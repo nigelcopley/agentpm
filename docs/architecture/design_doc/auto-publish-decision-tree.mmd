@@ -1,0 +1,37 @@
+%% Auto-Publish Decision Tree
+%% Determines when documents automatically publish
+
+flowchart TD
+    Start([Document Approved]) --> CheckVisibility{Visibility?}
+
+    CheckVisibility -->|PRIVATE| NoPublish[❌ Never Publish]
+    CheckVisibility -->|INTERNAL| CheckContext{Project Context?}
+    CheckVisibility -->|PUBLIC| CheckTypeRule{Type-Based Rule?}
+
+    CheckContext -->|Open Source| CheckTypeRule
+    CheckContext -->|Production| NoAutoPublish[⏸️ No Auto-Publish<br/>Require Manual]
+    CheckContext -->|Other| NoAutoPublish
+
+    CheckTypeRule -->|User Guide| AutoPublish[✅ Auto-Publish Now]
+    CheckTypeRule -->|API Doc| AutoPublish
+    CheckTypeRule -->|Developer Guide| AutoPublish
+    CheckTypeRule -->|Other| CheckPhaseRule{Phase-Based Rule?}
+
+    CheckPhaseRule -->|ADR| WaitPhase[⏳ Wait for<br/>O1_OPERATIONS Phase]
+    CheckPhaseRule -->|Migration Guide| WaitPhase
+    CheckPhaseRule -->|Deployment Guide| WaitPhase
+    CheckPhaseRule -->|Tech Spec| WaitPhase
+    CheckPhaseRule -->|Other| NoAutoPublish
+
+    WaitPhase -.->|Phase Change| PhaseCheck{Work Item<br/>Reached Phase?}
+    PhaseCheck -->|Yes| AutoPublish
+    PhaseCheck -->|No| WaitPhase
+
+    AutoPublish --> PublishAction[Publish to docs/]
+    NoAutoPublish --> ManualAction[Await Manual<br/>Publish Command]
+    NoPublish --> StayPrivate[Remain in<br/>.agentpm/docs/]
+
+    style AutoPublish fill:#90EE90
+    style NoPublish fill:#FFB6C1
+    style NoAutoPublish fill:#FFE4B5
+    style WaitPhase fill:#ADD8E6

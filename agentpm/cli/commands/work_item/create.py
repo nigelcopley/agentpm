@@ -74,6 +74,10 @@ from agentpm.cli.utils.templates import load_template
     help='WHY: Business value/rationale (e.g., "Protect user data, Enable personalization")'
 )
 @click.option(
+    '--why-value',
+    help='JSON object with structured why value (e.g., \'{"problem": "...", "desired_outcome": "...", "business_impact": "...", "target_metrics": [...]}\')'
+)
+@click.option(
     '--how',
     'six_w_how',
     help='HOW: Technical approach (e.g., "OAuth2 flow, JWT tokens, Redis session store")'
@@ -106,7 +110,7 @@ from agentpm.cli.utils.templates import load_template
 @click.pass_context
 def create(ctx: click.Context, name: str, wi_type: str, continuous: bool, description: str, priority: int,
            business_context: str, acceptance_criteria: str, ownership: str, scope: str,
-           artifacts: str, phase: str, metadata_template: str, **six_w_fields):
+           artifacts: str, phase: str, metadata_template: str, why_value: str, **six_w_fields):
     """
     Create new work item with type-specific quality gates.
 
@@ -245,6 +249,24 @@ def create(ctx: click.Context, name: str, wi_type: str, continuous: bool, descri
             metadata['artifacts'] = artifacts_data
         except json.JSONDecodeError as e:
             console.print(f"[red]❌ Error: Invalid JSON in --artifacts: {e}[/red]")
+            raise click.Abort()
+
+    if why_value:
+        try:
+            why_value_data = json.loads(why_value)
+            if not isinstance(why_value_data, dict):
+                console.print("[red]❌ Error: --why-value must be a JSON object[/red]")
+                raise click.Abort()
+            # Validate required fields
+            required_fields = ['problem', 'desired_outcome', 'business_impact', 'target_metrics']
+            missing_fields = [f for f in required_fields if not why_value_data.get(f)]
+            if missing_fields:
+                console.print(f"[red]❌ Error: --why-value missing required fields: {', '.join(missing_fields)}[/red]")
+                console.print("[yellow]Required: problem, desired_outcome, business_impact, target_metrics[/yellow]")
+                raise click.Abort()
+            metadata['why_value'] = why_value_data
+        except json.JSONDecodeError as e:
+            console.print(f"[red]❌ Error: Invalid JSON in --why-value: {e}[/red]")
             raise click.Abort()
 
     work_item_type = WorkItemType(wi_type)

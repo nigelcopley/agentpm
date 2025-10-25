@@ -1,0 +1,52 @@
+%% Document Publishing Workflow State Machine
+%% Mermaid diagram showing all lifecycle states and transitions
+
+stateDiagram-v2
+    [*] --> DRAFT: Document created
+
+    DRAFT --> REVIEW: submit-review<br/>(author, agent)
+    DRAFT --> APPROVED: skip-review<br/>(if no review required)
+
+    REVIEW --> APPROVED: approve<br/>(reviewer, owner)
+    REVIEW --> REJECTED: reject<br/>(reviewer)<br/>--reason required
+
+    REJECTED --> DRAFT: auto-revert<br/>(system)
+
+    APPROVED --> PUBLISHED: publish (manual)<br/>OR auto-publish<br/>(type/phase trigger)
+    APPROVED --> ARCHIVED: archive<br/>(author, admin)
+
+    PUBLISHED --> APPROVED: unpublish<br/>(author, admin)
+    PUBLISHED --> ARCHIVED: archive<br/>(removes public copy)
+
+    ARCHIVED --> APPROVED: unarchive<br/>(admin only)
+    ARCHIVED --> [*]
+
+    note right of DRAFT
+        Location: .agentpm/docs/
+        Visibility: Private
+        Editable: Yes
+    end note
+
+    note right of REVIEW
+        Location: .agentpm/docs/
+        Visibility: Reviewers only
+        Editable: No (read-only)
+    end note
+
+    note right of APPROVED
+        Location: .agentpm/docs/
+        Visibility: Internal
+        Ready for publication
+    end note
+
+    note right of PUBLISHED
+        Location: .agentpm/docs/ + docs/
+        Visibility: Public
+        Synced copies
+    end note
+
+    note right of ARCHIVED
+        Location: .agentpm/docs/
+        Visibility: Archive
+        Read-only
+    end note

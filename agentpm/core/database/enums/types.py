@@ -1644,3 +1644,74 @@ class SyncStatus(str, Enum):
         except ValueError:
             valid = ", ".join(cls.choices())
             raise ValueError(f"Invalid {cls.__name__}: '{value}'. Valid: {valid}")
+
+
+class DocumentLifecycle(str, Enum):
+    """
+    Document lifecycle states for publishing workflow (WI-164).
+
+    Defines document maturity and publication status:
+    - DRAFT: Initial creation state, work-in-progress
+    - REVIEW: Submitted for review, awaiting approval
+    - APPROVED: Review passed, ready for publication
+    - PUBLISHED: Public copy exists in docs/
+    - ARCHIVED: No longer active, removed from public
+    - REJECTED: Review failed, automatically reverts to DRAFT
+
+    State transitions follow the specification in:
+    docs/architecture/design_doc/publishing-workflow-specification.md
+
+    Migration 0044
+    """
+    DRAFT = "draft"
+    REVIEW = "review"
+    APPROVED = "approved"
+    PUBLISHED = "published"
+    ARCHIVED = "archived"
+    REJECTED = "rejected"
+
+    @classmethod
+    def choices(cls) -> list[str]:
+        """Get all enum values for CLI/form dropdowns."""
+        return [item.value for item in cls]
+
+    @classmethod
+    def from_string(cls, value: str):
+        """Safe conversion from string with helpful error message."""
+        try:
+            return cls(value)
+        except ValueError:
+            valid = ", ".join(cls.choices())
+            raise ValueError(f"Invalid {cls.__name__}: '{value}'. Valid: {valid}")
+
+
+class DocumentVisibility(str, Enum):
+    """
+    Document visibility levels for publishing workflow (WI-164).
+
+    Controls whether documents can be published to public docs/:
+    - PRIVATE: Only in .agentpm/docs/, never published
+    - PUBLIC: Can be published to docs/ (end-user facing)
+    - INTERNAL: Team-visible but not end-user facing
+
+    Visibility determines auto-publish eligibility and location mapping.
+
+    Migration 0044
+    """
+    PRIVATE = "private"
+    PUBLIC = "public"
+    INTERNAL = "internal"
+
+    @classmethod
+    def choices(cls) -> list[str]:
+        """Get all enum values for CLI/form dropdowns."""
+        return [item.value for item in cls]
+
+    @classmethod
+    def from_string(cls, value: str):
+        """Safe conversion from string with helpful error message."""
+        try:
+            return cls(value)
+        except ValueError:
+            valid = ", ".join(cls.choices())
+            raise ValueError(f"Invalid {cls.__name__}: '{value}'. Valid: {valid}")

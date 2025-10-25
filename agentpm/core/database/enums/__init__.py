@@ -45,6 +45,8 @@ from .types import (
     SearchResultType,
     StorageMode,
     SyncStatus,
+    DocumentLifecycle,
+    DocumentVisibility,
 )
 from .development_principles import (
     DevelopmentPrinciple,
@@ -98,6 +100,9 @@ __all__ = [
     # Document storage enums (WI-133)
     "StorageMode",
     "SyncStatus",
+    # Document publishing enums (WI-164)
+    "DocumentLifecycle",
+    "DocumentVisibility",
     # Development Principles (Pyramid)
     "DevelopmentPrinciple",
     "PrincipleDefinition",

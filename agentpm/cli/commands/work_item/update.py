@@ -38,9 +38,13 @@ from agentpm.cli.utils.services import get_database_service
     '--metadata',
     help='JSON object with complete metadata (e.g., \'{"why_value": {"problem": "...", "desired_outcome": "...", "business_impact": "...", "target_metrics": [...]}}\')'
 )
+@click.option(
+    '--why-value',
+    help='JSON object with structured why value (e.g., \'{"problem": "...", "desired_outcome": "...", "business_impact": "...", "target_metrics": [...]}\')'
+)
 @click.pass_context
 def update(ctx: click.Context, work_item_id: int, name: str, description: str, business_context: str, priority: int,
-           effort_estimate: float, phase: str, ownership: str, scope: str, artifacts: str, metadata: str):
+           effort_estimate: float, phase: str, ownership: str, scope: str, artifacts: str, metadata: str, why_value: str):
     """
     Update work item fields.
 
@@ -141,6 +145,25 @@ def update(ctx: click.Context, work_item_id: int, name: str, description: str, b
                 existing_metadata['artifacts'] = artifacts_data
             except json.JSONDecodeError as e:
                 console_err.print(f"[red]❌ Error: Invalid JSON in --artifacts: {e}[/red]")
+                raise click.Abort()
+
+        # Merge why_value
+        if why_value:
+            try:
+                why_value_data = json.loads(why_value)
+                if not isinstance(why_value_data, dict):
+                    console_err.print("[red]❌ Error: --why-value must be a JSON object[/red]")
+                    raise click.Abort()
+                # Validate required fields
+                required_fields = ['problem', 'desired_outcome', 'business_impact', 'target_metrics']
+                missing_fields = [f for f in required_fields if not why_value_data.get(f)]
+                if missing_fields:
+                    console_err.print(f"[red]❌ Error: --why-value missing required fields: {', '.join(missing_fields)}[/red]")
+                    console_err.print("[yellow]Required: problem, desired_outcome, business_impact, target_metrics[/yellow]")
+                    raise click.Abort()
+                existing_metadata['why_value'] = why_value_data
+            except json.JSONDecodeError as e:
+                console_err.print(f"[red]❌ Error: Invalid JSON in --why-value: {e}[/red]")
                 raise click.Abort()
 
         metadata_updates['metadata'] = json.dumps(existing_metadata)

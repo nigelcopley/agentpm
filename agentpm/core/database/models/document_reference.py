@@ -74,6 +74,17 @@ class DocumentReference(BaseModel):
     last_synced_at: Optional[datetime] = Field(None, description="When file was last synced from database")
     sync_status: SyncStatus = Field(default=SyncStatus.SYNCED, description="Synchronization state (synced, pending, conflict, error)")
 
+    # Visibility and lifecycle (WI-164: Document Visibility System - Migration 0044)
+    visibility: Optional[str] = Field(None, description="Visibility level (private|restricted|public)")
+    lifecycle_stage: Optional[str] = Field('draft', description="Lifecycle stage (draft|review|approved|published|archived)")
+    published_path: Optional[str] = Field(None, description="Path where public copy exists")
+    published_date: Optional[datetime] = Field(None, description="When document was published")
+    unpublished_date: Optional[datetime] = Field(None, description="When document was unpublished")
+    review_status: Optional[str] = Field(None, description="Review status (pending|approved|rejected)")
+    reviewer_id: Optional[str] = Field(None, description="Who is/was reviewing")
+    review_comment: Optional[str] = Field(None, description="Reviewer feedback")
+    auto_publish: Optional[bool] = Field(False, description="Auto-publish when approved")
+
     # Lifecycle
     created_by: Optional[str] = Field(None, max_length=200, description="Agent or user who created this document")
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -100,8 +111,10 @@ class DocumentReference(BaseModel):
         """Validate path follows docs/ structure with exceptions for legacy files."""
         # Check if path is valid according to migration 0032 constraints
         is_valid = (
-            # Primary rule: Must start with 'docs/'
+            # Primary rule: Must start with 'docs/' (public)
             v.startswith('docs/')
+            # NEW: Private documents in .agentpm/docs/ (WI-164)
+            or v.startswith('.agentpm/docs/')
             # Exception 1: Project root markdown files
             or v in ('CHANGELOG.md', 'README.md', 'LICENSE.md')
             # Exception 2: Project root artifacts (deployment, gates, etc.)
@@ -112,26 +125,33 @@ class DocumentReference(BaseModel):
             or v.startswith('testing/')
             or v.startswith('tests/')
         )
-        
+
         if not is_valid:
             raise ValueError(
-                f"Document path must start with 'docs/' or be an allowed exception. "
+                f"Document path must start with 'docs/' or '.agentpm/docs/' or be an allowed exception. "
                 f"Got: {v}"
             )
 
-        # For docs/ paths, validate structure
-        if v.startswith('docs/'):
+        # For docs/ and .agentpm/docs/ paths, validate structure
+        if v.startswith('docs/') or v.startswith('.agentpm/docs/'):
             parts = v.split('/')
-            if len(parts) < 4:
+            min_parts = 4 if v.startswith('docs/') else 5  # .agentpm/docs/ has extra level
+
+            if len(parts) < min_parts:
                 raise ValueError(
-                    f"Path must follow pattern: docs/{{category}}/{{document_type}}/{{filename}}. "
+                    f"Path must follow pattern: docs/{{category}}/{{document_type}}/{{filename}} "
+                    f"or .agentpm/docs/{{category}}/{{document_type}}/{{filename}}. "
                     f"Got: {v}"
                 )
 
+            # Extract category from path
+            category_index = 1 if v.startswith('docs/') else 2
+            path_category = parts[category_index]
+
             # Validate category matches if available (skip if None)
-            if 'category' in info.data and info.data['category'] is not None and parts[1] != info.data['category']:
+            if 'category' in info.data and info.data['category'] is not None and path_category != info.data['category']:
                 raise ValueError(
-                    f"Path category '{parts[1]}' doesn't match field category '{info.data['category']}'"
+                    f"Path category '{path_category}' doesn't match field category '{info.data['category']}'"
                 )
 
             # Note: Path document_type directory and field document_type can be different

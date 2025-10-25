@@ -21,6 +21,7 @@ from .summary import Summary
 from .evidence_source import EvidenceSource
 from .event import Event
 from .document_reference import DocumentReference
+from .document_audit_log import DocumentAuditLog
 from .search_index import SearchIndex
 from .search_metrics import SearchMetrics
 from .provider import (
@@ -92,6 +93,8 @@ __all__ = [
     "EvidenceSource",
     "Event",
     "DocumentReference",
+    # Document publishing models (WI-164)
+    "DocumentAuditLog",
     # Search models
     "SearchIndex",
     "SearchMetrics",

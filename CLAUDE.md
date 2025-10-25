@@ -14,6 +14,54 @@ You are the **AIPM Master Orchestrator**. Your role is to **route work to the co
 
 ---
 
+## 🚨 MANDATORY: Agent Operating Protocol (ALL AGENTS)
+
+**All agents MUST follow the Agent Operating Protocol**. This is **BLOCK-level enforcement**.
+
+**Protocol Location**: `.agentpm/docs/governance/quality_gates_spec/agent-operating-protocol-mandatory-workflow-compliance.md`
+
+### Required Steps for ALL Agents:
+
+**STEP 1 - START**: Before beginning work
+```bash
+apm task start <task-id>  # Transition to ACTIVE before starting
+```
+
+**STEP 2 - WORK**: During implementation
+```bash
+apm task update <task-id> --quality-metadata='{"progress": "...", "tests_passing": true}'
+```
+
+**STEP 3 - COMPLETE**: After finishing
+```bash
+apm task update <task-id> --quality-metadata='{"completed": true, "deliverables": [...]}'
+apm task submit-review <task-id>  # Transition to REVIEW
+apm task approve <task-id>  # Transition to DONE
+```
+
+**STEP 4 - DOCUMENT**: For all documentation (DOC-020)
+```bash
+# ❌ NEVER: Write(file_path="docs/...", content="...")
+# ✅ ALWAYS: Use apm document add with ALL fields
+apm document add \
+  --entity-type=task \
+  --entity-id=<task-id> \
+  --category=<category> \
+  --type=<type> \
+  --title="<title>" \
+  --content="<content>"
+# File path AUTO-GENERATED, do NOT provide --file-path
+```
+
+**Violations Result In**:
+- Task rejected in review
+- Work item blocked
+- Agent flagged for non-compliance
+
+**Full Protocol**: Read `.agentpm/docs/governance/quality_gates_spec/agent-operating-protocol-mandatory-workflow-compliance.md`
+
+---
+
 ## 0) Database-First Architecture (CRITICAL)
 
 ### **Source of Truth: Database, NOT Files**
@@ -275,11 +323,31 @@ Task(
 Task(
   subagent_type="aipm-python-cli-developer",
   description="Implement CLI command",
-  prompt="Implement [command] following three-layer pattern:
+  prompt="MANDATORY: Follow Agent Operating Protocol
+
+BEFORE STARTING:
+  1. Run: apm task start <task-id>
+  2. Verify task status = 'active'
+
+DURING WORK:
+  3. Update metadata: apm task update <task-id> --quality-metadata='{...}'
+
+AFTER COMPLETION:
+  4. Add completion metadata: apm task update <task-id> --quality-metadata='{"completed": true, "deliverables": [...], "tests_passing": true, "coverage_percent": XX}'
+  5. Transition: apm task submit-review <task-id> && apm task approve <task-id>
+
+FOR DOCUMENTATION (DOC-020):
+  - NEVER use Write/Edit/Bash for docs/ files
+  - ALWAYS use: apm document add --entity-type=task --entity-id=<task-id> --category=<cat> --type=<type> --title='...' --content='...'
+  - File path is AUTO-GENERATED, do NOT provide --file-path
+
+YOUR TASK:
+  Implement [command] following three-layer pattern:
   - Models (Pydantic)
   - Adapters (SQLite conversion)
   - Methods (business logic)
 
+  Task ID: <task-id>
   Requirements: [details]"
 )
 ```
@@ -312,12 +380,26 @@ Task(
 Task(
   subagent_type="aipm-testing-specialist",
   description="Create test suite",
-  prompt="Create comprehensive tests for [component]:
+  prompt="MANDATORY: Follow Agent Operating Protocol
+
+BEFORE STARTING:
+  1. Run: apm task start <task-id>
+
+DURING WORK:
+  2. Update: apm task update <task-id> --quality-metadata='{"test_plan": "...", "tests_total": X, "tests_passed": Y, "coverage_percent": Z}'
+
+AFTER COMPLETION:
+  3. Complete: apm task update <task-id> --quality-metadata='{"completed": true, "tests_passing": true, "coverage_percent": XX}'
+  4. Transition: apm task submit-review <task-id> && apm task approve <task-id>
+
+YOUR TASK:
+  Create comprehensive tests for [component]:
   - Unit tests (>90% coverage target)
   - Integration tests
   - Fixtures
   - AAA pattern
 
+  Task ID: <task-id>
   Component: [description]"
 )
 ```
@@ -330,12 +412,36 @@ Task(
 Task(
   subagent_type="aipm-documentation-specialist",
   description="Update documentation",
-  prompt="Update documentation for [feature]:
-  - User guides
-  - Developer guides
-  - API reference
-  - Examples
+  prompt="MANDATORY: Follow Agent Operating Protocol + DOC-020
 
+BEFORE STARTING:
+  1. Run: apm task start <task-id>
+
+DURING WORK - DOC-020 CRITICAL:
+  2. For EVERY document, use database-first approach:
+     apm document add \
+       --entity-type=task \
+       --entity-id=<task-id> \
+       --category=guides \
+       --type=user_guide \
+       --title='User Guide: [Feature]' \
+       --content='<full markdown content>'
+
+  3. ❌ NEVER use Write/Edit/Bash for docs/ files
+  4. File path is AUTO-GENERATED - do NOT provide --file-path
+
+AFTER COMPLETION:
+  5. Complete: apm task update <task-id> --quality-metadata='{"completed": true, "documents_created": [...], "doc_ids": [...]}'
+  6. Transition: apm task submit-review <task-id> && apm task approve <task-id>
+
+YOUR TASK:
+  Update documentation for [feature]:
+  - User guides (use type=user_guide, category=guides)
+  - Developer guides (use type=developer_guide, category=guides)
+  - API reference (use type=api_doc, category=reference)
+  - Examples (include in content)
+
+  Task ID: <task-id>
   Feature: [description]"
 )
 ```
@@ -812,3 +918,4 @@ If violation detected:
 **Last Updated**: 2025-10-17
 **Pattern**: Database-driven, phase-based, multi-agent orchestration via Task tool
 **Paradigm**: Master Orchestrator (delegate-only) → Phase Orchestrators → Specialist Agents → Sub-Agents
+- always use apm commands to do anything before using tools

@@ -171,8 +171,8 @@ def _normalize_entity_type(ctx, param, value):
               help='ID of the entity')
 @click.option('--file-path', 'file_path',
               type=str,
-              required=True,
-              help='Relative path to document file from project root')
+              required=False,
+              help='Optional relative path to document file (auto-generated if not provided)')
 @click.option('--category', 'category',
               type=click.Choice(DocumentCategory.choices()),
               help='Document category (auto-detected from file path if not specified)')
@@ -218,55 +218,60 @@ def add(ctx: click.Context, entity_type: str, entity_id: int, file_path: str,
         strict_validation: bool):
     """
     Add a document reference to an entity (work item, task, idea, or project).
-    
+
     Links a document file to an entity and tracks document metadata.
-    Supports both file-first and database-first workflows.
-    
+    Supports both file-first and database-first workflows with automatic path generation.
+
     \b
     Examples:
-      # File-first workflow (existing file)
+      # Database-first workflow with auto-path generation (RECOMMENDED)
       apm document add --entity-type=work-item --entity-id=5 \\
-          --file-path="docs/api-specification.md" \\
-          --type=specification --title="API Specification"
-      
-      # Database-first workflow (create from content)
+          --category=guides --type=user_guide \\
+          --title="Getting Started Guide" \\
+          --content="# Getting Started\\n\\n## Overview\\n..."
+
+      # File-first workflow (path auto-generated from metadata)
       apm document add --entity-type=work-item --entity-id=5 \\
-          --file-path="docs/architecture/design/user-auth.md" \\
           --category=architecture --type=design_doc \\
-          --title="User Authentication Design" \\
-          --content="# User Authentication Design\\n\\n## Overview\\n..."
-      
-      # Add with auto-detection
+          --title="User Authentication Design"
+
+      # With explicit file path (validates and corrects if needed)
       apm document add --entity-type=work-item --entity-id=5 \\
-          --file-path="docs/architecture/system-overview.md"
-    
+          --file-path="docs/old-location/auth.md" \\
+          --category=architecture --type=design_doc \\
+          --title="User Authentication Design"
+
     \b
     See Also:
       apm document types          # Show all available categories and types
       apm document types --help   # Show types command options
-    
+
     \b
-    Auto-Detection:
-      • Document type: Inferred from file path patterns
-      • Document format: Inferred from file extension
-      • Title: Generated from file name (cleaned up)
-      • File validation: Checks file exists and is readable (file-first only)
-    
+    Auto-Generation Features:
+      • File path: Generated from title + category + type + visibility
+      • Visibility: Determined by document type policy
+      • Path correction: Moves files to correct location if needed
+      • Conflict resolution: Adds numeric suffix if path exists
+
     \b
     File Path Rules:
-      • Must be relative to project root
+      • Path is optional (auto-generated from metadata)
+      • Must be relative to project root if provided
       • Cannot contain '..' (directory traversal)
-      • Must point to existing file (file-first workflow only)
-      • Follow structure: docs/{category}/{document_type}/{filename}
+      • Follows structure: docs/{category}/{document_type}/{filename}
+      • Private docs go to: .agentpm/docs/{category}/{document_type}/{filename}
     """
-    console = ctx.obj['console']
+    console = ctx.obj.get('console')
+    if console is None:
+        from rich.console import Console
+        console = Console()
     project_root = ctx.obj['project_root']
     db = ctx.obj['db_service']
     
     # Auto-detect created_by if not provided
     from agentpm.cli.utils.user import get_created_by_value
     created_by = get_created_by_value(created_by)
-    
+
     try:
         # Validate entity exists (unless validation is skipped)
         if not no_validate_entity:
@@ -275,164 +280,181 @@ def add(ctx: click.Context, entity_type: str, entity_id: int, file_path: str,
             elif entity_type == 'task':
                 validate_task_exists(db, entity_id, ctx)
             # TODO: Add validation for idea and project entities
-        
-        # Auto-detect document type if not specified (needed for path validation)
-        if not doc_type:
-            doc_type = _detect_document_type(file_path)
 
-        # Auto-detect category from path if not specified
+        # Require category and type for auto-path generation
         if not category:
-            category = _detect_category_from_path(file_path)
-
-        # STEP 1: Validate path structure (BEFORE file validation)
-        file_path = _validate_and_guide_path(file_path, doc_type, console, strict=strict_validation)
-
-        # STEP 2: SEC-001: Validate file path security (prevent directory traversal)
-        is_valid, error_msg = validate_file_path(file_path, project_root)
-        if not is_valid:
-            console.print(f"❌ [red]Security error: {error_msg}[/red]")
+            console.print("[red]❌ --category is required for auto-path generation[/red]")
             console.print()
-            console.print("💡 [yellow]File path security requirements:[/yellow]")
-            console.print("   • Path must be relative to project root")
-            console.print("   • Path cannot contain '..' (directory traversal)")
-            console.print("   • Path must resolve within project boundaries")
+            console.print("💡 [cyan]Use:[/cyan] apm document types  [dim]# Show all categories[/dim]")
             raise click.Abort()
 
-        # STEP 3: Validate file exists (if validation enabled and no content provided)
-        if validate_file and not no_validate_file and not content:
-            abs_path = project_root / file_path
-            if not abs_path.exists():
-                console.print(f"❌ [red]File not found: {file_path}[/red]")
-                console.print(f"   Expected at: {abs_path}")
+        if not doc_type:
+            console.print("[red]❌ --type is required for auto-path generation[/red]")
+            console.print()
+            console.print("💡 [cyan]Use:[/cyan] apm document types  [dim]# Show all types[/dim]")
+            raise click.Abort()
+
+        # Require title for auto-path generation
+        if not title:
+            console.print("[red]❌ --title is required for auto-path generation[/red]")
+            raise click.Abort()
+
+        # STEP 1: Determine visibility using VisibilityPolicyEngine
+        from agentpm.core.services.document_visibility import VisibilityPolicyEngine
+
+        visibility_engine = VisibilityPolicyEngine(db)
+        visibility_result = visibility_engine.determine_visibility(
+            category=category,
+            doc_type=doc_type,
+            lifecycle_stage='draft',
+            entity_type=entity_type,
+            entity_id=entity_id
+        )
+
+        # STEP 2: Generate file path using DocumentPathGenerator
+        from agentpm.core.services.document_path_generator import DocumentPathGenerator
+
+        path_generator = DocumentPathGenerator(db)
+        path_result = path_generator.generate_path(
+            title=title,
+            category=category,
+            doc_type=doc_type,
+            visibility=visibility_result.visibility,
+            lifecycle='draft',
+            entity_type=entity_type,
+            entity_id=entity_id,
+            provided_path=file_path  # May be None or user-provided
+        )
+
+        final_path = path_result.final_path
+
+        # Display path information to user
+        if path_result.was_corrected:
+            console.print()
+            console.print("[yellow]💡 Path auto-generated from metadata[/yellow]")
+            if file_path:
+                console.print(f"   Provided: {file_path}")
+            console.print(f"   Generated: {final_path}")
+            console.print(f"   Reason: {path_result.correction_reason}")
+            console.print()
+
+        # STEP 3: Handle file move if needed
+        if path_result.needs_move:
+            console.print("[cyan]📦 Moving file to correct location...[/cyan]")
+            console.print(f"   From: {path_result.move_from}")
+            console.print(f"   To: {final_path}")
+
+            try:
+                # Move file using path generator
+                from pathlib import Path
+                import shutil
+
+                from_path = Path(path_result.move_from)
+                to_path = Path(final_path)
+
+                # Create target directory
+                to_path.parent.mkdir(parents=True, exist_ok=True)
+
+                # Move file
+                shutil.move(str(from_path), str(to_path))
+                console.print("   ✅ File moved successfully")
                 console.print()
-                console.print("💡 [cyan]To fix:[/cyan]")
-                console.print("   • Create the file first")
-                console.print("   • Use [dim]--no-validate-file[/dim] to skip validation")
-                console.print("   • Use [dim]--content[/dim] to create database-first document")
-                console.print("   • Check the file path is correct")
-                console.print()
+            except Exception as e:
+                console.print(f"   [red]❌ Failed to move file: {e}[/red]")
                 raise click.Abort()
 
-            if not abs_path.is_file():
-                console.print(f"❌ [red]Path is not a file: {file_path}[/red]")
-                raise click.Abort()
+        # STEP 4: Create file from content (database-first) or validate existing file
+        abs_path = project_root / final_path
 
-        # Validate category/type consistency if both are provided
-        if category and doc_type:
-            _validate_category_type_consistency(category, doc_type, file_path, console)
+        if content:
+            # Database-first: Create file from provided content
+            console.print("[cyan]📝 Creating database-first document...[/cyan]")
+
+            # Create directory structure
+            abs_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Write content to file
+            abs_path.write_text(content, encoding='utf-8')
+            console.print(f"   ✅ File created with content ({len(content)} bytes)")
+            console.print()
+
+        elif not abs_path.exists() and not path_result.needs_move:
+            # No content, no existing file - create placeholder
+            abs_path.parent.mkdir(parents=True, exist_ok=True)
+            placeholder = f"# {title}\n\n<!-- Add content here -->\n"
+            abs_path.write_text(placeholder, encoding='utf-8')
+            console.print("[cyan]📝 Placeholder file created[/cyan]")
+            console.print()
+
+        # STEP 5: Calculate file metadata
+        if abs_path.exists():
+            file_size_bytes = abs_path.stat().st_size
+            content_hash = calculate_content_hash(abs_path)
+        else:
+            file_size_bytes = 0
+            content_hash = ""
 
         # Auto-detect document format if not specified
         if not doc_format:
-            doc_format = _detect_document_format(file_path)
+            doc_format = _detect_document_format(final_path)
 
-        # Auto-generate title if not specified
-        if not title:
-            title = _generate_title_from_path(file_path)
-
-        # Map string values to enums using safe conversion
+        # Map string values to enums
         entity_type_enum = EntityType.from_string(entity_type)
-
         doc_type_enum = DocumentType(doc_type) if doc_type else None
-        doc_format_enum = DocumentFormat(doc_format) if doc_format else None
+        doc_format_enum = DocumentFormat(doc_format) if doc_format else DocumentFormat.markdown
         category_enum = DocumentCategory(category) if category else None
-        
-        # Handle database-first vs file-first workflow
-        if content:
-            # Database-first workflow: content provided, file will be generated
-            console.print("[cyan]📝 Creating database-first document...[/cyan]")
-            
-            # Skip file validation for database-first workflow
-            validate_file = False
-            
-            # Calculate content metadata
-            content_hash = calculate_content_hash_from_string(content)
-            file_size_bytes = len(content.encode('utf-8'))
-            
-            # Create document reference with content
-            document = DocumentReference(
-                entity_type=entity_type_enum,
-                entity_id=entity_id,
-                file_path=file_path,
-                category=category,
-                document_type=doc_type_enum,
-                title=title,
-                description=description,
-                file_size_bytes=file_size_bytes,
-                content_hash=content_hash,
-                format=doc_format_enum,
-                created_by=created_by,
-                content=content,
-                storage_mode="hybrid"  # Database-first with file sync
-            )
-            
-            # Use content-aware creation method
-            from agentpm.core.database.methods import document_references as doc_methods
-            created_doc = doc_methods.create_document_with_content(db, document, content)
-            
-            # Generate physical file
-            _generate_file_from_database(project_root, created_doc, console)
-            
-            # Update sync status to SYNCED after file generation
-            from agentpm.core.database.methods import document_references as doc_methods
-            doc_methods.mark_document_synced(db, created_doc.id)
-            
-        else:
-            # File-first workflow: validate existing file
-            file_size_bytes = None
-            content_hash = None
-            if validate_file and not no_validate_file:
-                abs_path = project_root / file_path
-                file_size_bytes = abs_path.stat().st_size
-                # SEC-003: Calculate content hash for integrity verification
-                content_hash = calculate_content_hash(abs_path)
-            
-            # Create document reference
-            document = DocumentReference(
-                entity_type=entity_type_enum,
-                entity_id=entity_id,
-                file_path=file_path,
-                category=category,
-                document_type=doc_type_enum,
-                title=title,
-                description=description,
-                file_size_bytes=file_size_bytes,
-                content_hash=content_hash,
-                format=doc_format_enum,
-                created_by=created_by
-            )
-            
-            # THREE-LAYER PATTERN: Use adapter, not direct methods call
-            created_doc = DocumentReferenceAdapter.create(db, document)
+
+        # STEP 6: Create document reference in database with visibility metadata
+        document = DocumentReference(
+            entity_type=entity_type_enum,
+            entity_id=entity_id,
+            file_path=final_path,
+            category=category_enum,
+            document_type=doc_type_enum,
+            title=title,
+            description=description,
+            file_size_bytes=file_size_bytes,
+            content_hash=content_hash,
+            format=doc_format_enum,
+            created_by=created_by,
+            # NEW: Visibility fields
+            visibility=visibility_result.visibility,
+            audience=visibility_result.audience,
+            lifecycle_stage='draft',
+            auto_publish=visibility_result.auto_publish_on_approved
+        )
+
+        # THREE-LAYER PATTERN: Use adapter
+        created_doc = DocumentReferenceAdapter.create(db, document)
         
         # Display success message
         console.print()
-        console.print(Panel.fit(
-            f"[green]✅ Document reference added successfully[/green]",
-            title="📄 Document Added",
-            subtitle=f"ID: {created_doc.id}"
-        ))
+        console.print(f"✅ [green]Document created:[/green] #{created_doc.id}")
+        console.print(f"   Title: {title}")
+        console.print(f"   Category: {category}/{doc_type}")
+        console.print(f"   Path: {final_path}")
+        console.print(f"   Visibility: {visibility_result.visibility} ({visibility_result.audience})")
+        console.print(f"   Lifecycle: draft")
         console.print()
-        
-        # Show document details
-        console.print("[bold cyan]Document Details:[/bold cyan]")
-        console.print(f"  [dim]ID:[/dim] {created_doc.id}")
-        console.print(f"  [dim]Entity:[/dim] {entity_type} #{entity_id}")
-        console.print(f"  [dim]File Path:[/dim] {created_doc.file_path}")
-        console.print(f"  [dim]Type:[/dim] {created_doc.document_type.value if created_doc.document_type else 'Auto-detected'}")
-        console.print(f"  [dim]Format:[/dim] {created_doc.format.value if created_doc.format else 'Auto-detected'}")
-        console.print(f"  [dim]Title:[/dim] {created_doc.title}")
-        if created_doc.description:
-            console.print(f"  [dim]Description:[/dim] {created_doc.description}")
-        if created_doc.file_size_bytes:
-            console.print(f"  [dim]Size:[/dim] {_format_file_size(created_doc.file_size_bytes)}")
-        console.print(f"  [dim]Created By:[/dim] {created_doc.created_by}")
-        console.print(f"  [dim]Created At:[/dim] {created_doc.created_at.strftime('%Y-%m-%d %H:%M:%S')}")
+
+        if visibility_result.auto_publish_on_approved:
+            console.print(f"   Auto-publish: ✅ Yes (will publish when approved)")
+        else:
+            console.print(f"   Auto-publish: No (manual publish required)")
+
+        if visibility_result.requires_review:
+            console.print(f"   Review required: ✅ Yes")
         console.print()
-        
-        console.print("💡 [cyan]Next steps:[/cyan]")
-        console.print(f"   • View document: [dim]apm document show {created_doc.id}[/dim]")
-        console.print(f"   • List entity documents: [dim]apm document list --entity-type={entity_type} --entity-id={entity_id}[/dim]")
-        console.print(f"   • Update document: [dim]apm document update {created_doc.id}[/dim]")
+
+        console.print("📚 [cyan]Next steps:[/cyan]")
+        console.print(f"   apm document show {created_doc.id}  # View details")
+
+        if visibility_result.requires_review:
+            console.print(f"   apm document submit-review {created_doc.id}  # Submit for review")
+        else:
+            if visibility_result.auto_publish_on_approved:
+                console.print(f"   apm document approve {created_doc.id}  # Approve and auto-publish")
+        console.print()
         
     except Exception as e:
         console.print(f"❌ [red]Error adding document reference: {e}[/red]")
