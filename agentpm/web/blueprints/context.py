@@ -8,6 +8,17 @@ from flask import Blueprint, render_template, abort, request, redirect, url_for,
 import logging
 from datetime import datetime
 
+def _format_file_size(size_bytes):
+    """Format file size in human readable format"""
+    if size_bytes == 0:
+        return "0 B"
+    size_names = ["B", "KB", "MB", "GB", "TB"]
+    i = 0
+    while size_bytes >= 1024 and i < len(size_names) - 1:
+        size_bytes /= 1024.0
+        i += 1
+    return f"{size_bytes:.1f} {size_names[i]}"
+
 def _is_htmx_request():
     """Check if request is from HTMX"""
     return request.headers.get('HX-Request') == 'true'
@@ -431,6 +442,108 @@ def context_documents_list():
     }
     
     return render_template('context/documents.html', view=view)
+
+@context_bp.route('/files')
+def context_files_list():
+    """Context files list - actual file system files"""
+    from pathlib import Path
+    from datetime import datetime
+    
+    # Find .agentpm/contexts directory (from project root)
+    import os
+    project_root = Path(__file__).parent.parent.parent.parent  # Go up to project root
+    context_dir = project_root / '.agentpm' / 'contexts'
+    
+    files_info = []
+    total_size = 0
+    
+    if context_dir.exists() and context_dir.is_dir():
+        for file_path in context_dir.rglob('*'):
+            if file_path.is_file():
+                stat = file_path.stat()
+                file_size = stat.st_size
+                total_size += file_size
+                
+                files_info.append({
+                    'name': file_path.name,
+                    'path': str(file_path.relative_to(context_dir)),
+                    'full_path': str(file_path),
+                    'size_bytes': file_size,
+                    'size_human': _format_file_size(file_size),
+                    'modified': datetime.fromtimestamp(stat.st_mtime),
+                    'file_type': file_path.suffix or 'unknown',
+                    'is_file': True
+                })
+    
+    # Sort by modified date (newest first)
+    files_info.sort(key=lambda f: f['modified'], reverse=True)
+    
+    view = {
+        'project': {'name': 'APM (Agent Project Manager) Project', 'id': 1},
+        'context_files': files_info,
+        'total_size': total_size,
+        'total_files': len(files_info)
+    }
+    
+    return render_template('context/files.html', view=view)
+
+@context_bp.route('/files/preview/<path:filepath>')
+def context_files_preview(filepath: str):
+    """Preview context file content"""
+    from pathlib import Path
+    from flask import abort
+    
+    # Security check - ensure file is within .agentpm/contexts
+    project_root = Path(__file__).parent.parent.parent.parent  # Go up to project root
+    context_dir = project_root / '.agentpm' / 'contexts'
+    file_path = context_dir / filepath
+    
+    if not file_path.exists() or not file_path.is_file():
+        abort(404, description="File not found")
+    
+    # Ensure file is within the context directory
+    try:
+        file_path.resolve().relative_to(context_dir.resolve())
+    except ValueError:
+        abort(403, description="Access denied")
+    
+    # Read file content
+    try:
+        content = file_path.read_text(encoding='utf-8')
+        file_name = file_path.name
+        file_size = file_path.stat().st_size
+    except UnicodeDecodeError:
+        content = f"Binary file (cannot preview)\nSize: {file_path.stat().st_size} bytes"
+        file_name = file_path.name
+        file_size = file_path.stat().st_size
+    
+    return render_template('context/file_preview.html', 
+                         content=content, 
+                         file_name=file_name, 
+                         file_path=filepath,
+                         file_size=file_size)
+
+@context_bp.route('/files/download/<path:filepath>')
+def context_files_download(filepath: str):
+    """Download context file"""
+    from pathlib import Path
+    from flask import send_file, abort
+    
+    # Security check - ensure file is within .agentpm/contexts
+    project_root = Path(__file__).parent.parent.parent.parent  # Go up to project root
+    context_dir = project_root / '.agentpm' / 'contexts'
+    file_path = context_dir / filepath
+    
+    if not file_path.exists() or not file_path.is_file():
+        abort(404, description="File not found")
+    
+    # Ensure file is within the context directory
+    try:
+        file_path.resolve().relative_to(context_dir.resolve())
+    except ValueError:
+        abort(403, description="Access denied")
+    
+    return send_file(file_path, as_attachment=True, download_name=file_path.name)
 
 @context_bp.route('/evidence')
 def context_evidence_list():

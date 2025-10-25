@@ -13,6 +13,8 @@ import time
 import tempfile
 import sqlite3
 import statistics
+import psutil
+import os
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -249,9 +251,6 @@ class TestPerformanceBenchmarks:
     @pytest.mark.asyncio
     async def test_memory_usage_benchmark(self, performance_optimizer):
         """Benchmark memory usage - target <500MB"""
-        import psutil
-        import os
-        
         process = psutil.Process(os.getpid())
         initial_memory = process.memory_info().rss / 1024 / 1024  # MB
         

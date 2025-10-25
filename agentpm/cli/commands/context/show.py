@@ -370,14 +370,14 @@ def show(ctx: click.Context, task_id: int, work_item_id: int, show_project: bool
         }
 
         for level, ctx_data in contexts.items():
-            if ctx_data:
+            if ctx_data and ctx_data.six_w:
                 output['contexts'][level] = {
-                    'who': ctx_data.who,
-                    'what': ctx_data.what,
-                    'where': ctx_data.where,
-                    'when': ctx_data.when_context,
-                    'why': ctx_data.why,
-                    'how': ctx_data.how
+                    'who': ctx_data.six_w.who,
+                    'what': ctx_data.six_w.what,
+                    'where': ctx_data.six_w.where,
+                    'when': ctx_data.six_w.when,
+                    'why': ctx_data.six_w.why,
+                    'how': ctx_data.six_w.how
                 }
 
         # Clean the output to remove control characters that break JSON
@@ -408,22 +408,22 @@ def show(ctx: click.Context, task_id: int, work_item_id: int, show_project: bool
         level_names = {'task': '🎯 Task Context', 'work_item': '📋 Work Item Context', 'project': '🏗️  Project Context'}
 
         for level, ctx_data in contexts.items():
-            if ctx_data:
+            if ctx_data and ctx_data.six_w:
                 console.print(f"[bold]{level_names[level]}[/bold]")
 
                 # 6W Display
-                if ctx_data.who:
-                    console.print(f"  [cyan]WHO:[/cyan] {ctx_data.who}")
-                if ctx_data.what:
-                    console.print(f"  [cyan]WHAT:[/cyan] {ctx_data.what}")
-                if ctx_data.where:
-                    console.print(f"  [cyan]WHERE:[/cyan] {ctx_data.where}")
-                if ctx_data.when_context:
-                    console.print(f"  [cyan]WHEN:[/cyan] {ctx_data.when_context}")
-                if ctx_data.why:
-                    console.print(f"  [cyan]WHY:[/cyan] {ctx_data.why}")
-                if ctx_data.how:
-                    console.print(f"  [cyan]HOW:[/cyan] {ctx_data.how}")
+                if ctx_data.six_w.who:
+                    console.print(f"  [cyan]WHO:[/cyan] {ctx_data.six_w.who}")
+                if ctx_data.six_w.what:
+                    console.print(f"  [cyan]WHAT:[/cyan] {ctx_data.six_w.what}")
+                if ctx_data.six_w.where:
+                    console.print(f"  [cyan]WHERE:[/cyan] {ctx_data.six_w.where}")
+                if ctx_data.six_w.when:
+                    console.print(f"  [cyan]WHEN:[/cyan] {ctx_data.six_w.when}")
+                if ctx_data.six_w.why:
+                    console.print(f"  [cyan]WHY:[/cyan] {ctx_data.six_w.why}")
+                if ctx_data.six_w.how:
+                    console.print(f"  [cyan]HOW:[/cyan] {ctx_data.six_w.how}")
 
                 console.print()
             else:

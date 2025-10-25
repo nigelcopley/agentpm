@@ -653,10 +653,147 @@ apm work-item request-changes <id> --reason "..."
 8. **Validate before advancing** - Gate checks must pass to proceed
 9. **Context from database** - Always start with context-delivery agent
 10. **Observe, don't execute** - You coordinate, agents execute
+11. **Database-first documents** - ALWAYS use `apm document add` for docs/ (DOC-020, BLOCK)
 
 ---
 
-## 10) Reference Documentation
+## 10) HARD RULE: Database-First Document Creation
+
+**CRITICAL**: All agents MUST use `apm document add` command for document creation.
+
+### Rule Details
+
+- **Rule ID**: DOC-020
+- **Enforcement**: BLOCK (hard failure)
+- **Category**: Documentation Principles
+- **Priority**: CRITICAL
+
+### NEVER Do This:
+
+```python
+# ❌ PROHIBITED - Violation of DOC-020
+Write(file_path="docs/features/spec.md", content="...")
+Edit(file_path="docs/guide.md", old_string="...", new_string="...")
+Bash(command="echo '...' > docs/file.md")
+Bash(command="cat > docs/file.md << EOF\n...\nEOF")
+```
+
+### ALWAYS Do This:
+
+```bash
+# ✅ REQUIRED - Compliant with DOC-020
+apm document add \
+  --entity-type=work-item \
+  --entity-id=158 \
+  --file-path="docs/features/phase-1-spec.md" \
+  --category=planning \
+  --type=requirements \
+  --title="Phase 1 Specification" \
+  --description="Comprehensive specification for Phase 1 deliverables" \
+  --content="$(cat <<'EOF'
+# Phase 1 Specification
+
+## Overview
+Phase 1 implements...
+
+## Requirements
+...
+EOF
+)"
+```
+
+### Required Fields:
+
+| Field | Required | Description | Example |
+|-------|----------|-------------|---------|
+| `--entity-type` | ✅ | What this documents | `work-item`, `task`, `project` |
+| `--entity-id` | ✅ | Which entity ID | `158` |
+| `--file-path` | ✅ | Where file should be created | `docs/features/spec.md` |
+| `--category` | ✅ | Document category | `planning`, `architecture`, `guides`, `reference`, `processes`, `operations` |
+| `--type` | ✅ | Document type | `requirements`, `design_doc`, `user_guide`, `adr`, `test_plan`, etc. |
+| `--title` | ✅ | Clear, descriptive title | `Phase 1 Specification` |
+| `--content` | ✅ | The actual markdown/text | `# Phase 1...` |
+| `--description` | Recommended | Brief summary | `Comprehensive specification...` |
+
+### File Path Patterns:
+
+```
+docs/
+  ├── features/           # Feature specifications (category: planning, type: requirements)
+  ├── architecture/       # Architecture docs (category: architecture)
+  │   ├── design/        # Design docs (type: design_doc)
+  │   └── adrs/          # Architecture Decision Records (type: adr)
+  ├── guides/            # User/developer/admin guides (category: guides)
+  │   ├── user/          # User guides (type: user_guide)
+  │   ├── developer/     # Developer guides (type: developer_guide)
+  │   └── admin/         # Admin guides (type: admin_guide)
+  ├── reference/         # API docs, references (category: reference)
+  ├── processes/         # Runbooks, deployment (category: processes)
+  └── operations/        # Monitoring, incidents (category: operations)
+```
+
+### Why This Rule Exists:
+
+1. **Database is source of truth** - All documents tracked in database
+2. **Entity linkage** - Documents linked to work items, tasks, projects
+3. **Metadata completeness** - Category, type, title, description maintained
+4. **Consistent file naming** - Standard path patterns enforced
+5. **Document lifecycle** - Creation, updates, archival tracked
+6. **Quality gates** - Documents validated against acceptance criteria
+
+### Enforcement:
+
+- **Level**: BLOCK (hard failure)
+- **Rule**: DOC-020
+- **Validation**: Automated checks for direct file creation
+- **Remediation**: Delete file, recreate via command
+
+### Prohibited Tools for docs/:
+
+❌ **Write** tool - No direct file creation
+❌ **Edit** tool - No direct file editing (unless updating existing database-tracked file)
+❌ **Bash** with file redirection - No echo/cat > docs/
+
+### Exceptions:
+
+**NONE**. This rule has NO exceptions. All documentation must go through database.
+
+### Remediation Steps:
+
+If violation detected:
+
+1. **Delete** the directly created file:
+   ```bash
+   rm docs/path/to/file.md
+   ```
+
+2. **Recreate** using proper command:
+   ```bash
+   apm document add \
+     --entity-type=work-item \
+     --entity-id=<ID> \
+     --file-path="docs/path/to/file.md" \
+     --category=<category> \
+     --type=<type> \
+     --title="<title>" \
+     --content="<content>"
+   ```
+
+3. **Verify** database record:
+   ```bash
+   apm document list --entity-type=work-item --entity-id=<ID>
+   ```
+
+### See Also:
+
+- **Rule Documentation**: `docs/rules/DOC-020_DATABASE_FIRST_DOCUMENTS.md`
+- **Command Help**: `apm document add --help`
+- **Available Types**: `apm document types`
+- **Architecture**: `docs/architecture/three-tier-architecture.md`
+
+---
+
+## 11) Reference Documentation
 
 **Architecture**:
 - Three-tier architecture: `docs/components/agents/architecture/three-tier-orchestration.md`

@@ -1,0 +1,140 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Context Files - APM (Agent Project Manager){% endblock %}
+
+{% block content %}
+<!-- Main Header -->
+<div class="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white">
+    <div class="px-6 py-8">
+        <div class="flex justify-between items-start">
+            <div>
+                <h1 class="text-4xl font-bold mb-3">Context Files</h1>
+                <p class="text-white/90 text-lg">File system context files and resources</p>
+                <div class="mt-4 flex items-center space-x-6 text-sm">
+                    <div class="flex items-center">
+                        <i class="bi bi-folder mr-2"></i>
+                        <span>{{ view.total_files }} Files</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="bi bi-hdd mr-2"></i>
+                        <span>{{ view.total_size|format_file_size }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white/20 backdrop-blur-sm p-4 rounded-2xl">
+                <i class="bi bi-folder text-4xl"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="flex gap-6 p-6">
+    <!-- Sidebar -->
+    <aside class="w-64 flex-shrink-0">
+        {% include 'components/layout/sidebar.html' %}
+    </aside>
+    
+    <!-- Main Content Area -->
+    <div class="flex-1 space-y-6">
+
+    <!-- Search and Filter Bar -->
+    <div class="bg-white rounded-lg shadow-lg p-4 flex flex-col sm:flex-row items-center justify-between space-y-3 sm:space-y-0 sm:space-x-4">
+        <div class="flex-1 w-full sm:w-auto">
+            <div class="relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                    <i class="bi bi-search text-gray-400"></i>
+                </span>
+                <input type="text" placeholder="Search files..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+        </div>
+        <div class="flex items-center space-x-3">
+            <select class="border border-gray-300 rounded-lg py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500">
+                <option>All Types</option>
+                <option>.md</option>
+                <option>.txt</option>
+                <option>.json</option>
+                <option>.yaml</option>
+                <option>.py</option>
+            </select>
+            <select class="border border-gray-300 rounded-lg py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500">
+                <option>All Projects</option>
+                <option value="1">{{ view.project.name }}</option>
+            </select>
+            <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
+                <i class="bi bi-plus mr-2"></i>Add File
+            </button>
+        </div>
+    </div>
+
+    <!-- Files List -->
+    <div class="bg-white rounded-lg shadow-lg">
+        {% if view.context_files %}
+        <div class="divide-y divide-gray-200">
+            {% for file in view.context_files %}
+            <div class="p-6 hover:bg-gray-50 transition-colors">
+                <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-3 mb-2">
+                            <h3 class="text-lg font-semibold text-gray-900">{{ file.name }}</h3>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                {{ file.file_type or 'unknown' }}
+                            </span>
+                            {% if file.size_bytes > 1024 * 1024 %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                Large File
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div class="text-gray-600 mb-3">
+                            <p class="text-sm">
+                                <span class="font-medium">Path:</span> {{ file.path }}
+                            </p>
+                            {% if file.full_path %}
+                            <p class="text-sm text-gray-500">
+                                <span class="font-medium">Full Path:</span> {{ file.full_path }}
+                            </p>
+                            {% endif %}
+                        </div>
+                        <div class="flex items-center space-x-6 text-sm text-gray-500">
+                            <span>
+                                <i class="bi bi-calendar mr-1"></i>{{ file.modified.strftime('%Y-%m-%d %H:%M') if file.modified else 'N/A' }}
+                            </span>
+                            <span>
+                                <i class="bi bi-hdd mr-1"></i>{{ file.size_human }}
+                            </span>
+                            <span>
+                                <i class="bi bi-file-earmark mr-1"></i>{{ file.file_type or 'unknown' }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2 ml-4">
+                        <a href="{{ url_for('context.context_files_preview', filepath=file.path) }}" 
+                           class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors">
+                            <i class="bi bi-eye mr-1"></i>Preview
+                        </a>
+                        <a href="{{ url_for('context.context_files_download', filepath=file.path) }}" 
+                           class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
+                            <i class="bi bi-download mr-1"></i>Download
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="p-12 text-center">
+            <div class="bg-indigo-50 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-4">
+                <i class="bi bi-folder text-4xl text-indigo-500"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">No context files found</h3>
+            <p class="text-gray-600 mb-6">No files were found in the .agentpm/contexts directory. Context files will appear here as they are created.</p>
+            <button class="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors">
+                <i class="bi bi-plus mr-2"></i>Create Context File
+            </button>
+        </div>
+        {% endif %}
+    </div>
+    </div>
+</div>
+{% endblock %}

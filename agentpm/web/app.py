@@ -566,6 +566,9 @@ def format_file_size(size_bytes: int) -> str:
         size_bytes /= 1024
     return f"{size_bytes:.1f} TB"
 
+# Register the format_file_size filter
+app.jinja_env.filters['format_file_size'] = format_file_size
+
 
 def get_database_service() -> DatabaseService:
     """

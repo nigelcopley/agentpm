@@ -1,0 +1,91 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ file_name }} - File Preview - APM (Agent Project Manager){% endblock %}
+
+{% block content %}
+<!-- Main Header -->
+<div class="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white">
+    <div class="px-6 py-8">
+        <div class="flex justify-between items-start">
+            <div>
+                <h1 class="text-4xl font-bold mb-3">{{ file_name }}</h1>
+                <p class="text-white/90 text-lg">File preview and content</p>
+                <div class="mt-4 flex items-center space-x-6 text-sm">
+                    <div class="flex items-center">
+                        <i class="bi bi-file-earmark mr-2"></i>
+                        <span>{{ file_size|format_file_size }}</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="bi bi-folder mr-2"></i>
+                        <span>{{ file_path }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white/20 backdrop-blur-sm p-4 rounded-2xl">
+                <i class="bi bi-file-earmark-text text-4xl"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="flex gap-6 p-6">
+    <!-- Sidebar -->
+    <aside class="w-64 flex-shrink-0">
+        {% include 'components/layout/sidebar.html' %}
+    </aside>
+    
+    <!-- Main Content Area -->
+    <div class="flex-1 space-y-6">
+
+    <!-- Action Bar -->
+    <div class="bg-white rounded-lg shadow-lg p-4 flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+            <a href="{{ url_for('context.context_files_list') }}" 
+               class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-600 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                <i class="bi bi-arrow-left mr-2"></i>Back to Files
+            </a>
+            <a href="{{ url_for('context.context_files_download', filepath=file_path) }}" 
+               class="inline-flex items-center px-4 py-2 text-sm font-medium text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
+                <i class="bi bi-download mr-2"></i>Download
+            </a>
+        </div>
+        <div class="flex items-center space-x-2 text-sm text-gray-500">
+            <span>{{ file_size|format_file_size }}</span>
+            <span>•</span>
+            <span>{{ file_path }}</span>
+        </div>
+    </div>
+
+    <!-- File Content -->
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">File Content</h2>
+        </div>
+        <div class="p-6">
+            {% if file_name.endswith('.md') %}
+                <!-- Markdown content -->
+                <div class="prose max-w-none">
+                    {{ content|markdown }}
+                </div>
+            {% elif file_name.endswith('.json') %}
+                <!-- JSON content -->
+                <pre class="bg-gray-50 rounded-lg p-4 overflow-x-auto text-sm"><code class="language-json">{{ content }}</code></pre>
+            {% elif file_name.endswith('.yaml') or file_name.endswith('.yml') %}
+                <!-- YAML content -->
+                <pre class="bg-gray-50 rounded-lg p-4 overflow-x-auto text-sm"><code class="language-yaml">{{ content }}</code></pre>
+            {% elif file_name.endswith('.py') %}
+                <!-- Python content -->
+                <pre class="bg-gray-50 rounded-lg p-4 overflow-x-auto text-sm"><code class="language-python">{{ content }}</code></pre>
+            {% elif file_name.endswith('.txt') %}
+                <!-- Plain text content -->
+                <pre class="bg-gray-50 rounded-lg p-4 overflow-x-auto text-sm whitespace-pre-wrap">{{ content }}</pre>
+            {% else %}
+                <!-- Generic content -->
+                <pre class="bg-gray-50 rounded-lg p-4 overflow-x-auto text-sm whitespace-pre-wrap">{{ content }}</pre>
+            {% endif %}
+        </div>
+    </div>
+    </div>
+</div>
+{% endblock %}

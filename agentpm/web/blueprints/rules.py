@@ -15,13 +15,24 @@ logger = logging.getLogger(__name__)
 @rules_bp.route('/')
 def rules_list():
     """Rules list view"""
-    # Create mock data for rules
+    from ...core.database.service import DatabaseService
+    from ...core.database.methods import rules as rules_methods
+    
+    db = DatabaseService('.agentpm/data/agentpm.db')
+    rules_list = rules_methods.list_rules(db) or []
+    
+    # Calculate metrics
+    active_count = len([r for r in rules_list if r.enabled])
+    blocking_count = len([r for r in rules_list if r.enabled and r.enforcement_level.value == 'BLOCK'])
+    quality_gates_count = len([r for r in rules_list if r.category and 'quality' in r.category.lower()])
+    
+    # Create rules object with metrics
     rules_data = {
-        'total_rules': 0,
-        'active_count': 0,
-        'quality_gates_count': 0,
-        'blocking_count': 0,
-        'rules': []
+        'rules': rules_list,
+        'total_rules': len(rules_list),
+        'active_count': active_count,
+        'quality_gates_count': quality_gates_count,
+        'blocking_count': blocking_count
     }
     
     return render_template('rules/list.html', rules=rules_data)

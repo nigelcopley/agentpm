@@ -77,7 +77,15 @@
                 <div class="flex items-start justify-between">
                     <div class="flex-1">
                         <div class="flex items-center space-x-3 mb-2">
-                            <h3 class="text-lg font-semibold text-gray-900">{{ file.title or file.file_path or 'Untitled Document' }}</h3>
+                            <h3 class="text-lg font-semibold text-gray-900">
+                                {% if file.file_path %}
+                                    {{ file.file_path.split('/')[-1] }}
+                                {% elif file.what %}
+                                    {{ file.what[:60] }}{% if file.what|length > 60 %}...{% endif %}
+                                {% else %}
+                                    Document #{{ file.id }}
+                                {% endif %}
+                            </h3>
                             {% if file.resource_type %}
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                 {{ file.resource_type.value.replace('_', ' ').title() if file.resource_type else 'Unknown' }}
@@ -85,7 +93,16 @@
                             {% endif %}
                         </div>
                         <div class="text-gray-600 mb-3">
-                            {% if file.context_data %}
+                            {% if file.why %}
+                                <p class="font-medium text-gray-800 mb-1">Why:</p>
+                                <p>{{ file.why[:200] }}{% if file.why|length > 200 %}...{% endif %}</p>
+                            {% elif file.what %}
+                                <p class="font-medium text-gray-800 mb-1">What:</p>
+                                <p>{{ file.what[:200] }}{% if file.what|length > 200 %}...{% endif %}</p>
+                            {% elif file.how %}
+                                <p class="font-medium text-gray-800 mb-1">How:</p>
+                                <p>{{ file.how[:200] }}{% if file.how|length > 200 %}...{% endif %}</p>
+                            {% elif file.context_data %}
                                 {% set content_text = file.context_data|string|markdown_to_text(150) %}
                                 <p>{{ content_text }}</p>
                             {% else %}

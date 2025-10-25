@@ -23,12 +23,20 @@ def agents_list():
     db = get_database_service()
     from ...core.database.methods import agents
     
-    agents_list = agents.list_agents(db)
+    agents_list = agents.list_agents(db) or []
     
-    # Create agents object with total count
+    # Calculate metrics
+    active_count = len([a for a in agents_list if a.is_active])
+    inactive_count = len([a for a in agents_list if not a.is_active])
+    total_capabilities = sum(len(a.capabilities or []) for a in agents_list)
+    
+    # Create agents object with metrics
     agents_data = {
         'agents': agents_list,
-        'total_agents': len(agents_list)
+        'total_agents': len(agents_list),
+        'active_count': active_count,
+        'inactive_count': inactive_count,
+        'total_capabilities': total_capabilities
     }
     
     return render_template('agents/list.html', agents=agents_data)
