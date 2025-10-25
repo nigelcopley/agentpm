@@ -1,7 +1,0 @@
-.aipm/
-htmlcov/
-.pytest_cache/
-**/__pycache__/
-*.pyc
-.git/
-node_modules/
