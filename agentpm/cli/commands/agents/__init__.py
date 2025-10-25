@@ -8,6 +8,7 @@ Commands:
 - list: List all agents with filtering
 - show: Display detailed agent information
 - generate: Generate agent .md files from database
+- generate-intelligent: Intelligently generate project-specific agents using AI
 - validate: Validate agent against rules
 - roles: Show all available agent roles
 - load: Load agent definitions from YAML files
@@ -19,6 +20,7 @@ import click
 from .list import list_agents_cmd as list
 from .show import show
 from .generate import generate
+from .intelligent_generate import generate_intelligent
 from .validate import validate
 from .roles import roles
 from .load import load_agents as load
@@ -75,6 +77,7 @@ def agents():
 agents.add_command(list)
 agents.add_command(show)
 agents.add_command(generate)
+agents.add_command(generate_intelligent)
 agents.add_command(validate)
 agents.add_command(roles)
 agents.add_command(load)
