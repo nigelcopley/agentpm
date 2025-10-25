@@ -1,8 +1,8 @@
 # Architecture Overview
 
-**Real-World Architecture from AIPM Production Codebase**
+**Real-World Architecture from APM Production Codebase**
 
-This guide documents AIPM's actual architecture with real code examples from `agentpm/`. All patterns, metrics, and examples are from production code, not hypothetical designs.
+This guide documents APM's actual architecture with real code examples from `agentpm/`. All patterns, metrics, and examples are from production code, not hypothetical designs.
 
 ---
 
@@ -20,7 +20,7 @@ This guide documents AIPM's actual architecture with real code examples from `ag
 
 **Database is Source of Truth**
 
-AIPM uses SQLite as the authoritative data store for ALL project state. This decision drives the entire architecture:
+APM uses SQLite as the authoritative data store for ALL project state. This decision drives the entire architecture:
 
 ### Why Database-First?
 

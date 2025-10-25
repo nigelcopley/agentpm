@@ -742,7 +742,7 @@ apm claude-code settings reset
 **Issue**: Integration generation fails with "No agents found"
 
 **Solution**:
-1. Verify AIPM is initialized: `apm status`
+1. Verify APM is initialized: `apm status`
 2. Check agents are registered: `apm agents list`
 3. Initialize database if needed: `apm init`
 

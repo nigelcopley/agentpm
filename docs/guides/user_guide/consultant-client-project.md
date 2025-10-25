@@ -23,7 +23,7 @@ David manages 5 different client projects simultaneously. He's constantly dealin
 David sees a LinkedIn post: "APM (Agent Project Manager): Manage multiple projects without context loss"
 
 **Research Process:**
-1. Visits GitHub: `github.com/aipm-v2/aipm`
+1. Visits GitHub: `github.com/agentpm/aipm`
 2. Reads README: "Local-first context persistence for AI coding assistants"
 3. Checks multi-project support: "Works with multiple projects simultaneously"
 4. Reviews consultant testimonials: "Saves 2+ hours per day"
@@ -109,7 +109,7 @@ Ready to continue work!
 ```
 
 ### The Magic Moment
-David realizes he doesn't need to remember which project he's working on. AIPM automatically detects the project context and loads the right information.
+David realizes he doesn't need to remember which project he's working on. APM automatically detects the project context and loads the right information.
 
 **Time Saved:** 5 minutes (no project context switching needed)
 

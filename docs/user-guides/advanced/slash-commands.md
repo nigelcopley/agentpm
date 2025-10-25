@@ -1,0 +1,344 @@
+# Slash Commands
+
+> **Navigation**: [📚 Index](INDEX.md) | [← Previous](advanced/detection-packs.md) | [Next →](integrations/claude-code/overview.md)
+
+## Overview
+
+APM provides custom slash commands for Claude Code integration, enabling quick access to project context, status, memory management, and checkpoints.
+
+## Available Commands
+
+### `/aipm:context` - Load Project Context
+
+Load AIPM context for current session.
+
+**Usage:**
+```
+/aipm:context                     # Load current session context
+/aipm:context --work-item=123     # Load specific work item
+/aipm:context --task=456          # Load specific task
+/aipm:context --work-item=123 --full  # Load with full details
+```
+
+**Arguments:**
+- `--work-item=ID` - Load context for specific work item
+- `--task=ID` - Load context for specific task
+- `--full` - Include full hierarchical context (tasks for work items, work items for tasks)
+
+**Returns:**
+- Session info (if no arguments)
+- Work item details with optional tasks
+- Task details with optional work item
+- Active work items and tasks
+
+**Examples:**
+```
+# Get current session context
+/aipm:context
+
+# Load work item #123 with all tasks
+/aipm:context --work-item=123 --full
+
+# Load task #456 with parent work item
+/aipm:context --task=456 --full
+```
+
+---
+
+### `/aipm:status` - Show Project Status
+
+Display APM project status dashboard.
+
+**Usage:**
+```
+/aipm:status                      # Show full status
+/aipm:status --detailed           # Show detailed information
+/aipm:status --work-items-only    # Show only work items
+/aipm:status --tasks-only         # Show only tasks
+```
+
+**Arguments:**
+- `--detailed` - Show detailed status information
+- `--work-items-only` - Show only work items section
+- `--tasks-only` - Show only tasks section
+
+**Returns:**
+- Active work items (count + list)
+- Active and ready tasks (counts + lists)
+- Current session info (if available)
+
+**Examples:**
+```
+# Full project status
+/aipm:status
+
+# Just active work items
+/aipm:status --work-items-only
+
+# Just tasks
+/aipm:status --tasks-only
+```
+
+---
+
+### `/aipm:memory` - Manage Memory Files
+
+Generate or show memory files for context persistence.
+
+**Usage:**
+```
+/aipm:memory status               # Show memory file status (default)
+/aipm:memory generate             # Generate current context
+/aipm:memory generate --all       # Generate all memory files
+```
+
+**Actions:**
+- `status` - Show memory directory status and file list (default)
+- `generate` - Generate memory files
+
+**Arguments:**
+- `--all` - Generate all memory file types (with `generate` action)
+
+**Returns:**
+- Memory directory info
+- File list with sizes and timestamps
+- Generation status
+
+**Memory Files Generated:**
+- `PROJECT.md` - Project overview
+- `WORK_ITEMS.md` - Active work items
+- `TASKS.md` - Active and ready tasks
+- `RECENT_PROGRESS.md` - Recent progress summary
+- `CURRENT_CONTEXT.md` - Current session context
+
+**Examples:**
+```
+# Check memory file status
+/aipm:memory status
+
+# Generate current context
+/aipm:memory generate
+
+# Generate all memory files
+/aipm:memory generate --all
+```
+
+---
+
+### `/aipm:checkpoint` - Create Session Checkpoint
+
+Create a checkpoint to save current session state.
+
+**Usage:**
+```
+/aipm:checkpoint                  # Create checkpoint with auto name
+/aipm:checkpoint --name=my-checkpoint  # Create with custom name
+/aipm:checkpoint --message="Test passing"  # Add message
+/aipm:checkpoint --name=feature-complete --message="All AC met"
+```
+
+**Arguments:**
+- `--name=NAME` - Custom checkpoint name (default: auto-generated timestamp)
+- `--message=MSG` - Checkpoint message/description (default: "Manual checkpoint")
+
+**Returns:**
+- Checkpoint ID
+- Checkpoint name
+- Creation timestamp
+- Session ID
+
+**Examples:**
+```
+# Quick checkpoint
+/aipm:checkpoint
+
+# Named checkpoint
+/aipm:checkpoint --name=before-refactor
+
+# Checkpoint with message
+/aipm:checkpoint --name=feature-complete --message="All tests passing, ready for review"
+```
+
+---
+
+## Setup
+
+### Initialization
+
+Commands must be initialized with a database instance:
+
+```python
+from agentpm.services.claude_integration.commands import init_commands
+from agentpm.core.database import DatabaseService
+
+# Get database instance
+db = DatabaseService("/path/to/project")
+
+# Initialize all commands
+init_commands(db)
+```
+
+### Using in Code
+
+```python
+from agentpm.services.claude_integration.commands import (
+    get_registry,
+    init_commands,
+)
+from agentpm.core.database import DatabaseService
+
+# Setup
+db = DatabaseService("/path/to/project")
+init_commands(db)
+
+# Get registry
+registry = get_registry()
+
+# Execute command
+result = registry.execute("aipm:status")
+
+if result.status == "success":
+    print(result.message)
+    print(result.data)
+else:
+    print(f"Error: {result.error}")
+```
+
+---
+
+## Error Handling
+
+Commands return `CommandResult` with status:
+- `success` - Command executed successfully
+- `error` - Command failed
+- `partial` - Command partially completed
+
+**Error Example:**
+```python
+result = registry.execute("aipm:context", args=["--work-item=99999"])
+
+if result.status == "error":
+    print(f"Error: {result.message}")
+    # Error: Work item 99999 not found
+```
+
+**Common Errors:**
+- `Command not found` - Invalid command name
+- `Invalid arguments` - Incorrect argument format
+- `No active session` - Checkpoint requires active session
+- `Work item not found` - Invalid work item ID
+- `Task not found` - Invalid task ID
+
+---
+
+## Integration with Claude Code
+
+These commands integrate with Claude Code's slash command system:
+
+1. Commands are registered on session start
+2. Available via `/` prefix in Claude Code
+3. Results returned to Claude for processing
+4. Errors handled gracefully
+
+---
+
+## Command Registry
+
+### List Available Commands
+
+```python
+from agentpm.services.claude_integration.commands import list_available_commands
+
+# Get formatted command list
+print(list_available_commands())
+```
+
+### Register Custom Command
+
+```python
+from agentpm.services.claude_integration.commands import (
+    get_registry,
+    CommandResult,
+    CommandStatus,
+)
+
+registry = get_registry()
+
+
+def my_command(args):
+    return CommandResult(
+        status=CommandStatus.SUCCESS,
+        message="Custom command executed",
+        data={"args": args}
+    )
+
+
+registry.register(
+    name="custom:command",
+    description="My custom command",
+    usage="/custom:command [options]",
+    handler=my_command
+)
+```
+
+---
+
+## Best Practices
+
+1. **Use `--full` for Complete Context**
+   - Get related entities in one call
+   - Reduces multiple command executions
+
+2. **Checkpoint Before Major Changes**
+   - Name checkpoints descriptively
+   - Add meaningful messages
+   - Use before refactoring or major edits
+
+3. **Generate Memory Files Regularly**
+   - Keep context fresh
+   - Use `--all` for comprehensive updates
+   - Check status to see staleness
+
+4. **Use Status for Quick Overview**
+   - Filter with `--work-items-only` or `--tasks-only`
+   - Check before starting work
+   - Verify active items
+
+---
+
+## Troubleshooting
+
+### Command Not Found
+**Problem:** `/aipm:status` returns "Command not found"
+**Solution:** Ensure `init_commands(db)` was called
+
+### No Active Session
+**Problem:** `/aipm:checkpoint` fails with "No active session"
+**Solution:** Start a Claude Code session first
+
+### Invalid Arguments
+**Problem:** Command returns "Invalid arguments"
+**Solution:** Check command usage with `list_available_commands()`
+
+### Memory Files Empty
+**Problem:** `/aipm:memory status` shows 0 files
+**Solution:** Run `/aipm:memory generate --all` to create files
+
+---
+
+## See Also
+
+- [Claude Code Integration Guide](./claude-integration-usage.md)
+- [Session Management](./session-management.md)
+- [Memory System Guide](./memory-system-guide.md)
+- [Checkpoint Documentation](./checkpoints.md)
+
+---
+
+## Navigation
+
+- [📚 Back to Index](INDEX.md)
+- [⬅️ Previous: Slash Commands](advanced/detection-packs.md)
+- [➡️ Next: Claude Code Overview](integrations/claude-code/overview.md)
+
+---

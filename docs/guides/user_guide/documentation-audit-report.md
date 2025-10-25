@@ -231,7 +231,7 @@ Documentation should:
    ```markdown
    ### Rich 6W Context System
 
-   AIPM uses a sophisticated 15-field UnifiedSixW structure that scales across Project, WorkItem, and Task levels:
+   APM uses a sophisticated 15-field UnifiedSixW structure that scales across Project, WorkItem, and Task levels:
 
    **WHO** (3 fields): end_users, implementers, reviewers
    **WHAT** (3 fields): functional_requirements, technical_constraints, acceptance_criteria
@@ -396,7 +396,7 @@ Documentation should clarify:
 
 > ### Status vs Phase Progression
 >
-> AIPM provides two complementary commands for work item progression:
+> APM provides two complementary commands for work item progression:
 >
 > **1. Status Progression: `work-item next`**
 > Advances work item through 6 status states: draft → ready → active → review → done → archived

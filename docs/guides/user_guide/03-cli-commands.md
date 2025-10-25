@@ -1,4 +1,4 @@
-# AIPM CLI Command Reference
+# APM CLI Command Reference
 
 **Complete Command Documentation** | Version 2.0 | Real Examples from fullstack-ecommerce Project
 
@@ -63,7 +63,7 @@ apm --version
 
 ### `apm init`
 
-Initialize AIPM in a project directory.
+Initialize APM in a project directory.
 
 **Syntax**:
 ```bash
@@ -96,7 +96,7 @@ apm init "Fullstack Ecommerce" \
 **Real Output**:
 ```
 🚀 Initializing APM project: Fullstack Ecommerce
-📁 Location: /Users/nigelcopley/.project_manager/aipm-v2/testing/fullstack-ecommerce
+📁 Location: /Users/nigelcopley/.project_manager/agentpm/testing/fullstack-ecommerce
 
 ✅ Migration 0018: Consolidated Schema Migration Complete
   Creating directory structure... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -139,7 +139,7 @@ apm status
 ```
 ╭─────────────────────── 🤖 APM (Agent Project Manager) Project Dashboard ───────────────────────╮
 │ Fullstack Ecommerce                                                        │
-│ 📁 /Users/nigelcopley/.project_manager/aipm-v2/testing/fullstack-ecommerce │
+│ 📁 /Users/nigelcopley/.project_manager/agentpm/testing/fullstack-ecommerce │
 │ Status: active                                                             │
 ╰────────────────────────────────────────────────────────────────────────────╯
 
@@ -898,7 +898,7 @@ apm task next 1
 
 ### Agent Commands
 
-**IMPORTANT**: AIPM uses a **three-stage agent system** (YAML → DB → Generate):
+**IMPORTANT**: APM uses a **three-stage agent system** (YAML → DB → Generate):
 
 1. **YAML Catalog** (development time) - Agent definitions in `_RULES/agents/` (documentation only)
 2. **Database Population** (init time) - Migration 0029 populates agents table during `apm init`
@@ -1051,5 +1051,5 @@ apm template show <id>       # Show template details
 ---
 
 **Generated**: 2025-10-17
-**AIPM Version**: 2.0
+**APM Version**: 2.0
 **Real Examples**: All examples from live walkthrough of fullstack-ecommerce project

@@ -9,7 +9,7 @@
 
 ## Overview
 
-AIPM uses a **three-stage agent generation system** that separates agent definitions, database storage, and provider-specific file generation.
+APM uses a **three-stage agent generation system** that separates agent definitions, database storage, and provider-specific file generation.
 
 ### Key Benefits
 

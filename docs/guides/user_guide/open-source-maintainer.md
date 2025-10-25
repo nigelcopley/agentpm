@@ -23,7 +23,7 @@ Maria maintains a popular web framework with 200+ contributors. She's constantly
 Maria sees a GitHub issue: "APM (Agent Project Manager): Context persistence for open source projects"
 
 **Research Process:**
-1. Visits GitHub: `github.com/aipm-v2/aipm`
+1. Visits GitHub: `github.com/agentpm/aipm`
 2. Reads README: "Local-first context persistence for AI coding assistants"
 3. Checks open source compatibility: "MIT license, works with any AI tool"
 4. Reviews community feedback: "Helps with large codebases"

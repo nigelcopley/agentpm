@@ -2,7 +2,7 @@
 
 **The Gold Standard for Database Operations in AIPM**
 
-This guide shows you how to implement AIPM's three-layer pattern with real production code examples. Every pattern and metric is from actual `agentpm/` codebase.
+This guide shows you how to implement APM's three-layer pattern with real production code examples. Every pattern and metric is from actual `agentpm/` codebase.
 
 ---
 
@@ -57,7 +57,7 @@ USER CODE (CLI, Services, Web)
 | Adapters | Type conversion | Unit tests (fast) | Rare (schema changes) |
 | Methods | Database operations | Integration tests | Medium (features) |
 
-**Real Metrics from AIPM:**
+**Real Metrics from APM:**
 - 90% test coverage across all three layers
 - 347 model tests (Pydantic validation)
 - 198 adapter tests (round-trip conversion)

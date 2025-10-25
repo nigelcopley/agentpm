@@ -1,14 +1,14 @@
-# Getting Started with AIPM
+# Getting Started with APM
 
 **Agent Project Manager (APM)** is a framework-agnostic, AI-powered project management tool that helps you organize development work with intelligent context awareness, quality gates, and phase-based workflows.
 
 ## What You'll Learn
 
-- Install and initialize AIPM in your project
+- Install and initialize APM in your project
 - Create your first work item and tasks
 - Understand the phase-based workflow
 - Navigate quality gates and task lifecycle
-- Use AIPM's intelligent project analysis
+- Use APM's intelligent project analysis
 
 **Time Required**: 15 minutes
 
@@ -24,7 +24,7 @@
 
 ## 1. Installation
 
-### Install AIPM
+### Install APM
 
 ```bash
 # From the AIPM repository
@@ -47,7 +47,7 @@ After reloading your shell, you can use `apm` instead of the full command.
 
 ---
 
-## 2. Initialize AIPM in Your Project
+## 2. Initialize APM in Your Project
 
 Navigate to your project directory and run:
 
@@ -69,7 +69,7 @@ apm init "Fullstack Ecommerce" -d "Full-stack e-commerce platform with Django ba
 
 ```
 🚀 Initializing APM project: Fullstack Ecommerce
-📁 Location: /Users/nigelcopley/.project_manager/aipm-v2/testing/fullstack-ecommerce
+📁 Location: /Users/nigelcopley/.project_manager/agentpm/testing/fullstack-ecommerce
 
 🚀 Migration 0018: Consolidated Schema Migration (Enum-Driven)
    - Creating complete APM (Agent Project Manager) database schema
@@ -155,9 +155,9 @@ your-project/
 **Key Points**:
 
 ✅ **Database-First**: Agents stored in database, files generated on demand
-✅ **Intelligent Detection**: AIPM automatically detected 9 technologies in our project
+✅ **Intelligent Detection**: APM automatically detected 9 technologies in our project
 ✅ **Provider-Specific**: Generated files work with Claude Code, Claude Desktop, etc.
-✅ **Zero Configuration**: No manual setup required - AIPM analyzed and configured itself
+✅ **Zero Configuration**: No manual setup required - APM analyzed and configured itself
 ✅ **Fast**: Complete initialization in under 5 seconds
 
 ---
@@ -175,7 +175,7 @@ apm status
 ```
 ╭─────────────────────── 🤖 APM (Agent Project Manager) Project Dashboard ───────────────────────╮
 │ Fullstack Ecommerce                                                        │
-│ 📁 /Users/nigelcopley/.project_manager/aipm-v2/testing/fullstack-ecommerce │
+│ 📁 /Users/nigelcopley/.project_manager/agentpm/testing/fullstack-ecommerce │
 │ Status: active                                                             │
 ╰────────────────────────────────────────────────────────────────────────────╯
 
@@ -258,7 +258,7 @@ apm work-item create "Product Catalog API" \
 
 ### Understanding the 6W Framework
 
-AIPM uses a sophisticated **6W Framework** (UnifiedSixW) for comprehensive context analysis:
+APM uses a sophisticated **6W Framework** (UnifiedSixW) for comprehensive context analysis:
 
 - **WHO**: Target users and stakeholders
 - **WHAT**: What you're building
@@ -394,7 +394,7 @@ All quality gates are now satisfied! ✅
 
 ## 7. Understanding Phases
 
-AIPM uses a **6-phase workflow** (D1 → P1 → I1 → R1 → O1 → E1):
+APM uses a **6-phase workflow** (D1 → P1 → I1 → R1 → O1 → E1):
 
 | Phase | Name | Purpose |
 |-------|------|---------|
@@ -516,15 +516,15 @@ apm work-item next <id>
 
 You've learned how to:
 
-✅ Initialize AIPM in your project
+✅ Initialize APM in your project
 ✅ Create work items with full business context
 ✅ Create tasks with quality gates
 ✅ Understand the phase-based workflow
-✅ Navigate the AIPM dashboard and commands
+✅ Navigate the APM dashboard and commands
 
 **Key Takeaways**:
 
-1. **Framework Agnostic**: AIPM works with any technology stack
+1. **Framework Agnostic**: APM works with any technology stack
 2. **Intelligent Detection**: Auto-detects your project's tech stack
 3. **Phase Gates**: Validates outcomes at each phase (code complete? tests passing?)
 4. **Phase-Based**: Structured 6-phase workflow (D1→P1→I1→R1→O1→E1)
@@ -536,5 +536,5 @@ You've learned how to:
 ---
 
 **Generated**: 2025-10-17
-**AIPM Version**: 2.0
+**APM Version**: 2.0
 **Real Examples**: All examples from live walkthrough of fullstack-ecommerce project

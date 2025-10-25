@@ -1,8 +1,8 @@
-# AIPM User Documentation
+# APM User Documentation
 
 **Complete User Guides for APM (Agent Project Manager)** | All Examples from Real fullstack-ecommerce Project Walkthrough
 
-These guides were created through a **live walkthrough** of AIPM on a real project, capturing actual command outputs, errors, and workflows. Every example you see is real, not hypothetical.
+These guides were created through a **live walkthrough** of APM on a real project, capturing actual command outputs, errors, and workflows. Every example you see is real, not hypothetical.
 
 ---
 
@@ -10,7 +10,7 @@ These guides were created through a **live walkthrough** of AIPM on a real proje
 
 ### 📚 Start Here
 
-**New to AIPM?** → Start with [Getting Started Guide](01-getting-started.md)
+**New to APM?** → Start with [Getting Started Guide](01-getting-started.md)
 
 **Need quick reference?** → See [Quick Reference Card](02-quick-reference.md)
 
@@ -32,7 +32,7 @@ These guides were created through a **live walkthrough** of AIPM on a real proje
 - Create your first work item
 - Create tasks with quality gates
 - Understand the phase-based workflow
-- Navigate the AIPM dashboard
+- Navigate the APM dashboard
 
 **Real Examples**:
 - Full initialization output from fullstack-ecommerce project
@@ -41,7 +41,7 @@ These guides were created through a **live walkthrough** of AIPM on a real proje
 - Quality gate validation
 - Phase advancement
 
-**Start Here If**: You've never used AIPM before
+**Start Here If**: You've never used APM before
 
 ---
 
@@ -69,7 +69,7 @@ These guides were created through a **live walkthrough** of AIPM on a real proje
 
 ### 3. CLI Command Reference
 **File**: [03-cli-commands.md](03-cli-commands.md)
-**Scope**: Complete documentation of all 67+ AIPM commands
+**Scope**: Complete documentation of all 67+ APM commands
 **Organization**: By command group (work-item, task, phase, context, etc.)
 
 **Sections**:
@@ -339,11 +339,11 @@ These guides were created through a **live walkthrough** of AIPM on a real proje
 
 ### Documentation Team
 
-These guides were created by walking through AIPM on a real project and documenting every step, output, and error encountered. The goal was to create documentation that reflects the actual user experience, not idealized workflows.
+These guides were created by walking through APM on a real project and documenting every step, output, and error encountered. The goal was to create documentation that reflects the actual user experience, not idealized workflows.
 
 ---
 
 **Last Updated**: 2025-10-17
-**AIPM Version**: 2.0
+**APM Version**: 2.0
 **Walkthrough Project**: fullstack-ecommerce
 **Documentation Quality**: 100% real examples, 0% hypothetical

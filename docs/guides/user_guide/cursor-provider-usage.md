@@ -143,7 +143,7 @@ AI: "The testing-standards rule requires ≥90% coverage for all implementations
 
 ### What Are Custom Modes?
 
-Custom modes are pre-configured tool + instruction combinations in Cursor. AIPM provides 6 modes matching workflow phases.
+Custom modes are pre-configured tool + instruction combinations in Cursor. APM provides 6 modes matching workflow phases.
 
 ### 6 AIPM Modes
 
@@ -459,7 +459,7 @@ AI: [Executes: apm provider sync-memories cursor]
 | `@Past Chats` | Previous conversations | `@Past Chats task priority` |
 | `@Lint Errors` | Current linting issues | `@Lint Errors` |
 
-### AIPM Custom Symbols
+### APM Custom Symbols
 
 The provider adds 4 custom @-symbols:
 
@@ -631,7 +631,7 @@ Enable users to prioritize tasks within work items, improving workflow managemen
 
 Cursor Memories are persistent knowledge files (`.cursor/memories/*.md`) that provide long-term project context across sessions.
 
-### AIPM ↔ Cursor Sync
+### APM ↔ Cursor Sync
 
 The provider enables bi-directional sync:
 

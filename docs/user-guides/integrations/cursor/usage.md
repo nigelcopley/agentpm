@@ -1,0 +1,926 @@
+# Cursor Usage
+
+> **Navigation**: [📚 Index](INDEX.md) | [← Previous](integrations/cursor/setup.md) | [Next →](integrations/mcp-setup.md)
+
+**Version**: 1.0.0
+**Last Updated**: 2025-10-20
+**Related Work Item**: WI-118 "Full Cursor Integration"
+
+---
+
+## Quick Start
+
+**Immediate Actions:**
+
+1. Open Cursor in APM (Agent Project Manager) project: `cursor .`
+2. Check your work: `apm status`
+3. Open relevant files (auto-attach rules activate automatically)
+4. Use suggested `apm` commands for your workflow phase
+5. Let Cursor guide you through quality gates
+
+**Learning Time**: 15 minutes to understand, 1 hour to master
+
+---
+
+## How Consolidated Rules Work
+
+### Master + Auto-Attach Architecture
+
+**Master Rule** (`aipm-master.mdc`):
+- **Always active** for all files and sessions
+- Provides workflow orchestration (D1 → E1 phases)
+- Database-first command patterns
+- Quality gate validation
+- Agent delegation strategies
+
+**Auto-Attach Rules** (Context-aware):
+- Activate automatically based on file patterns
+- Provide domain-specific guidance
+- Stack on top of master rule
+- Don't replace master rule, they augment it
+
+**Example: Opening a Python file**
+```
+Active Rules:
+  ├─ aipm-master.mdc (always active)
+  └─ [auto-attached rule based on file location]
+```
+
+### Auto-Attach Trigger Examples
+
+#### Python Files: CLI Development
+
+**Pattern**: `agentpm/cli/**/*.py`
+**Rule**: `cli-development.mdc`
+
+**Triggers When You Open:**
+- `agentpm/cli/status.py`
+- `agentpm/cli/task_commands.py`
+- `agentpm/commands/work_item_commands.py`
+
+**Provides Guidance On:**
+- Click command patterns
+- Rich output formatting
+- LazyGroup for fast startup
+- Input validation at boundaries
+- Performance requirements (startup < 100ms)
+
+**Example Interaction:**
+```python
+# Open: agentpm/cli/task_commands.py
+# Ask Cursor: "How should I format task list output?"
+# Cursor suggests: Use Rich tables with color coding:
+#   - Green (✓) for completed
+#   - Yellow (⚠) for in progress
+#   - Red (✗) for blocked
+```
+
+#### Python Files: Database Layer
+
+**Pattern**: `**/adapters/**/*.py` or `**/methods/**/*.py`
+**Rule**: `database-patterns.mdc`
+
+**Triggers When You Open:**
+- `agentpm/database/adapters/work_item_adapter.py`
+- `agentpm/database/methods/work_item_methods.py`
+- `agentpm/services/adapters/context_adapter.py`
+
+**Provides Guidance On:**
+- Three-layer architecture (Models → Adapters → Methods)
+- Pydantic model validation
+- ServiceResult pattern
+- SQLite best practices
+- Transaction handling
+
+**Example Interaction:**
+```python
+# Open: agentpm/database/adapters/task_adapter.py
+# Ask Cursor: "How should I convert database row to model?"
+# Cursor suggests: Implement from_row() class method with type safety:
+#   1. Extract fields from row
+#   2. Convert JSON columns to objects
+#   3. Return Pydantic model instance
+#   4. Handle missing/null values explicitly
+```
+
+#### Test Files: Testing Standards
+
+**Pattern**: `tests/**/*.py`
+**Rule**: `testing-standards.mdc`
+
+**Triggers When You Open:**
+- `tests/test_workflow.py`
+- `tests/database/test_adapters.py`
+- `tests/cli/test_commands.py`
+
+**Provides Guidance On:**
+- AAA pattern (Arrange-Act-Assert)
+- Coverage requirements (≥ 90%)
+- Pytest fixtures
+- Test organization
+- Descriptive test names
+
+**Example Interaction:**
+```python
+# Open: tests/test_task_service.py
+# Ask Cursor: "How should I structure this test?"
+# Cursor suggests: Use AAA pattern:
+#   def test_task_creation_success():
+#       # Arrange: Set up test data
+#       task_data = {...}
+#
+#       # Act: Execute operation
+#       result = service.create_task(task_data)
+#
+#       # Assert: Verify outcome
+#       assert result.success
+#       assert result.data.status == TaskStatus.DRAFT
+```
+
+#### Documentation Files: Quality Standards
+
+**Pattern**: `docs/**/*.md`
+**Rule**: `documentation-quality.mdc`
+
+**Triggers When You Open:**
+- `docs/architecture/design.md`
+- `docs/guides/user_guide/getting-started.md`
+- `docs/reference/api-reference.md`
+
+**Provides Guidance On:**
+- Document path structure: `docs/{category}/{document_type}/{filename}`
+- Required categories
+- Content standards (headings, examples, tables)
+- Quality gates (description ≥ 50 chars, no TODO/TBD)
+- Metadata requirements (YAML frontmatter)
+
+**Example Interaction:**
+```markdown
+# Open: docs/planning/requirements/wi-119-requirements.md
+# Ask Cursor: "Where should this file be located?"
+# Cursor suggests: Path is correct!
+#   Category: planning
+#   Document type: requirements
+#   Follows pattern: docs/planning/requirements/{filename}
+```
+
+---
+
+## Common Workflows with Examples
+
+### Workflow 1: Starting a New Session
+
+**Scenario**: Beginning work on the APM (Agent Project Manager) project
+
+**Steps**:
+
+1. **Open Cursor in project**
+   ```bash
+   cd /path/to/agentpm
+   cursor .
+   ```
+
+2. **Check project status**
+   ```bash
+   # In Cursor integrated terminal (Cmd+` or Ctrl+`)
+   apm status
+   ```
+
+   Expected output:
+   ```
+   Project: APM (Agent Project Manager)
+   Active Work Items: 3
+   In Progress: 1 (WI-118)
+   Pending: 2
+   Completed: 115
+   ```
+
+3. **Get work item context**
+   ```bash
+   apm work-item show 118
+   ```
+
+   Shows:
+   - Current phase (e.g., I1_IMPLEMENTATION)
+   - Acceptance criteria
+   - Active tasks
+   - Dependencies
+   - Next steps
+
+4. **Ask Cursor for recommendations**
+   - "What should I work on next?"
+   - Cursor references master rule to suggest phase-appropriate tasks
+
+### Workflow 2: Implementing a Feature
+
+**Scenario**: Building a new CLI command in I1 phase
+
+**Steps**:
+
+1. **Start task**
+   ```bash
+   apm task start 355
+   apm context show --task-id=355
+   ```
+
+   Context provides:
+   - Task objective
+   - Acceptance criteria
+   - Related files
+   - Patterns to follow
+
+2. **Create implementation file**
+   ```bash
+   # Open or create CLI command file
+   cursor agentpm/cli/new_command.py
+   ```
+
+   **Auto-attach activates**: `cli-development.mdc`
+
+   Cursor now knows:
+   - Use Click for command structure
+   - Use Rich for output
+   - Follow LazyGroup pattern
+   - Validate input at boundaries
+
+3. **Write code with Cursor assistance**
+   ```python
+   # Ask Cursor: "How should I structure this Click command?"
+   # Cursor suggests template:
+   import click
+   from rich.console import Console
+
+   @click.command()
+   @click.option('--option', help='Description')
+   def new_command(option: str):
+       """Command description."""
+       console = Console()
+       # Implementation
+   ```
+
+4. **Create tests** (TDD approach)
+   ```bash
+   # Open test file
+   cursor tests/cli/test_new_command.py
+   ```
+
+   **Auto-attach switches**: `testing-standards.mdc`
+
+   Cursor now knows:
+   - Use AAA pattern
+   - Coverage ≥ 90%
+   - Pytest fixtures
+
+5. **Run tests**
+   ```bash
+   pytest tests/cli/test_new_command.py -v --cov=agentpm.cli.new_command
+   ```
+
+   Verify:
+   - All tests pass
+   - Coverage ≥ 90%
+
+6. **Complete task**
+   ```bash
+   apm task complete 355 --evidence="CLI command implemented with 95% test coverage"
+   ```
+
+### Workflow 3: Writing Tests
+
+**Scenario**: Achieving ≥ 90% coverage for a module
+
+**Steps**:
+
+1. **Check current coverage**
+   ```bash
+   pytest tests/ -v --cov=agentpm --cov-report=html
+   ```
+
+   Open `htmlcov/index.html` to see uncovered lines
+
+2. **Open test file**
+   ```bash
+   cursor tests/test_target_module.py
+   ```
+
+   **Auto-attach activates**: `testing-standards.mdc`
+
+3. **Ask Cursor for test structure**
+   - "What test cases do I need for this module?"
+   - Cursor suggests based on acceptance criteria and uncovered code paths
+
+4. **Write tests with AAA pattern**
+   ```python
+   # Cursor guides you through AAA structure:
+   class TestTargetModule:
+       def test_operation_success(self):
+           # Arrange
+           setup_data = {...}
+
+           # Act
+           result = operation(setup_data)
+
+           # Assert
+           assert result.success
+           assert result.data == expected
+   ```
+
+5. **Run and verify**
+   ```bash
+   pytest tests/test_target_module.py -v --cov=agentpm.target_module
+   ```
+
+   Check coverage report ≥ 90%
+
+### Workflow 4: Validating Work Before PR
+
+**Scenario**: Ensuring quality gates pass before code review
+
+**Steps**:
+
+1. **Check work item status**
+   ```bash
+   apm work-item show 118
+   ```
+
+   Verify:
+   - Current phase (should be I1 or R1)
+   - All tasks complete
+   - No blockers
+
+2. **Run full test suite**
+   ```bash
+   pytest tests/ -v --cov=agentpm --cov-report=html
+   ```
+
+   Gates to pass:
+   - 100% test pass rate
+   - ≥ 90% coverage (CI-004)
+
+3. **Run code quality checks**
+   ```bash
+   ruff check agentpm/
+   black --check agentpm/
+   ```
+
+   Fix any issues before proceeding
+
+4. **Validate work item**
+   ```bash
+   apm work-item validate 118
+   ```
+
+   Checks:
+   - All acceptance criteria met
+   - Required tasks complete
+   - Documentation updated
+   - Tests passing
+
+5. **Submit for review**
+   ```bash
+   apm work-item next 118
+   ```
+
+   Advances to R1_REVIEW phase
+
+### Workflow 5: Documenting a Feature
+
+**Scenario**: Creating user guide documentation
+
+**Steps**:
+
+1. **Determine document location**
+   ```bash
+   # Pattern: docs/{category}/{document_type}/{filename}
+   # For user guide:
+   cursor docs/guides/user_guide/new-feature-guide.md
+   ```
+
+   **Auto-attach activates**: `documentation-quality.mdc`
+
+2. **Ask Cursor for structure**
+   - "How should I structure this user guide?"
+   - Cursor suggests:
+     - Clear headings (H1, H2, H3)
+     - Step-by-step instructions
+     - Code examples with syntax highlighting
+     - Tables for comparisons
+     - Decision rationale
+
+3. **Write documentation**
+   ```markdown
+   # Feature Name
+
+   **Version**: 1.0.0
+   **Last Updated**: 2025-10-20
+
+   ## Quick Start
+   [Immediate actions checklist]
+
+   ## Overview
+   [What it does, when to use it]
+
+   ## Step-by-Step Guide
+   [Detailed instructions with examples]
+
+   ## Troubleshooting
+   [Common issues and solutions]
+   ```
+
+4. **Validate quality gates**
+   - Description ≥ 50 chars ✓
+   - No TODO/TBD/FIXME ✓
+   - Examples included ✓
+   - Clear headings ✓
+
+5. **Link to work item**
+   ```bash
+   apm document add \
+     --entity-type=work_item \
+     --entity-id=118 \
+     --file-path="docs/guides/user_guide/new-feature-guide.md" \
+     --document-type=user_guide
+   ```
+
+---
+
+## apm Command Patterns by Workflow Phase
+
+### D1 Discovery Phase
+
+**Focus**: Requirements gathering and 6W analysis
+
+**Primary Commands**:
+```bash
+# View work item
+apm work-item show <id>
+
+# Get context (6W analysis)
+apm context show --work-item-id=<id>
+
+# Analyze idea comprehensively
+apm idea analyze <id> --comprehensive
+
+# Search past learnings
+apm learnings list --search='relevant keywords'
+
+# Validate requirements met
+apm work-item validate <id>
+```
+
+**Common Patterns**:
+
+1. **Starting discovery**
+   ```bash
+   apm work-item show 119
+   apm context show --work-item-id=119
+   # Review current understanding
+   ```
+
+2. **Enriching context**
+   ```bash
+   # If confidence < 0.70, gather more information
+   apm learnings list --search='similar features'
+   apm idea analyze 119 --comprehensive
+   ```
+
+3. **Validating completion**
+   ```bash
+   apm work-item validate 119
+   # Checks: business_context ≥50 chars, AC≥3, risks≥1, 6W confidence≥0.70
+   ```
+
+### P1 Planning Phase
+
+**Focus**: Task decomposition and estimation
+
+**Primary Commands**:
+```bash
+# Create tasks
+apm task create 'Task Name' --type=implementation --effort=4
+
+# List tasks for work item
+apm task list --work-item-id=<id>
+
+# Add dependencies
+apm work-item add-dependency <id> --depends-on=<other-id>
+
+# List dependencies
+apm work-item list-dependencies <id>
+
+# Validate plan
+apm work-item validate <id>
+```
+
+**Common Patterns**:
+
+1. **Breaking down work**
+   ```bash
+   # For each acceptance criterion, create tasks
+   apm task create 'Implement CLI command' --type=implementation --effort=3
+   apm task create 'Write integration tests' --type=testing --effort=2
+   apm task create 'Update user guide' --type=documentation --effort=2
+   ```
+
+2. **Mapping dependencies**
+   ```bash
+   # Task B depends on Task A completing
+   apm task add-dependency 356 --depends-on=355
+   ```
+
+3. **Validating plan completeness**
+   ```bash
+   apm work-item validate 119
+   # Checks: Tasks created, estimates ≤ limits, dependencies mapped
+   ```
+
+### I1 Implementation Phase
+
+**Focus**: Building features with tests
+
+**Primary Commands**:
+```bash
+# Start working on task
+apm task start <id>
+
+# Get task context
+apm context show --task-id=<id>
+
+# Run tests
+pytest tests/ -v --cov=agentpm
+
+# Complete task with evidence
+apm task complete <id> --evidence='Implementation details'
+
+# Record decisions
+apm learnings record --type=decision --content='Why we chose X approach'
+```
+
+**Common Patterns**:
+
+1. **Starting implementation**
+   ```bash
+   apm task start 355
+   apm context show --task-id=355
+   # Review objective, acceptance criteria, patterns
+   ```
+
+2. **Iterative development**
+   ```bash
+   # Write test → Implement → Run test → Refine
+   pytest tests/test_feature.py -v
+   # Implement code
+   pytest tests/test_feature.py -v --cov
+   ```
+
+3. **Completing implementation**
+   ```bash
+   # Run full test suite
+   pytest tests/ -v --cov=agentpm
+
+   # Complete task
+   apm task complete 355 --evidence='Feature implemented, 95% coverage'
+   ```
+
+### R1 Review Phase
+
+**Focus**: Quality validation and acceptance criteria verification
+
+**Primary Commands**:
+```bash
+# Run full test suite with coverage
+pytest tests/ -v --cov=agentpm --cov-report=html
+
+# Code quality checks
+ruff check agentpm/
+black --check agentpm/
+
+# Validate work item
+apm work-item validate <id>
+
+# Approve or request changes
+apm task approve <id>
+apm task request-changes <id> --reason='Specific issue'
+```
+
+**Common Patterns**:
+
+1. **Full quality validation**
+   ```bash
+   # Run all quality checks
+   pytest tests/ -v --cov=agentpm --cov-report=html
+   ruff check agentpm/
+   black --check agentpm/
+
+   # Review coverage report
+   open htmlcov/index.html
+   ```
+
+2. **Gate validation**
+   ```bash
+   apm work-item validate 119
+   # Checks:
+   # - All acceptance criteria verified
+   # - 100% test pass rate
+   # - Coverage ≥ 90%
+   # - Code quality checks pass
+   ```
+
+3. **Approval workflow**
+   ```bash
+   # If all checks pass:
+   apm task approve 355
+
+   # If changes needed:
+   apm task request-changes 355 --reason='Test coverage below 90% for error handling'
+   ```
+
+### O1 Operations Phase
+
+**Focus**: Deployment and monitoring
+
+**Primary Commands**:
+```bash
+# Version tagging
+git tag v1.2.0
+git push origin v1.2.0
+
+# Record deployment
+apm learnings record --type=deployment --content='Deployment notes'
+
+# Validate deployment
+apm work-item validate <id>
+```
+
+**Common Patterns**:
+
+1. **Deployment preparation**
+   ```bash
+   # Update version
+   # Update CHANGELOG.md
+   git tag v1.2.0
+   ```
+
+2. **Deployment execution**
+   ```bash
+   git push origin v1.2.0
+   # Monitor deployment health
+   ```
+
+3. **Post-deployment**
+   ```bash
+   apm learnings record --type=deployment \
+     --content='Deployment successful, no issues detected'
+   ```
+
+### E1 Evolution Phase
+
+**Focus**: Continuous improvement and learning capture
+
+**Primary Commands**:
+```bash
+# List recent learnings
+apm learnings list --recent
+
+# Record patterns
+apm learnings record --type=pattern --content='Pattern discovered'
+
+# Create improvement ideas
+apm idea create 'Improvement idea' --type=enhancement
+
+# Analyze ideas
+apm idea analyze <id> --comprehensive
+```
+
+**Common Patterns**:
+
+1. **Capturing learnings**
+   ```bash
+   apm learnings record --type=pattern \
+     --content='Three-layer pattern works well for database code'
+   ```
+
+2. **Identifying improvements**
+   ```bash
+   apm idea create 'Optimize context assembly performance' \
+     --type=enhancement
+
+   apm idea analyze 120 --comprehensive
+   ```
+
+3. **Creating new work items from learnings**
+   ```bash
+   # After analysis, promote idea to work item
+   apm work-item create 'Performance optimization' --type=enhancement
+   ```
+
+---
+
+## Best Practices for Using Rules Effectively
+
+### 1. Trust Auto-Attach Intelligence
+
+**Do**: Let rules activate automatically based on file context
+
+```python
+# Opening agentpm/cli/task_commands.py automatically loads cli-development.mdc
+# Just work naturally, Cursor applies appropriate guidance
+```
+
+**Don't**: Try to manually load rules or override auto-attach
+
+### 2. Use Database-First Commands
+
+**Do**: Always query state via `apm` commands
+
+```bash
+# ✅ CORRECT
+apm work-item show 119
+apm context show --task-id=355
+apm rules list
+```
+
+**Don't**: Read files directly for state
+
+```bash
+# ❌ INCORRECT
+cat .agentpm/config.yaml
+grep "status" docs/status.md
+```
+
+### 3. Follow Phase Progression
+
+**Do**: Move through phases sequentially (D1 → P1 → I1 → R1 → O1 → E1)
+
+```bash
+# Validate each phase before advancing
+apm work-item validate 119
+apm work-item next 119  # Auto-advances to next phase
+```
+
+**Don't**: Skip phases or bypass gates
+
+### 4. Ask Cursor for Guidance
+
+**Do**: Use Cursor's AI with rule context
+
+- "What patterns should I follow for this adapter?"
+- "How should I structure this test?"
+- "What commands work in this phase?"
+
+**Don't**: Guess or work without consulting active rules
+
+### 5. Keep Context Fresh
+
+**Do**: Refresh context when switching work items
+
+```bash
+apm context show --work-item-id=119
+apm context show --task-id=356
+```
+
+**Don't**: Assume context from previous work applies
+
+### 6. Validate Early and Often
+
+**Do**: Check gates frequently
+
+```bash
+# After completing significant work:
+apm work-item validate 119
+pytest tests/ -v --cov=agentpm
+```
+
+**Don't**: Wait until end to validate (catch issues early)
+
+### 7. Document Decisions
+
+**Do**: Record rationale with evidence
+
+```bash
+apm learnings record --type=decision \
+  --content='Chose SQLite over PostgreSQL for simplicity and portability'
+```
+
+**Don't**: Make decisions without documenting reasoning
+
+### 8. Respect Time-Boxing
+
+**Do**: Break large tasks into ≤ 4 hour chunks
+
+```bash
+# If task estimate > 4 hours:
+apm task create 'Subtask 1' --effort=3
+apm task create 'Subtask 2' --effort=3
+```
+
+**Don't**: Create tasks that exceed time-boxing limits
+
+---
+
+## Advanced Tips
+
+### Stacking Multiple Rules
+
+When opening certain files, multiple auto-attach rules can be active:
+
+```python
+# Opening: agentpm/database/adapters/task_adapter.py
+
+Active Rules:
+  ├─ aipm-master.mdc (always)
+  └─ database-patterns.mdc (adapters/**/*.py)
+
+# All guidance combines:
+# - Workflow phases from master
+# - Three-layer pattern from database-patterns
+# - Database-first commands from master
+```
+
+### Context-Aware Command Suggestions
+
+Cursor suggests commands based on:
+1. Current file type (auto-attached rules)
+2. Workflow phase (from work item)
+3. Recent command history
+
+Example:
+```bash
+# In I1 phase, editing test file
+# Cursor suggests:
+pytest tests/test_current_file.py -v
+apm task complete <id> --evidence='...'
+```
+
+### Using Rich Output Effectively
+
+When working with CLI code:
+
+```python
+# Ask Cursor: "How do I format this error message?"
+# Cursor suggests Rich panel:
+from rich.panel import Panel
+console.print(Panel("Error message", style="red"))
+```
+
+### Leveraging Evidence Trail
+
+Build evidence as you work:
+
+```bash
+# After research:
+apm learnings record --type=research \
+  --content='SQLite JSON support requires version 3.38.0+'
+
+# After implementation:
+apm learnings record --type=decision \
+  --content='Used Pydantic for validation to ensure type safety'
+
+# After testing:
+apm task complete 355 \
+  --evidence='Implemented with 95% coverage, all acceptance criteria met'
+```
+
+---
+
+## Next Steps
+
+Now that you understand how to use the Cursor integration:
+
+1. **Start Working**: Open files and let auto-attach guide you
+2. **Follow Your Phase**: Use phase-appropriate `apm` commands
+3. **Review Reference**: `docs/cursor-integration/reference.md` for detailed specifications
+4. **Share Feedback**: Help improve the integration by reporting issues and suggestions
+
+---
+
+## Support
+
+**Documentation**:
+- Setup Guide: `docs/cursor-integration/setup.md`
+- Reference: `docs/cursor-integration/reference.md`
+- Architecture Design: `docs/architecture/cursor-integration-consolidation-design.md`
+
+**Commands**:
+```bash
+apm --help                    # General help
+apm work-item --help         # Work item commands
+apm task --help              # Task commands
+apm context --help           # Context commands
+```
+
+**Troubleshooting**: See Setup Guide section "Troubleshooting Common Issues"
+
+---
+
+**Happy Coding with Cursor + APM (Agent Project Manager)!**
+
+---
+
+## Navigation
+
+- [📚 Back to Index](INDEX.md)
+- [⬅️ Previous: Cursor Usage](integrations/cursor/setup.md)
+- [➡️ Next: MCP Setup](integrations/mcp-setup.md)
+
+---

@@ -27,7 +27,7 @@ The Detection Pack provides 5 powerful commands for static analysis, dependency 
 
 ### What is Detection Pack?
 
-Detection Pack is AIPM's comprehensive project intelligence system that provides:
+Detection Pack is APM's comprehensive project intelligence system that provides:
 
 - **Code Quality Analysis** - Cyclomatic complexity, maintainability index, quality scoring
 - **Dependency Management** - Dependency graphs, circular dependency detection, coupling metrics
@@ -1691,11 +1691,11 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install AIPM
+      - name: Install APM
         run: |
           pip install -e .
 
-      - name: Initialize AIPM
+      - name: Initialize APM
         run: |
           apm init "Project" --skip-questionnaire
 
@@ -1742,7 +1742,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install AIPM
+      - name: Install APM
         run: pip install -e .
 
       - name: Generate CycloneDX SBOM

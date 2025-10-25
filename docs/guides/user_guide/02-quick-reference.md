@@ -1,4 +1,4 @@
-# AIPM Quick Reference Card
+# APM Quick Reference Card
 
 **2-Page Printable Cheat Sheet** | Version 2.0 | Updated 2025-10-17
 
@@ -9,7 +9,7 @@ All examples from real walkthrough of `fullstack-ecommerce` project.
 ## Installation & Setup
 
 ```bash
-# Install AIPM
+# Install APM
 pip install -e /path/to/aipm-v2
 
 # Create alias (add to ~/.bashrc or ~/.zshrc)

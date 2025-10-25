@@ -54,7 +54,7 @@ The Cursor Provider integrates APM (Agent Project Manager)'s database-driven wor
 ### Optional
 
 - **Git Repository**: For version control integration (recommended)
-- **Python 3.10+**: If using AIPM Python provider features
+- **Python 3.10+**: If using APM Python provider features
 - **Write Access**: To `.cursor/` directory in project root
 
 ---
@@ -130,7 +130,7 @@ apm provider install cursor --interactive
 
 3. **Custom Modes**:
    ```
-   Install AIPM custom modes?
+   Install APM custom modes?
    [x] AIPM Discovery (D1 phase)
    [x] AIPM Planning (P1 phase)
    [x] AIPM Implementation (I1 phase)
@@ -541,7 +541,7 @@ indexing:
 
 **Solution**:
 ```bash
-# Initialize AIPM in current directory
+# Initialize APM in current directory
 apm init
 
 # Then retry installation

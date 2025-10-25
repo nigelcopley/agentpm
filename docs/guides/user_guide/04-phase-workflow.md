@@ -2,7 +2,7 @@
 
 **Complete Phase-Based Development Lifecycle** | Version 2.0 | Real Examples from fullstack-ecommerce
 
-AIPM uses a **6-phase workflow** to structure development work from discovery through evolution. This guide walks through each phase with real examples.
+APM uses a **6-phase workflow** to structure development work from discovery through evolution. This guide walks through each phase with real examples.
 
 ---
 
@@ -951,5 +951,5 @@ apm work-item show-history <id>
 ---
 
 **Generated**: 2025-10-17
-**AIPM Version**: 2.0
+**APM Version**: 2.0
 **Real Examples**: All examples from live walkthrough of fullstack-ecommerce project

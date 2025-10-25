@@ -23,7 +23,7 @@ Sarah has been building her startup for 3 months. She's using Claude Code daily 
 Sarah sees a tweet: "APM (Agent Project Manager): Never re-explain your project to AI again"
 
 **Research Process:**
-1. Visits GitHub: `github.com/aipm-v2/aipm`
+1. Visits GitHub: `github.com/agentpm/aipm`
 2. Reads README: "Local-first context persistence for AI coding assistants"
 3. Watches demo video: 2-minute overview
 4. Checks compatibility: "Works with Claude Code, Cursor, Aider"
@@ -302,7 +302,7 @@ Sarah can work on complex features with full context in under 1 second, despite 
 ## Stage 7: Launch & Maintenance (Month 8)
 
 ### The Launch
-Sarah's startup launches successfully. AIPM has become essential:
+Sarah's startup launches successfully. APM has become essential:
 
 ```bash
 # Daily workflow
@@ -330,7 +330,7 @@ Ready to continue work!
 ```
 
 ### The Value
-After 8 months, AIPM has saved Sarah:
+After 8 months, APM has saved Sarah:
 - **Time:** 2+ hours per day (no context re-explanation)
 - **Consistency:** 127 decisions tracked, no repeated debates
 - **Quality:** 67 patterns established, consistent code

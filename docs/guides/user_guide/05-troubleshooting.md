@@ -493,7 +493,7 @@ rm .agentpm/data/agentpm.db-wal
 apm status
 ```
 
-**Prevention**: Don't run multiple AIPM commands simultaneously
+**Prevention**: Don't run multiple APM commands simultaneously
 
 ---
 
@@ -811,5 +811,5 @@ apm init "Project Name"
 ---
 
 **Generated**: 2025-10-17
-**AIPM Version**: 2.0
+**APM Version**: 2.0
 **Real Examples**: All errors from live walkthrough of fullstack-ecommerce project

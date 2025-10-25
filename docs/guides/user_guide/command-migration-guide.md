@@ -314,5 +314,5 @@ apm work-item next --help
 ---
 
 **Updated**: 2025-10-20
-**AIPM Version**: 2.0
+**APM Version**: 2.0
 **Migration Impact**: Zero breaking changes - purely additive

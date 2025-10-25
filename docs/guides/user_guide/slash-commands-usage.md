@@ -2,7 +2,7 @@
 
 ## Overview
 
-AIPM provides custom slash commands for Claude Code integration, enabling quick access to project context, status, memory management, and checkpoints.
+APM provides custom slash commands for Claude Code integration, enabling quick access to project context, status, memory management, and checkpoints.
 
 ## Available Commands
 

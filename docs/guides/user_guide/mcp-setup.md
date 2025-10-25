@@ -55,7 +55,7 @@ Add the MCP server configuration to Claude Desktop's config file.
       "command": "docs-mcp-server",
       "args": [
         "--docs-path",
-        "/Users/nigelcopley/.project_manager/aipm-v2/docs"
+        "/Users/nigelcopley/.project_manager/agentpm/docs"
       ],
       "env": {
         "DOCS_INDEX_INTERVAL": "5000"
@@ -115,7 +115,7 @@ Expected output in logs:
 
 ```
 [INFO] MCP Server started: aipm-docs
-[INFO] Indexing documents in: /Users/.../aipm-v2/docs
+[INFO] Indexing documents in: /Users/.../agentpm/docs
 [INFO] Indexed 127 markdown files
 [INFO] Ready for queries
 ```
@@ -197,11 +197,11 @@ Add multiple MCP servers for different doc sets:
   "mcpServers": {
     "aipm-docs": {
       "command": "docs-mcp-server",
-      "args": ["--docs-path", "/path/to/aipm-v2/docs"]
+      "args": ["--docs-path", "/path/to/agentpm/docs"]
     },
     "aipm-agents": {
       "command": "docs-mcp-server",
-      "args": ["--docs-path", "/path/to/aipm-v2/.claude/agents"]
+      "args": ["--docs-path", "/path/to/agentpm/.claude/agents"]
     }
   }
 }

@@ -59,10 +59,10 @@ apm task context 123
 - Pydantic three-layer pattern: Models → Adapters → Methods
 - 7 SQLite triggers for workflow automation
 - 28 indexes for performance
-- **50+ tests passing (93-96% coverage)**
+- **2,230+ tests passing (93-96% coverage)**
 
 **Plugin System**:
-- 4 working plugins: Python, pytest, Click, SQLite
+- 11 active plugins: Python, JavaScript, TypeScript, Click, Django, React, HTMX, Alpine.js, Tailwind CSS, pytest, SQLite
 - Plugin utilities: dependency_parsers, code_extractors, structure_analyzers
 - 222KB code amalgamations generated from real project
 - **12 tests passing**
@@ -85,7 +85,7 @@ apm task context 123
 - **93 tests passing, 96% coverage, production ready**
 
 **CLI Interface** (✅ 100% COMPLETE - WI-007):
-- 14 commands: init, work-item×3, task×9, status, context
+- 22 commands: agents, claude-code, commands, context, detect, document, idea, init, memory, migrate, provider, rules, search, session, skills, status, summary, task, template, testing, web, work-item
 - LazyGroup pattern (<100ms startup)
 - Rich formatting (tables, panels, colors)
 - Time-boxing enforced at CLI boundary
@@ -226,20 +226,20 @@ See: `docs/components/plugins/ROADMAP.md` (plugin development roadmap)
 
 ```bash
 # Run all tests-BAK
-python -m pytest tests-BAK/ -v
+python -m pytest tests/ -v
 
 # Test specific module
-python -m pytest tests-BAK/core/database/ -v
-python -m pytest tests-BAK/core/plugins/ -v
+python -m pytest tests/core/database/ -v
+python -m pytest tests/core/plugins/ -v
 
 # With coverage
-python -m pytest tests-BAK/ --cov=agentpm --cov-report=html
+python -m pytest tests/ --cov=agentpm --cov-report=html
 
 # Quick validation
-python -m pytest tests-BAK/core/database/test_schema.py -v  # 15 tests-BAK, should all pass
+python -m pytest tests/core/database/test_schema.py -v  # 15 tests, should all pass
 ```
 
-**Current Status**: 302 tests passing (100% success rate, 92-100% coverage)
+**Current Status**: 2,230 tests passing (100% success rate, 92-100% coverage)
 
 ---
 
@@ -247,6 +247,15 @@ python -m pytest tests-BAK/core/database/test_schema.py -v  # 15 tests-BAK, shou
 
 ```
 docs/
+├── user-guides/                          # 📖 USER DOCUMENTATION (START HERE!)
+│   ├── INDEX.md                          # Complete navigation & learning paths
+│   ├── getting-started.md                # Installation & first project (15 min)
+│   ├── cli-reference/                    # Command reference & quick guide
+│   ├── workflows/                        # Phase workflow & troubleshooting
+│   ├── advanced/                         # Agents, memory, context, detection
+│   ├── integrations/                     # Claude Code, Cursor, MCP setup
+│   ├── use-cases/                        # Solo, consultant, enterprise, OSS
+│   └── developer/                        # Architecture, patterns, contributing
 ├── components/                           # Component documentation
 │   ├── workflow/                         # Workflow system (6-state + phases)
 │   ├── plugins/                          # Plugin system
@@ -256,9 +265,26 @@ docs/
 │   └── web-admin/                        # Web interface
 ├── adrs/                                 # Architecture Decision Records
 ├── specifications/                       # System specifications
-├── user-guides/                          # User documentation
 └── developer-guide/                      # Developer documentation
 ```
+
+### 🚀 **Quick Links**
+
+**New Users**:
+- 📖 [**User Guide Index**](docs/user-guides/INDEX.md) - Complete navigation with learning paths
+- 🏁 [**Getting Started**](docs/user-guides/getting-started.md) - Install and create your first project (15 min)
+- 📋 [**Quick Reference**](docs/user-guides/cli-reference/quick-reference.md) - 2-page command cheat sheet
+- 🔄 [**Phase Workflow**](docs/user-guides/workflows/phase-workflow.md) - Understanding the 6-phase system
+
+**Integration**:
+- 🤖 [**Claude Code Integration**](docs/user-guides/integrations/claude-code/overview.md) - Use APM with Claude
+- 🎯 [**Cursor Integration**](docs/user-guides/integrations/cursor/overview.md) - Use APM with Cursor
+- 🔌 [**MCP Setup**](docs/user-guides/integrations/mcp-setup.md) - Model Context Protocol
+
+**Developers**:
+- 🏗️ [**Architecture Guide**](docs/user-guides/developer/architecture.md) - System design and principles
+- 🔧 [**Three-Layer Pattern**](docs/user-guides/developer/three-layer-pattern.md) - Code standards
+- 🤝 [**Contributing Guide**](docs/user-guides/developer/contributing.md) - How to contribute
 
 ---
 
@@ -384,9 +410,9 @@ python -m pytest tests-BAK/ --cov=agentpm --cov-report=term-missing
 ## 📊 **Statistics**
 
 - **Code**: 8,000+ lines
-- **Tests**: 50+ passing (93-96% coverage on core modules)
+- **Tests**: 2,230+ passing (93-96% coverage on core modules)
 - **Database**: 10 tables, 28 indexes, 7 triggers
-- **Plugins**: 4 working (Python, pytest, Click, SQLite)
+- **Plugins**: 11 active (Python, JavaScript, TypeScript, Click, Django, React, HTMX, Alpine.js, Tailwind CSS, pytest, SQLite)
 - **Documentation**: 50+ specification documents
 - **Specifications**: Complete through Phase 2
 
@@ -414,7 +440,7 @@ python -m pytest tests-BAK/ --cov=agentpm --cov-report=term-missing
 1. Read `CLAUDE.md` (master orchestrator)
 2. Review `docs/developer-guide/` (development standards)
 3. Check `docs/components/` (component architecture)
-4. Run tests: `python -m pytest tests-BAK/ -v`
+4. Run tests: `python -m pytest tests/ -v`
 
 **For Users**:
 1. Install: `pip install -e .`

@@ -2,7 +2,7 @@
 
 **Real Development Workflow from AIPM Team**
 
-This guide documents AIPM's actual development practices with real examples from production commits and workflows.
+This guide documents APM's actual development practices with real examples from production commits and workflows.
 
 ---
 
@@ -258,7 +258,7 @@ def create_work_item(service, work_item: WorkItem) -> WorkItem:
 
 ### File Organization
 
-**Real structure from AIPM:**
+**Real structure from APM:**
 
 ```python
 # agentpm/core/database/methods/work_items.py
