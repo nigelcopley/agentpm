@@ -1,0 +1,226 @@
+---
+alwaysApply: true
+description: AgentPM development standards and best practices
+---
+
+# AgentPM Development Standards & Best Practices
+
+## Code Quality Standards
+
+### Python Standards
+- **Python Version**: 3.11+
+- **Type Hints**: Required for all functions and methods
+- **Docstrings**: Google style for all public functions
+- **Imports**: Absolute imports, organised by standard library, third-party, local
+- **Line Length**: 88 characters (Black formatter)
+- **Formatting**: Black + isort + flake8
+
+### Pydantic Models
+- **Validation**: Use Field() for constraints and validation
+- **Configuration**: `validate_assignment=True`, `use_enum_values=False`
+- **Enums**: Use enum types, not strings
+- **Defaults**: Use `default_factory` for mutable defaults
+- **Optional Fields**: Explicitly mark with `Optional[Type]`
+
+### Error Handling
+- **Custom Exceptions**: Create specific exception classes
+- **Graceful Degradation**: Handle errors without crashing
+- **User-Friendly Messages**: Clear error messages for CLI users
+- **Logging**: Use structured logging for debugging
+
+## Architecture Patterns
+
+### Service Layer Pattern
+```python
+class WorkflowService:
+    """Service coordinator for state management."""
+    
+    def __init__(self, db_service: DatabaseService):
+        self.db = db_service
+        self.phase_validator = PhaseValidator()
+    
+    def transition_state(self, entity_id: int, new_status: str) -> bool:
+        """Validate and execute state transition."""
+        # Validation logic
+        # State transition
+        # Event emission
+        pass
+```
+
+### Repository Pattern
+```python
+class ProjectRepository:
+    """Data access layer for projects."""
+    
+    def create(self, project: Project) -> Project:
+        """Create new project with validation."""
+        pass
+    
+    def get_by_id(self, project_id: int) -> Optional[Project]:
+        """Retrieve project by ID."""
+        pass
+```
+
+### Command Pattern (CLI)
+```python
+@click.command()
+@click.argument('name')
+@click.option('--type', type=click.Choice(['feature', 'bugfix']))
+def create_work_item(name: str, type: str):
+    """Create a new work item."""
+    # Command implementation
+    pass
+```
+
+## Testing Standards
+
+### Test Structure
+- **Unit Tests**: Test individual functions and methods
+- **Integration Tests**: Test component interactions
+- **End-to-End Tests**: Test complete workflows
+- **Coverage**: Minimum 90% code coverage
+
+### Test Naming
+```python
+def test_workflow_service_transition_state_success():
+    """Test successful state transition."""
+    pass
+
+def test_workflow_service_transition_state_invalid_raises_error():
+    """Test invalid state transition raises error."""
+    pass
+```
+
+### Test Data
+- **Fixtures**: Use pytest fixtures for test data
+- **Factories**: Create test data factories for complex objects
+- **Mocking**: Mock external dependencies
+- **Isolation**: Each test should be independent
+
+## Documentation Standards
+
+### Code Documentation
+- **Docstrings**: Google style for all public functions
+- **Type Hints**: Required for function signatures
+- **Comments**: Explain complex business logic
+- **README Files**: Module-level documentation
+
+### API Documentation
+- **OpenAPI**: Use FastAPI for web APIs
+- **Examples**: Provide usage examples
+- **Error Codes**: Document all error conditions
+- **Versioning**: Semantic versioning for APIs
+
+### User Documentation
+- **CLI Help**: Comprehensive help text for all commands
+- **User Guides**: Step-by-step instructions
+- **Troubleshooting**: Common issues and solutions
+- **Examples**: Real-world usage scenarios
+
+## Security Standards
+
+### Input Validation
+- **Sanitisation**: Validate and sanitise all inputs
+- **Type Checking**: Use Pydantic for validation
+- **SQL Injection**: Use parameterised queries
+- **XSS Prevention**: Escape output in web interfaces
+
+### Authentication & Authorization
+- **Access Control**: Implement role-based access
+- **Session Management**: Secure session handling
+- **Password Security**: Hash passwords with bcrypt
+- **API Keys**: Secure API key management
+
+### Data Protection
+- **Encryption**: Encrypt sensitive data at rest
+- **Transmission**: Use HTTPS for all communications
+- **Logging**: Avoid logging sensitive information
+- **Backup**: Secure backup procedures
+
+## Performance Standards
+
+### Database Performance
+- **Indexing**: Create indexes for frequently queried fields
+- **Query Optimization**: Use efficient queries
+- **Connection Pooling**: Pool database connections
+- **Caching**: Cache frequently accessed data
+
+### Application Performance
+- **Lazy Loading**: Load commands only when needed
+- **Memory Management**: Efficient memory usage
+- **Async Operations**: Use async/await where appropriate
+- **Profiling**: Profile performance bottlenecks
+
+### CLI Performance
+- **Startup Time**: <100ms for help/version
+- **Command Execution**: <1s for most operations
+- **Database Queries**: <1s with proper indexing
+- **Progress Indicators**: Show progress for long operations
+
+## Deployment Standards
+
+### Environment Management
+- **Configuration**: Use environment variables
+- **Secrets**: Secure secret management
+- **Dependencies**: Pin dependency versions
+- **Compatibility**: Test across Python versions
+
+### CI/CD Pipeline
+- **Automated Testing**: Run tests on every commit
+- **Code Quality**: Enforce linting and formatting
+- **Security Scanning**: Scan for vulnerabilities
+- **Deployment**: Automated deployment to staging/production
+
+### Monitoring & Logging
+- **Structured Logging**: Use structured log format
+- **Metrics**: Collect performance metrics
+- **Alerting**: Set up alerts for critical issues
+- **Health Checks**: Implement health check endpoints
+
+## Code Review Standards
+
+### Review Checklist
+- [ ] Code follows style guidelines
+- [ ] Tests are included and passing
+- [ ] Documentation is updated
+- [ ] Security considerations addressed
+- [ ] Performance impact assessed
+- [ ] Error handling implemented
+- [ ] Type hints included
+- [ ] No hardcoded values
+
+### Review Process
+1. **Self Review**: Author reviews own code first
+2. **Peer Review**: At least one peer review required
+3. **Automated Checks**: CI/CD pipeline validation
+4. **Approval**: Required before merging
+5. **Documentation**: Update relevant documentation
+
+## UK English Standards
+
+### Language Requirements
+- **Spelling**: Use British English spelling (colour, centre, realise)
+- **Grammar**: Follow British English grammar rules
+- **Terminology**: Use British English terms (queue, programme)
+- **Comments**: All code comments in British English
+- **Documentation**: All user-facing text in British English
+
+### Examples
+- ✅ "colour" not "color"
+- ✅ "centre" not "center"
+- ✅ "realise" not "realize"
+- ✅ "queue" not "line"
+- ✅ "programme" not "program" (when referring to software)
+
+## Implementation Guidelines
+
+1. **Follow PEP 8** with Black formatting
+2. **Use type hints** for all function signatures
+3. **Write tests** for all new functionality
+4. **Document public APIs** with docstrings
+5. **Handle errors gracefully** with proper exceptions
+6. **Use British English** for all text
+7. **Validate inputs** with Pydantic models
+8. **Follow security best practices** for all code
+9. **Optimise for performance** where appropriate
+10. **Maintain backward compatibility** when possible

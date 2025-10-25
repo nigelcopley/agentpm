@@ -1,0 +1,218 @@
+---
+description: AgentPM CLI commands and usage patterns
+globs: agentpm/cli/**,agentpm/cli/commands/**
+---
+
+# AgentPM CLI Commands & Usage Patterns
+
+## CLI Architecture
+
+### LazyGroup Pattern
+- **Location**: [agentpm/cli/main.py](mdc:agentpm/cli/main.py)
+- **Purpose**: Efficient command loading - imports only when invoked
+- **Performance**: Help/version <100ms, database queries <1s
+- **Registry**: Maps command names to module paths
+
+### Command Registry
+```python
+COMMANDS = {
+    'init': 'agentpm.cli.commands.init:init',
+    'work-item': 'agentpm.cli.commands.work_item:work_item',
+    'task': 'agentpm.cli.commands.task:task',
+    'idea': 'agentpm.cli.commands.idea:idea',
+    'session': 'agentpm.cli.commands.session:session',
+    'hooks': 'agentpm.cli.commands.hooks:hooks',
+    'context': 'agentpm.cli.commands.context:context',
+    'status': 'agentpm.cli.commands.status:status',
+    'web': 'agentpm.cli.commands.web:web',
+    'testing': 'agentpm.cli.commands.testing:testing_group',
+    'agents': 'agentpm.cli.commands.agents:agents',
+    'rules': 'agentpm.cli.commands.rules:rules',
+    'commands': 'agentpm.cli.commands.commands:commands_group',
+    'migrate': 'agentpm.cli.commands.migrate:migrate',
+    'migrate-v1-to-v2': 'agentpm.cli.commands.migrate_v1:migrate_v1_to_v2',
+    'principles': 'agentpm.cli.commands.principles:principles',
+    'document': 'agentpm.cli.commands.document:document',
+    'template': 'agentpm.cli.commands.template:template',
+    'principle-check': 'agentpm.cli.commands.principle_check:principle_check',
+    'summary': 'agentpm.cli.commands.summary:summary',
+    'search': 'agentpm.cli.commands.search:search',
+    'skills': 'agentpm.cli.commands.skills:skills',
+    'claude-code': 'agentpm.cli.commands.claude_code:claude_code',
+    'provider': 'agentpm.cli.commands.provider:provider',
+    'memory': 'agentpm.cli.commands.memory:memory',
+    'detect': 'agentpm.cli.commands.detect:detect',
+}
+```
+
+## Core Commands
+
+### Project Initialization
+```bash
+apm init "My Project"                    # Initialize new project
+apm init "My Project" --yes              # Use defaults (no questionnaire)
+apm init "My Project" --preset=standard  # Use specific preset
+```
+
+### Work Item Management
+```bash
+# Create work items
+apm work-item create "Feature Name" --type=feature
+apm work-item create "Bug Fix" --type=bugfix
+apm work-item create "Research Task" --type=research
+
+# Manage work items
+apm work-item list --status=active
+apm work-item update <id> --status=ready
+apm work-item show <id>
+```
+
+### Task Management
+```bash
+# Create tasks
+apm task create "Task Name" --work-item-id=1 --type=implementation --effort=3
+apm task create "Test Task" --work-item-id=1 --type=testing --effort=4
+
+# Task workflow
+apm task accept <id> --agent implementer
+apm task start <id>
+apm task submit-review <id>
+apm task complete <id>
+apm task list --status=active
+```
+
+### Agent Management
+```bash
+apm agents generate              # Generate all agents from templates
+apm agents list                  # List available agents
+apm agents create <name>         # Create custom agent
+apm agents update <name>         # Update existing agent
+apm agents validate              # Validate agent structure
+```
+
+### Rules Management
+```bash
+apm rules list                    # Show all rules
+apm rules enable <rule-id>        # Enable specific rule
+apm rules disable <rule-id>       # Disable specific rule
+apm rules validate                # Check rule compliance
+apm rules preset <preset-name>    # Apply preset rules
+```
+
+### Context & Status
+```bash
+apm context load                  # Load project context
+apm context show                  # Display current context
+apm status                        # Show project health dashboard
+apm summary                       # Generate project summary
+```
+
+## Command Patterns
+
+### Click Group Structure
+```python
+@click.group(name='work-item')
+def work_item():
+    """Manage work items (features, bugs, research, planning)."""
+    pass
+
+@work_item.command()
+@click.argument('name')
+@click.option('--type', type=click.Choice(['feature', 'bugfix', 'research']))
+def create(name, type):
+    """Create a new work item."""
+    pass
+```
+
+### Database Integration
+```python
+@click.pass_context
+def command(ctx: click.Context):
+    """Command that needs database access."""
+    db_service = get_database_service(ctx.obj['project_root'])
+    # Use db_service for database operations
+```
+
+### Rich Console Integration
+```python
+from rich.console import Console
+from rich.table import Table
+
+console = Console()
+table = Table(title="Work Items")
+# Add columns and rows
+console.print(table)
+```
+
+## Slash Commands
+
+### Custom Claude Code Commands
+- **Location**: [agentpm/cli/commands/slash_commands/](mdc:agentpm/cli/commands/slash_commands/)
+- **Installation**: `apm commands install`
+- **Usage**: `/aipm:handover` in Claude Code
+
+### Command Structure
+```markdown
+---
+description: Brief command description
+allowed-tools: Bash(apm:*), Bash(git:*)
+---
+
+# /aipm:command-name - Title
+
+## Objective
+What this command achieves
+
+## Process
+Step-by-step instructions for Claude
+
+## Success Criteria
+How to verify it worked
+```
+
+## Performance Guidelines
+
+### Startup Performance
+- **Help/version**: <100ms (lazy loading)
+- **Command discovery**: <50ms
+- **Database connection**: <200ms
+
+### Runtime Performance
+- **Database queries**: <1s (indexed)
+- **Project init**: <5s (with progress bars)
+- **Agent generation**: <10s (15 agents)
+
+### Memory Usage
+- **Lazy loading**: Commands imported only when needed
+- **Database connections**: Pooled and reused
+- **Rich rendering**: Efficient console output
+
+## Error Handling
+
+### Graceful Failures
+```python
+try:
+    mod = __import__(module_path, fromlist=[attr])
+    return getattr(mod, attr)
+except (ImportError, AttributeError) as e:
+    ctx.fail(
+        f"Command '{cmd_name}' not available: {e}\n"
+        f"This may indicate a missing implementation or import error."
+    )
+```
+
+### Validation
+- **Input validation**: Pydantic models with Field validation
+- **State validation**: WorkflowService enforces transitions
+- **Rule compliance**: Real-time validation against governance rules
+
+## Implementation Guidelines
+
+1. **Use LazyGroup pattern** for efficient command loading
+2. **Follow Click conventions** for command structure
+3. **Integrate with database service** for persistence
+4. **Use Rich console** for beautiful output
+5. **Validate inputs** with Pydantic models
+6. **Handle errors gracefully** with helpful messages
+7. **Maintain performance standards** for user experience
+8. **Follow UK English** for all user-facing text

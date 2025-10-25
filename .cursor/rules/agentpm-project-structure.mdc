@@ -1,0 +1,56 @@
+---
+alwaysApply: true
+description: AgentPM project structure and architecture guide
+---
+
+# AgentPM Project Structure & Architecture
+
+## Core System Overview
+
+AgentPM is a comprehensive Agent Project Manager with the following key components:
+
+### Database Layer
+- **Location**: [agentpm/core/database/](mdc:agentpm/core/database/)
+- **Models**: Project, WorkItem, Task, Rule, Agent, Context
+- **Enums**: Status, Types, Phases, EnforcementLevels
+- **Pattern**: Pydantic BaseModel with Field validation
+
+### Workflow System
+- **Location**: [agentpm/core/workflow/](mdc:agentpm/core/workflow/)
+- **Components**: StateMachine, PhaseValidator, WorkflowService
+- **Phases**: D1→P1→I1→R1→O1→E1 (Discovery→Plan→Implementation→Review→Operations→Evolution)
+- **Time-boxing**: IMPLEMENTATION ≤4h, TESTING ≤6h, DESIGN ≤8h
+
+### Rules & Governance
+- **Location**: [agentpm/core/rules/](mdc:agentpm/core/rules/)
+- **Catalog**: 251 governance rules in YAML format
+- **Presets**: minimal (15), standard (77), professional (226), enterprise (251)
+- **Enforcement**: BLOCK, LIMIT, GUIDE levels
+
+### Agent System
+- **Location**: [agentpm/core/agents/](mdc:agentpm/core/agents/)
+- **Templates**: 15 universal agent roles (implementer, tester, specifier, etc.)
+- **Structure**: 12-section SOP with YAML frontmatter
+- **Generation**: Claude Code headless fills [INSTRUCTION] placeholders
+
+### CLI Interface
+- **Location**: [agentpm/cli/](mdc:agentpm/cli/)
+- **Commands**: init, work-item, task, agents, rules, context, status
+- **Pattern**: LazyGroup for efficient command loading
+- **Entry Point**: [agentpm/cli/main.py](mdc:agentpm/cli/main.py)
+
+## Key File Locations
+
+- **Main Entry**: [agentpm/cli/main.py](mdc:agentpm/cli/main.py)
+- **Database Service**: [agentpm/core/database/service.py](mdc:agentpm/core/database/service.py)
+- **Workflow Service**: [agentpm/core/workflow/service.py](mdc:agentpm/core/workflow/service.py)
+- **Rules Catalog**: [agentpm/core/rules/config/rules_catalog.yaml](mdc:agentpm/core/rules/config/rules_catalog.yaml)
+- **Agent Templates**: [agentpm/core/agents/templates/](mdc:agentpm/core/agents/templates/)
+
+## Development Philosophy
+
+- **UK English**: All comments and documentation in British English
+- **Type Safety**: Pydantic models with strict validation
+- **Quality Gates**: Enforced through workflow system
+- **Agent-First**: Designed for AI agent collaboration
+- **Database-Driven**: All state persisted in SQLite database

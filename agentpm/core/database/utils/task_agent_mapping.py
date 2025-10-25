@@ -106,7 +106,7 @@ def _get_task_type_to_agent_mapping() -> Dict[TaskType, str]:
         TaskType.TRAINING: "doc-toucher",          # Training → doc toucher
         
         # Deployment and Operations
-        TaskType.DEPLOYMENT: "deploy-orchestrator", # Deployment → deploy orchestrator
+        TaskType.DEPLOYMENT: "code-implementer", # Deployment → code implementer
     }
 
 

@@ -1,0 +1,185 @@
+---
+description: AgentPM agent system and templates
+globs: agentpm/core/agents/**,agentpm/cli/commands/agents/**
+---
+
+# AgentPM Agent System & Templates
+
+## Agent Architecture
+
+### Universal Agent Roles (15 Templates)
+
+1. **implementer.md** - Transform specifications into working code
+2. **tester.md** - Write tests and validate coverage
+3. **specifier.md** - Define requirements and acceptance criteria
+4. **reviewer.md** - Review code quality and patterns
+5. **documenter.md** - Write technical documentation
+6. **debugger.md** - Investigate and fix bugs
+7. **analyzer.md** - Analyze code and generate metrics
+8. **optimizer.md** - Improve performance
+9. **integrator.md** - Connect systems and APIs
+10. **validator.md** - Enforce quality gates
+11. **planner.md** - Break down work and estimate
+12. **automator.md** - Create CI/CD and workflows
+13. **deployer.md** - Deploy and operate systems
+14. **refactorer.md** - Restructure and improve code
+15. **researcher.md** - Evaluate technologies
+
+### Agent Template Structure
+
+**12-Section Standard Operating Procedure**:
+
+1. **Role & Authority** - What this agent does and decides
+2. **Rule Compliance** - Project rules and constraints
+3. **Core Expertise** - Principles and capabilities
+4. **Required Context** - How to load project context
+5. **Standard Operating Procedures** - Step-by-step process
+6. **Communication Protocols** - Input/output specifications
+7. **Quality Gates** - Success criteria
+8. **Domain-Specific Patterns** - Project-specific examples
+9. **Push-Back Mechanisms** - When to challenge requests
+10. **Success Metrics** - How to measure success
+11. **Escalation Paths** - When and how to escalate
+12. **Context-Specific Examples** - Project code examples
+
+### Template Format
+
+**YAML Frontmatter**:
+```yaml
+---
+name: [agent-name]
+description: [Brief description of agent purpose and responsibilities]
+tier: [1|2|3]
+type: [specialist|orchestrator|utility|generic]
+tools: [tool1, tool2, tool3]
+---
+```
+
+**Markdown Body**:
+- 12 sections with ## headings
+- [INSTRUCTION] placeholders for Claude Code
+- Code blocks for examples
+- Checklists for quality gates
+- Cross-references to other agents
+
+### Agent Generation Process
+
+1. **Template Loading**: Load base template from [agentpm/core/agents/templates/](mdc:agentpm/core/agents/templates/)
+2. **Context Composition**: Gather project-specific context
+3. **Claude Code Integration**: Fill [INSTRUCTION] placeholders
+4. **Specialization**: Create project-specific agent
+5. **Database Registration**: Store agent in database
+6. **File Generation**: Write to `.claude/agents/` directory
+
+### [INSTRUCTION] Placeholders
+
+Templates contain placeholders that Claude Code fills with:
+- **Tech Stack**: Detected languages, frameworks, versions
+- **Project Patterns**: From code analysis
+- **Code Examples**: From existing files
+- **Quality Requirements**: From rules table
+- **Time-boxing Limits**: From project rules
+
+**Example**:
+```
+[INSTRUCTION: List detected languages, frameworks, libraries with versions]
+```
+
+**Filled by Claude**:
+```
+- Python 3.11
+- Pydantic 2.5+
+- Click 8.1+
+- Rich 13.7+
+- pytest (testing)
+```
+
+## Agent Management
+
+### CLI Commands
+```bash
+apm agents generate              # Generate all agents from templates
+apm agents list                  # List available agents
+apm agents create <name>         # Create custom agent
+apm agents update <name>         # Update existing agent
+apm agents validate              # Validate agent structure
+```
+
+### Agent Database Model
+
+**Agent Definition**:
+```yaml
+role: "agent-name"
+display_name: "Human Readable Name"
+description: "What this agent does"
+tier: 1|2|3
+category: "orchestrator|sub-agent|specialist|utility|generic"
+sop_content: |
+  # Agent SOP markdown
+capabilities: [list]
+tools: [list]
+dependencies: [list]
+```
+
+### Agent Tiers
+
+- **Tier 1**: Sub-agents (specialized, focused)
+- **Tier 2**: Specialists (domain experts)
+- **Tier 3**: Orchestrators (coordinate multiple agents)
+
+## Design Principles
+
+### 1. Domain-Agnostic
+- Templates describe **universal agent functions**
+- Not technology-specific roles
+- ✅ "Implementation Agent" (universal)
+- ❌ "Python Django Implementer" (too specific)
+
+### 2. Role-Focused
+- Emphasize **what the agent does**
+- Not what technology it uses
+- ✅ "Transform specifications into working solutions"
+- ❌ "Write Python code with Django ORM"
+
+### 3. Context-Driven
+- Placeholders for **project-specific** content
+- Tech stack detection via PluginOrchestrator
+- Pattern extraction via code analysis
+- Rules query from rules table
+- Example code from actual project files
+
+### 4. Composable
+- One base template → Many specialized agents
+- `implementer.md` → `python-django-implementer.md`
+- `implementer.md` → `typescript-react-implementer.md`
+- `implementer.md` → `rust-backend-implementer.md`
+
+## Implementation Guidelines
+
+1. **Follow 12-section structure** in all agent templates
+2. **Use [INSTRUCTION] placeholders** for project-specific content
+3. **Keep templates domain-agnostic** - no hardcoded technology
+4. **Validate agent structure** before database storage
+5. **Maintain consistency** across all agent templates
+6. **Update templates** when adding new capabilities
+7. **Test agent generation** with different project types
+
+## Agent Integration
+
+### Workflow Integration
+- Agents accept tasks via `apm task accept <id> --agent [agent-name]`
+- Begin work via `apm task start <id>`
+- Submit for review via `apm task submit-review <id>`
+- Follow project rules and time-boxing limits
+
+### Context Loading
+- Agents load project context from database
+- Access rules and governance requirements
+- Understand project patterns and conventions
+- Maintain awareness of system-wide impact
+
+### Quality Assurance
+- All agents follow project rules
+- Enforce time-boxing limits
+- Maintain code quality standards
+- Provide proper documentation

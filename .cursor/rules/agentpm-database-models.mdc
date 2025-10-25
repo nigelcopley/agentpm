@@ -1,0 +1,257 @@
+---
+description: AgentPM database models and data structures
+globs: agentpm/core/database/models/**,agentpm/core/database/enums/**
+---
+
+# AgentPM Database Models & Data Structures
+
+## Model Architecture
+
+### Pydantic BaseModel Pattern
+- **Type Safety**: Strict validation with Field constraints
+- **Configuration**: `validate_assignment=True`, `use_enum_values=False`
+- **Validation**: Model validators for complex business rules
+- **Serialization**: JSON-compatible with database storage
+
+### Core Models
+
+#### Project Model
+**Location**: [agentpm/core/database/models/project.py](mdc:agentpm/core/database/models/project.py)
+
+```python
+class Project(BaseModel):
+    id: Optional[int] = None
+    name: str = Field(..., min_length=1, max_length=200)
+    description: Optional[str] = None
+    path: str = Field(..., min_length=1)
+    tech_stack: List[str] = Field(default_factory=list)
+    detected_frameworks: List[str] = Field(default_factory=list)
+    status: ProjectStatus = ProjectStatus.INITIATED
+    business_domain: Optional[str] = None
+    business_description: Optional[str] = None
+    project_type: Optional[ProjectType] = None
+    team: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+```
+
+#### WorkItem Model
+**Location**: [agentpm/core/database/models/work_item.py](mdc:agentpm/core/database/models/work_item.py)
+
+```python
+class WorkItem(BaseModel):
+    id: Optional[int] = None
+    project_id: int
+    parent_work_item_id: Optional[int] = None
+    name: str = Field(..., min_length=1, max_length=200)
+    description: Optional[str] = None
+    type: WorkItemType
+    business_context: Optional[str] = None
+    is_continuous: bool = False
+    effort_estimate_hours: Optional[float] = Field(None, ge=0.1, le=1000.0)
+    status: WorkItemStatus = WorkItemStatus.DRAFT
+    priority: int = Field(3, ge=1, le=5)
+    phase: Optional[Phase] = None
+    due_date: Optional[datetime] = None
+    not_before: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+```
+
+#### Task Model
+**Location**: [agentpm/core/database/models/task.py](mdc:agentpm/core/database/models/task.py)
+
+```python
+class Task(BaseModel):
+    id: Optional[int] = None
+    work_item_id: int
+    name: str = Field(..., min_length=1, max_length=200)
+    description: Optional[str] = None
+    type: TaskType
+    effort_hours: float = Field(..., ge=0.1, le=24.0)
+    status: TaskStatus = TaskStatus.PROPOSED
+    priority: int = Field(3, ge=1, le=5)
+    assigned_to: Optional[str] = None
+    blocked_reason: Optional[str] = None
+    due_date: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+```
+
+## Enumerations
+
+### Status Enums
+**Location**: [agentpm/core/database/enums/status.py](mdc:agentpm/core/database/enums/status.py)
+
+```python
+class ProjectStatus(str, Enum):
+    INITIATED = "initiated"
+    ACTIVE = "active"
+    ON_HOLD = "on_hold"
+    COMPLETED = "completed"
+    ARCHIVED = "archived"
+
+class WorkItemStatus(str, Enum):
+    DRAFT = "draft"
+    READY = "ready"
+    ACTIVE = "active"
+    REVIEW = "review"
+    DONE = "done"
+    ARCHIVED = "archived"
+
+class TaskStatus(str, Enum):
+    PROPOSED = "proposed"
+    VALIDATED = "validated"
+    ACCEPTED = "accepted"
+    IN_PROGRESS = "in_progress"
+    REVIEW = "review"
+    COMPLETED = "completed"
+    BLOCKED = "blocked"
+    CANCELLED = "cancelled"
+    ARCHIVED = "archived"
+```
+
+### Type Enums
+**Location**: [agentpm/core/database/enums/types.py](mdc:agentpm/core/database/enums/types.py)
+
+```python
+class WorkItemType(str, Enum):
+    FEATURE = "feature"
+    ENHANCEMENT = "enhancement"
+    BUGFIX = "bugfix"
+    RESEARCH = "research"
+    PLANNING = "planning"
+    ANALYSIS = "analysis"
+    REFACTORING = "refactoring"
+    INFRASTRUCTURE = "infrastructure"
+    MAINTENANCE = "maintenance"
+    MONITORING = "monitoring"
+
+class TaskType(str, Enum):
+    IMPLEMENTATION = "implementation"
+    TESTING = "testing"
+    DESIGN = "design"
+    DOCUMENTATION = "documentation"
+    RESEARCH = "research"
+    DEPLOYMENT = "deployment"
+    REVIEW = "review"
+    ANALYSIS = "analysis"
+    PLANNING = "planning"
+    MAINTENANCE = "maintenance"
+
+class Phase(str, Enum):
+    D1_DISCOVERY = "d1_discovery"
+    P1_PLAN = "p1_plan"
+    I1_IMPLEMENTATION = "i1_implementation"
+    R1_REVIEW = "r1_review"
+    O1_OPERATIONS = "o1_operations"
+    E1_EVOLUTION = "e1_evolution"
+```
+
+### Enforcement Levels
+```python
+class EnforcementLevel(str, Enum):
+    BLOCK = "block"      # Prevents action
+    LIMIT = "limit"      # Warns but allows
+    GUIDE = "guide"      # Suggests best practice
+```
+
+## Database Service
+
+### Service Pattern
+**Location**: [agentpm/core/database/service.py](mdc:agentpm/core/database/service.py)
+
+```python
+class DatabaseService:
+    def __init__(self, db_path: str):
+        self.db_path = db_path
+        self.engine = create_engine(f"sqlite:///{db_path}")
+        self.SessionLocal = sessionmaker(bind=self.engine)
+    
+    def get_session(self):
+        return self.SessionLocal()
+    
+    def create_project(self, project: Project) -> Project:
+        # Implementation with validation
+        pass
+    
+    def get_project(self, project_id: int) -> Optional[Project]:
+        # Implementation with error handling
+        pass
+```
+
+### Database Methods
+**Location**: [agentpm/core/database/methods/](mdc:agentpm/core/database/methods/)
+
+- **projects.py**: Project CRUD operations
+- **work_items.py**: Work item management
+- **tasks.py**: Task operations
+- **rules.py**: Rule management
+- **agents.py**: Agent storage and retrieval
+
+## Validation Rules
+
+### Field Validation
+```python
+# String length constraints
+name: str = Field(..., min_length=1, max_length=200)
+
+# Numeric constraints
+effort_hours: float = Field(..., ge=0.1, le=24.0)
+priority: int = Field(3, ge=1, le=5)
+
+# Optional fields with defaults
+description: Optional[str] = None
+created_at: datetime = Field(default_factory=datetime.utcnow)
+```
+
+### Model Validators
+```python
+@model_validator(mode='after')
+def validate_business_rules(self):
+    # Custom business logic validation
+    if self.type == WorkItemType.FEATURE and not self.business_context:
+        raise ValueError("Features must have business context")
+    return self
+```
+
+### Enum Validation
+```python
+# Use enum values, not strings
+status: WorkItemStatus = WorkItemStatus.DRAFT
+type: TaskType = TaskType.IMPLEMENTATION
+```
+
+## Database Schema
+
+### Tables
+- **projects**: Project information and metadata
+- **work_items**: Work item definitions and status
+- **tasks**: Task details and workflow state
+- **rules**: Governance rules and enforcement
+- **agents**: Agent definitions and capabilities
+- **context**: Project context and documentation
+- **sessions**: Agent session management
+- **events**: Audit trail and logging
+
+### Relationships
+- **Project** → **WorkItem** (one-to-many)
+- **WorkItem** → **Task** (one-to-many)
+- **WorkItem** → **WorkItem** (self-referential for hierarchy)
+- **Project** → **Rule** (many-to-many)
+- **Project** → **Agent** (many-to-many)
+
+## Implementation Guidelines
+
+1. **Use Pydantic models** for all data structures
+2. **Validate field constraints** with Field() parameters
+3. **Use enums for categorical data** - maintain type safety
+4. **Implement model validators** for complex business rules
+5. **Follow naming conventions** - snake_case for fields
+6. **Include timestamps** for audit trails
+7. **Use Optional types** for nullable fields
+8. **Maintain referential integrity** in relationships
+9. **Validate enum values** at model level
+10. **Use default factories** for mutable defaults

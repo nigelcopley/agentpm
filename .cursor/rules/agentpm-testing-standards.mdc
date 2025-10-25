@@ -1,0 +1,385 @@
+---
+description: AgentPM testing standards and practices
+globs: tests/**,agentpm/core/testing/**
+---
+
+# AgentPM Testing Standards & Practices
+
+## Testing Architecture
+
+### Test Structure
+- **Location**: [tests/](mdc:tests/) directory
+- **Organisation**: Mirror source code structure
+- **Types**: Unit, integration, end-to-end, visual
+- **Coverage**: Minimum 90% code coverage
+
+### Test Categories
+
+#### Unit Tests
+- **Location**: [tests/unit/](mdc:tests/unit/)
+- **Purpose**: Test individual functions and methods
+- **Scope**: Single module or class
+- **Dependencies**: Mocked external dependencies
+- **Speed**: Fast execution (<100ms per test)
+
+#### Integration Tests
+- **Location**: [tests/integration/](mdc:tests/integration/)
+- **Purpose**: Test component interactions
+- **Scope**: Multiple modules working together
+- **Dependencies**: Real database, mocked external services
+- **Speed**: Medium execution (<1s per test)
+
+#### End-to-End Tests
+- **Location**: [tests/e2e/](mdc:tests/e2e/)
+- **Purpose**: Test complete workflows
+- **Scope**: Full application stack
+- **Dependencies**: Real database, real services
+- **Speed**: Slow execution (<10s per test)
+
+#### Visual Tests
+- **Location**: [tests/visual/](mdc:tests/visual/)
+- **Purpose**: Test CLI output and formatting
+- **Scope**: Rich console output validation
+- **Dependencies**: Rich library, console capture
+- **Speed**: Fast execution (<100ms per test)
+
+## Testing Framework
+
+### Pytest Configuration
+**Location**: [pyproject.toml](mdc:pyproject.toml)
+
+```toml
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--cov=agentpm",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-fail-under=90"
+]
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "e2e: End-to-end tests",
+    "visual: Visual tests",
+    "slow: Slow running tests"
+]
+```
+
+### Test Fixtures
+```python
+import pytest
+from agentpm.core.database.service import DatabaseService
+from agentpm.core.database.models import Project, WorkItem, Task
+
+@pytest.fixture
+def db_service(tmp_path):
+    """Create temporary database service."""
+    db_path = tmp_path / "test.db"
+    return DatabaseService(str(db_path))
+
+@pytest.fixture
+def sample_project():
+    """Create sample project for testing."""
+    return Project(
+        name="Test Project",
+        description="Test project description",
+        path="/tmp/test_project"
+    )
+
+@pytest.fixture
+def sample_work_item(sample_project):
+    """Create sample work item for testing."""
+    return WorkItem(
+        project_id=1,
+        name="Test Feature",
+        type=WorkItemType.FEATURE,
+        description="Test feature description"
+    )
+```
+
+## Test Patterns
+
+### Unit Test Pattern
+```python
+def test_workflow_service_transition_state_success(db_service, sample_work_item):
+    """Test successful state transition."""
+    # Arrange
+    service = WorkflowService(db_service)
+    work_item_id = db_service.create_work_item(sample_work_item).id
+    
+    # Act
+    result = service.transition_state(work_item_id, WorkItemStatus.ACTIVE)
+    
+    # Assert
+    assert result is True
+    updated_item = db_service.get_work_item(work_item_id)
+    assert updated_item.status == WorkItemStatus.ACTIVE
+```
+
+### Integration Test Pattern
+```python
+@pytest.mark.integration
+def test_work_item_creation_workflow(db_service, sample_project):
+    """Test complete work item creation workflow."""
+    # Arrange
+    project = db_service.create_project(sample_project)
+    
+    # Act
+    work_item = WorkItem(
+        project_id=project.id,
+        name="Integration Test Feature",
+        type=WorkItemType.FEATURE
+    )
+    created_item = db_service.create_work_item(work_item)
+    
+    # Assert
+    assert created_item.id is not None
+    assert created_item.status == WorkItemStatus.DRAFT
+    assert created_item.project_id == project.id
+```
+
+### CLI Test Pattern
+```python
+@pytest.mark.visual
+def test_work_item_create_command(runner, db_service):
+    """Test work item creation CLI command."""
+    # Arrange
+    project = create_test_project(db_service)
+    
+    # Act
+    result = runner.invoke(work_item.create, [
+        "Test Feature",
+        "--type", "feature",
+        "--project-id", str(project.id)
+    ])
+    
+    # Assert
+    assert result.exit_code == 0
+    assert "Work item created successfully" in result.output
+    assert "Test Feature" in result.output
+```
+
+## Test Data Management
+
+### Test Factories
+```python
+class ProjectFactory:
+    """Factory for creating test projects."""
+    
+    @staticmethod
+    def create(name: str = "Test Project", **kwargs) -> Project:
+        """Create test project with defaults."""
+        defaults = {
+            "name": name,
+            "description": "Test project description",
+            "path": "/tmp/test_project",
+            "status": ProjectStatus.ACTIVE
+        }
+        defaults.update(kwargs)
+        return Project(**defaults)
+
+class WorkItemFactory:
+    """Factory for creating test work items."""
+    
+    @staticmethod
+    def create(project_id: int, name: str = "Test Work Item", **kwargs) -> WorkItem:
+        """Create test work item with defaults."""
+        defaults = {
+            "project_id": project_id,
+            "name": name,
+            "type": WorkItemType.FEATURE,
+            "status": WorkItemStatus.DRAFT
+        }
+        defaults.update(kwargs)
+        return WorkItem(**defaults)
+```
+
+### Test Database
+```python
+@pytest.fixture
+def test_db(tmp_path):
+    """Create test database with sample data."""
+    db_path = tmp_path / "test.db"
+    db_service = DatabaseService(str(db_path))
+    
+    # Create sample data
+    project = ProjectFactory.create()
+    db_service.create_project(project)
+    
+    work_item = WorkItemFactory.create(project_id=1)
+    db_service.create_work_item(work_item)
+    
+    return db_service
+```
+
+## Mocking and Stubbing
+
+### External Dependencies
+```python
+from unittest.mock import Mock, patch
+
+@pytest.fixture
+def mock_claude_service():
+    """Mock Claude service for testing."""
+    mock = Mock()
+    mock.generate_agent.return_value = "Generated agent content"
+    return mock
+
+def test_agent_generation_with_mock(mock_claude_service):
+    """Test agent generation with mocked Claude service."""
+    with patch('agentpm.core.agents.generator.claude_service', mock_claude_service):
+        result = generate_agent("test-agent", {})
+        assert result == "Generated agent content"
+        mock_claude_service.generate_agent.assert_called_once()
+```
+
+### Database Mocking
+```python
+@pytest.fixture
+def mock_db_service():
+    """Mock database service for unit tests."""
+    mock = Mock()
+    mock.get_project.return_value = ProjectFactory.create()
+    mock.create_work_item.return_value = WorkItemFactory.create(project_id=1)
+    return mock
+```
+
+## Test Coverage
+
+### Coverage Requirements
+- **Minimum**: 90% code coverage
+- **Critical Paths**: 100% coverage for workflow logic
+- **Business Logic**: 100% coverage for validation rules
+- **CLI Commands**: 100% coverage for user-facing commands
+
+### Coverage Reporting
+```bash
+# Run tests with coverage
+pytest --cov=agentpm --cov-report=html
+
+# View coverage report
+open htmlcov/index.html
+
+# Check coverage threshold
+pytest --cov=agentpm --cov-fail-under=90
+```
+
+### Coverage Exclusions
+```python
+# Exclude from coverage
+# pragma: no cover
+def debug_function():
+    """Debug function excluded from coverage."""
+    pass
+
+# Exclude entire file
+# coverage: ignore file
+```
+
+## Performance Testing
+
+### Benchmark Tests
+```python
+@pytest.mark.slow
+def test_workflow_service_performance(db_service):
+    """Test workflow service performance."""
+    import time
+    
+    service = WorkflowService(db_service)
+    start_time = time.time()
+    
+    # Perform 100 state transitions
+    for i in range(100):
+        work_item = WorkItemFactory.create(project_id=1, name=f"Item {i}")
+        item_id = db_service.create_work_item(work_item).id
+        service.transition_state(item_id, WorkItemStatus.ACTIVE)
+    
+    end_time = time.time()
+    duration = end_time - start_time
+    
+    # Should complete in under 5 seconds
+    assert duration < 5.0
+```
+
+### Load Testing
+```python
+@pytest.mark.slow
+def test_database_concurrent_access(db_service):
+    """Test database concurrent access."""
+    import threading
+    import time
+    
+    results = []
+    
+    def create_work_item(thread_id):
+        """Create work item in thread."""
+        work_item = WorkItemFactory.create(
+            project_id=1,
+            name=f"Thread {thread_id} Item"
+        )
+        result = db_service.create_work_item(work_item)
+        results.append(result)
+    
+    # Create 10 concurrent threads
+    threads = []
+    for i in range(10):
+        thread = threading.Thread(target=create_work_item, args=(i,))
+        threads.append(thread)
+        thread.start()
+    
+    # Wait for all threads to complete
+    for thread in threads:
+        thread.join()
+    
+    # Verify all work items were created
+    assert len(results) == 10
+```
+
+## Test Utilities
+
+### Test Helpers
+```python
+def assert_work_item_created(result, expected_name: str):
+    """Assert work item was created successfully."""
+    assert result.exit_code == 0
+    assert "created successfully" in result.output
+    assert expected_name in result.output
+
+def assert_validation_error(result, expected_error: str):
+    """Assert validation error occurred."""
+    assert result.exit_code != 0
+    assert expected_error in result.output
+
+def capture_console_output(func, *args, **kwargs):
+    """Capture Rich console output for testing."""
+    from io import StringIO
+    from rich.console import Console
+    
+    console = Console(file=StringIO())
+    func(console, *args, **kwargs)
+    return console.file.getvalue()
+```
+
+## Implementation Guidelines
+
+1. **Write tests first** (TDD approach where possible)
+2. **Use descriptive test names** that explain what is being tested
+3. **Follow AAA pattern** (Arrange, Act, Assert)
+4. **Mock external dependencies** in unit tests
+5. **Use real dependencies** in integration tests
+6. **Test error conditions** as well as success cases
+7. **Maintain test data factories** for consistent test data
+8. **Run tests frequently** during development
+9. **Keep tests fast** - unit tests should run in <100ms
+10. **Document test purpose** with clear docstrings
+11. **Use appropriate test markers** for different test types
+12. **Maintain high coverage** but focus on meaningful coverage
+13. **Test edge cases** and boundary conditions
+14. **Use fixtures** for common test setup
+15. **Clean up test data** after each test

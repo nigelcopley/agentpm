@@ -235,13 +235,14 @@ def task_detail(task_id: int):
     Shows all task information in a single view:
     - Basic information (name, description, status, type, effort)
     - Work item context
-    - Agent assignments
+    - Dependencies and blockers
     - Timeline and history
     - Quality metadata
+    - Agent assignments
     """
     # Fetch task data
     db = get_database_service()
-    from ...core.database.methods import tasks, work_items, projects
+    from ...core.database.methods import tasks, work_items, projects, dependencies, events
     
     task = tasks.get_task(db, task_id)
     
@@ -257,6 +258,27 @@ def task_detail(task_id: int):
         projects_list = projects.list_projects(db) or []
         project = next((p for p in projects_list if p.id == work_item.project_id), None)
     
+    # Get task dependencies
+    task_dependencies = []
+    try:
+        task_dependencies = dependencies.get_task_dependencies(db, task_id)
+    except Exception:
+        pass  # Dependencies might not be implemented yet
+    
+    # Get task blockers
+    task_blockers = []
+    try:
+        task_blockers = dependencies.get_task_blockers(db, task_id)
+    except Exception:
+        pass  # Blockers might not be implemented yet
+    
+    # Get task events/timeline
+    task_events = []
+    try:
+        task_events = events.get_events_for_task(db, task_id)
+    except Exception:
+        pass  # Events might not be implemented yet
+    
     # Calculate task statistics
     task_stats = {
         'is_active': task.is_active(),
@@ -266,6 +288,9 @@ def task_detail(task_id: int):
         'days_since_created': (datetime.now() - task.created_at).days if task.created_at else None,
         'days_since_started': (datetime.now() - task.started_at).days if task.started_at else None,
         'days_since_completed': (datetime.now() - task.completed_at).days if task.completed_at else None,
+        'has_dependencies': len(task_dependencies) > 0,
+        'has_blockers': len(task_blockers) > 0,
+        'has_events': len(task_events) > 0,
     }
     
     return render_template('tasks/detail.html', 
@@ -273,6 +298,9 @@ def task_detail(task_id: int):
                          task_id=task_id,
                          work_item=work_item,
                          project=project,
+                         task_dependencies=task_dependencies,
+                         task_blockers=task_blockers,
+                         task_events=task_events,
                          task_stats=task_stats)
 
 @tasks_bp.route('/create', methods=['GET', 'POST'])

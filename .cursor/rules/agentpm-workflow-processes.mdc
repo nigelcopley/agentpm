@@ -1,0 +1,100 @@
+---
+description: AgentPM workflow processes and state management
+globs: agentpm/core/workflow/**,agentpm/cli/commands/work_item/**,agentpm/cli/commands/task/**
+---
+
+# AgentPM Workflow Processes & State Management
+
+## Workflow Architecture
+
+### Phase-Based Lifecycle
+The system uses a 6-phase workflow: **D1→P1→I1→R1→O1→E1**
+
+- **D1 Discovery**: Gathering requirements and understanding
+- **P1 Plan**: Planning and design phase
+- **I1 Implementation**: Building the solution
+- **R1 Review**: Quality validation and testing
+- **O1 Operations**: Deployment and operations
+- **E1 Evolution**: Learning and improvement
+
+### Work Item Types & Phase Mapping
+
+Different work item types follow different phase sequences:
+
+- **FEATURE**: Full lifecycle (D1→P1→I1→R1→O1→E1)
+- **ENHANCEMENT**: D1→P1→I1→R1→E1 (skip O1)
+- **BUGFIX**: I1→R1 (skip discovery/planning)
+- **RESEARCH**: D1→P1 (no implementation)
+- **PLANNING**: D1→P1 (no implementation)
+- **ANALYSIS**: D1→P1 (can be ACTIVE in P1)
+- **REFACTORING**: P1→I1→R1 (skip discovery)
+- **INFRASTRUCTURE**: D1→P1→I1→R1→O1 (no evolution)
+- **MAINTENANCE**: I1→O1→E1 (ongoing work)
+- **MONITORING**: O1→E1 (ongoing monitoring)
+
+### State Machine
+
+**Unified 6-State Workflow**:
+1. **DRAFT** - Initial creation
+2. **READY** - Validated and ready to start
+3. **ACTIVE** - Currently being worked on
+4. **REVIEW** - Under review
+5. **DONE** - Completed successfully
+6. **ARCHIVED** - Historical record
+
+### Time-Boxing Rules
+
+**Strict Enforcement**:
+- **IMPLEMENTATION** tasks: ≤4 hours (BLOCK level)
+- **TESTING** tasks: ≤6 hours (BLOCK level)
+- **DESIGN** tasks: ≤8 hours (LIMIT level)
+- **DOCUMENTATION** tasks: ≤4 hours (LIMIT level)
+
+### Quality Gates
+
+**Required Task Types by Work Item**:
+- **FEATURE**: Must have DESIGN + IMPLEMENTATION + TESTING + DOCUMENTATION
+- **ENHANCEMENT**: Must have IMPLEMENTATION + TESTING
+- **BUGFIX**: Must have IMPLEMENTATION + TESTING
+- **RESEARCH**: Must have RESEARCH + DOCUMENTATION
+
+### Workflow Commands
+
+**Work Item Management**:
+```bash
+apm work-item create "Name" --type=feature
+apm work-item update <id> --status=ready
+apm work-item list --status=active
+```
+
+**Task Management**:
+```bash
+apm task create "Name" --work-item-id=1 --type=implementation --effort=3
+apm task start <id>
+apm task submit-review <id>
+apm task complete <id>
+```
+
+### State Transition Validation
+
+**WorkflowService** enforces:
+- Phase-to-status mapping validation
+- Time-boxing limits
+- Required task dependencies
+- Terminal state protection (DONE/CANCELLED/ARCHIVED)
+
+### Phase Progression
+
+**PhaseValidator** ensures:
+- Gate requirements met before phase advancement
+- Evidence-based progression with confidence scoring
+- Audit trail for all transitions
+- Transactional updates (atomic state changes)
+
+## Implementation Guidelines
+
+1. **Always validate state transitions** through WorkflowService
+2. **Respect time-boxing limits** - use BLOCK enforcement
+3. **Follow phase sequences** for work item types
+4. **Use proper CLI commands** for state changes
+5. **Maintain audit trails** for all workflow actions

@@ -1,0 +1,16 @@
+{
+  "plugin_enabled": true,
+  "verbose_logging": false,
+  "hooks": {
+    "enabled": {
+      "session_start": true,
+      "session_end": true,
+      "prompt_submit": true
+    }
+  },
+  "memory": {
+    "auto_load_memory": true,
+    "auto_generate_memory": true,
+    "generation_frequency": "on_change"
+  }
+}

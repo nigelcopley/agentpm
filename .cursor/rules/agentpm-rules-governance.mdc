@@ -1,0 +1,141 @@
+---
+description: AgentPM rules and governance system
+globs: agentpm/core/rules/**,agentpm/cli/commands/rules/**
+---
+
+# AgentPM Rules & Governance System
+
+## Rules Architecture
+
+### Rule Categories (251 Total Rules)
+
+1. **Development Principles (DP)** - Time-boxing, quality standards
+2. **Testing Standards (TEST)** - Coverage, test types, quality gates
+3. **Security Standards (SEC)** - Authentication, authorization, data protection
+4. **Code Quality (CQ)** - Standards, patterns, architecture
+5. **Documentation (DOC)** - Requirements, standards, maintenance
+6. **Deployment (DEP)** - CI/CD, infrastructure, monitoring
+7. **Governance (GOV)** - Compliance, access control, processes
+
+### Enforcement Levels
+
+- **BLOCK**: Prevents action (e.g., time-boxing violations)
+- **LIMIT**: Warns but allows (e.g., design task duration)
+- **GUIDE**: Suggests best practice (e.g., documentation standards)
+
+### Preset System
+
+**Four Preset Levels**:
+- **minimal** (15 rules): Solo developer, prototype, learning
+- **standard** (77 rules): Small team, MVP stage, startup
+- **professional** (226 rules): Established team, production system
+- **enterprise** (251 rules): Large organisation, compliance-heavy
+
+### Rule Structure
+
+**YAML Format**:
+```yaml
+- rule_id: DP-001
+  name: time-boxing-implementation
+  description: "IMPLEMENTATION tasks ≤4h"
+  rationale: Prevents scope creep
+  category: Development Principles
+  enforcement_level: BLOCK
+  presets: [enterprise, professional, standard, minimal]
+  config:
+    max_hours: 4.0
+  enabled_by_default: true
+  validation_logic: effort_hours > 4.0
+```
+
+## Key Rules
+
+### Time-Boxing Rules (BLOCK Level)
+- **DP-001**: IMPLEMENTATION tasks ≤4 hours
+- **DP-002**: TESTING tasks ≤6 hours
+- **DP-003**: DESIGN tasks ≤8 hours
+- **DP-004**: DOCUMENTATION tasks ≤4 hours
+
+### Quality Gates
+- **TEST-002**: Unit tests for all logic
+- **TEST-003**: Integration tests required
+- **CQ-001**: Code review required
+- **DOC-001**: Documentation for all features
+
+### Security Standards
+- **SEC-001**: Authentication required
+- **SEC-002**: Input validation mandatory
+- **SEC-003**: Secure configuration
+- **SEC-004**: Data encryption
+
+## Rules Management
+
+### CLI Commands
+```bash
+apm rules list                    # Show all rules
+apm rules enable <rule-id>        # Enable specific rule
+apm rules disable <rule-id>       # Disable specific rule
+apm rules validate                # Check rule compliance
+apm rules preset <preset-name>    # Apply preset rules
+```
+
+### Rule Loading Process
+
+1. **QuestionnaireService**: 18-question configuration during `apm init`
+2. **PresetSelector**: 3-axis scoring (Scale + Maturity + Governance)
+3. **RuleGenerationService**: Orchestrates rule loading
+4. **DefaultRulesLoader**: Loads from YAML catalog or hardcoded defaults
+5. **Database Storage**: Rules persisted for AI agent enforcement
+
+### Rule Validation
+
+**RuleValidationService** provides:
+- Real-time compliance checking
+- Violation reporting
+- Enforcement level handling
+- Integration with workflow system
+
+## Implementation Guidelines
+
+1. **Always check rule compliance** before state transitions
+2. **Respect BLOCK-level rules** - they prevent actions
+3. **Use appropriate presets** for project maturity
+4. **Validate against rules** in all workflow operations
+5. **Maintain rule documentation** and rationale
+
+## Rule Categories Reference
+
+### Development Principles (DP-001 to DP-020)
+- Time-boxing limits for all task types
+- Quality standards and practices
+- Development workflow enforcement
+
+### Testing Standards (TEST-001 to TEST-030)
+- Unit, integration, and end-to-end testing
+- Coverage requirements and thresholds
+- Test automation and CI/CD integration
+
+### Security Standards (SEC-001 to SEC-025)
+- Authentication and authorization
+- Data protection and encryption
+- Secure coding practices
+
+### Code Quality (CQ-001 to CQ-040)
+- Coding standards and patterns
+- Architecture principles
+- Code review requirements
+
+### Documentation (DOC-001 to DOC-020)
+- Documentation standards
+- API documentation requirements
+- User guide maintenance
+
+### Deployment (DEP-001 to DEP-030)
+- CI/CD pipeline requirements
+- Infrastructure as code
+- Monitoring and alerting
+
+### Governance (GOV-001 to GOV-015)
+- Compliance requirements
+- Access control and audit
+- Process governance
