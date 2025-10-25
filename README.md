@@ -1,457 +1,569 @@
 # APM (Agent Project Manager)
 
-**Quality-Gated Coding Agent Enablement System**
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Tests: 2,230](https://img.shields.io/badge/tests-2,230-green.svg)](https://github.com/nigelcopley/agentpm)
+[![Coverage: 93%+](https://img.shields.io/badge/coverage-93%25+-brightgreen.svg)](https://github.com/nigelcopley/agentpm)
 
-A sophisticated project management system that provides AI coding agents with hierarchical context, framework intelligence, and enforced quality gates to ensure professional-quality deliverables.
+**Database-Driven AI Agent Enablement System with Quality Gates**
+
+APM transforms how AI coding agents work by providing persistent memory, hierarchical context, and enforced quality gates. No more context loss between sessions, no more agents skipping critical steps, no more guessing what the codebase uses.
 
 ---
 
-## 🎯 **Mission**
+## Why APM?
 
-Eliminate AI coding agent failures through:
-- **Persistent Memory**: Context survives across sessions (database-driven)
+**The Problem**: AI agents lose context between sessions, skip quality steps, and lack framework-specific knowledge.
+
+**The Solution**: APM provides:
+
+- **Persistent Memory**: Context survives across sessions (database-driven, not file-based)
+- **Quality Enforcement**: 75 rules with strict gates agents cannot bypass
+- **Framework Intelligence**: 11 plugins extract project facts and provide code examples
+- **Time-Boxing**: Forces decomposition (implementation tasks limited to 4 hours)
 - **Hierarchical Context**: Project → Work Item → Task with appropriate granularity
-- **Framework Intelligence**: Plugin-extracted facts and code amalgamations
-- **Quality Enforcement**: Strict gates ensure agents follow proper development process
-- **Dependency Management**: Structured task dependencies and blocker tracking
 
 ---
 
-## ⚡ **Quick Start**
+## Quick Demo
 
 ```bash
-# Install APM (Agent Project Manager)
+# Initialize APM in your project
+apm init "My Django App" /path/to/project
+# → Detects: Python 3.11, Django 5.0, pytest 8.0
+# → Extracts: 186KB class definitions, 31KB function signatures
+# → Generates: Framework-specific code amalgamations
+
+# Create a feature with quality requirements
+apm work-item create "Add User Authentication" --type feature
+# → System automatically requires: DESIGN, IMPLEMENTATION, TESTING, DOCUMENTATION tasks
+# → Enforces: Time-boxing, quality gates, acceptance criteria
+
+# Create time-boxed tasks
+apm task create "Design auth schema" --type design --effort 3h
+apm task create "Implement User model" --type implementation --effort 3.5h
+# → IMPLEMENTATION tasks strictly limited to 4 hours (forces decomposition)
+
+# Agent gets complete hierarchical context
+apm task context 123
+# Returns:
+# - Project facts (Django 5.0, Python 3.11, installed packages)
+# - Work item scope (feature goals, acceptance criteria)
+# - Task details (objective, time-box, dependencies)
+# - Code examples (relevant Django patterns from your codebase)
+```
+
+**Result**: Agents work with full context, follow quality processes, and deliver professional results.
+
+---
+
+## Features
+
+### Database-Driven Architecture
+
+- **Persistent Context**: Survives restarts, switches between projects, works across AI providers
+- **57 Database Tables**: Projects, work items, tasks, dependencies, contexts, rules, plugins
+- **Relationship Tracking**: Hard/soft dependencies, blockers, hierarchical task structures
+- **Automated Triggers**: 7 SQLite triggers enforce workflow rules and auto-resolve blockers
+
+### Quality Gate System
+
+- **75 Enforced Rules**: Development principles, testing standards, security requirements, workflow governance
+- **Block-Level Enforcement**: Agents cannot bypass critical gates (e.g., tests must pass before review)
+- **Time-Boxing**: Implementation ≤4h, Testing ≤6h, Design ≤8h (STRICT enforcement)
+- **Type-Specific Validation**: FEATURE requires DESIGN + IMPLEMENTATION + TESTING + DOCUMENTATION tasks
+
+### Framework Intelligence
+
+- **11 Active Plugins**: Python, JavaScript, TypeScript, Click, Django, React, HTMX, Alpine.js, Tailwind CSS, pytest, SQLite
+- **Automatic Detection**: Scans project for frameworks, extracts versions, dependencies, structure
+- **Code Amalgamations**: Generates searchable code groupings (classes, functions, components)
+- **Project Facts**: Not recommendations - actual versions, dependencies, patterns from YOUR codebase
+
+### Multi-Agent Orchestration
+
+- **85 Specialized Agents**: Phase orchestrators, domain specialists, single-purpose sub-agents
+- **Hierarchical Delegation**: Master orchestrator → Phase orchestrator → Specialist → Sub-agent
+- **Context Assembly**: Automatic hierarchical context delivery with confidence scoring
+- **Provider Agnostic**: Works with Claude Code, Cursor, Claude Desktop, custom integrations
+
+### Professional Workflow
+
+- **6-Phase Lifecycle**: Discovery → Planning → Implementation → Review → Operations → Evolution
+- **State Machine**: 9 states with quality-gated transitions (proposed → validated → accepted → in_progress → review → completed)
+- **Dependency Management**: Task and work item dependencies with blocking enforcement
+- **Audit Trail**: Complete history of state changes, assignments, quality gate passes
+
+---
+
+## Installation
+
+### Prerequisites
+
+- Python 3.9 or higher
+- Git (for version control integration)
+- SQLite 3.35+ (usually included with Python)
+
+### Install from GitHub
+
+```bash
+# Clone the repository
+git clone https://github.com/nigelcopley/agentpm.git
+cd agentpm
+
+# Install in development mode
 pip install -e .
 
-# Initialize project (creates database, detects frameworks)
-apm init "My Django App" /path/to/project
-# → Detects: Python, Django, pytest
-# → Generates: 222KB code amalgamations
-# → Extracts: Versions, dependencies, structure
+# Verify installation
+apm --version
+```
 
-# Generate agent files (database → provider-specific files)
-apm agents generate --all
-# → Creates: .claude/agents/ directory with 50+ agent SOPs
-# → Providers: Claude Code, Claude Desktop, custom
+### Install from PyPI (Coming Soon)
 
-# Create work item (with type-driven validation)
-apm work-item create "Add User Authentication" --type feature
-# → System requires: DESIGN, IMPLEMENTATION, TESTING, DOCUMENTATION tasks
-
-# Create tasks (time-boxed and type-validated)
-apm task create "Design auth schema" --type design --effort 3h
-apm task create "Implement User model" --type implementation --effort 4h
-# → IMPLEMENTATION tasks limited to 4h (enforced)
-
-# Agent gets complete context
-apm task context 123
-# → Returns: Project facts + Work item scope + Task details + Code examples
+```bash
+pip install agentpm
 ```
 
 ---
 
-## 🏗️ **Architecture**
+## Quick Start
 
-### **Phase 1: Foundation** (✅ COMPLETE)
-
-**Database Foundation**:
-- 10 tables: 6 entities + 3 relationships (dependencies/blockers) + 1 system
-- Pydantic three-layer pattern: Models → Adapters → Methods
-- 7 SQLite triggers for workflow automation
-- 28 indexes for performance
-- **2,230+ tests passing (93-96% coverage)**
-
-**Plugin System**:
-- 11 active plugins: Python, JavaScript, TypeScript, Click, Django, React, HTMX, Alpine.js, Tailwind CSS, pytest, SQLite
-- Plugin utilities: dependency_parsers, code_extractors, structure_analyzers
-- 222KB code amalgamations generated from real project
-- **12 tests passing**
-
-**Security Framework**:
-- Input validation (prevents injection, path traversal)
-- Command security (whitelist, safe execution)
-- Output sanitization (sensitive data redaction)
-- **4 tests passing**
-
----
-
-### **Phase 2: Core Systems** (✅ 95% COMPLETE)
-
-**Workflow Management** (✅ 100% COMPLETE):
-- Quality-gated transitions (state machine enforced)
-- Time-boxing enforcement (IMPLEMENTATION ≤4h STRICT)
-- Type-specific validation (FEATURE requires DESIGN+IMPL+TEST+DOC)
-- Dependency validation (hard deps block start, blockers prevent completion)
-- **93 tests passing, 96% coverage, production ready**
-
-**CLI Interface** (✅ 100% COMPLETE - WI-007):
-- 22 commands: agents, claude-code, commands, context, detect, document, idea, init, memory, migrate, provider, rules, search, session, skills, status, summary, task, template, testing, web, work-item
-- LazyGroup pattern (<100ms startup)
-- Rich formatting (tables, panels, colors)
-- Time-boxing enforced at CLI boundary
-- Quality gates displayed in real-time
-- **107 tests passing, 92% coverage, production ready**
-
-**Task Dependencies** (✅ 100% COMPLETE - WI-008):
-- Hard/soft dependency types
-- Internal + external blocker tracking
-- Workflow integration (blocking enforced)
-- 5 CLI commands (add-dependency, add-blocker, list, resolve)
-- Auto-resolution SQL trigger
-- **6 tests passing, 100% coverage, exceeds Asana capabilities**
-
-**Context System** (Specified):
-- Hierarchical context assembly (Project + Work Item + Task)
-- Plugin fact integration
-- Confidence scoring (RED/YELLOW/GREEN)
-- Code amalgamation references
-
-**CLI Interface** (Specified):
-- Deferred until Workflow + Context complete
-
----
-
-## 📊 **Type System**
-
-### **Work Item Types** (7 strategic deliverables):
-- **FEATURE**: New capability/system
-- **ENHANCEMENT**: Improve existing
-- **BUGFIX**: Fix substantial defect
-- **RESEARCH**: Investigation/spike
-- **PLANNING**: Architecture/design/roadmap
-- **REFACTORING**: Code improvement
-- **INFRASTRUCTURE**: DevOps/platform work
-
-### **Task Types** (10 tactical activities):
-- **DESIGN**: Design/planning (max 8h)
-- **IMPLEMENTATION**: Write code (max 4h - STRICT)
-- **TESTING**: Write tests (max 6h)
-- **BUGFIX**: Fix bugs (max 4h)
-- **REFACTORING**: Improve code (max 4h)
-- **DOCUMENTATION**: Write docs (max 6h)
-- **DEPLOYMENT**: Deploy/release (max 4h)
-- **REVIEW**: Code review (max 2h)
-- **ANALYSIS**: Research (max 8h)
-- **SIMPLE**: Quick tasks (max 1h)
-
----
-
-## 🚪 **Quality Gates**
-
-### **State Transitions Require Quality**:
-
-**proposed → validated**:
-- ✅ All required task types present (FEATURE needs DESIGN+IMPLEMENTATION+TESTING+DOCUMENTATION)
-- ✅ quality_metadata initialized
-- ✅ No time-box violations
-
-**validated → accepted**:
-- ✅ All ambiguities resolved
-- ✅ Agent assigned
-- ✅ Design approved
-
-**in_progress → review**:
-- ✅ All acceptance criteria met
-- ✅ Tests written and passing
-- ✅ Code committed
-
-**review → completed**:
-- ✅ Quality review passed
-- ✅ All feedback addressed
-- ✅ Documentation complete
-
-**Agents cannot skip gates** - system enforces quality.
-
----
-
-## 🔌 **Plugin System**
-
-### **Available Plugins**:
-
-**Phase 1** (Self-Hosting):
-- **Python**: Versions, dependencies, structure, standards → 186KB classes, 31KB functions
-- **pytest**: Test framework, fixtures, patterns
-- **Click**: CLI commands, structure
-- **SQLite**: Schema, tables, indexes
-
-**Phase 2A** (Planned - Priority 1, 14h):
-- **JavaScript/Node.js**: Language foundation (enables 8+ plugins)
-- **TypeScript**: Modern full-stack (80%+ adoption)
-
-**Phase 2B** (Planned - Priority 2, 22h):
-- **Django**: Models, views, URLs, admin
-- **React**: Components, hooks, state management
-- **Docker**: Containerization, docker-compose
-
-**Phase 2C** (Planned - Priority 3, 16h):
-- **Jest**: JavaScript testing
-- **PostgreSQL**: Production database
-- **Git**: VCS intelligence
-
-**Total**: 52 hours → 95% real-world coverage
-
-See: `docs/components/plugins/ROADMAP.md` (plugin development roadmap)
-
-### **What Plugins Provide**:
-1. **Project Facts**: Versions, dependencies, structure, code standards
-2. **Code Amalgamations**: Searchable code groupings in `.agentpm/contexts/`
-3. **Not Recommendations**: Plugins extract facts, don't advise
-
----
-
-## 🗄️ **Database Schema**
-
-### **Core Entities**:
-- **projects**: Container with tech stack
-- **work_items**: Features, bugs, research (strategic)
-- **tasks**: Design, implementation, testing (tactical)
-- **agents**: AI assistants with SOPs
-- **contexts**: UnifiedSixW structure + confidence scoring
-- **rules**: Quality gates, enforcement levels
-
-### **Relationships**:
-- **task_dependencies**: Task→Task prerequisites
-- **task_blockers**: Impediment tracking with auto-resolution
-- **work_item_dependencies**: Work Item→Work Item prerequisites
-
-### **Features**:
-- Unified 9-state workflow (proposed → completed)
-- Hierarchical status (ProjectStatus, WorkItemStatus, TaskStatus)
-- Quality metadata (JSON field for gate tracking)
-- 7 triggers for automation
-
----
-
-## 🧪 **Testing**
+### 1. Initialize Your Project
 
 ```bash
-# Run all tests-BAK
+# Initialize in current directory
+apm init "My Project"
+
+# Or specify path
+apm init "My Django App" /path/to/project
+```
+
+This creates:
+- `.agentpm/data/agentpm.db` - SQLite database with all project data
+- `.agentpm/contexts/` - Code amalgamations and extracted facts
+- `.agentpm/cache/` - Temporary cache files
+- Detects frameworks and extracts project intelligence
+
+### 2. Create Your First Work Item
+
+```bash
+# Create a feature
+apm work-item create "User Registration System" --type feature
+
+# View quality requirements
+apm work-item show 1
+# Shows: Required task types, quality gates, acceptance criteria template
+```
+
+### 3. Break Down Into Tasks
+
+```bash
+# Design phase (max 8 hours)
+apm task create "Design user schema" --type design --effort 3h --work-item 1
+
+# Implementation (max 4 hours - STRICT)
+apm task create "Implement User model" --type implementation --effort 3.5h --work-item 1
+apm task create "Create registration view" --type implementation --effort 3h --work-item 1
+
+# Testing (max 6 hours)
+apm task create "Test user registration flow" --type testing --effort 4h --work-item 1
+
+# Documentation (max 4 hours)
+apm task create "Document registration API" --type documentation --effort 2h --work-item 1
+```
+
+### 4. Work Through Tasks
+
+```bash
+# Start a task
+apm task start 2
+
+# Get full context for your agent
+apm task context 2
+# Returns: Project facts + Work item scope + Task details + Code examples
+
+# Complete the task
+apm task complete 2
+```
+
+### 5. Advance Through Phases
+
+```bash
+# Automatic progression (recommended)
+apm work-item next 1
+# Automatically advances to next logical phase when gates pass
+
+# Explicit control (advanced)
+apm work-item validate 1      # Check quality gates
+apm work-item start 1         # Begin implementation
+apm work-item submit-review 1 # Submit for review
+```
+
+---
+
+## Core Concepts
+
+### Quality Gates
+
+Gates ensure agents follow professional development processes:
+
+- **proposed → validated**: All required task types present, no time-box violations
+- **validated → accepted**: Ambiguities resolved, agent assigned, design approved
+- **accepted → in_progress**: Dependencies met, resources allocated
+- **in_progress → review**: All acceptance criteria met, tests passing, code committed
+- **review → completed**: Quality review passed, documentation complete
+
+**Agents cannot bypass gates** - the database enforces quality.
+
+### Time-Boxing Philosophy
+
+Time-boxing forces proper decomposition:
+
+- **Implementation ≤4h**: If it takes longer, break it down further
+- **Testing ≤6h**: Focused test suites, not marathon sessions
+- **Design ≤8h**: High-level design, not over-engineering
+- **Documentation ≤4h**: Clear, concise documentation
+
+**Benefits**: Better estimates, smaller commits, easier reviews, faster feedback.
+
+### Three-Layer Architecture
+
+All database operations follow a consistent pattern:
+
+1. **Models** (Pydantic): Type-safe business objects with validation
+2. **Adapters**: Convert between Models and SQLite rows
+3. **Methods**: Business logic and database operations
+
+**Result**: Maintainable, testable, type-safe codebase with 155,000+ lines of code.
+
+### Plugin System
+
+Plugins extract facts from your project:
+
+- **Automatic Detection**: Scans for frameworks, analyzes structure
+- **Version Extraction**: Actual versions from requirements.txt, package.json, etc.
+- **Code Analysis**: Extracts classes, functions, components, patterns
+- **Amalgamation Generation**: Creates searchable code groupings
+
+**Plugins provide facts, not recommendations** - they tell agents what YOUR project uses.
+
+### Agent Orchestration
+
+85 specialized agents organized hierarchically:
+
+- **Master Orchestrator**: Routes work to phase orchestrators
+- **Phase Orchestrators** (6): Discovery, Planning, Implementation, Review, Operations, Evolution
+- **Domain Specialists** (15+): Python development, database design, testing, documentation
+- **Sub-Agents** (25+): Single-purpose agents for specific tasks (context delivery, gate checking, etc.)
+- **Utility Agents**: Work item writing, evidence collection, rule validation
+
+**Agents work together** through structured delegation, not ad-hoc coordination.
+
+---
+
+## Documentation
+
+### Getting Started
+
+- [**User Guide Index**](docs/user-guides/INDEX.md) - Complete navigation with learning paths
+- [**Getting Started Guide**](docs/user-guides/getting-started.md) - Detailed installation and first project (15 minutes)
+- [**Quick Reference**](docs/user-guides/cli-reference/quick-reference.md) - 2-page command cheat sheet
+
+### Workflows
+
+- [**Phase Workflow**](docs/user-guides/workflows/phase-workflow.md) - Understanding the 6-phase system
+- [**Ideas Workflow**](docs/user-guides/workflows/ideas-workflow.md) - Lightweight brainstorming and idea management
+- [**Troubleshooting**](docs/user-guides/workflows/troubleshooting.md) - Common issues and solutions
+
+### Integration
+
+- [**Claude Code Integration**](docs/user-guides/integrations/claude-code/overview.md) - Use APM with Claude
+- [**Cursor Integration**](docs/user-guides/integrations/cursor/overview.md) - Use APM with Cursor
+- [**MCP Setup**](docs/user-guides/integrations/mcp-setup.md) - Model Context Protocol configuration
+
+### Advanced
+
+- [**Agent Generation**](docs/user-guides/advanced/agent-generation.md) - Intelligent agent creation and customization
+- [**Memory System**](docs/user-guides/advanced/memory-system.md) - How APM maintains persistent context
+- [**Rich Context**](docs/user-guides/advanced/rich-context.md) - Hierarchical context delivery and scoring
+- [**Detection Packs**](docs/user-guides/advanced/detection-packs.md) - Framework detection and SBOM generation
+- [**Slash Commands**](docs/user-guides/advanced/slash-commands.md) - Custom command creation
+
+### Development
+
+- [**Architecture Guide**](docs/user-guides/developer/architecture.md) - System design and principles
+- [**Three-Layer Pattern**](docs/user-guides/developer/three-layer-pattern.md) - Code organization standard
+- [**Contributing Guide**](docs/user-guides/developer/contributing.md) - How to contribute to APM
+- [**Migrations Guide**](docs/user-guides/developer/migrations.md) - Database migration patterns
+- [**Database Schema Reference**](docs/developer-guide/database-schema.md) - Complete schema documentation
+
+---
+
+## Architecture
+
+### High-Level Overview
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    APM Agent Project Manager                 │
+├─────────────────────────────────────────────────────────────┤
+│  CLI Layer (22 Commands)                                     │
+│  ├─ work-item: Create, list, show, update, advance phases   │
+│  ├─ task: Create, start, complete, context, dependencies    │
+│  ├─ agents: List, generate SOPs, assign to work             │
+│  ├─ context: Show, update, confidence scoring               │
+│  ├─ rules: List, validate, enforce quality gates            │
+│  └─ init, status, detect, migrate, testing, web, etc.       │
+├─────────────────────────────────────────────────────────────┤
+│  Core Services                                               │
+│  ├─ Workflow: State machine, quality gates, phase lifecycle │
+│  ├─ Context: Hierarchical assembly, confidence scoring      │
+│  ├─ Plugins: Framework detection, fact extraction           │
+│  ├─ Rules: 75 rules with block/warn/inform enforcement      │
+│  ├─ Memory: Session persistence, context retrieval          │
+│  └─ Search: Full-text search across work items and tasks    │
+├─────────────────────────────────────────────────────────────┤
+│  Three-Layer Database Pattern                                │
+│  ├─ Models: Pydantic type-safe business objects             │
+│  ├─ Adapters: SQLite ↔ Model conversion                     │
+│  └─ Methods: Business logic, transactions, validation       │
+├─────────────────────────────────────────────────────────────┤
+│  Database (57 Tables, 7 Triggers, 28 Indexes)                │
+│  ├─ Core: projects, work_items, tasks, agents               │
+│  ├─ Relationships: dependencies, blockers, hierarchies      │
+│  ├─ Context: contexts, rules, evidence, sessions            │
+│  └─ Plugins: plugins, facts, code_amalgamations             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Key Design Decisions
+
+- **Database-First**: All state in SQLite, not files (enables persistence and queries)
+- **Quality-Gated**: State machine prevents agents from skipping steps
+- **Time-Boxed**: Forces decomposition and realistic estimates
+- **Plugin-Driven**: Framework intelligence comes from detection, not assumptions
+- **Agent-Orchestrated**: 85 specialized agents, not one generic assistant
+- **Type-Safe**: Pydantic everywhere, no Dict[str, Any] in public APIs
+
+---
+
+## Development
+
+### Running Tests
+
+```bash
+# Run all tests
 python -m pytest tests/ -v
 
-# Test specific module
-python -m pytest tests/core/database/ -v
-python -m pytest tests/core/plugins/ -v
-
-# With coverage
+# Run with coverage
 python -m pytest tests/ --cov=agentpm --cov-report=html
 
-# Quick validation
-python -m pytest tests/core/database/test_schema.py -v  # 15 tests, should all pass
+# Run specific test suite
+python -m pytest tests/core/database/ -v
+python -m pytest tests/core/workflow/ -v
+
+# Quick validation (core schema tests)
+python -m pytest tests/core/database/test_schema.py -v
 ```
 
-**Current Status**: 2,230 tests passing (100% success rate, 92-100% coverage)
+**Test Suite**: 2,230 tests, 93%+ coverage on core modules, 100% passing.
+
+### Code Standards
+
+- **Three-Layer Pattern**: Models → Adapters → Methods (MANDATORY)
+- **Type Safety**: Pydantic models, type hints everywhere
+- **Test Coverage**: ≥90% required (enforced by CI-004 rule)
+- **Time-Boxing**: Implementation tasks ≤4h (enforced by DP-001 rule)
+- **Conventional Commits**: `type(scope): message` format with work item references
+
+### Contributing
+
+1. Read [CLAUDE.md](CLAUDE.md) - Master orchestrator guide and system overview
+2. Review [Contributing Guide](docs/user-guides/developer/contributing.md) - Development standards
+3. Check [Architecture Guide](docs/user-guides/developer/architecture.md) - System design
+4. Run tests before committing: `python -m pytest tests/ --cov=agentpm`
+
+**Pull Requests**:
+- Must pass all 2,230 tests
+- Must maintain ≥90% coverage
+- Must follow three-layer pattern
+- Must include documentation updates
 
 ---
 
-## 📚 **Documentation Structure**
+## Project Stats
 
-```
-docs/
-├── user-guides/                          # 📖 USER DOCUMENTATION (START HERE!)
-│   ├── INDEX.md                          # Complete navigation & learning paths
-│   ├── getting-started.md                # Installation & first project (15 min)
-│   ├── cli-reference/                    # Command reference & quick guide
-│   ├── workflows/                        # Phase workflow & troubleshooting
-│   ├── advanced/                         # Agents, memory, context, detection
-│   ├── integrations/                     # Claude Code, Cursor, MCP setup
-│   ├── use-cases/                        # Solo, consultant, enterprise, OSS
-│   └── developer/                        # Architecture, patterns, contributing
-├── components/                           # Component documentation
-│   ├── workflow/                         # Workflow system (6-state + phases)
-│   ├── plugins/                          # Plugin system
-│   ├── cli/                              # CLI commands
-│   ├── database/                         # Database architecture
-│   ├── context/                          # Context assembly system
-│   └── web-admin/                        # Web interface
-├── adrs/                                 # Architecture Decision Records
-├── specifications/                       # System specifications
-└── developer-guide/                      # Developer documentation
-```
-
-### 🚀 **Quick Links**
-
-**New Users**:
-- 📖 [**User Guide Index**](docs/user-guides/INDEX.md) - Complete navigation with learning paths
-- 🏁 [**Getting Started**](docs/user-guides/getting-started.md) - Install and create your first project (15 min)
-- 📋 [**Quick Reference**](docs/user-guides/cli-reference/quick-reference.md) - 2-page command cheat sheet
-- 🔄 [**Phase Workflow**](docs/user-guides/workflows/phase-workflow.md) - Understanding the 6-phase system
-
-**Integration**:
-- 🤖 [**Claude Code Integration**](docs/user-guides/integrations/claude-code/overview.md) - Use APM with Claude
-- 🎯 [**Cursor Integration**](docs/user-guides/integrations/cursor/overview.md) - Use APM with Cursor
-- 🔌 [**MCP Setup**](docs/user-guides/integrations/mcp-setup.md) - Model Context Protocol
-
-**Developers**:
-- 🏗️ [**Architecture Guide**](docs/user-guides/developer/architecture.md) - System design and principles
-- 🔧 [**Three-Layer Pattern**](docs/user-guides/developer/three-layer-pattern.md) - Code standards
-- 🤝 [**Contributing Guide**](docs/user-guides/developer/contributing.md) - How to contribute
+| Metric | Count | Notes |
+|--------|-------|-------|
+| **Tests** | 2,230 | 100% passing, 93%+ coverage |
+| **Code** | 155,000+ lines | Python 3.9+ |
+| **CLI Commands** | 22 | Full-featured interface |
+| **Plugins** | 11 | Python, JS, TS, Django, React, etc. |
+| **Agents** | 85 | Hierarchical orchestration |
+| **Database Tables** | 57 | 33 entities + 24 FTS5 indexes |
+| **Rules** | 75 | Quality gates and enforcement |
+| **Documentation** | 620 files | Comprehensive guides and references |
+| **Coverage** | 93-96% | Core modules (database, workflow, CLI) |
 
 ---
 
-## 🎯 **Current Status**
+## Roadmap
 
-### **✅ Phase 1: Foundation - COMPLETE** (41 hours)
-- Database with quality gates ✅
-- Plugin system (4 plugins) ✅
-- Security framework ✅
+### Current Status: Phase 2 (95% Complete)
 
-### **✅ Phase 2: Core Systems - 95% COMPLETE** (44 hours)
-- Workflow Management (WI-005) ✅ 100%
-- CLI Interface (WI-007) ✅ 100%
-- Task Dependencies (WI-008) ✅ 100%
-- Context System (WI-006) 🔄 75%
+**Phase 1: Foundation** ✅ Complete
+- Database architecture with quality gates
+- Plugin system with 11 active plugins
+- Security framework and input validation
+- Three-layer pattern implementation
 
-### **📋 Phase 3: Planning Complete** (8 hours today)
-- Plugin Development Roadmap ✅
-- Agent System Specification (WI-010) ✅
-- README.md Implementation Standards ✅
-- Test Environment Structure ✅ 30%
+**Phase 2: Core Systems** 🔄 95% Complete
+- Workflow management with state machine ✅
+- CLI interface with 22 commands ✅
+- Task dependency system ✅
+- Context assembly system 🔄 (75% complete)
 
-### **🎯 Next Priorities**
-- Option A: Complete Testing Environment (2h) - Validate foundation
-- Option B: Start WI-010 Agent System (26h) - Unblock production
-- Option C: Start Plugin Phase 2A (14h) - Unlock frontend ecosystem
+### Next: Phase 3 (Q1 2026)
 
-### **📈 Total Progress**
-- **Phase 1**: 41 hours ✅ COMPLETE
-- **Phase 2**: 44 hours ✅ 95% COMPLETE (WI-006 wiring remaining)
-- **Planning**: 8 hours ✅ Roadmaps + specifications
-- **Total**: 93 hours invested, production-ready core
+**Agent System Enhancement**
+- Complete context assembly system
+- Enhance agent delegation patterns
+- Improve confidence scoring
+- Add session persistence
 
----
+**Documentation Expansion**
+- Video tutorials
+- Interactive examples
+- Use case deep-dives
+- Plugin development guides
 
-## 📋 **Development Standards**
+### Future: Phase 4 (Q2-Q3 2026)
 
-**CRITICAL**: Read `README.md` before any development work!
+**Integrations**
+- MCP server for Claude integration
+- Asana/Linear bidirectional sync
+- GitHub Issues integration
+- Slack/Discord notifications
 
-**Key Rules**:
-- Three-layer database pattern (Models → Adapters → Methods) - MANDATORY
-- Time-boxing (IMPLEMENTATION ≤4h STRICT)
-- Testing >90% coverage (CI-004)
-- FEATURE work items need DESIGN + IMPL + TEST + DOC
-- CLI uses Rich formatting only
-- Conventional commits with WI-XXX references
-
-See `README.md` for complete implementation standards.
+**Advanced Features**
+- Web-based dashboard
+- Real-time collaboration
+- Advanced analytics and reporting
+- Plugin marketplace
 
 ---
 
-## 🔑 **Key Features**
+## What Makes APM Different
 
-### **Quality-Driven Development**:
-- ✅ Time-boxing (IMPLEMENTATION max 4h)
-- ✅ Required tasks per work item type
-- ✅ Quality gates at each state transition
-- ✅ No shortcuts allowed for agents
+### vs. Traditional Project Management Tools
 
-### **Intelligent Context**:
-- ✅ Plugin-extracted facts (versions, dependencies, structure)
-- ✅ Code amalgamations (222KB searchable code)
-- ✅ Hierarchical assembly (task inherits work item + project)
-- ✅ Confidence scoring (RED/YELLOW/GREEN)
+**Traditional Tools** (Jira, Asana, Linear):
+- Static task tracking
+- No framework intelligence
+- No quality enforcement
+- No agent coordination
+- Manual context switching
 
-### **Dependency Management**:
-- ✅ Structured dependencies (task→task, work_item→work_item)
-- ✅ Blocker tracking with auto-resolution
-- ✅ Circular dependency detection
-- ✅ SQLite triggers for automation
+**APM**:
+- Database-driven persistent memory
+- Framework-specific intelligence (11 plugins)
+- Strict quality gates (75 rules)
+- 85-agent orchestration
+- Automatic hierarchical context assembly
 
----
+### vs. AI Coding Tools
 
-## 🤝 **Contributing**
+**Traditional AI Tools** (GitHub Copilot, Cursor standalone):
+- Lose context between sessions
+- No quality enforcement
+- Generic suggestions
+- No task breakdown
+- No dependency tracking
 
-### **Before Starting**:
-1. Read `CLAUDE.md` (master orchestrator guide)
-2. Review `docs/components/` (component documentation)
-3. Check `docs/developer-guide/` (development standards)
+**APM**:
+- Persistent context across sessions
+- Enforced quality gates and time-boxing
+- Project-specific facts and patterns
+- Forced task decomposition (≤4h implementation)
+- Structured dependency management with blocking
 
-### **Development Rules**:
-- ✅ Pydantic three-layer pattern (Models → Adapters → Methods)
-- ✅ Type-safe everywhere (no Dict[str, Any] in public APIs)
-- ✅ ≥90% test coverage required
-- ✅ Follow quality gate specifications (no shortcuts)
+### Built for AI Agents
 
-### **Testing**:
-```bash
-# Before committing
-python -m pytest tests-BAK/ --cov=agentpm --cov-report=term-missing
-# Must have ≥90% coverage
-```
+APM is designed specifically for AI coding agents:
 
----
+- **Strict Enforcement**: Agents cannot skip quality steps
+- **Complete Context**: Hierarchical delivery from project to task
+- **Quality Metadata**: Acceptance criteria, test status, review approval
+- **Template-Driven**: Different requirements per work item type
+- **Time-Boxed**: Forces agents to decompose complex work
 
-## 🚀 **Roadmap**
-
-### **Q4 2025**: Phase 1 Foundation ✅
-- Database, Plugins, Security
-
-### **Q1 2026**: Phase 2 Core Systems
-- Workflow, Context, CLI
-
-### **Q2 2026**: Phase 3 Extended Plugins
-- Django, HTML, JavaScript, Next.js
-
-### **Q3 2026**: Phase 4 Integrations
-- MCP server
-- Asana/Linear sync
-- Advanced features
+**Result**: Professional-quality deliverables, not quick hacks.
 
 ---
 
-## 📖 **Learn More**
+## Use Cases
 
-- **Architecture**: `docs/specifications/AIPM-V2-COMPLETE-SPECIFICATION.md`
-- **Plugin Development**: `docs/components/plugins/developer-guide.md`
-- **Workflow System**: `docs/components/workflow/6-state-workflow-system.md`
-- **Context System**: `docs/components/context/README.md` (coming soon)
+### Solo Developer
 
----
+- Track personal projects with quality standards
+- Maintain context across coding sessions
+- Enforce best practices automatically
+- Build portfolio-quality work
 
-## 📊 **Statistics**
+### Consultant/Freelancer
 
-- **Code**: 8,000+ lines
-- **Tests**: 2,230+ passing (93-96% coverage on core modules)
-- **Database**: 10 tables, 28 indexes, 7 triggers
-- **Plugins**: 11 active (Python, JavaScript, TypeScript, Click, Django, React, HTMX, Alpine.js, Tailwind CSS, pytest, SQLite)
-- **Documentation**: 50+ specification documents
-- **Specifications**: Complete through Phase 2
+- Manage multiple client projects
+- Demonstrate professional process
+- Provide detailed progress reports
+- Ensure consistent quality
 
----
+### Small Team
 
-## 💡 **What Makes APM (Agent Project Manager) Different**
+- Coordinate work across team members
+- Track dependencies and blockers
+- Enforce team coding standards
+- Maintain institutional knowledge
 
-**Not Just Task Tracking**:
-- Quality-gated workflow (agents must follow process)
-- Time-boxed tasks (IMPLEMENTATION max 4h - forces decomposition)
-- Type-specific validation (FEATURE requires DESIGN+IMPLEMENTATION+TESTING+DOCUMENTATION)
-- Framework intelligence (plugins provide context, not generic advice)
+### Open Source
 
-**Built for AI Agents**:
-- Strict enforcement (no shortcuts)
-- Complete context delivery (hierarchical)
-- Quality metadata tracking (acceptance criteria, test status, review approval)
-- Template-driven validation (different requirements per task type)
+- Organize contributor work
+- Track feature development
+- Enforce quality gates
+- Build sustainable projects
 
 ---
 
-## 🎯 **Next Steps**
+## License
 
-**For Developers**:
-1. Read `CLAUDE.md` (master orchestrator)
-2. Review `docs/developer-guide/` (development standards)
-3. Check `docs/components/` (component architecture)
-4. Run tests: `python -m pytest tests/ -v`
+Apache License 2.0 - See [LICENSE](LICENSE) for details.
 
-**For Users**:
-1. Install: `pip install -e .`
-2. Initialize: `apm init "My Project"`
-3. Create work items and tasks
-4. Use phase workflow: `apm work-item next <id>`
+Copyright 2024-2025 APM Development Team
 
 ---
 
-**APM (Agent Project Manager): Quality-driven development for AI coding agents**
+## Support
 
-**Status**: Foundation complete, core systems in progress
-**License**: Apache 2.0
-**Documentation**: Complete specifications in `docs/project-plan/`
+- **Documentation**: [docs/user-guides/INDEX.md](docs/user-guides/INDEX.md)
+- **Issues**: [GitHub Issues](https://github.com/nigelcopley/agentpm/issues)
+- **Repository**: [https://github.com/nigelcopley/agentpm](https://github.com/nigelcopley/agentpm)
+- **Discussions**: [GitHub Discussions](https://github.com/nigelcopley/agentpm/discussions)
+
+---
+
+## Acknowledgments
+
+APM stands on the shoulders of giants:
+
+- **Pydantic**: Type-safe data validation
+- **Click**: Powerful CLI framework
+- **Rich**: Beautiful terminal formatting
+- **SQLite**: Reliable embedded database
+- **pytest**: Comprehensive testing framework
+
+Special thanks to the AI coding community for inspiration and feedback.
+
+---
+
+**APM: Database-driven project management designed for AI coding agents**
+
+Stop losing context. Start delivering quality.
