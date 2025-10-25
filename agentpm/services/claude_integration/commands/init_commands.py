@@ -67,7 +67,7 @@ def init_commands(db: DatabaseService) -> None:
     # Register /aipm:status command
     registry.register(
         name="aipm:status",
-        description="Show AIPM project status",
+        description="Show APM project status",
         usage=(
             "/aipm:status [options]\n"
             "  Options:\n"

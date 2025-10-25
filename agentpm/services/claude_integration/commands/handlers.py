@@ -123,7 +123,7 @@ class CommandHandlers:
         """
         Handle /aipm:status command.
 
-        Show AIPM project status with active work items, tasks, and progress.
+        Show APM project status with active work items, tasks, and progress.
 
         Args:
             args: Command arguments:
@@ -287,16 +287,16 @@ class CommandHandlers:
                     generator.generate_all()
                     result_data["generated"] = "all"
                     result_data["files"] = [
-                        ".aipm/MEMORY/PROJECT.md",
-                        ".aipm/MEMORY/WORK_ITEMS.md",
-                        ".aipm/MEMORY/TASKS.md",
-                        ".aipm/MEMORY/RECENT_PROGRESS.md"
+                        ".agentpm/MEMORY/PROJECT.md",
+                        ".agentpm/MEMORY/WORK_ITEMS.md",
+                        ".agentpm/MEMORY/TASKS.md",
+                        ".agentpm/MEMORY/RECENT_PROGRESS.md"
                     ]
                 else:
                     # Generate current context only
                     generator.generate_current_context()
                     result_data["generated"] = "current"
-                    result_data["files"] = [".aipm/MEMORY/CURRENT_CONTEXT.md"]
+                    result_data["files"] = [".agentpm/MEMORY/CURRENT_CONTEXT.md"]
 
                 message = f"Memory files generated: {result_data['generated']}"
 
@@ -304,7 +304,7 @@ class CommandHandlers:
                 # Show memory file status
                 import os
 
-                memory_dir = ".aipm/MEMORY"
+                memory_dir = ".agentpm/MEMORY"
                 result_data["directory"] = memory_dir
                 result_data["exists"] = os.path.exists(memory_dir)
 

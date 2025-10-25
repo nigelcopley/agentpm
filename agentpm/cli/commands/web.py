@@ -276,23 +276,23 @@ def detect_database_path(project_root: Path) -> Optional[Path]:
     
     Detection Priority:
     1. Environment variable AIPM_DB_PATH (explicit override)
-    2. Current directory .aipm/data/aipm.db (project context)
-    3. Parent directories (walk up to find AIPM project)
-    4. Home directory ~/.aipm/aipm.db (global fallback)
+    2. Current directory .agentpm/data/agentpm.db (project context)
+    3. Parent directories (walk up to find APM project)
+    4. Home directory ~/.agentpm/agentpm.db (global fallback)
     """
     # 1. Check environment variable (explicit override)
     if 'AIPM_DB_PATH' in os.environ:
         return Path(os.environ['AIPM_DB_PATH'])
     
     # 2. Check current directory for project database
-    project_db = project_root / '.aipm' / 'data' / 'aipm.db'
+    project_db = project_root / '.agentpm' / 'data' / 'agentpm.db'
     if project_db.exists():
         return project_db
     
-    # 3. Walk up parent directories to find AIPM project
+    # 3. Walk up parent directories to find APM project
     search_dir = project_root
     for _ in range(10):  # Limit search depth
-        candidate_db = search_dir / '.aipm' / 'data' / 'aipm.db'
+        candidate_db = search_dir / '.agentpm' / 'data' / 'agentpm.db'
         if candidate_db.exists():
             return candidate_db
         
@@ -303,7 +303,7 @@ def detect_database_path(project_root: Path) -> Optional[Path]:
         search_dir = parent
     
     # 4. Fall back to global database
-    global_db = Path.home() / '.aipm' / 'aipm.db'
+    global_db = Path.home() / '.agentpm' / 'agentpm.db'
     if global_db.exists():
         return global_db
     

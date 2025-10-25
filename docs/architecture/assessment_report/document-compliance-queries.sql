@@ -1,5 +1,5 @@
 -- Document Compliance Analysis Queries
--- Database: .aipm/data/aipm.db
+-- Database: .agentpm/data/agentpm.db
 -- Table: document_references
 -- Generated: 2025-10-19
 

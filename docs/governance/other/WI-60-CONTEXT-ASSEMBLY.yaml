@@ -285,7 +285,7 @@ quick_start_commands:
   status_check: |
     python3 -c "from agentpm.core.database.service import DatabaseService; \
     from pathlib import Path; \
-    db = DatabaseService(Path.home() / '.project_manager/aipm-v2/.aipm/data/aipm.db'); \
+    db = DatabaseService(Path.home() / '.project_manager/aipm-v2/.agentpm/data/aipm.db'); \
     with db.connect() as conn: \
         tasks = conn.execute('SELECT status, COUNT(*) FROM tasks WHERE work_item_id=60 GROUP BY status').fetchall(); \
         print('WI-60 Task Status:'); \
@@ -304,7 +304,7 @@ quick_start_commands:
 metadata:
   generator: "context-assembler sub-agent"
   service: "agentpm.core.context.assembly_service.ContextAssemblyService"
-  database: "/Users/nigelcopley/.project_manager/aipm-v2/.aipm/data/aipm.db"
+  database: "/Users/nigelcopley/.project_manager/aipm-v2/.agentpm/data/agentpm.db"
   verification: "All task data verified from database, no synthetic information"
   generated_at: "2025-10-12T00:00:00"
   format_version: "1.0"

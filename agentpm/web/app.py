@@ -11,17 +11,17 @@ Architecture:
 - Automatic database detection (no configuration needed!)
 
 Usage:
-    # From AIPM project directory (auto-detects .aipm/data/aipm.db)
+    # From APM project directory (auto-detects .agentpm/data/agentpm.db)
     flask --app agentpm.web.app run
 
     # Or specify explicit database path
-    AIPM_DB_PATH=/path/to/aipm.db flask --app agentpm.web.app run
+    agentpm.db_PATH=/path/to/agentpm.db flask --app agentpm.web.app run
 
 Database Detection Priority:
-    1. AIPM_DB_PATH environment variable (explicit override)
-    2. Current directory .aipm/data/aipm.db (project context)
-    3. Parent directories (walks up to find AIPM project)
-    4. Home directory ~/.aipm/aipm.db (global fallback)
+    1. agentpm.db_PATH environment variable (explicit override)
+    2. Current directory .agentpm/data/agentpm.db (project context)
+    3. Parent directories (walks up to find APM project)
+    4. Home directory ~/.agentpm/agentpm.db (global fallback)
 
 Example:
     # Run from project root - auto-detects project database
@@ -313,7 +313,7 @@ class ProjectContextView(BaseModel):
 class ContextFileInfo(BaseModel):
     """Context file metadata"""
     name: str
-    path: str  # Relative to .aipm/contexts/
+    path: str  # Relative to .agentpm/contexts/
     size_bytes: int
     size_human: str  # e.g., "15.2 KB"
     modified: Any
@@ -572,28 +572,28 @@ def get_database_service() -> DatabaseService:
     Get DatabaseService instance with automatic database detection.
 
     Detection Priority:
-    1. Environment variable AIPM_DB_PATH (explicit override)
-    2. Current directory .aipm/data/aipm.db (project context)
-    3. Parent directories (walk up to find AIPM project)
-    4. Home directory ~/.aipm/aipm.db (global fallback)
+    1. Environment variable agentpm.db_PATH (explicit override)
+    2. Current directory .agentpm/data/agentpm.db (project context)
+    3. Parent directories (walk up to find APM project)
+    4. Home directory ~/.agentpm/agentpm.db (global fallback)
 
     Returns:
         DatabaseService configured with detected AIPM database path
     """
     # 1. Check environment variable (explicit override)
-    if 'AIPM_DB_PATH' in os.environ:
-        return DatabaseService(os.environ['AIPM_DB_PATH'])
+    if 'agentpm.db_PATH' in os.environ:
+        return DatabaseService(os.environ['agentpm.db_PATH'])
 
     # 2. Check current directory for project database
     current_dir = Path.cwd()
-    project_db = current_dir / '.aipm' / 'data' / 'aipm.db'
+    project_db = current_dir / '.agentpm' / 'data' / 'agentpm.db'
     if project_db.exists():
         return DatabaseService(str(project_db))
 
-    # 3. Walk up parent directories to find AIPM project
+    # 3. Walk up parent directories to find APM project
     search_dir = current_dir
     for _ in range(10):  # Limit search depth to prevent infinite loops
-        candidate_db = search_dir / '.aipm' / 'data' / 'aipm.db'
+        candidate_db = search_dir / '.agentpm' / 'data' / 'agentpm.db'
         if candidate_db.exists():
             return DatabaseService(str(candidate_db))
 
@@ -604,7 +604,7 @@ def get_database_service() -> DatabaseService:
         search_dir = parent
 
     # 4. Fall back to global database
-    return DatabaseService('~/.aipm/aipm.db')
+    return DatabaseService('~/.agentpm/agentpm.db')
 
 
 def calculate_status_distribution(

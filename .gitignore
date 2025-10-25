@@ -43,7 +43,7 @@ htmlcov/
 .hypothesis/
 
 # AIPM generated files
-.aipm/
+.agentpm/
 *.db
 *.db-journal
 *.db-wal

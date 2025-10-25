@@ -61,7 +61,7 @@ A read-only Flask dashboard providing real-time visualization of APM (Agent Proj
 # 1. Install dashboard dependencies
 pip install -e .[dev]
 
-# 2. Navigate to your AIPM project
+# 2. Navigate to your APM project
 cd /path/to/your/aipm-project
 
 # 3. Start the dashboard
@@ -71,7 +71,7 @@ flask --app agentpm.web.app run
 # Dashboard: http://localhost:5000
 ```
 
-The dashboard automatically detects your project's `.aipm/data/aipm.db` database.
+The dashboard automatically detects your project's `.agentpm/data/agentpm.db` database.
 
 ---
 
@@ -112,7 +112,7 @@ The dashboard uses environment variables for configuration:
 
 ```bash
 # Database Path (optional - auto-detected if not set)
-export AIPM_DB_PATH=/path/to/aipm.db
+export agentpm.db_PATH=/path/to/agentpm.db
 
 # Flask Secret Key (production only)
 export SECRET_KEY=your-secret-key-here
@@ -126,22 +126,22 @@ export FLASK_DEBUG=1          # Enable debug mode (alternative)
 
 The dashboard automatically finds your AIPM database in this order:
 
-1. **Environment Variable**: `AIPM_DB_PATH` (explicit override)
-2. **Project Context**: `./aipm/data/aipm.db` (current directory)
-3. **Parent Search**: Walks up directory tree to find `.aipm/data/aipm.db`
-4. **Global Fallback**: `~/.aipm/aipm.db` (home directory)
+1. **Environment Variable**: `agentpm.db_PATH` (explicit override)
+2. **Project Context**: `./agentpm/data/agentpm.db` (current directory)
+3. **Parent Search**: Walks up directory tree to find `.agentpm/data/agentpm.db`
+4. **Global Fallback**: `~/.agentpm/agentpm.db` (home directory)
 
 **Example - Project Context** (recommended):
 ```bash
 cd /Users/you/projects/my-aipm-project
 flask --app agentpm.web.app run
-# ✅ Auto-detects: /Users/you/projects/my-aipm-project/.aipm/data/aipm.db
+# ✅ Auto-detects: /Users/you/projects/my-aipm-project/.agentpm/data/agentpm.db
 ```
 
 **Example - Explicit Path**:
 ```bash
-AIPM_DB_PATH=/path/to/custom/aipm.db flask --app agentpm.web.app run
-# ✅ Uses: /path/to/custom/aipm.db
+agentpm.db_PATH=/path/to/custom/agentpm.db flask --app agentpm.web.app run
+# ✅ Uses: /path/to/custom/agentpm.db
 ```
 
 ### Flask Configuration
@@ -186,7 +186,7 @@ flask --app agentpm.web.app run --host=0.0.0.0 --port=8080
 
 **With Explicit Database**:
 ```bash
-AIPM_DB_PATH=/path/to/project.db flask --app agentpm.web.app run --debug
+agentpm.db_PATH=/path/to/project.db flask --app agentpm.web.app run --debug
 ```
 
 ### Production Mode
@@ -227,7 +227,7 @@ CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "agentpm.web.app:app"]
 ```bash
 # Build and run
 docker build -t aipm-dashboard .
-docker run -p 5000:5000 -v /path/to/.aipm:/root/.aipm aipm-dashboard
+docker run -p 5000:5000 -v /path/to/.agentpm:/root/.agentpm aipm-dashboard
 ```
 
 ---
@@ -571,7 +571,7 @@ curl http://localhost:5000/project/1
 **Context Files Browser** - Browse project context files.
 
 **Response**: Rendered file browser with:
-- Context file listing (.aipm/contexts/)
+- Context file listing (.agentpm/contexts/)
 - File sizes and modification dates
 - File type icons
 - Quick preview links
@@ -763,13 +763,13 @@ See `templates/project_detail.html` and `templates/work_item_detail.html` for co
 
 **Error**:
 ```
-FileNotFoundError: [Errno 2] No such file or directory: '.aipm/data/aipm.db'
+FileNotFoundError: [Errno 2] No such file or directory: '.agentpm/data/agentpm.db'
 ```
 
 **Solutions**:
-1. Run from project directory containing `.aipm/` folder
-2. Set `AIPM_DB_PATH` environment variable explicitly
-3. Initialize AIPM project first: `apm init "Project Name"`
+1. Run from project directory containing `.agentpm/` folder
+2. Set `agentpm.db_PATH` environment variable explicitly
+3. Initialize APM project first: `apm init "Project Name"`
 
 ```bash
 # Option 1: Run from project directory
@@ -777,7 +777,7 @@ cd /path/to/your/aipm-project
 flask --app agentpm.web.app run
 
 # Option 2: Set explicit path
-AIPM_DB_PATH=/path/to/aipm.db flask --app agentpm.web.app run
+agentpm.db_PATH=/path/to/agentpm.db flask --app agentpm.web.app run
 
 # Option 3: Initialize project
 cd /path/to/new-project

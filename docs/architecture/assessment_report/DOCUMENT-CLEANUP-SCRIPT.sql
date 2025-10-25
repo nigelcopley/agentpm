@@ -6,7 +6,7 @@
 -- BACKUP FIRST!
 -- ============================================================================
 -- Before running this script, create a backup:
--- cp .aipm/data/aipm.db .aipm/data/aipm.db.backup-2025-10-19
+-- cp .agentpm/data/agentpm.db .agentpm/data/agentpm.db.backup-2025-10-19
 
 -- ============================================================================
 -- SECTION 1: Remove Missing Files (14 records)
@@ -132,8 +132,8 @@ AND file_path NOT LIKE 'agentpm/%';
 -- ============================================================================
 -- EXECUTION INSTRUCTIONS
 -- ============================================================================
--- 1. Create backup: cp .aipm/data/aipm.db .aipm/data/aipm.db.backup-2025-10-19
--- 2. Run this script: sqlite3 .aipm/data/aipm.db < DOCUMENT-CLEANUP-SCRIPT.sql
+-- 1. Create backup: cp .agentpm/data/agentpm.db .agentpm/data/agentpm.db.backup-2025-10-19
+-- 2. Run this script: sqlite3 .agentpm/data/agentpm.db < DOCUMENT-CLEANUP-SCRIPT.sql
 -- 3. Verify results with verification queries above
--- 4. If issues found, restore backup: cp .aipm/data/aipm.db.backup-2025-10-19 .aipm/data/aipm.db
+-- 4. If issues found, restore backup: cp .agentpm/data/agentpm.db.backup-2025-10-19 .agentpm/data/agentpm.db
 -- ============================================================================

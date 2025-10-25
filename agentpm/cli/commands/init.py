@@ -1,7 +1,7 @@
 """
-apm init - Initialize AIPM project
+apm init - Initialize APM project
 
-Creates .aipm directory structure, initializes database with schema,
+Creates .agentpm directory structure, initializes database with schema,
 runs plugin detection, and generates initial project context.
 
 Performance Target: <5 seconds with progress feedback
@@ -124,13 +124,13 @@ def _create_rules_context(
 @click.pass_context
 def init(ctx: click.Context, project_name: str, path: Path, description: str, skip_questionnaire: bool):
     """
-    Initialize AIPM project with database and plugin detection.
+    Initialize APM project with database and plugin detection.
 
     \b
     Creates:
-      • .aipm/data/aipm.db      - SQLite database with complete schema
-      • .aipm/contexts/          - Plugin-generated context files
-      • .aipm/cache/             - Temporary cache files
+      • .agentpm/data/agentpm.db      - SQLite database with complete schema
+      • .agentpm/contexts/          - Plugin-generated context files
+      • .agentpm/cache/             - Temporary cache files
 
     \b
     Post-Init Setup:
@@ -158,14 +158,14 @@ def init(ctx: click.Context, project_name: str, path: Path, description: str, sk
     console = ctx.obj['console']
 
     # Check if already initialized
-    aipm_dir = path / '.aipm'
+    aipm_dir = path / '.agentpm'
     if aipm_dir.exists():
         console.print(f"\n❌ [red]Project already initialized at {path}[/red]")
-        console.print(f"\n💡 [yellow]To re-initialize, first remove .aipm directory:[/yellow]")
+        console.print(f"\n💡 [yellow]To re-initialize, first remove .agentpm directory:[/yellow]")
         console.print(f"   rm -rf {aipm_dir}")
         raise click.Abort()
 
-    console.print(f"\n🚀 [cyan]Initializing AIPM project:[/cyan] {project_name}")
+    console.print(f"\n🚀 [cyan]Initializing APM project:[/cyan] {project_name}")
     console.print(f"📁 [dim]Location:[/dim] {path.absolute()}\n")
 
     with Progress(
@@ -178,7 +178,7 @@ def init(ctx: click.Context, project_name: str, path: Path, description: str, sk
         # Task 1: Create directory structure
         task1 = progress.add_task("[cyan]Creating directory structure...", total=3)
 
-        # Create .aipm directory structure
+        # Create .agentpm directory structure
         aipm_dir.mkdir()
         progress.update(task1, advance=1)
 
@@ -195,7 +195,7 @@ def init(ctx: click.Context, project_name: str, path: Path, description: str, sk
         # Task 2: Initialize database
         task2 = progress.add_task("[cyan]Initializing database schema...", total=2)
 
-        db_path = data_dir / 'aipm.db'
+        db_path = data_dir / 'agentpm.db'
         db = DatabaseService(str(db_path))  # Schema initialized automatically
         progress.update(task2, advance=1)
 
@@ -449,7 +449,7 @@ def init(ctx: click.Context, project_name: str, path: Path, description: str, sk
 
         # Show amalgamation files count
         if amalgamation_count > 0:
-            console.print(f"📁 [dim]Generated {amalgamation_count} code amalgamation files in .aipm/contexts/[/dim]\n")
+            console.print(f"📁 [dim]Generated {amalgamation_count} code amalgamation files in .agentpm/contexts/[/dim]\n")
         else:
             console.print()
     else:

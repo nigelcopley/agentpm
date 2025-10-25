@@ -17,7 +17,7 @@ The AIPM is a local-first, AI-powered project management system designed to enha
 
 ## Architecture and Technologies
 
-The AIPM project adheres to a **Service-Oriented Clean Architecture** with a strong emphasis on modularity, separation of concerns, and event-driven design.
+The APM project adheres to a **Service-Oriented Clean Architecture** with a strong emphasis on modularity, separation of concerns, and event-driven design.
 
 **Core Components:**
 *   **`agentpm` (Python):**

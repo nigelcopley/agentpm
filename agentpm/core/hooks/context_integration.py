@@ -65,7 +65,7 @@ class ContextHookAdapter:
             project_root: Project root directory (default: auto-detect from cwd)
         """
         self.project_root = project_root or self._find_project_root()
-        self.db_path = self.project_root / ".aipm" / "data" / "aipm.db"
+        self.db_path = self.project_root / ".agentpm" / "data" / "agentpm.db"
 
         # Initialize services (lazy loading for performance)
         self._db: Optional[DatabaseService] = None
@@ -782,7 +782,7 @@ class ContextHookAdapter:
 
     def _format_no_project_warning(self) -> str:
         """Format warning when no project found."""
-        return "\n⚠️ No AIPM project initialized. Run `apm init` first.\n"
+        return "\n⚠️ No APM project initialized. Run `apm init` first.\n"
 
     def _format_error_fallback(self, hook_name: str, error_msg: str) -> str:
         """Format graceful degradation message on error."""
@@ -796,17 +796,17 @@ class ContextHookAdapter:
         return "\n".join(lines)
 
     def _find_project_root(self) -> Path:
-        """Find AIPM project root from current directory."""
+        """Find APM project root from current directory."""
         cwd = Path.cwd()
 
         # Check current directory
-        if (cwd / ".aipm").exists():
+        if (cwd / ".agentpm").exists():
             return cwd
 
         # Check parent directories (up to 3 levels)
         for parent in [cwd.parent, cwd.parent.parent, cwd.parent.parent.parent]:
-            if (parent / ".aipm").exists():
+            if (parent / ".agentpm").exists():
                 return parent
 
-        # Default to cwd (will fail gracefully if no .aipm)
+        # Default to cwd (will fail gracefully if no .agentpm)
         return cwd

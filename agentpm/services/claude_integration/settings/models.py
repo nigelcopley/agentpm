@@ -302,7 +302,7 @@ class ClaudeCodeSettings(BaseModel):
     # Project-specific overrides
     project_id: Optional[int] = Field(
         default=None,
-        description="AIPM project ID for context"
+        description="APM project ID for context"
     )
 
     custom_settings: Dict[str, Any] = Field(

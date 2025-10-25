@@ -1,7 +1,7 @@
 {
   "metadata": {
     "report_title": "Database Document Inventory Audit",
-    "database_path": ".aipm/data/aipm.db",
+    "database_path": ".agentpm/data/aipm.db",
     "table": "document_references",
     "generated_at": "2025-10-19T00:00:00",
     "generated_by": "database-query-agent",

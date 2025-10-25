@@ -19,13 +19,13 @@ That's it! Flask and all dependencies are now installed.
 
 ### From Your AIPM Project
 
-**Most Common Usage** - Run from your AIPM project directory:
+**Most Common Usage** - Run from your APM project directory:
 
 ```bash
-# Navigate to your AIPM project
+# Navigate to your APM project
 cd /path/to/your/aipm-project
 
-# Start the dashboard (auto-detects .aipm/data/aipm.db)
+# Start the dashboard (auto-detects .agentpm/data/agentpm.db)
 flask --app agentpm.web.app run
 
 # Open in browser
@@ -38,14 +38,14 @@ open http://localhost:5000
 
 ### From Any Directory
 
-If you're not in an AIPM project directory, specify the database path:
+If you're not in an APM project directory, specify the database path:
 
 ```bash
 # Set database path explicitly
-AIPM_DB_PATH=/path/to/project/.aipm/data/aipm.db flask --app agentpm.web.app run
+agentpm.db_PATH=/path/to/project/.agentpm/data/agentpm.db flask --app agentpm.web.app run
 
 # Or export for the session
-export AIPM_DB_PATH=/path/to/project/.aipm/data/aipm.db
+export agentpm.db_PATH=/path/to/project/.agentpm/data/agentpm.db
 flask --app agentpm.web.app run
 ```
 
@@ -110,7 +110,7 @@ Navigate to: Dashboard → Context Files
 Or visit: http://localhost:5000/context/files
 ```
 
-Explore `.aipm/contexts/` directory with file previews.
+Explore `.agentpm/contexts/` directory with file previews.
 
 ---
 
@@ -138,9 +138,9 @@ Timeline of work sessions with key decisions and completed tasks.
 
 ### Database Not Found
 
-**Error**: `FileNotFoundError: .aipm/data/aipm.db`
+**Error**: `FileNotFoundError: .agentpm/data/agentpm.db`
 
-**Fix**: Run from project directory or set `AIPM_DB_PATH`
+**Fix**: Run from project directory or set `agentpm.db_PATH`
 ```bash
 cd /path/to/your/aipm-project
 flask --app agentpm.web.app run
@@ -191,7 +191,7 @@ pip install -e .[dev]
 | **Start Dashboard** | `flask --app agentpm.web.app run` |
 | **Debug Mode** | `flask --app agentpm.web.app run --debug` |
 | **Custom Port** | `flask --app agentpm.web.app run --port=8080` |
-| **Set Database** | `AIPM_DB_PATH=/path/to/aipm.db flask --app agentpm.web.app run` |
+| **Set Database** | `agentpm.db_PATH=/path/to/agentpm.db flask --app agentpm.web.app run` |
 | **Health Check** | `curl http://localhost:5000/health` |
 
 ---

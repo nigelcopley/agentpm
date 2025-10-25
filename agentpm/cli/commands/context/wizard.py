@@ -52,7 +52,7 @@ def wizard(ctx, work_item_id: int, minimal: bool, skip_existing: bool):
         # Get database service
         project_root = find_project_root()
         if not project_root:
-            console.print("[red]✗[/red] Not in an AIPM project directory")
+            console.print("[red]✗[/red] Not in an APM project directory")
             ctx.exit(1)
 
         db = get_database_service(project_root)

@@ -90,7 +90,7 @@ def install(ctx: click.Context, project_path: str, force: bool):
     
     try:
         # Check if config already exists
-        config_path = Path(project_path) / '.aipm' / 'testing_config.json'
+        config_path = Path(project_path) / '.agentpm' / 'testing_config.json'
         if config_path.exists() and not force:
             console.print(f"⚠️  [yellow]Testing configuration already exists at {config_path}[/yellow]")
             console.print("Use --force to overwrite existing configuration")
@@ -268,7 +268,7 @@ def configure_rules(ctx: click.Context, project_path: str, force: bool):
         # Create configurator
         configurator = TestingRuleConfigurator(db)
         
-        # Get project ID (assuming we're in an AIPM project)
+        # Get project ID (assuming we're in an APM project)
         # For now, we'll use a default project ID of 1
         project_id = 1
         

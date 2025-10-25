@@ -10,11 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2025-10-25
 
 ### Changed
-- **BREAKING**: Rebranded from "AIPM V2" to "AgentPM" (Agent Project Manager)
+- **BREAKING**: Rebranded from "APM (Agent Project Manager)" to "AgentPM" (Agent Project Manager)
   - Package renamed: `aipm-v2` → `agentpm`
   - Python module: `aipm_v2` → `agentpm`
   - CLI command remains: `apm` (backward compatible)
-  - All references updated from "AIPM V2" to "APM (Agent Project Manager)"
+  - All references updated from "APM (Agent Project Manager)" to "APM (Agent Project Manager)"
 - **Project location**: Moved from `~/.project_manager/aipm-v2` to `~/Projects/AgentPM`
 - **Repository**: Updated to `github.com/nigelcopley/agentpm`
 

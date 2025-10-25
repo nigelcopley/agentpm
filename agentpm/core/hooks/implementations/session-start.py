@@ -2,7 +2,7 @@
 """
 Claude Code SessionStart Hook - Python Version
 
-Loads AIPM project context when Claude Code session starts.
+Loads APM project context when Claude Code session starts.
 Output is injected into Claude's context automatically.
 
 Performance: ~200ms (faster than bash with subprocess overhead)
@@ -47,7 +47,7 @@ def read_hook_input() -> dict:
 
 def get_database() -> DatabaseService:
     """Get database service instance."""
-    db_path = PROJECT_ROOT / ".aipm" / "data" / "aipm.db"
+    db_path = PROJECT_ROOT / ".agentpm" / "data" / "agentpm.db"
     return DatabaseService(str(db_path))
 
 

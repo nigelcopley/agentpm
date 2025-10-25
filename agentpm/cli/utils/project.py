@@ -2,7 +2,7 @@
 Project Detection Utilities
 
 Provides git-style project root detection by walking up the directory tree
-looking for .aipm directories. Works from any subdirectory of a project.
+looking for .agentpm directories. Works from any subdirectory of a project.
 """
 
 from pathlib import Path
@@ -12,28 +12,28 @@ import click
 
 def find_project_root(start_path: Optional[Path] = None) -> Optional[Path]:
     """
-    Find nearest .aipm project directory by walking up the tree.
+    Find nearest .agentpm project directory by walking up the tree.
 
     Similar to git's .git directory detection. Starts from current directory
-    or specified path and walks up the tree until finding an .aipm directory
+    or specified path and walks up the tree until finding an .agentpm directory
     or reaching the filesystem root.
 
     Args:
         start_path: Starting directory (defaults to current working directory)
 
     Returns:
-        Path to project root containing .aipm directory, or None if not found
+        Path to project root containing .agentpm directory, or None if not found
 
     Example:
         >>> # From /path/to/project/src/components
         >>> root = find_project_root()
-        >>> # Returns /path/to/project (if .aipm exists there)
+        >>> # Returns /path/to/project (if .agentpm exists there)
     """
     current = start_path or Path.cwd()
 
-    # Walk up directory tree until finding .aipm or reaching root
+    # Walk up directory tree until finding .agentpm or reaching root
     while current != current.parent:  # Stop at filesystem root
-        aipm_dir = current / ".aipm"
+        aipm_dir = current / ".agentpm"
 
         if aipm_dir.is_dir():
             return current
@@ -57,7 +57,7 @@ def ensure_project_root(ctx: click.Context) -> Path:
         Path to project root
 
     Raises:
-        click.Abort: If not in an AIPM project (with helpful error message)
+        click.Abort: If not in an APM project (with helpful error message)
 
     Example:
         ```python
@@ -72,7 +72,7 @@ def ensure_project_root(ctx: click.Context) -> Path:
     project_root = ctx.obj.get('project_root')
 
     if not project_root:
-        console_err.print("❌ [red]Not in an AIPM project[/red]\n")
+        console_err.print("❌ [red]Not in an APM project[/red]\n")
         console_err.print("💡 [yellow]To initialize a new project:[/yellow]")
         console_err.print("   apm init \"My Project Name\"\n")
         console_err.print("📚 [cyan]Or navigate to an existing project directory[/cyan]")

@@ -300,7 +300,7 @@ def test_work_item_creation_via_cli(tmp_path):
     assert "Work item created" in result.output
 
     # Assert: Work item exists in database
-    db = DatabaseService(str(project_path / ".aipm" / "data" / "aipm.db"))
+    db = DatabaseService(str(project_path / ".agentpm" / "data" / "agentpm.db"))
     work_items = db.fetch_all("SELECT * FROM work_items WHERE name = 'Test Feature'")
     assert len(work_items) == 1
 ```

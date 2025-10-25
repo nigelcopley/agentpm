@@ -36,7 +36,7 @@ modes_to_install:
 # Indexing Configuration
 indexing_enabled: true
 exclude_patterns:
-  - ".aipm/"
+  - ".agentpm/"
   - "htmlcov/"
   - ".pytest_cache/"
   - "**/__pycache__/"

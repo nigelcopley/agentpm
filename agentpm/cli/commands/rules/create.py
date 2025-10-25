@@ -48,14 +48,14 @@ def create_rule(ctx: click.Context, template: str, interactive: bool):
     
     # Find project database
     cwd = Path.cwd()
-    aipm_dir = cwd / '.aipm'
+    aipm_dir = cwd / '.agentpm'
     
     if not aipm_dir.exists():
-        console.print("[red]❌ Not an AIPM project (no .aipm directory found)[/red]")
+        console.print("[red]❌ Not an APM project (no .agentpm directory found)[/red]")
         console.print("[dim]Run 'apm init' to initialize this project[/dim]")
         raise click.Abort()
     
-    db_path = aipm_dir / 'data' / 'aipm.db'
+    db_path = aipm_dir / 'data' / 'agentpm.db'
     if not db_path.exists():
         console.print("[red]❌ Project database not found[/red]")
         raise click.Abort()

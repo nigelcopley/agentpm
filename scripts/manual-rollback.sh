@@ -8,8 +8,8 @@
 set -e  # Exit on error
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-BACKUP_DIR="$PROJECT_ROOT/.aipm/v1-backup"
-ARCHIVE_DIR="$PROJECT_ROOT/.aipm/v1-archive"
+BACKUP_DIR="$PROJECT_ROOT/.agentpm/v1-backup"
+ARCHIVE_DIR="$PROJECT_ROOT/.agentpm/v1-archive"
 
 echo "🔄 Manual V1 Rollback"
 echo "===================="
@@ -42,7 +42,7 @@ BACKUP_PATH="$BACKUP_DIR/$LATEST_BACKUP"
 # Show backup contents
 echo ""
 echo "Backup Contents:"
-[ -f "$BACKUP_PATH/aipm.db.backup" ] && echo "   ✅ aipm.db.backup" || echo "   ❌ aipm.db.backup (MISSING)"
+[ -f "$BACKUP_PATH/agentpm.db.backup" ] && echo "   ✅ agentpm.db.backup" || echo "   ❌ agentpm.db.backup (MISSING)"
 [ -d "$BACKUP_PATH/_RULES" ] && echo "   ✅ _RULES/" || echo "   ⚠️  _RULES/ (missing)"
 [ -f "$BACKUP_PATH/STATUS.md" ] && echo "   ✅ STATUS.md" || echo "   ⚠️  STATUS.md (missing)"
 [ -f "$BACKUP_PATH/NEXT-SESSION.md" ] && echo "   ✅ NEXT-SESSION.md" || echo "   ⚠️  NEXT-SESSION.md (missing)"
@@ -60,9 +60,9 @@ echo "🔄 Rolling back to: $LATEST_BACKUP"
 
 # Step 1: Restore database
 echo "   Restoring database..."
-if [ -f "$BACKUP_PATH/aipm.db.backup" ]; then
-    mkdir -p "$PROJECT_ROOT/.aipm/data"
-    cp "$BACKUP_PATH/aipm.db.backup" "$PROJECT_ROOT/.aipm/data/aipm.db"
+if [ -f "$BACKUP_PATH/agentpm.db.backup" ]; then
+    mkdir -p "$PROJECT_ROOT/.agentpm/data"
+    cp "$BACKUP_PATH/agentpm.db.backup" "$PROJECT_ROOT/.agentpm/data/agentpm.db"
     echo "      ✅ Database restored"
 else
     echo "      ❌ Database backup not found - cannot restore"
@@ -105,7 +105,7 @@ echo "Verification:"
 [ -d "$PROJECT_ROOT/_RULES" ] && echo "   ✅ _RULES/ restored" || echo "   ❌ _RULES/ missing"
 [ -f "$PROJECT_ROOT/STATUS.md" ] && echo "   ✅ STATUS.md restored" || echo "   ⚠️  STATUS.md missing"
 [ -f "$PROJECT_ROOT/NEXT-SESSION.md" ] && echo "   ✅ NEXT-SESSION.md restored" || echo "   ⚠️  NEXT-SESSION.md missing"
-[ -f "$PROJECT_ROOT/.aipm/data/aipm.db" ] && echo "   ✅ Database restored" || echo "   ❌ Database missing"
+[ -f "$PROJECT_ROOT/.agentpm/data/agentpm.db" ] && echo "   ✅ Database restored" || echo "   ❌ Database missing"
 
 echo ""
 echo "📝 Next Steps:"

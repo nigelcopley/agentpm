@@ -5,7 +5,7 @@ AIPM-specific slash commands for Claude Code integration.
 
 Provides:
 - /aipm:context - Load AIPM context for current session
-- /aipm:status - Show AIPM project status
+- /aipm:status - Show APM project status
 - /aipm:memory - Generate or show memory files
 - /aipm:checkpoint - Create session checkpoint
 

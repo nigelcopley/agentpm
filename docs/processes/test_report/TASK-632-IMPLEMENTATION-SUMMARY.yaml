@@ -21,7 +21,7 @@ files_created:
 
 # Files Modified
 files_modified:
-  - path: ".aipm/data/aipm.db"
+  - path: ".agentpm/data/agentpm.db"
     changes: "Reset quality_metadata to '{}' for 31 tasks"
     affected_task_ids: [517, 521, 525, 529, 530, 531, 532, 533, 536, 537, 538, 539, 546, 557, 598, 599, 601, 605, 606, 608, 609, 613, 617, 618, 619, 620, 621, 622, 623, 624, 625]
 

@@ -120,7 +120,7 @@ def main(ctx: click.Context, verbose: bool):
 
     \b
     Common Commands:
-      init        Initialize new AIPM project with database and detection
+      init        Initialize new APM project with database and detection
       status      Show project health dashboard with quality metrics
       work-item   Manage work items (features, bugs, research, planning)
       task        Manage tasks with strict time-boxing and quality gates
