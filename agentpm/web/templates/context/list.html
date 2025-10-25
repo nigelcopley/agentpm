@@ -151,6 +151,27 @@
         </div>
     </div>
 
+    <!-- Quick Actions -->
+    <div class="bg-white rounded-lg shadow-lg p-4">
+        <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-gray-900">Quick Actions</h2>
+            <div class="flex items-center space-x-3">
+                <a href="{{ url_for('context.context_documents_list') }}" 
+                   class="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                    <i class="bi bi-file-text mr-2"></i>Documents
+                </a>
+                <a href="{{ url_for('context.context_evidence_list') }}" 
+                   class="inline-flex items-center px-3 py-2 text-sm font-medium text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
+                    <i class="bi bi-lightbulb mr-2"></i>Evidence
+                </a>
+                <a href="{{ url_for('context.context_events_list') }}" 
+                   class="inline-flex items-center px-3 py-2 text-sm font-medium text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
+                    <i class="bi bi-clock-history mr-2"></i>Timeline
+                </a>
+            </div>
+        </div>
+    </div>
+
     <!-- Context List -->
     <div class="bg-white rounded-lg shadow-lg overflow-hidden">
         {% if contexts %}
@@ -160,7 +181,15 @@
                 <div class="flex items-start justify-between">
                     <div class="flex-1">
                         <div class="flex items-center space-x-3 mb-2">
-                            <h3 class="text-lg font-semibold text-gray-900">{{ context.title or 'Untitled Context' }}</h3>
+                            <h3 class="text-lg font-semibold text-gray-900">
+                                {% if context.what %}
+                                    {{ context.what[:60] }}{% if context.what|length > 60 %}...{% endif %}
+                                {% elif context.file_path %}
+                                    {{ context.file_path.split('/')[-1] }}
+                                {% else %}
+                                    Context #{{ context.id }}
+                                {% endif %}
+                            </h3>
                             {% if context.confidence_score %}
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                                 {% if context.confidence_score >= 0.8 %}bg-green-100 text-green-800
@@ -181,12 +210,20 @@
                             {% endif %}
                         </div>
                         <div class="text-gray-600 mb-3">
-                            {% if context.six_w and context.six_w.business_value %}
-                                {% set content_text = context.six_w.business_value|markdown_to_text(150) %}
-                                <p>{{ content_text }}</p>
+                            {% if context.why %}
+                                <p class="font-medium text-gray-800 mb-1">Why:</p>
+                                <p>{{ context.why[:200] }}{% if context.why|length > 200 %}...{% endif %}</p>
+                            {% elif context.what %}
+                                <p class="font-medium text-gray-800 mb-1">What:</p>
+                                <p>{{ context.what[:200] }}{% if context.what|length > 200 %}...{% endif %}</p>
+                            {% elif context.how %}
+                                <p class="font-medium text-gray-800 mb-1">How:</p>
+                                <p>{{ context.how[:200] }}{% if context.how|length > 200 %}...{% endif %}</p>
                             {% elif context.context_data %}
                                 {% set content_text = context.context_data|string|markdown_to_text(150) %}
                                 <p>{{ content_text }}</p>
+                            {% elif context.file_path %}
+                                <p class="text-gray-500 italic">Resource file: {{ context.file_path }}</p>
                             {% else %}
                                 <p class="text-gray-500 italic">No content available</p>
                             {% endif %}
@@ -195,17 +232,14 @@
                             <span>
                                 <i class="bi bi-calendar mr-1"></i>{{ context.created_at.strftime('%Y-%m-%d') if context.created_at else 'N/A' }}
                             </span>
+                            {% if context.entity_type and context.entity_id %}
                             <span>
-                                <i class="bi bi-person mr-1"></i>{{ context.created_by or 'System' }}
-                            </span>
-                            {% if context.source %}
-                            <span>
-                                <i class="bi bi-link mr-1"></i>{{ context.source }}
+                                <i class="bi bi-link mr-1"></i>{{ context.entity_type.value.replace('_', ' ').title() }} #{{ context.entity_id }}
                             </span>
                             {% endif %}
-                            {% if context.tags %}
+                            {% if context.file_path %}
                             <span>
-                                <i class="bi bi-tags mr-1"></i>{{ context.tags|join(', ') }}
+                                <i class="bi bi-file mr-1"></i>{{ context.file_path.split('/')[-1] }}
                             </span>
                             {% endif %}
                         </div>
@@ -229,10 +263,16 @@
             <div class="bg-purple-50 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-4">
                 <i class="bi bi-file-text text-4xl text-purple-500"></i>
             </div>
-            <h3 class="text-xl font-semibold text-gray-900 mb-2">No contexts yet</h3>
-            <p class="text-gray-600 mb-6">Start by creating context for your project to get started.</p>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">No contexts found</h3>
+            <p class="text-gray-600 mb-6">
+                {% if current_filters.search or current_filters.type or current_filters.entity_type or current_filters.confidence %}
+                    Try adjusting your filters or create a new context.
+                {% else %}
+                    Start by creating context for your project to get started.
+                {% endif %}
+            </p>
             <a href="{{ url_for('context.create_context') }}" class="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors">
-                <i class="bi bi-plus mr-2"></i>Create Your First Context
+                <i class="bi bi-plus mr-2"></i>Create Context
             </a>
         </div>
         {% endif %}

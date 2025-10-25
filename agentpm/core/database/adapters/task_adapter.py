@@ -104,6 +104,30 @@ class TaskAdapter:
         from ..methods import tasks as task_methods
         return task_methods.update_task(service, task_id, **updates)
 
+    @staticmethod
+    def delete(service, task_id: int) -> bool:
+        """
+        Delete task by ID (CLI entry point).
+
+        Three-layer pattern:
+          1. Validate task exists
+          2. Delegate to methods layer
+          3. Return success status
+
+        Args:
+            service: DatabaseService instance
+            task_id: Task ID to delete
+
+        Returns:
+            True if deleted, False if not found
+
+        Example:
+            >>> from agentpm.core.database.adapters import TaskAdapter
+            >>> success = TaskAdapter.delete(db, 123)
+        """
+        from ..methods import tasks as task_methods
+        return task_methods.delete_task(service, task_id)
+
     # ============================================================================
     # MODEL CONVERSION (Internal Use)
     # ============================================================================

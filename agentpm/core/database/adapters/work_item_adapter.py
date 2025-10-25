@@ -102,6 +102,33 @@ class WorkItemAdapter:
         from ..methods import work_items as wi_methods
         return wi_methods.update_work_item(service, work_item_id, **updates)
 
+    @staticmethod
+    def delete(service, work_item_id: int) -> bool:
+        """
+        Delete work item by ID (CLI entry point).
+
+        Three-layer pattern:
+          1. Validate work item exists
+          2. Delegate to methods layer (cascades to tasks)
+          3. Return success status
+
+        Args:
+            service: DatabaseService instance
+            work_item_id: Work item ID to delete
+
+        Returns:
+            True if deleted, False if not found
+
+        Note:
+            This will cascade delete all associated tasks.
+
+        Example:
+            >>> from agentpm.core.database.adapters import WorkItemAdapter
+            >>> success = WorkItemAdapter.delete(db, 123)
+        """
+        from ..methods import work_items as wi_methods
+        return wi_methods.delete_work_item(service, work_item_id)
+
     # ============================================================================
     # MODEL CONVERSION (Internal Use)
     # ============================================================================

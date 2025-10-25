@@ -9,7 +9,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}APM (Agent Project Manager) Dashboard{% endblock %}</title>
+    <title>{% block title %}AgentPM - Agent Project Manager Dashboard{% endblock %}</title>
+
+    <!-- Favicon -->
+    {% from 'macros/logo.html' import favicon_links %}
+    {{ favicon_links() }}
 
     <!-- Brand System CSS -->
     <!-- Theme System CSS -->
@@ -29,9 +33,9 @@
     {% block extra_css %}{% endblock %}
     
     <!-- Meta Tags -->
-    <meta name="description" content="{% block description %}Agent Project Manager V2 - Professional project management dashboard{% endblock %}">
+    <meta name="description" content="{% block description %}AgentPM - Agent Project Manager V2 - Professional project management dashboard{% endblock %}">
     <meta name="keywords" content="{% block keywords %}AI, project management, task management, workflow, automation{% endblock %}">
-    <meta name="author" content="APM (Agent Project Manager)">
+    <meta name="author" content="AgentPM - Agent Project Manager">
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">

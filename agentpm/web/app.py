@@ -715,6 +715,7 @@ def calculate_time_boxing_metrics(tasks: List[Task]) -> TimeBoxingMetrics:
 from .blueprints import (
     dashboard_bp,
     ideas_bp,
+    idea_elements_bp,
     work_items_bp,
     tasks_bp,
     context_bp,
@@ -728,6 +729,7 @@ from .blueprints import (
 # Register consolidated blueprints (30+ routes total)
 app.register_blueprint(dashboard_bp)
 app.register_blueprint(ideas_bp)
+app.register_blueprint(idea_elements_bp)
 app.register_blueprint(work_items_bp)
 app.register_blueprint(tasks_bp)
 app.register_blueprint(context_bp)

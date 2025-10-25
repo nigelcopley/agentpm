@@ -1,0 +1,90 @@
+{# AgentPM Logo Component Macro #}
+{# 
+Usage:
+  {{ logo('symbol', size='32', class='h-8 w-8') }}
+  {{ logo('full', size='200', class='h-12') }}
+  {{ logo('symbol', size='64', class='h-16 w-16', show_text=true) }}
+#}
+
+{% macro logo(type='icon', size='32', class='', show_text=false, text_class='', link_url='/') %}
+  {% if type == 'icon' %}
+    {% set logo_file = 'icon-' + size + '.png' %}
+  {% elif type == 'symbol' %}
+    {% set logo_file = 'symbol-' + size + '.png' %}
+  {% else %}
+    {% set logo_file = 'full-' + size + '.png' %}
+  {% endif %}
+  {% set logo_path = url_for('static', filename='images/logos/' + logo_file) %}
+  
+  <a href="{{ link_url }}" class="flex items-center gap-3 {{ class }}">
+    <img 
+      src="{{ logo_path }}" 
+      alt="AgentPM Logo" 
+      class="h-auto w-auto"
+      loading="lazy"
+    />
+    {% if show_text %}
+      <div class="{{ text_class }}">
+        <span class="block text-base font-semibold text-gray-900">AgentPM</span>
+        <span class="block text-xs font-medium uppercase tracking-wide text-gray-500">Agent Project Manager</span>
+      </div>
+    {% endif %}
+  </a>
+{% endmacro %}
+
+{# Header Logo - Optimized for header use #}
+{% macro header_logo(size='64', show_text=true, class='') %}
+  {% set logo_file = 'icon-' + size + '.png' %}
+  {% set logo_path = url_for('static', filename='images/logos/' + logo_file) %}
+  
+  <a href="/" class="flex items-center gap-3 {{ class }}">
+    <img 
+      src="{{ logo_path }}" 
+      alt="AgentPM Logo" 
+      class="h-8 w-8 flex-shrink-0"
+      loading="eager"
+    />
+    {% if show_text %}
+      <div class="hidden sm:block">
+        <span class="block text-base font-semibold text-gray-900">AgentPM</span>
+        <span class="block text-xs font-medium uppercase tracking-wide text-gray-500">Agent Project Manager</span>
+      </div>
+    {% endif %}
+  </a>
+{% endmacro %}
+
+{# Favicon Links - For use in <head> section #}
+{% macro favicon_links() %}
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="48x48" href="{{ url_for('static', filename='favicon-48x48.png') }}">
+  <link rel="icon" type="image/png" sizes="64x64" href="{{ url_for('static', filename='favicon-64x64.png') }}">
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='favicon-64x64.png') }}">
+{% endmacro %}
+
+{# Brand Logo - For use in marketing/landing pages #}
+{% macro brand_logo(size='400', class='') %}
+  {% set logo_file = 'full-' + size + '.png' %}
+  {% set logo_path = url_for('static', filename='images/logos/' + logo_file) %}
+  
+  <img 
+    src="{{ logo_path }}" 
+    alt="AgentPM - Agent Project Manager" 
+    class="{{ class }}"
+    loading="lazy"
+  />
+{% endmacro %}
+
+{# Compact Logo - For use in small spaces #}
+{% macro compact_logo(size='24', class='') %}
+  {% set logo_file = 'icon-' + size + '.png' %}
+  {% set logo_path = url_for('static', filename='images/logos/' + logo_file) %}
+  
+  <img 
+    src="{{ logo_path }}" 
+    alt="AgentPM" 
+    class="h-6 w-6 {{ class }}"
+    loading="lazy"
+  />
+{% endmacro %}

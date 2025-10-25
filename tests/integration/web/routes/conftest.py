@@ -185,7 +185,7 @@ def test_work_items(test_db_service, test_project):
             project_id=test_project.id,
             name='Fix Test Bug',
             description='Fix bug in test code',
-            type=WorkItemType.FIX,
+            type=WorkItemType.BUGFIX,
             status=WorkItemStatus.DONE,
             phase='R1_review',
             effort_estimate_hours=2.0,

@@ -1,39 +1,114 @@
-{% extends "layouts/base.html" %}
+{% extends "layouts/main_only.html" %}
 
 {% block title %}{{ idea.title }} - APM (Agent Project Manager){% endblock %}
 
-{% block content %}
+{% block extra_css %}
+<style>
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.prose {
+    max-width: none;
+}
+
+.prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+    color: #1f2937;
+    font-weight: 600;
+}
+
+.prose p {
+    color: #374151;
+    line-height: 1.7;
+}
+
+.prose ul, .prose ol {
+    color: #374151;
+}
+
+.prose code {
+    background-color: #f3f4f6;
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    font-size: 0.875em;
+}
+</style>
+{% endblock %}
+
+{% block main_content %}
 <div class="space-y-6">
-    <!-- Page Header -->
-    <div class="bg-gradient-to-r from-yellow-500 to-orange-500 rounded-lg p-6 text-white">
-        <div class="flex justify-between items-center">
-            <div>
-                <h1 class="text-3xl font-bold mb-2">{{ idea.title }}</h1>
-                <p class="text-yellow-100">Idea Details & Development</p>
-            </div>
-            <div class="bg-white/20 p-3 rounded-full">
-                <i class="bi bi-lightbulb text-3xl"></i>
+        <!-- Page Header -->
+        <div class="bg-gradient-to-r from-yellow-500 to-orange-500 rounded-lg p-6 text-white">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold mb-2">{{ idea.title }}</h1>
+                    <p class="text-yellow-100">Idea Details & Development</p>
+                </div>
+                <div class="bg-white/20 p-3 rounded-full">
+                    <i class="bi bi-lightbulb text-3xl"></i>
+                </div>
             </div>
         </div>
-    </div>
 
     <!-- Action Bar -->
     <div class="bg-white rounded-lg shadow-lg p-4">
         <div class="flex items-center justify-between">
             <div class="flex items-center space-x-4">
-                <a href="/ideas/" class="text-gray-600 hover:text-gray-800">
+                <a href="{{ url_for('ideas.ideas_list') }}" class="text-gray-600 hover:text-gray-800 transition-colors">
                     <i class="bi bi-arrow-left mr-2"></i>Back to Ideas
                 </a>
                 <div class="h-6 w-px bg-gray-300"></div>
                 <span class="text-sm text-gray-500">ID: {{ idea.id }}</span>
+                <div class="h-6 w-px bg-gray-300"></div>
+                <span class="text-sm text-gray-500">
+                    Created {{ idea.created_at.strftime('%Y-%m-%d') if idea.created_at else 'N/A' }}
+                </span>
             </div>
             <div class="flex items-center space-x-3">
-                <button class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                <button onclick="voteIdea({{ idea.id }})" 
+                        class="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
+                    <i class="bi bi-heart mr-2"></i>Vote ({{ idea.votes or 0 }})
+                </button>
+                <button onclick="editIdea({{ idea.id }})" 
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
                     <i class="bi bi-pencil mr-2"></i>Edit
                 </button>
-                <button class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+                {% if idea.status and idea.status.value == 'accepted' %}
+                <button onclick="convertToWorkItem({{ idea.id }})" 
+                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
                     <i class="bi bi-arrow-right mr-2"></i>Convert to Work Item
                 </button>
+                {% endif %}
+                <div class="relative">
+                    <button onclick="toggleActionMenu()" 
+                            class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                        <i class="bi bi-three-dots"></i>
+                    </button>
+                    <div id="actionMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                        <div class="py-1">
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i class="bi bi-share mr-2"></i>Share Idea
+                            </a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i class="bi bi-copy mr-2"></i>Duplicate
+                            </a>
+                            <hr class="my-1">
+                            <a href="#" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                                <i class="bi bi-trash mr-2"></i>Delete
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -46,7 +121,7 @@
             <div class="bg-white rounded-lg shadow-lg p-6">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-xl font-semibold text-gray-900">Description</h2>
-                    <button class="text-blue-600 hover:text-blue-800">
+                    <button onclick="editIdea({{ idea.id }})" class="text-blue-600 hover:text-blue-800 transition-colors">
                         <i class="bi bi-pencil"></i>
                     </button>
                 </div>
@@ -57,6 +132,68 @@
                         <p class="text-gray-500 italic">No description provided.</p>
                     {% endif %}
                 </div>
+            </div>
+
+            <!-- Idea Elements -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold text-gray-900">Idea Elements</h2>
+                    <button onclick="addIdeaElement({{ idea.id }})" class="text-blue-600 hover:text-blue-800 transition-colors">
+                        <i class="bi bi-plus-circle"></i>
+                    </button>
+                </div>
+                
+                {% if elements %}
+                <div class="space-y-3">
+                    {% for element in elements %}
+                    <div class="idea-element flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div class="flex-1">
+                            <h4 class="font-medium text-gray-900">{{ element.title }}</h4>
+                            {% if element.description %}
+                            <p class="text-sm text-gray-600 mt-1">{{ element.description }}</p>
+                            {% endif %}
+                            <div class="flex items-center space-x-4 mt-2 text-xs text-gray-500">
+                                <span class="flex items-center">
+                                    <i class="bi bi-clock mr-1"></i>{{ element.effort_hours }}h
+                                </span>
+                                <span class="flex items-center">
+                                    <i class="bi bi-tag mr-1"></i>{{ element.type.value|title }}
+                                </span>
+                                {% if element.is_completed %}
+                                <span class="flex items-center text-green-600">
+                                    <i class="bi bi-check-circle mr-1"></i>Completed
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            {% if not element.is_completed %}
+                            <button onclick="toggleElementCompletion({{ element.id }})" 
+                                    class="px-3 py-1 text-sm text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
+                                <i class="bi bi-check"></i>
+                            </button>
+                            {% endif %}
+                            <button onclick="editElement({{ element.id }})" 
+                                    class="px-3 py-1 text-sm text-gray-600 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-8">
+                    <div class="bg-blue-50 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                        <i class="bi bi-puzzle text-2xl text-blue-500"></i>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">No elements yet</h3>
+                    <p class="text-gray-600 mb-4">Break down your idea into manageable components</p>
+                    <button onclick="addIdeaElement({{ idea.id }})" 
+                            class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        <i class="bi bi-plus mr-2"></i>Add First Element
+                    </button>
+                </div>
+                {% endif %}
             </div>
 
             <!-- Business Context -->
@@ -109,23 +246,54 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Current Status</label>
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-                            {% if idea.status == 'draft' %}bg-gray-100 text-gray-800
-                            {% elif idea.status == 'active' %}bg-green-100 text-green-800
-                            {% elif idea.status == 'completed' %}bg-blue-100 text-blue-800
+                            {% if idea.status and idea.status.value == 'idea' %}bg-gray-100 text-gray-800
+                            {% elif idea.status and idea.status.value == 'research' %}bg-blue-100 text-blue-800
+                            {% elif idea.status and idea.status.value == 'design' %}bg-purple-100 text-purple-800
+                            {% elif idea.status and idea.status.value == 'accepted' %}bg-green-100 text-green-800
+                            {% elif idea.status and idea.status.value == 'converted' %}bg-emerald-100 text-emerald-800
+                            {% elif idea.status and idea.status.value == 'rejected' %}bg-red-100 text-red-800
                             {% else %}bg-yellow-100 text-yellow-800{% endif %}">
-                            <i class="bi bi-circle-fill mr-2 text-xs"></i>{{ idea.status }}
+                            <i class="bi bi-circle-fill mr-2 text-xs"></i>{{ idea.status.value|title if idea.status else 'Unknown' }}
                         </span>
                     </div>
+                    
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Votes</label>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                            {% if idea.votes and idea.votes >= 5 %}bg-red-100 text-red-800
-                            {% elif idea.votes and idea.votes >= 2 %}bg-yellow-100 text-yellow-800
-                            {% elif idea.votes and idea.votes > 0 %}bg-green-100 text-green-800
-                            {% else %}bg-gray-100 text-gray-800{% endif %}">
-                            {{ idea.votes or 0 }} votes
-                        </span>
+                        <div class="flex items-center space-x-2">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                {% if idea.votes and idea.votes >= 5 %}bg-red-100 text-red-800
+                                {% elif idea.votes and idea.votes >= 2 %}bg-yellow-100 text-yellow-800
+                                {% elif idea.votes and idea.votes > 0 %}bg-green-100 text-green-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ idea.votes or 0 }} votes
+                            </span>
+                            <button onclick="voteIdea({{ idea.id }})" 
+                                    class="text-red-600 hover:text-red-800 transition-colors" title="Vote for this idea">
+                                <i class="bi bi-heart"></i>
+                            </button>
+                        </div>
                     </div>
+
+                    {% if idea.status and not idea.is_terminal() %}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Next Actions</label>
+                        <div class="space-y-2">
+                            {% for transition in idea.get_allowed_transitions() %}
+                            <button onclick="transitionIdea({{ idea.id }}, '{{ transition.value }}')" 
+                                    class="w-full text-left px-3 py-2 text-sm text-gray-700 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                                <i class="bi bi-arrow-right mr-2"></i>Move to {{ transition.value|title }}
+                            </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if idea.status and idea.status.value == 'rejected' and idea.rejection_reason %}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Rejection Reason</label>
+                        <p class="text-sm text-gray-600 bg-red-50 p-3 rounded-lg">{{ idea.rejection_reason }}</p>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
 
@@ -145,6 +313,10 @@
                         <label class="block text-sm font-medium text-gray-500">Created By</label>
                         <p class="text-sm text-gray-900">{{ idea.created_by or 'System' }}</p>
                     </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500">Source</label>
+                        <p class="text-sm text-gray-900">{{ idea.source.value|title if idea.source else 'User' }}</p>
+                    </div>
                     {% if idea.tags %}
                     <div>
                         <label class="block text-sm font-medium text-gray-500 mb-2">Tags</label>
@@ -155,6 +327,21 @@
                             </span>
                             {% endfor %}
                         </div>
+                    </div>
+                    {% endif %}
+                    {% if idea.converted_to_work_item_id %}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500">Converted to Work Item</label>
+                        <a href="/work-items/{{ idea.converted_to_work_item_id }}" 
+                           class="text-sm text-blue-600 hover:text-blue-800 transition-colors">
+                            Work Item #{{ idea.converted_to_work_item_id }}
+                        </a>
+                    </div>
+                    {% endif %}
+                    {% if idea.converted_at %}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500">Converted At</label>
+                        <p class="text-sm text-gray-900">{{ idea.converted_at.strftime('%Y-%m-%d %H:%M') }}</p>
                     </div>
                     {% endif %}
                 </div>
@@ -181,4 +368,378 @@
         </div>
     </div>
 </div>
+
+<!-- Idea Element Modal -->
+<div id="ideaElementModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="relative bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-6 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900" id="modalTitle">Add Idea Element</h3>
+                <button onclick="closeElementModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="bi bi-x-lg text-xl"></i>
+                </button>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="p-6">
+                <form id="elementForm" onsubmit="submitElement(event)">
+                    <div class="space-y-4">
+                    <!-- Title -->
+                    <div>
+                        <label for="elementTitle" class="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                        <input type="text" id="elementTitle" name="title" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                               placeholder="Enter element title">
+                    </div>
+                    
+                    <!-- Description -->
+                    <div>
+                        <label for="elementDescription" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                        <textarea id="elementDescription" name="description" rows="3"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                                  placeholder="Enter element description (optional)"></textarea>
+                    </div>
+                    
+                    <!-- Type and Effort -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="elementType" class="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                            <select id="elementType" name="type" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500">
+                                <option value="implementation">Implementation</option>
+                                <option value="research">Research</option>
+                                <option value="design">Design</option>
+                                <option value="testing">Testing</option>
+                                <option value="documentation">Documentation</option>
+                                <option value="review">Review</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="elementEffort" class="block text-sm font-medium text-gray-700 mb-2">Effort (hours)</label>
+                            <input type="number" id="elementEffort" name="effort_hours" required min="0.1" max="1000" step="0.1"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                                   placeholder="e.g. 2.5">
+                        </div>
+                    </div>
+                    
+                    <!-- Order Index -->
+                    <div>
+                        <label for="elementOrder" class="block text-sm font-medium text-gray-700 mb-2">Display Order</label>
+                        <input type="number" id="elementOrder" name="order_index" required min="0"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                               placeholder="0">
+                        <p class="text-xs text-gray-500 mt-1">Lower numbers appear first</p>
+                    </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Modal Footer -->
+            <div class="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-lg">
+                <button type="button" onclick="closeElementModal()"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" form="elementForm" id="submitButton"
+                        class="px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-lg hover:bg-yellow-700 transition-colors">
+                    <span id="submitText">Add Element</span>
+                    <span id="submitLoading" class="hidden">
+                        <i class="bi bi-hourglass-split mr-1"></i>Adding...
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function voteIdea(ideaId) {
+    fetch(`/ideas/${ideaId}/vote`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'vote' })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update vote count in UI
+            const voteElements = document.querySelectorAll('.vote-count');
+            voteElements.forEach(element => {
+                element.textContent = data.votes;
+            });
+            
+            showNotification('Vote recorded successfully!', 'success');
+            // Reload page to update all vote counts
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification('Failed to record vote: ' + data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error voting for idea:', error);
+        showNotification('Error voting for idea', 'error');
+    });
+}
+
+function editIdea(ideaId) {
+    // TODO: Implement edit functionality
+    showNotification('Edit functionality coming soon!', 'info');
+}
+
+function convertToWorkItem(ideaId) {
+    if (confirm('Are you sure you want to convert this idea to a work item?')) {
+        fetch(`/ideas/${ideaId}/convert`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ action: 'convert' })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Idea converted to work item successfully!', 'success');
+                setTimeout(() => {
+                    window.location.href = `/work-items/${data.work_item_id}`;
+                }, 1500);
+            } else {
+                showNotification('Failed to convert idea: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error converting idea:', error);
+            showNotification('Error converting idea', 'error');
+        });
+    }
+}
+
+function transitionIdea(ideaId, newStatus) {
+    if (confirm(`Are you sure you want to move this idea to ${newStatus}?`)) {
+        fetch(`/ideas/${ideaId}/transition`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status: newStatus })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(`Idea moved to ${newStatus} successfully!`, 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showNotification('Failed to transition idea: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error transitioning idea:', error);
+            showNotification('Error transitioning idea', 'error');
+        });
+    }
+}
+
+function toggleActionMenu() {
+    const menu = document.getElementById('actionMenu');
+    if (menu) {
+        menu.classList.toggle('hidden');
+    }
+}
+
+let currentIdeaId = {{ idea.id }};
+let editingElementId = null;
+
+function addIdeaElement(ideaId) {
+    currentIdeaId = ideaId;
+    editingElementId = null;
+    
+    // Reset form
+    document.getElementById('elementForm').reset();
+    document.getElementById('modalTitle').textContent = 'Add Idea Element';
+    document.getElementById('submitText').textContent = 'Add Element';
+    
+    // Set default order index
+    const existingElements = document.querySelectorAll('.idea-element');
+    document.getElementById('elementOrder').value = existingElements.length;
+    
+    // Show modal
+    document.getElementById('ideaElementModal').classList.remove('hidden');
+    document.getElementById('elementTitle').focus();
+}
+
+function editElement(elementId) {
+    editingElementId = elementId;
+    
+    // Fetch element data from server
+    fetch(`/idea-elements/${elementId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const element = data.element;
+                
+                // Populate form with existing data
+                document.getElementById('elementTitle').value = element.title || '';
+                document.getElementById('elementDescription').value = element.description || '';
+                document.getElementById('elementType').value = element.type || 'implementation';
+                document.getElementById('elementEffort').value = element.effort_hours || '';
+                document.getElementById('elementOrder').value = element.order_index || 0;
+                
+                // Update modal title and button text
+                document.getElementById('modalTitle').textContent = 'Edit Idea Element';
+                document.getElementById('submitText').textContent = 'Update Element';
+                
+                // Show modal
+                document.getElementById('ideaElementModal').classList.remove('hidden');
+                document.getElementById('elementTitle').focus();
+            } else {
+                showNotification('Failed to load element data: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching element data:', error);
+            showNotification('Error loading element data', 'error');
+        });
+}
+
+function closeElementModal() {
+    document.getElementById('ideaElementModal').classList.add('hidden');
+    editingElementId = null;
+}
+
+function submitElement(event) {
+    event.preventDefault();
+    
+    const form = document.getElementById('elementForm');
+    const formData = new FormData(form);
+    
+    // Show loading state
+    const submitButton = document.getElementById('submitButton');
+    const submitText = document.getElementById('submitText');
+    const submitLoading = document.getElementById('submitLoading');
+    
+    submitText.classList.add('hidden');
+    submitLoading.classList.remove('hidden');
+    submitButton.disabled = true;
+    
+    // Prepare data
+    const data = {
+        idea_id: currentIdeaId,
+        title: formData.get('title'),
+        description: formData.get('description'),
+        type: formData.get('type'),
+        effort_hours: parseFloat(formData.get('effort_hours')),
+        order_index: parseInt(formData.get('order_index'))
+    };
+    
+    const url = editingElementId 
+        ? `/idea-elements/${editingElementId}` 
+        : '/idea-elements';
+    const method = editingElementId ? 'PUT' : 'POST';
+    
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showNotification(
+                editingElementId ? 'Element updated successfully!' : 'Element added successfully!', 
+                'success'
+            );
+            closeElementModal();
+            // Reload page to show updated elements
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification('Failed to save element: ' + result.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving element:', error);
+        showNotification('Error saving element', 'error');
+    })
+    .finally(() => {
+        // Reset button state
+        submitText.classList.remove('hidden');
+        submitLoading.classList.add('hidden');
+        submitButton.disabled = false;
+    });
+}
+
+function toggleElementCompletion(elementId) {
+    fetch(`/idea-elements/${elementId}/toggle-completion`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Element status updated!', 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification('Failed to update element: ' + data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error updating element:', error);
+        showNotification('Error updating element', 'error');
+    });
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg transition-all duration-300 ${
+        type === 'success' ? 'bg-green-500 text-white' :
+        type === 'error' ? 'bg-red-500 text-white' :
+        'bg-blue-500 text-white'
+    }`;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (document.body.contains(notification)) {
+                document.body.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// Close menus when clicking outside
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('#actionMenu') && !event.target.closest('button[onclick="toggleActionMenu()"]')) {
+        const menu = document.getElementById('actionMenu');
+        if (menu) {
+            menu.classList.add('hidden');
+        }
+    }
+    
+    // Close modal when clicking outside
+    if (event.target.id === 'ideaElementModal') {
+        closeElementModal();
+    }
+});
+
+// Keyboard support for modal
+document.addEventListener('keydown', function(event) {
+    // Close modal with Escape key
+    if (event.key === 'Escape') {
+        const modal = document.getElementById('ideaElementModal');
+        if (!modal.classList.contains('hidden')) {
+            closeElementModal();
+        }
+    }
+});
+</script>
 {% endblock %}

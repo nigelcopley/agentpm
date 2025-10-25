@@ -51,6 +51,7 @@ def tasks_list():
     type_filter = request.args.get('type', '')
     work_item_filter = request.args.get('work_item', '')
     assigned_filter = request.args.get('assigned', '')
+    priority_filter = request.args.get('priority', '')
     sort_by = request.args.get('sort', 'updated_desc')
     
     # Get all tasks
@@ -101,6 +102,17 @@ def tasks_list():
             task for task in filtered_tasks
             if task.assigned_to and assigned_filter.lower() in task.assigned_to.lower()
         ]
+    
+    # Priority filter
+    if priority_filter:
+        try:
+            priority = int(priority_filter)
+            filtered_tasks = [
+                task for task in filtered_tasks
+                if task.priority == priority
+            ]
+        except ValueError:
+            pass
     
     # Apply sorting
     if sort_by == 'name_asc':
@@ -209,6 +221,7 @@ def tasks_list():
                                  'type': type_filter,
                                  'work_item': work_item_filter,
                                  'assigned': assigned_filter,
+                                 'priority': priority_filter,
                                  'sort': sort_by
                              })
     
@@ -224,6 +237,7 @@ def tasks_list():
                              'type': type_filter,
                              'work_item': work_item_filter,
                              'assigned': assigned_filter,
+                             'priority': priority_filter,
                              'sort': sort_by
                          })
 
@@ -513,4 +527,285 @@ def update_task_status(task_id: int):
         
     except Exception as e:
         logger.error(f"Error updating task status: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@tasks_bp.route('/bulk-update', methods=['POST'])
+def bulk_update_tasks():
+    """Bulk update tasks via AJAX"""
+    try:
+        db = get_database_service()
+        from ...core.database.methods import tasks
+        from ...core.database.enums import TaskStatus, TaskType
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        task_ids = data.get('task_ids', [])
+        if not task_ids:
+            return jsonify({'error': 'No task IDs provided'}), 400
+        
+        updates = {}
+        
+        # Process update fields
+        if 'status' in data and data['status']:
+            try:
+                updates['status'] = TaskStatus(data['status'])
+            except ValueError:
+                return jsonify({'error': 'Invalid status'}), 400
+        
+        if 'priority' in data and data['priority']:
+            try:
+                priority = int(data['priority'])
+                if priority < 1 or priority > 5:
+                    return jsonify({'error': 'Priority must be between 1 and 5'}), 400
+                updates['priority'] = priority
+            except ValueError:
+                return jsonify({'error': 'Invalid priority'}), 400
+        
+        if 'assigned_to' in data:
+            updates['assigned_to'] = data['assigned_to'] if data['assigned_to'] else None
+        
+        if 'description' in data:
+            updates['description'] = data['description'] if data['description'] else None
+        
+        if not updates:
+            return jsonify({'error': 'No update fields provided'}), 400
+        
+        # Perform bulk updates
+        updated_count = 0
+        errors = []
+        
+        for task_id in task_ids:
+            try:
+                task = tasks.get_task(db, task_id)
+                if not task:
+                    errors.append(f"Task {task_id} not found")
+                    continue
+                
+                # Apply updates
+                for field, value in updates.items():
+                    setattr(task, field, value)
+                
+                # Update timestamps based on status changes
+                if 'status' in updates:
+                    if updates['status'].value == 'in_progress' and not task.started_at:
+                        task.started_at = datetime.now()
+                    elif updates['status'].value in ['done', 'cancelled'] and not task.completed_at:
+                        task.completed_at = datetime.now()
+                
+                tasks.update_task(db, task)
+                updated_count += 1
+                
+            except Exception as e:
+                errors.append(f"Task {task_id}: {str(e)}")
+        
+        return jsonify({
+            'success': True,
+            'updated_count': updated_count,
+            'total_count': len(task_ids),
+            'errors': errors,
+            'message': f'Successfully updated {updated_count} of {len(task_ids)} tasks'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in bulk update: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@tasks_bp.route('/bulk-delete', methods=['POST'])
+def bulk_delete_tasks():
+    """Bulk delete tasks via AJAX"""
+    try:
+        db = get_database_service()
+        from ...core.database.methods import tasks
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        task_ids = data.get('task_ids', [])
+        if not task_ids:
+            return jsonify({'error': 'No task IDs provided'}), 400
+        
+        # Perform bulk deletes
+        deleted_count = 0
+        errors = []
+        
+        for task_id in task_ids:
+            try:
+                task = tasks.get_task(db, task_id)
+                if not task:
+                    errors.append(f"Task {task_id} not found")
+                    continue
+                
+                tasks.delete_task(db, task_id)
+                deleted_count += 1
+                
+            except Exception as e:
+                errors.append(f"Task {task_id}: {str(e)}")
+        
+        return jsonify({
+            'success': True,
+            'deleted_count': deleted_count,
+            'total_count': len(task_ids),
+            'errors': errors,
+            'message': f'Successfully deleted {deleted_count} of {len(task_ids)} tasks'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in bulk delete: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@tasks_bp.route('/export')
+def export_tasks():
+    """Export tasks to CSV or JSON"""
+    try:
+        db = get_database_service()
+        from ...core.database.methods import tasks
+        
+        # Get filter parameters (same as list view)
+        search_query = request.args.get('search', '').strip()
+        status_filter = request.args.get('status', '')
+        type_filter = request.args.get('type', '')
+        work_item_filter = request.args.get('work_item', '')
+        assigned_filter = request.args.get('assigned', '')
+        sort_by = request.args.get('sort', 'updated_desc')
+        
+        # Get all tasks and apply filters (reuse logic from tasks_list)
+        tasks_list = tasks.list_tasks(db) or []
+        
+        # Apply same filtering logic as in tasks_list
+        filtered_tasks = tasks_list
+        
+        if search_query:
+            filtered_tasks = [
+                task for task in filtered_tasks
+                if search_query.lower() in (task.name or '').lower() or 
+                   search_query.lower() in (task.description or '').lower()
+            ]
+        
+        if status_filter:
+            filtered_tasks = [
+                task for task in filtered_tasks
+                if task.status and task.status.value == status_filter
+            ]
+        
+        if type_filter:
+            filtered_tasks = [
+                task for task in filtered_tasks
+                if task.type and task.type.value == type_filter
+            ]
+        
+        if work_item_filter:
+            try:
+                work_item_id = int(work_item_filter)
+                filtered_tasks = [
+                    task for task in filtered_tasks
+                    if task.work_item_id == work_item_id
+                ]
+            except ValueError:
+                pass
+        
+        if assigned_filter:
+            filtered_tasks = [
+                task for task in filtered_tasks
+                if task.assigned_to and assigned_filter.lower() in task.assigned_to.lower()
+            ]
+        
+        # Apply sorting (same as in tasks_list)
+        if sort_by == 'name_asc':
+            filtered_tasks.sort(key=lambda x: (x.name or '').lower())
+        elif sort_by == 'name_desc':
+            filtered_tasks.sort(key=lambda x: (x.name or '').lower(), reverse=True)
+        elif sort_by == 'status_asc':
+            filtered_tasks.sort(key=lambda x: x.status.value if x.status else '')
+        elif sort_by == 'status_desc':
+            filtered_tasks.sort(key=lambda x: x.status.value if x.status else '', reverse=True)
+        elif sort_by == 'priority_asc':
+            filtered_tasks.sort(key=lambda x: x.priority or 0)
+        elif sort_by == 'priority_desc':
+            filtered_tasks.sort(key=lambda x: x.priority or 0, reverse=True)
+        else:  # updated_desc (default)
+            filtered_tasks.sort(key=lambda x: x.updated_at or x.created_at or datetime.min, reverse=True)
+        
+        # Get export format
+        export_format = request.args.get('format', 'csv').lower()
+        
+        if export_format == 'json':
+            # Export as JSON
+            import json
+            from flask import Response
+            
+            # Convert tasks to dictionaries
+            tasks_data = []
+            for task in filtered_tasks:
+                task_dict = {
+                    'id': task.id,
+                    'name': task.name,
+                    'description': task.description,
+                    'type': task.type.value if task.type else None,
+                    'status': task.status.value if task.status else None,
+                    'priority': task.priority,
+                    'effort_hours': task.effort_hours,
+                    'assigned_to': task.assigned_to,
+                    'work_item_id': task.work_item_id,
+                    'due_date': task.due_date.isoformat() if task.due_date else None,
+                    'created_at': task.created_at.isoformat() if task.created_at else None,
+                    'updated_at': task.updated_at.isoformat() if task.updated_at else None,
+                    'started_at': task.started_at.isoformat() if task.started_at else None,
+                    'completed_at': task.completed_at.isoformat() if task.completed_at else None,
+                }
+                tasks_data.append(task_dict)
+            
+            response = Response(
+                json.dumps(tasks_data, indent=2),
+                mimetype='application/json',
+                headers={'Content-Disposition': 'attachment; filename=tasks_export.json'}
+            )
+            return response
+        
+        else:  # CSV format
+            import csv
+            from flask import Response
+            import io
+            
+            # Create CSV in memory
+            output = io.StringIO()
+            writer = csv.writer(output)
+            
+            # Write header
+            writer.writerow([
+                'ID', 'Name', 'Description', 'Type', 'Status', 'Priority', 
+                'Effort Hours', 'Assigned To', 'Work Item ID', 'Due Date',
+                'Created At', 'Updated At', 'Started At', 'Completed At'
+            ])
+            
+            # Write data
+            for task in filtered_tasks:
+                writer.writerow([
+                    task.id,
+                    task.name or '',
+                    task.description or '',
+                    task.type.value if task.type else '',
+                    task.status.value if task.status else '',
+                    task.priority or '',
+                    task.effort_hours or '',
+                    task.assigned_to or '',
+                    task.work_item_id or '',
+                    task.due_date.strftime('%Y-%m-%d %H:%M:%S') if task.due_date else '',
+                    task.created_at.strftime('%Y-%m-%d %H:%M:%S') if task.created_at else '',
+                    task.updated_at.strftime('%Y-%m-%d %H:%M:%S') if task.updated_at else '',
+                    task.started_at.strftime('%Y-%m-%d %H:%M:%S') if task.started_at else '',
+                    task.completed_at.strftime('%Y-%m-%d %H:%M:%S') if task.completed_at else '',
+                ])
+            
+            response = Response(
+                output.getvalue(),
+                mimetype='text/csv',
+                headers={'Content-Disposition': 'attachment; filename=tasks_export.csv'}
+            )
+            return response
+        
+    except Exception as e:
+        logger.error(f"Error exporting tasks: {e}")
         return jsonify({'error': str(e)}), 500

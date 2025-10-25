@@ -106,10 +106,10 @@ class TestDependencyGraphService:
         assert graph.number_of_nodes() >= 3  # At least main, utils, models
         assert graph.number_of_edges() >= 2  # main->utils, main->models
 
-        # Verify nodes exist
-        assert any("main.py" in node for node in graph.nodes())
-        assert any("utils" in node for node in graph.nodes())
-        assert any("models" in node for node in graph.nodes())
+        # Verify nodes exist (normalized module names without .py extension)
+        assert any("main" == node for node in graph.nodes())
+        assert any("utils" == node for node in graph.nodes())
+        assert any("models" == node for node in graph.nodes())
 
     def test_build_graph_caching(self, temp_project):
         """Test graph caching mechanism."""
@@ -200,7 +200,7 @@ class TestDependencyGraphService:
         metrics = service.get_module_coupling("utils.py")
 
         assert isinstance(metrics, CouplingMetrics)
-        assert metrics.module == "utils.py"
+        assert metrics.module == "utils"  # Normalized to module name (no .py)
         assert metrics.afferent_coupling >= 0
         assert metrics.efferent_coupling >= 0
         assert 0.0 <= metrics.instability <= 1.0

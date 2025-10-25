@@ -58,7 +58,15 @@
             <div class="flex items-start justify-between">
                 <div class="flex-1">
                     <div class="flex items-center space-x-3 mb-2">
-                        <h3 class="text-lg font-semibold text-gray-900">{{ context.title or 'Untitled Context' }}</h3>
+                        <h3 class="text-lg font-semibold text-gray-900">
+                            {% if context.what %}
+                                {{ context.what[:60] }}{% if context.what|length > 60 %}...{% endif %}
+                            {% elif context.file_path %}
+                                {{ context.file_path.split('/')[-1] }}
+                            {% else %}
+                                Context #{{ context.id }}
+                            {% endif %}
+                        </h3>
                         {% if context.confidence_score %}
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                             {% if context.confidence_score >= 0.8 %}bg-green-100 text-green-800
@@ -79,12 +87,20 @@
                         {% endif %}
                     </div>
                     <div class="text-gray-600 mb-3">
-                        {% if context.six_w and context.six_w.business_value %}
-                            {% set content_text = context.six_w.business_value|markdown_to_text(150) %}
-                            <p>{{ content_text }}</p>
+                        {% if context.why %}
+                            <p class="font-medium text-gray-800 mb-1">Why:</p>
+                            <p>{{ context.why[:200] }}{% if context.why|length > 200 %}...{% endif %}</p>
+                        {% elif context.what %}
+                            <p class="font-medium text-gray-800 mb-1">What:</p>
+                            <p>{{ context.what[:200] }}{% if context.what|length > 200 %}...{% endif %}</p>
+                        {% elif context.how %}
+                            <p class="font-medium text-gray-800 mb-1">How:</p>
+                            <p>{{ context.how[:200] }}{% if context.how|length > 200 %}...{% endif %}</p>
                         {% elif context.context_data %}
                             {% set content_text = context.context_data|string|markdown_to_text(150) %}
                             <p>{{ content_text }}</p>
+                        {% elif context.file_path %}
+                            <p class="text-gray-500 italic">Resource file: {{ context.file_path }}</p>
                         {% else %}
                             <p class="text-gray-500 italic">No content available</p>
                         {% endif %}
@@ -93,17 +109,14 @@
                         <span>
                             <i class="bi bi-calendar mr-1"></i>{{ context.created_at.strftime('%Y-%m-%d') if context.created_at else 'N/A' }}
                         </span>
+                        {% if context.entity_type and context.entity_id %}
                         <span>
-                            <i class="bi bi-person mr-1"></i>{{ context.created_by or 'System' }}
-                        </span>
-                        {% if context.source %}
-                        <span>
-                            <i class="bi bi-link mr-1"></i>{{ context.source }}
+                            <i class="bi bi-link mr-1"></i>{{ context.entity_type.value.replace('_', ' ').title() }} #{{ context.entity_id }}
                         </span>
                         {% endif %}
-                        {% if context.tags %}
+                        {% if context.file_path %}
                         <span>
-                            <i class="bi bi-tags mr-1"></i>{{ context.tags|join(', ') }}
+                            <i class="bi bi-file mr-1"></i>{{ context.file_path.split('/')[-1] }}
                         </span>
                         {% endif %}
                     </div>

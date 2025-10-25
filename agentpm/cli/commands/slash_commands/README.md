@@ -1,6 +1,6 @@
-# AIPM Slash Commands
+# APM Slash Commands
 
-Custom Claude Code slash commands for AIPM workflows.
+Custom Claude Code slash commands for APM workflows.
 
 ## Available Commands
 
@@ -27,7 +27,7 @@ cp agentpm/cli/commands/slash_commands/*.md ~/.claude/commands/agentpm/
 
 ### Via CLI (Future)
 ```bash
-apm commands install    # Install all AIPM slash commands to ~/.claude/
+apm commands install    # Install all APM slash commands to ~/.claude/
 apm commands update     # Update installed commands
 apm commands list       # Show installed commands
 ```
@@ -72,4 +72,4 @@ How to verify it worked
 2. **Specific**: Use exact commands, file paths, field names
 3. **Validated**: Include verification steps
 4. **Focused**: One command = one clear purpose
-5. **Database-First**: Store results in AIPM database, not files
+5. **Database-First**: Store results in APM database, not files

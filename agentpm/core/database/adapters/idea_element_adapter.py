@@ -172,6 +172,21 @@ class IdeaElementAdapter:
         from ..methods import idea_elements as element_methods
         return element_methods.get_idea_completion_stats(service, idea_id)
 
+    @staticmethod
+    def delete(service, element_id: int) -> bool:
+        """
+        Delete idea element (Web interface entry point).
+
+        Args:
+            service: DatabaseService instance
+            element_id: Element ID to delete
+
+        Returns:
+            True if deleted successfully
+        """
+        from ..methods import idea_elements as element_methods
+        return element_methods.delete_idea_element(service, element_id)
+
     # ============================================================================
     # CONVERSION METHODS
     # ============================================================================

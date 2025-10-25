@@ -28,6 +28,8 @@ from .approve import approve
 from .request_changes import request_changes
 from .complete import complete
 from .update import update
+from .delete import delete
+from .bulk import bulk
 from .next import next
 from .types import types
 
@@ -69,6 +71,8 @@ task.add_command(approve)
 task.add_command(request_changes)
 task.add_command(complete)
 task.add_command(update)
+task.add_command(delete)
+task.add_command(bulk)
 task.add_command(next)
 task.add_command(types)
 

@@ -103,6 +103,8 @@ def start(ctx: click.Context, port: int, host: str, debug: bool, dev: bool, forc
     # Auto-detect database path (same logic as web app)
     db_path = detect_database_path(project_root)
     if db_path:
+        # Set both APM_DB_PATH (new) and AIPM_DB_PATH (backward compatibility)
+        env['APM_DB_PATH'] = str(db_path)
         env['AIPM_DB_PATH'] = str(db_path)
         console.print(f"[green]✓[/green] Database detected: {db_path}")
     
@@ -129,11 +131,11 @@ def status(ctx: click.Context):
     flask_processes = find_flask_processes()
     
     if not flask_processes:
-        console.print("[yellow]No AIPM web servers are currently running[/yellow]")
+        console.print("[yellow]No APM web servers are currently running[/yellow]")
         return
-    
+
     # Create status table
-    table = Table(title="🌐 AIPM Web Server Status")
+    table = Table(title="🌐 APM Web Server Status")
     table.add_column("PID", style="cyan")
     table.add_column("Port", style="green")
     table.add_column("Host", style="blue")
@@ -179,15 +181,15 @@ def stop(ctx: click.Context, all: bool, port: Optional[int]):
     
     \b
     Examples:
-      apm web stop              # Stop all AIPM web servers
+      apm web stop              # Stop all APM web servers
       apm web stop --port 5002  # Stop server on port 5002
     """
     console = ctx.obj['console']
-    
+
     flask_processes = find_flask_processes()
-    
+
     if not flask_processes:
-        console.print("[yellow]No AIPM web servers are currently running[/yellow]")
+        console.print("[yellow]No APM web servers are currently running[/yellow]")
         return
     
     # Filter processes by port if specified
@@ -272,15 +274,17 @@ def find_available_port(start_port: int, max_attempts: int = 10) -> Optional[int
 
 def detect_database_path(project_root: Path) -> Optional[Path]:
     """
-    Detect AIPM database path using the same logic as the web app.
-    
+    Detect APM database path using the same logic as the web app.
+
     Detection Priority:
-    1. Environment variable AIPM_DB_PATH (explicit override)
+    1. Environment variable APM_DB_PATH or AIPM_DB_PATH (backward compatibility)
     2. Current directory .agentpm/data/agentpm.db (project context)
     3. Parent directories (walk up to find APM project)
     4. Home directory ~/.agentpm/agentpm.db (global fallback)
     """
-    # 1. Check environment variable (explicit override)
+    # 1. Check environment variable (explicit override, support both APM_DB_PATH and AIPM_DB_PATH for backward compatibility)
+    if 'APM_DB_PATH' in os.environ:
+        return Path(os.environ['APM_DB_PATH'])
     if 'AIPM_DB_PATH' in os.environ:
         return Path(os.environ['AIPM_DB_PATH'])
     
@@ -311,7 +315,7 @@ def detect_database_path(project_root: Path) -> Optional[Path]:
 
 
 def find_flask_processes() -> List[psutil.Process]:
-    """Find running Flask processes related to AIPM."""
+    """Find running Flask processes related to APM."""
     processes = []
     for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
         try:
@@ -360,7 +364,7 @@ def get_process_host(proc: psutil.Process) -> str:
 
 def start_flask_server(console: Console, port: int, host: str, env: dict, debug: bool):
     """Start the Flask web server."""
-    console.print(f"[green]🚀 Starting AIPM web server...[/green]")
+    console.print(f"[green]🚀 Starting APM web server...[/green]")
     console.print(f"   Port: {port}")
     console.print(f"   Host: {host}")
     console.print(f"   Debug: {'Yes' if debug else 'No'}")
@@ -392,7 +396,7 @@ def start_flask_server(console: Console, port: int, host: str, env: dict, debug:
 
 def start_dev_environment(console: Console, port: int, host: str, env: dict):
     """Start the full development environment (Vite + Flask)."""
-    console.print(f"[green]🚀 Starting AIPM development environment...[/green]")
+    console.print(f"[green]🚀 Starting APM development environment...[/green]")
     console.print(f"   Flask Port: {port}")
     console.print(f"   Vite Port: 3000")
     console.print(f"   Host: {host}")

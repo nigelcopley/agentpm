@@ -19,6 +19,8 @@ from .show import show
 from .validate import validate
 from .accept import accept
 from .update import update
+from .delete import delete
+from .bulk import bulk
 from .start import start
 from .submit_review import submit_review
 from .approve import approve
@@ -77,6 +79,8 @@ work_item.add_command(submit_review)
 work_item.add_command(approve)
 work_item.add_command(request_changes)
 work_item.add_command(update)
+work_item.add_command(delete)
+work_item.add_command(bulk)
 work_item.add_command(add_summary)
 work_item.add_command(show_history)
 work_item.add_command(next)

@@ -26,10 +26,10 @@ from agentpm.core.agents.simplified.quality_orchestrator import (
     QualityOrchestrator, QualityGateType, QualityLevel, QualityGate, QualityMetrics, create_quality_orchestrator
 )
 from agentpm.core.performance.optimizer import (
-    PerformanceOptimizer, LRUCache, MultiLevelCache, DatabaseConnectionPool, 
+    PerformanceOptimizer, LRUCache, MultiLevelCache, DatabaseConnectionPool,
     CacheLevel, PerformanceMetrics, create_performance_optimizer
 )
-from agentpm.database.enums import WorkItemStatus, Phase, TaskStatus
+from agentpm.core.database.enums import WorkItemStatus, Phase, TaskStatus
 
 
 class TestWorkflowOrchestrator:

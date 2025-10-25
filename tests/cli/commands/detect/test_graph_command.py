@@ -13,6 +13,7 @@ Tests dependency graph CLI integration including:
 import json
 import yaml
 from pathlib import Path
+import re
 import pytest
 from click.testing import CliRunner
 from rich.console import Console
@@ -31,7 +32,114 @@ def cli_runner():
 def mock_console():
     """Mock Rich console for testing."""
     output = StringIO()
-    return Console(file=output, force_terminal=True, width=120)
+    console = Console(file=output, force_terminal=True, width=999, legacy_windows=False)
+    # Attach the StringIO to the console for easy access in tests
+    console._test_output = output
+    return console
+
+
+def get_output(result, console=None):
+    """
+    Get output from either CLI result or mock console.
+    
+    When using custom console with Rich, output goes to console.file.
+    When using Click's default output, it goes to result.output.
+    """
+    if console and hasattr(console, '_test_output'):
+        return console._test_output.getvalue()
+    return result.output
+
+
+def strip_ansi(text: str) -> str:
+    """
+    Strip ANSI escape codes from text.
+    
+    Rich applies syntax highlighting to JSON/YAML which adds ANSI codes.
+    For testing structured output, we need to strip these.
+    """
+    ansi_escape = re.compile(r'\x1b\[[0-9;]*[mGKHF]')
+    return ansi_escape.sub('', text)
+
+
+def extract_json(text: str) -> str:
+    """
+    Extract JSON content from console output.
+    
+    The CLI prints status messages before JSON, so we need to find and extract
+    just the JSON portion (from first { to last }).
+    """
+    # Strip ANSI codes first
+    text = strip_ansi(text)
+    
+    # Find the JSON object
+    start = text.find('{')
+    if start == -1:
+        return text  # No JSON found, return as-is
+    
+    # Find matching closing brace
+    end = text.rfind('}')
+    if end == -1 or end < start:
+        return text  # No valid JSON found
+    
+    return text[start:end + 1]
+
+
+def extract_yaml(text: str) -> str:
+    """
+    Extract YAML content from console output.
+    
+    The CLI prints status messages before YAML. We extract everything after
+    the last status line (lines starting with emojis or "Pattern:", etc.).
+    """
+    # Strip ANSI codes first
+    text = strip_ansi(text)
+    
+    lines = text.split('\n')
+    
+    # Find where YAML content starts (after status messages)
+    yaml_start = 0
+    for i, line in enumerate(lines):
+        # Skip empty lines
+        if not line.strip():
+            continue
+
+        # Skip common status message prefixes
+        status_prefixes = ['🔍', '🏋️', 'Pattern:', 'Cache:', '✅', '⚠️', '❌',
+                          'Analyzing', 'Running', 'Loaded', 'Total']
+        if any(line.strip().startswith(x) for x in status_prefixes):
+            continue
+
+        # Check if this looks like YAML (key: value)
+        if ':' in line and not line.strip().startswith('#'):
+            yaml_start = i
+            break
+    
+    return '\n'.join(lines[yaml_start:])
+
+
+def get_output_clean(result, console=None, format='json') -> str:
+    """
+    Get output and extract structured data (JSON/YAML).
+    
+    Use this when you need to parse structured output that Rich has syntax-highlighted
+    and that comes after CLI status messages.
+    
+    Args:
+        result: Click test result
+        console: Mock console (optional)
+        format: Output format - 'json' or 'yaml' (default: 'json')
+    
+    Returns:
+        Extracted and cleaned structured data
+    """
+    output = get_output(result, console)
+    
+    if format == 'json':
+        return extract_json(output)
+    elif format == 'yaml':
+        return extract_yaml(output)
+    else:
+        return strip_ansi(output)
 
 
 @pytest.fixture
@@ -135,8 +243,10 @@ def test_graph_basic_execution(cli_runner, sample_project_with_deps, mock_consol
         obj={'console': mock_console}
     )
 
+    output = get_output(result, mock_console)
+
     assert result.exit_code == 0
-    assert 'Total Modules' in result.output or 'total_modules' in result.output.lower()
+    assert 'Total Modules' in output or 'total_modules' in output.lower()
 
 
 def test_graph_current_directory(cli_runner, sample_project_with_deps, mock_console):
@@ -162,10 +272,12 @@ def test_graph_summary_table(cli_runner, sample_project_with_deps, mock_console)
         obj={'console': mock_console}
     )
 
+    output = get_output(result, mock_console)
+
     assert result.exit_code == 0
     # Check for key metrics
-    assert 'Total Modules' in result.output
-    assert 'Dependencies' in result.output
+    assert 'Total Modules' in output
+    assert 'Dependencies' in output
 
 
 # ===== Cycle Detection Tests =====
@@ -178,9 +290,11 @@ def test_graph_detect_cycles_flag(cli_runner, sample_project_with_deps, mock_con
         obj={'console': mock_console}
     )
 
+    output = get_output(result, mock_console)
+
     assert result.exit_code == 0
     # Should detect circular dependency between D and E
-    assert 'circular' in result.output.lower() or 'cycle' in result.output.lower()
+    assert 'circular' in output.lower() or 'cycle' in output.lower()
 
 
 def test_graph_cycles_only_mode(cli_runner, sample_project_with_deps, mock_console):
@@ -191,9 +305,11 @@ def test_graph_cycles_only_mode(cli_runner, sample_project_with_deps, mock_conso
         obj={'console': mock_console}
     )
 
+    output = get_output(result, mock_console)
+
     assert result.exit_code == 0
     # Should show cycles
-    assert 'circular' in result.output.lower() or 'cycle' in result.output.lower()
+    assert 'circular' in output.lower() or 'cycle' in output.lower()
 
 
 def test_graph_no_cycles_detected(cli_runner, tmp_path, mock_console):
@@ -212,8 +328,10 @@ def test_graph_no_cycles_detected(cli_runner, tmp_path, mock_console):
         obj={'console': mock_console}
     )
 
+    output = get_output(result, mock_console)
+
     assert result.exit_code == 0
-    assert 'No circular dependencies' in result.output or 'no circular' in result.output.lower()
+    assert 'No circular dependencies' in output or 'no circular' in output.lower()
 
 
 # ===== Coupling Metrics Tests =====
@@ -226,13 +344,15 @@ def test_graph_coupling_metrics(cli_runner, sample_project_with_deps, mock_conso
         obj={'console': mock_console}
     )
 
+    output = get_output(result, mock_console)
+
     assert result.exit_code == 0
     # Should show coupling table
-    assert 'Coupling Metrics' in result.output or 'coupling' in result.output.lower()
+    assert 'Coupling Metrics' in output or 'coupling' in output.lower()
     # Should show Ca (afferent) and Ce (efferent)
-    assert 'Ca' in result.output or 'afferent' in result.output.lower()
-    assert 'Ce' in result.output or 'efferent' in result.output.lower()
-    assert 'Instability' in result.output or 'instability' in result.output.lower()
+    assert 'Ca' in output or 'afferent' in output.lower()
+    assert 'Ce' in output or 'efferent' in output.lower()
+    assert 'Instability' in output or 'instability' in output.lower()
 
 
 def test_graph_coupling_show_all(cli_runner, sample_project_with_deps, mock_console):
@@ -247,9 +367,11 @@ def test_graph_coupling_show_all(cli_runner, sample_project_with_deps, mock_cons
         obj={'console': mock_console}
     )
 
+    output = get_output(result, mock_console)
+
     assert result.exit_code == 0
     # Should show coupling metrics
-    assert 'Coupling' in result.output or 'coupling' in result.output.lower()
+    assert 'Coupling' in output or 'coupling' in output.lower()
 
 
 # ===== Module-Specific Analysis Tests =====
@@ -298,9 +420,11 @@ def test_graph_root_modules(cli_runner, sample_project_with_deps, mock_console):
         obj={'console': mock_console}
     )
 
+    output = get_output(result, mock_console)
+
     assert result.exit_code == 0
     # Should show root modules section
-    assert 'Root Modules' in result.output or 'root' in result.output.lower()
+    assert 'Root Modules' in output or 'root' in output.lower()
 
 
 def test_graph_leaf_modules(cli_runner, sample_project_with_deps, mock_console):
@@ -311,9 +435,11 @@ def test_graph_leaf_modules(cli_runner, sample_project_with_deps, mock_console):
         obj={'console': mock_console}
     )
 
+    output = get_output(result, mock_console)
+
     assert result.exit_code == 0
     # Should show leaf modules section
-    assert 'Leaf Modules' in result.output or 'leaf' in result.output.lower()
+    assert 'Leaf Modules' in output or 'leaf' in output.lower()
 
 
 def test_graph_root_and_leaf(cli_runner, sample_project_with_deps, mock_console):
@@ -328,9 +454,11 @@ def test_graph_root_and_leaf(cli_runner, sample_project_with_deps, mock_console)
         obj={'console': mock_console}
     )
 
+    output = get_output(result, mock_console)
+
     assert result.exit_code == 0
-    assert 'Root' in result.output or 'root' in result.output.lower()
-    assert 'Leaf' in result.output or 'leaf' in result.output.lower()
+    assert 'Root' in output or 'root' in output.lower()
+    assert 'Leaf' in output or 'leaf' in output.lower()
 
 
 # ===== Visualization Tests =====
@@ -427,11 +555,13 @@ def test_graph_json_format(cli_runner, sample_project_with_deps, mock_console):
         obj={'console': mock_console}
     )
 
+    output = get_output(result, mock_console)
+
     assert result.exit_code == 0
 
     # Should create default JSON file
     # In isolated mode, check result indicates success
-    assert 'exported' in result.output.lower() or result.exit_code == 0
+    assert 'exported' in output.lower() or result.exit_code == 0
 
 
 def test_graph_yaml_format(cli_runner, sample_project_with_deps, mock_console):
@@ -442,8 +572,10 @@ def test_graph_yaml_format(cli_runner, sample_project_with_deps, mock_console):
         obj={'console': mock_console}
     )
 
+    output = get_output(result, mock_console)
+
     assert result.exit_code == 0
-    assert 'exported' in result.output.lower() or result.exit_code == 0
+    assert 'exported' in output.lower() or result.exit_code == 0
 
 
 def test_graph_export_json_custom_file(cli_runner, sample_project_with_deps, tmp_path, mock_console):
@@ -566,9 +698,11 @@ def test_graph_recommendations_with_cycles(cli_runner, sample_project_with_deps,
         obj={'console': mock_console}
     )
 
+    output = get_output(result, mock_console)
+
     assert result.exit_code == 0
     # Should show recommendations
-    assert 'Recommendation' in result.output or 'suggestion' in result.output.lower()
+    assert 'Recommendation' in output or 'suggestion' in output.lower()
 
 
 # ===== Combined Options Tests =====
@@ -588,9 +722,11 @@ def test_graph_all_options_combined(cli_runner, sample_project_with_deps, mock_c
         obj={'console': mock_console}
     )
 
+    output = get_output(result, mock_console)
+
     assert result.exit_code == 0
     # Should show comprehensive analysis
-    assert result.output  # Has content
+    assert output  # Has content
 
 
 # ===== Help and Documentation Tests =====

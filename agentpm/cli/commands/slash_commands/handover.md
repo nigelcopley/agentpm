@@ -1,5 +1,5 @@
 ---
-description: Generate intelligent session handover summaries for AIPM database
+description: Generate intelligent session handover summaries for APM database
 allowed-tools: Bash(apm:*), Bash(git:*)
 ---
 

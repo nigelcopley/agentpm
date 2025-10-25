@@ -66,9 +66,12 @@ def contexts_list():
     if search_query:
         filtered_contexts = [
             ctx for ctx in filtered_contexts
-            if search_query.lower() in (ctx.title or '').lower() or 
+            if search_query.lower() in (ctx.what or '').lower() or 
+               search_query.lower() in (ctx.why or '').lower() or
+               search_query.lower() in (ctx.how or '').lower() or
                search_query.lower() in (str(ctx.context_data or '')).lower() or
-               search_query.lower() in (ctx.source or '').lower()
+               search_query.lower() in (ctx.file_path or '').lower() or
+               search_query.lower() in (ctx.context_type.value if ctx.context_type else '').lower()
         ]
     
     # Type filter
@@ -281,38 +284,36 @@ def create_context():
             db = get_database_service()
             from ...core.database.methods import contexts
             from ...core.database.models import Context
-            from ...core.database.enums import ContextType, EntityType
+            from ...core.database.enums import ContextType, EntityType, ResourceType
             
             # Get form data
-            title = request.form.get('title', '').strip()
             context_type = request.form.get('context_type', 'business_context')
             entity_type = request.form.get('entity_type')
             entity_id = request.form.get('entity_id')
             context_data = request.form.get('context_data', '').strip()
-            source = request.form.get('source', '').strip()
-            tags = request.form.get('tags', '').strip()
+            file_path = request.form.get('file_path', '').strip()
+            resource_type = request.form.get('resource_type')
             project_id = int(request.form.get('project_id', 1))
             
             # Validate required fields
-            if not title:
-                flash('Context title is required', 'error')
+            if not context_data and not file_path:
+                flash('Context description or file path is required', 'error')
                 return redirect(url_for('context.create_context'))
             
             # Create context
             context = Context(
-                title=title,
                 context_type=ContextType(context_type),
                 entity_type=EntityType(entity_type) if entity_type else None,
                 entity_id=int(entity_id) if entity_id else None,
                 context_data=context_data if context_data else None,
-                source=source if source else None,
-                tags=tags.split(',') if tags else None,
+                file_path=file_path if file_path else None,
+                resource_type=ResourceType(resource_type) if resource_type else None,
                 project_id=project_id
             )
             
             created_context = contexts.create_context(db, context)
             
-            flash(f'Context "{created_context.title}" created successfully', 'success')
+            flash(f'Context created successfully', 'success')
             return redirect(url_for('context.context_detail', context_id=created_context.id))
             
         except Exception as e:
@@ -325,7 +326,7 @@ def edit_context(context_id: int):
     """Edit an existing context"""
     db = get_database_service()
     from ...core.database.methods import contexts, projects, work_items, tasks, ideas
-    from ...core.database.enums import ContextType, EntityType
+    from ...core.database.enums import ContextType, EntityType, ResourceType
     
     context = contexts.get_context(db, context_id)
     if not context:
@@ -351,35 +352,33 @@ def edit_context(context_id: int):
         # Process form submission
         try:
             # Get form data
-            title = request.form.get('title', '').strip()
             context_type = request.form.get('context_type', 'business_context')
             entity_type = request.form.get('entity_type')
             entity_id = request.form.get('entity_id')
             context_data = request.form.get('context_data', '').strip()
-            source = request.form.get('source', '').strip()
-            tags = request.form.get('tags', '').strip()
+            file_path = request.form.get('file_path', '').strip()
+            resource_type = request.form.get('resource_type')
             project_id = int(request.form.get('project_id', 1))
             
             # Validate required fields
-            if not title:
-                flash('Context title is required', 'error')
+            if not context_data and not file_path:
+                flash('Context description or file path is required', 'error')
                 return redirect(url_for('context.edit_context', context_id=context_id))
             
             # Update context
             updates = {
-                'title': title,
                 'context_type': ContextType(context_type),
                 'entity_type': EntityType(entity_type) if entity_type else None,
                 'entity_id': int(entity_id) if entity_id else None,
                 'context_data': context_data if context_data else None,
-                'source': source if source else None,
-                'tags': tags.split(',') if tags else None,
+                'file_path': file_path if file_path else None,
+                'resource_type': ResourceType(resource_type) if resource_type else None,
                 'project_id': project_id
             }
             
             updated_context = contexts.update_context(db, context_id, **updates)
             
-            flash(f'Context "{updated_context.title}" updated successfully', 'success')
+            flash(f'Context updated successfully', 'success')
             return redirect(url_for('context.context_detail', context_id=updated_context.id))
             
         except Exception as e:
@@ -400,7 +399,7 @@ def delete_context(context_id: int):
         
         contexts.delete_context(db, context_id)
         
-        flash(f'Context "{context.title}" deleted successfully', 'success')
+        flash(f'Context deleted successfully', 'success')
         return redirect(url_for('context.contexts_list'))
         
     except Exception as e:

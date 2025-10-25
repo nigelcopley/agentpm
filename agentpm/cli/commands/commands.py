@@ -1,5 +1,5 @@
 """
-apm commands - Manage AIPM slash commands for Claude Code
+apm commands - Manage APM slash commands for Claude Code
 """
 
 import shutil
@@ -11,14 +11,14 @@ from rich.console import Console
 
 @click.group(name='commands')
 def commands_group():
-    """Manage AIPM slash commands for Claude Code.
+    """Manage APM slash commands for Claude Code.
 
     Install, update, and manage custom slash commands that extend
-    Claude Code with AIPM-specific workflows.
+    Claude Code with APM-specific workflows.
 
     \b
     Examples:
-      apm commands install           # Install all AIPM commands to ~/.claude/
+      apm commands install           # Install all APM commands to ~/.claude/
       apm commands list              # Show installed commands
       apm commands update            # Update installed commands
     """
@@ -28,7 +28,7 @@ def commands_group():
 @commands_group.command()
 @click.pass_context
 def install(ctx: click.Context):
-    """Install AIPM slash commands to ~/.claude/commands/agentpm/
+    """Install APM slash commands to ~/.claude/commands/agentpm/
 
     Copies all slash commands from agentpm/cli/commands/slash_commands/
     to ~/.claude/commands/agentpm/ for use in Claude Code.
@@ -57,7 +57,7 @@ def install(ctx: click.Context):
         raise click.Abort()
 
     # Install each command
-    console.print(f"\n📦 Installing AIPM slash commands...\n")
+    console.print(f"\n📦 Installing APM slash commands...\n")
 
     installed = []
     for cmd_file in command_files:
@@ -80,7 +80,7 @@ def install(ctx: click.Context):
 @commands_group.command()
 @click.pass_context
 def update(ctx: click.Context):
-    """Update installed AIPM slash commands.
+    """Update installed APM slash commands.
 
     Re-copies all commands from source to ~/.claude/commands/agentpm/
     to sync with latest versions.
@@ -92,13 +92,13 @@ def update(ctx: click.Context):
 @commands_group.command(name='list')
 @click.pass_context
 def list_commands(ctx: click.Context):
-    """List installed AIPM slash commands."""
+    """List installed APM slash commands."""
     console = Console()
 
     dest_dir = Path.home() / ".claude" / "commands" / "aipm"
 
     if not dest_dir.exists():
-        console.print("\n⚠️  [yellow]No AIPM commands installed[/yellow]\n")
+        console.print("\n⚠️  [yellow]No APM commands installed[/yellow]\n")
         console.print("💡 [cyan]Run: apm commands install[/cyan]\n")
         raise click.Abort()
 
@@ -109,7 +109,7 @@ def list_commands(ctx: click.Context):
         console.print(f"\n⚠️  [yellow]No commands found in {dest_dir}[/yellow]\n")
         raise click.Abort()
 
-    console.print("\n📋 Installed AIPM Slash Commands:\n")
+    console.print("\n📋 Installed APM Slash Commands:\n")
 
     for cmd_file in sorted(command_files):
         cmd_name = cmd_file.stem

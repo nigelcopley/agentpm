@@ -4,8 +4,9 @@ Ideas Blueprint for APM (Agent Project Manager) Web Application
 Ideas management functionality.
 """
 
-from flask import Blueprint, render_template, abort, request
+from flask import Blueprint, render_template, abort, request, jsonify
 import logging
+from datetime import datetime
 
 # Create ideas blueprint
 ideas_bp = Blueprint('ideas', __name__, url_prefix='/ideas')
@@ -196,14 +197,154 @@ def idea_detail(idea_id: int):
     - Voting history
     - Transition history
     - Related work items (if converted)
+    - Idea elements
     """
-    # Fetch idea data
-    db = get_database_service()
-    from ...core.database.methods import ideas
-    
-    idea = ideas.get_idea(db, idea_id)
-    
-    if not idea:
-        abort(404, description=f"Idea {idea_id} not found")
-    
-    return render_template('ideas/detail.html', idea=idea, idea_id=idea_id)
+    try:
+        # Fetch idea data
+        db = get_database_service()
+        from ...core.database.methods import ideas
+        
+        idea = ideas.get_idea(db, idea_id)
+        
+        if not idea:
+            abort(404, description=f"Idea {idea_id} not found")
+        
+        # Fetch idea elements
+        from ...core.database.adapters.idea_element_adapter import IdeaElementAdapter
+        try:
+            elements = IdeaElementAdapter.list(db, idea_id=idea_id, order_by="order_index")
+        except Exception as e:
+            logger.warning(f"Error fetching idea elements: {e}")
+            elements = []
+        
+        return render_template('ideas/detail.html', idea=idea, idea_id=idea_id, elements=elements)
+        
+    except Exception as e:
+        logger.error(f"Unexpected error in idea_detail: {e}")
+        abort(500, description="Internal server error")
+
+@ideas_bp.route('/<int:idea_id>/vote', methods=['POST'])
+def vote_idea(idea_id: int):
+    """Vote for an idea"""
+    try:
+        db = get_database_service()
+        from ...core.database.methods import ideas
+        
+        idea = ideas.get_idea(db, idea_id)
+        if not idea:
+            return jsonify({'success': False, 'message': 'Idea not found'}), 404
+        
+        # Check if idea can receive votes
+        if idea.is_terminal():
+            return jsonify({'success': False, 'message': 'Cannot vote on terminal ideas'}), 400
+        
+        # Increment vote count
+        idea.votes = (idea.votes or 0) + 1
+        idea.updated_at = datetime.now()
+        
+        # Update in database
+        from ...core.database.adapters.idea_adapter import IdeaAdapter
+        IdeaAdapter.update(db, idea)
+        
+        return jsonify({'success': True, 'votes': idea.votes})
+        
+    except Exception as e:
+        logger.error(f"Error voting for idea {idea_id}: {e}")
+        return jsonify({'success': False, 'message': 'Internal server error'}), 500
+
+@ideas_bp.route('/<int:idea_id>/transition', methods=['POST'])
+def transition_idea(idea_id: int):
+    """Transition idea to a new status"""
+    try:
+        data = request.get_json()
+        new_status = data.get('status')
+        
+        if not new_status:
+            return jsonify({'success': False, 'message': 'Status is required'}), 400
+        
+        db = get_database_service()
+        from ...core.database.methods import ideas
+        from ...core.database.enums import IdeaStatus
+        
+        idea = ideas.get_idea(db, idea_id)
+        if not idea:
+            return jsonify({'success': False, 'message': 'Idea not found'}), 404
+        
+        # Validate transition
+        try:
+            new_status_enum = IdeaStatus(new_status)
+        except ValueError:
+            return jsonify({'success': False, 'message': 'Invalid status'}), 400
+        
+        if not idea.can_transition_to(new_status_enum):
+            return jsonify({'success': False, 'message': f'Cannot transition from {idea.status.value} to {new_status}'}), 400
+        
+        # Update status
+        idea.status = new_status_enum
+        idea.updated_at = datetime.now()
+        
+        # Update in database
+        from ...core.database.adapters.idea_adapter import IdeaAdapter
+        IdeaAdapter.update(db, idea)
+        
+        return jsonify({'success': True, 'status': idea.status.value})
+        
+    except Exception as e:
+        logger.error(f"Error transitioning idea {idea_id}: {e}")
+        return jsonify({'success': False, 'message': 'Internal server error'}), 500
+
+@ideas_bp.route('/<int:idea_id>/convert', methods=['POST'])
+def convert_idea(idea_id: int):
+    """Convert idea to work item"""
+    try:
+        db = get_database_service()
+        from ...core.database.methods import ideas, work_items
+        from ...core.database.enums import IdeaStatus, WorkItemStatus, WorkItemType
+        
+        idea = ideas.get_idea(db, idea_id)
+        if not idea:
+            return jsonify({'success': False, 'message': 'Idea not found'}), 404
+        
+        # Check if idea can be converted
+        if idea.status != IdeaStatus.ACTIVE:
+            return jsonify({'success': False, 'message': 'Only accepted ideas can be converted to work items'}), 400
+        
+        if idea.converted_to_work_item_id:
+            return jsonify({'success': False, 'message': 'Idea has already been converted'}), 400
+        
+        # Create work item from idea
+        from ...core.database.models.work_item import WorkItem
+        
+        work_item = WorkItem(
+            project_id=idea.project_id,
+            name=idea.title,
+            description=idea.description,
+            type=WorkItemType.FEATURE,  # Default type
+            status=WorkItemStatus.D1_DISCOVERY,  # Start in discovery phase
+            created_by=idea.created_by,
+            tags=idea.tags.copy() if idea.tags else []
+        )
+        
+        # Create work item in database
+        from ...core.database.adapters.work_item_adapter import WorkItemAdapter
+        created_work_item = WorkItemAdapter.create(db, work_item)
+        
+        # Update idea to mark as converted
+        idea.status = IdeaStatus.CONVERTED
+        idea.converted_to_work_item_id = created_work_item.id
+        idea.converted_at = datetime.now()
+        idea.updated_at = datetime.now()
+        
+        # Update idea in database
+        from ...core.database.adapters.idea_adapter import IdeaAdapter
+        IdeaAdapter.update(db, idea)
+        
+        return jsonify({
+            'success': True, 
+            'work_item_id': created_work_item.id,
+            'message': 'Idea converted to work item successfully'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error converting idea {idea_id}: {e}")
+        return jsonify({'success': False, 'message': 'Internal server error'}), 500

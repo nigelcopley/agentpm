@@ -5,7 +5,7 @@ Commands for managing IDE providers (Cursor, VS Code, Zed, etc.):
 - install: Install provider for project
 - uninstall: Remove provider
 - verify: Check installation integrity
-- sync-memories: Sync AIPM learnings with provider memories
+- sync-memories: Sync APM learnings with provider memories
 - list: List installed providers
 - status: Show provider installation status
 
@@ -363,11 +363,11 @@ def sync_memories(
     direction: str,
 ):
     """
-    Sync AIPM learnings with provider memories.
+    Sync APM learnings with provider memories.
 
     Directions:
-    - to_cursor: AIPM learnings → Cursor memories (default)
-    - from_cursor: Cursor memories → AIPM learnings (coming soon)
+    - to_cursor: APM learnings → Cursor memories (default)
+    - from_cursor: Cursor memories → APM learnings (coming soon)
     - bi_directional: Both directions (coming soon)
 
     \b

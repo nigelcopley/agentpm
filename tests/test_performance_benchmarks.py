@@ -20,7 +20,7 @@ from agentpm.core.performance.optimizer import PerformanceOptimizer, create_perf
 from agentpm.core.agents.simplified.workflow_orchestrator import WorkflowOrchestrator, create_workflow_orchestrator
 from agentpm.core.agents.simplified.phase_orchestrator import PhaseOrchestrator, create_phase_orchestrator
 from agentpm.core.agents.simplified.quality_orchestrator import QualityOrchestrator, create_quality_orchestrator
-from agentpm.database.enums import WorkItemStatus, Phase
+from agentpm.core.database.enums import WorkItemStatus, Phase
 
 
 class TestPerformanceBenchmarks:

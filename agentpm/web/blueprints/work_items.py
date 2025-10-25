@@ -743,3 +743,274 @@ def update_work_item_status(work_item_id: int):
     except Exception as e:
         logger.error(f"Error updating work item status: {e}")
         return jsonify({'error': str(e)}), 500
+
+@work_items_bp.route('/bulk-update', methods=['POST'])
+def bulk_update_work_items():
+    """Bulk update work items via AJAX"""
+    try:
+        db = get_database_service()
+        from ...core.database.methods import work_items
+        from ...core.database.enums import WorkItemStatus, WorkItemType, Phase
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        work_item_ids = data.get('work_item_ids', [])
+        if not work_item_ids:
+            return jsonify({'error': 'No work item IDs provided'}), 400
+        
+        updates = {}
+        
+        # Process update fields
+        if 'status' in data and data['status']:
+            try:
+                updates['status'] = WorkItemStatus(data['status'])
+            except ValueError:
+                return jsonify({'error': 'Invalid status'}), 400
+        
+        if 'priority' in data and data['priority']:
+            try:
+                priority = int(data['priority'])
+                if priority < 1 or priority > 5:
+                    return jsonify({'error': 'Priority must be between 1 and 5'}), 400
+                updates['priority'] = priority
+            except ValueError:
+                return jsonify({'error': 'Invalid priority'}), 400
+        
+        if 'phase' in data and data['phase']:
+            try:
+                updates['phase'] = Phase(data['phase'])
+            except ValueError:
+                return jsonify({'error': 'Invalid phase'}), 400
+        
+        if 'description' in data:
+            updates['description'] = data['description'] if data['description'] else None
+        
+        if not updates:
+            return jsonify({'error': 'No update fields provided'}), 400
+        
+        # Perform bulk updates
+        updated_count = 0
+        errors = []
+        
+        for work_item_id in work_item_ids:
+            try:
+                work_item = work_items.get_work_item(db, work_item_id)
+                if not work_item:
+                    errors.append(f"Work item {work_item_id} not found")
+                    continue
+                
+                # Apply updates
+                for field, value in updates.items():
+                    setattr(work_item, field, value)
+                
+                work_items.update_work_item(db, work_item)
+                updated_count += 1
+                
+            except Exception as e:
+                errors.append(f"Work item {work_item_id}: {str(e)}")
+        
+        return jsonify({
+            'success': True,
+            'updated_count': updated_count,
+            'total_count': len(work_item_ids),
+            'errors': errors,
+            'message': f'Successfully updated {updated_count} of {len(work_item_ids)} work items'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in bulk update: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@work_items_bp.route('/bulk-delete', methods=['POST'])
+def bulk_delete_work_items():
+    """Bulk delete work items via AJAX"""
+    try:
+        db = get_database_service()
+        from ...core.database.methods import work_items
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        work_item_ids = data.get('work_item_ids', [])
+        if not work_item_ids:
+            return jsonify({'error': 'No work item IDs provided'}), 400
+        
+        # Perform bulk deletes
+        deleted_count = 0
+        errors = []
+        
+        for work_item_id in work_item_ids:
+            try:
+                work_item = work_items.get_work_item(db, work_item_id)
+                if not work_item:
+                    errors.append(f"Work item {work_item_id} not found")
+                    continue
+                
+                work_items.delete_work_item(db, work_item_id)
+                deleted_count += 1
+                
+            except Exception as e:
+                errors.append(f"Work item {work_item_id}: {str(e)}")
+        
+        return jsonify({
+            'success': True,
+            'deleted_count': deleted_count,
+            'total_count': len(work_item_ids),
+            'errors': errors,
+            'message': f'Successfully deleted {deleted_count} of {len(work_item_ids)} work items'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in bulk delete: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@work_items_bp.route('/export')
+def export_work_items():
+    """Export work items to CSV or JSON"""
+    try:
+        db = get_database_service()
+        from ...core.database.methods import work_items
+        
+        # Get filter parameters (same as list view)
+        search_query = request.args.get('search', '').strip()
+        status_filter = request.args.get('status', '')
+        type_filter = request.args.get('type', '')
+        priority_filter = request.args.get('priority', '')
+        sort_by = request.args.get('sort', 'updated_desc')
+        
+        # Get all work items and apply filters (reuse logic from work_items_list)
+        work_items_list = work_items.list_work_items(db) or []
+        
+        # Apply same filtering logic as in work_items_list
+        filtered_work_items = work_items_list
+        
+        if search_query:
+            filtered_work_items = [
+                wi for wi in filtered_work_items
+                if search_query.lower() in (wi.name or '').lower() or 
+                   search_query.lower() in (wi.description or '').lower()
+            ]
+        
+        if status_filter:
+            filtered_work_items = [
+                wi for wi in filtered_work_items
+                if wi.status and wi.status.value == status_filter
+            ]
+        
+        if type_filter:
+            filtered_work_items = [
+                wi for wi in filtered_work_items
+                if wi.type and wi.type.value == type_filter
+            ]
+        
+        if priority_filter:
+            try:
+                priority = int(priority_filter)
+                filtered_work_items = [
+                    wi for wi in filtered_work_items
+                    if wi.priority == priority
+                ]
+            except ValueError:
+                pass
+        
+        # Apply sorting (same as in work_items_list)
+        if sort_by == 'name_asc':
+            filtered_work_items.sort(key=lambda x: (x.name or '').lower())
+        elif sort_by == 'name_desc':
+            filtered_work_items.sort(key=lambda x: (x.name or '').lower(), reverse=True)
+        elif sort_by == 'status_asc':
+            filtered_work_items.sort(key=lambda x: x.status.value if x.status else '')
+        elif sort_by == 'status_desc':
+            filtered_work_items.sort(key=lambda x: x.status.value if x.status else '', reverse=True)
+        elif sort_by == 'priority_asc':
+            filtered_work_items.sort(key=lambda x: x.priority or 0)
+        elif sort_by == 'priority_desc':
+            filtered_work_items.sort(key=lambda x: x.priority or 0, reverse=True)
+        else:  # updated_desc (default)
+            filtered_work_items.sort(key=lambda x: x.updated_at or x.created_at or datetime.min, reverse=True)
+        
+        # Get export format
+        export_format = request.args.get('format', 'csv').lower()
+        
+        if export_format == 'json':
+            # Export as JSON
+            import json
+            from flask import Response
+            
+            # Convert work items to dictionaries
+            work_items_data = []
+            for work_item in filtered_work_items:
+                work_item_dict = {
+                    'id': work_item.id,
+                    'name': work_item.name,
+                    'description': work_item.description,
+                    'type': work_item.type.value if work_item.type else None,
+                    'status': work_item.status.value if work_item.status else None,
+                    'priority': work_item.priority,
+                    'phase': work_item.phase.value if work_item.phase else None,
+                    'business_context': work_item.business_context,
+                    'effort_estimate_hours': work_item.effort_estimate_hours,
+                    'project_id': work_item.project_id,
+                    'parent_work_item_id': work_item.parent_work_item_id,
+                    'originated_from_idea_id': work_item.originated_from_idea_id,
+                    'created_at': work_item.created_at.isoformat() if work_item.created_at else None,
+                    'updated_at': work_item.updated_at.isoformat() if work_item.updated_at else None,
+                }
+                work_items_data.append(work_item_dict)
+            
+            response = Response(
+                json.dumps(work_items_data, indent=2),
+                mimetype='application/json',
+                headers={'Content-Disposition': 'attachment; filename=work_items_export.json'}
+            )
+            return response
+        
+        else:  # CSV format
+            import csv
+            from flask import Response
+            import io
+            
+            # Create CSV in memory
+            output = io.StringIO()
+            writer = csv.writer(output)
+            
+            # Write header
+            writer.writerow([
+                'ID', 'Name', 'Description', 'Type', 'Status', 'Priority', 'Phase',
+                'Business Context', 'Effort Estimate Hours', 'Project ID',
+                'Parent Work Item ID', 'Originated From Idea ID',
+                'Created At', 'Updated At'
+            ])
+            
+            # Write data
+            for work_item in filtered_work_items:
+                writer.writerow([
+                    work_item.id,
+                    work_item.name or '',
+                    work_item.description or '',
+                    work_item.type.value if work_item.type else '',
+                    work_item.status.value if work_item.status else '',
+                    work_item.priority or '',
+                    work_item.phase.value if work_item.phase else '',
+                    work_item.business_context or '',
+                    work_item.effort_estimate_hours or '',
+                    work_item.project_id or '',
+                    work_item.parent_work_item_id or '',
+                    work_item.originated_from_idea_id or '',
+                    work_item.created_at.strftime('%Y-%m-%d %H:%M:%S') if work_item.created_at else '',
+                    work_item.updated_at.strftime('%Y-%m-%d %H:%M:%S') if work_item.updated_at else '',
+                ])
+            
+            response = Response(
+                output.getvalue(),
+                mimetype='text/csv',
+                headers={'Content-Disposition': 'attachment; filename=work_items_export.csv'}
+            )
+            return response
+        
+    except Exception as e:
+        logger.error(f"Error exporting work items: {e}")
+        return jsonify({'error': str(e)}), 500

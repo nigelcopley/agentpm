@@ -1,0 +1,70 @@
+{
+  "project_path": "/private/var/folders/53/jjm94d8s1_x0dqtqskv43bk40000gn/T/pytest-of-nigelcopley/pytest-98/test_graph_with_cache0/test_project",
+  "total_modules": 7,
+  "total_dependencies": 7,
+  "circular_dependencies": [
+    {
+      "cycle": [
+        "module_e",
+        "module_d",
+        "module_e"
+      ],
+      "severity": "high",
+      "suggestion": "Extract shared functionality to a third module. Consider dependency inversion or interface segregation."
+    }
+  ],
+  "coupling_metrics": [
+    {
+      "module": "module_e",
+      "afferent_coupling": 1,
+      "efferent_coupling": 1,
+      "instability": 0.5
+    },
+    {
+      "module": "module_d",
+      "afferent_coupling": 1,
+      "efferent_coupling": 1,
+      "instability": 0.5
+    },
+    {
+      "module": "module_a",
+      "afferent_coupling": 2,
+      "efferent_coupling": 0,
+      "instability": 0.0
+    },
+    {
+      "module": "__init__",
+      "afferent_coupling": 0,
+      "efferent_coupling": 0,
+      "instability": 0.0
+    },
+    {
+      "module": "module_c",
+      "afferent_coupling": 1,
+      "efferent_coupling": 1,
+      "instability": 0.5
+    },
+    {
+      "module": "module_b",
+      "afferent_coupling": 2,
+      "efferent_coupling": 1,
+      "instability": 0.3333333333333333
+    },
+    {
+      "module": "module_f",
+      "afferent_coupling": 0,
+      "efferent_coupling": 3,
+      "instability": 1.0
+    }
+  ],
+  "root_modules": [
+    "__init__",
+    "module_f"
+  ],
+  "leaf_modules": [
+    "module_a",
+    "__init__"
+  ],
+  "max_depth": -1,
+  "analyzed_at": "2025-10-25T19:04:26.472880"
+}

@@ -16,6 +16,7 @@ from agentpm.cli.utils.services import get_database_service
 @click.option('--description', '-d', help='Update work item description')
 @click.option('--business-context', help='Update business context')
 @click.option('--priority', '-p', type=click.IntRange(1, 5), help='Update priority (1-5)')
+@click.option('--effort-estimate', type=float, help='Update effort estimate in hours')
 @click.option(
     '--phase',
     type=click.Choice(Phase.choices(), case_sensitive=False),
@@ -38,8 +39,8 @@ from agentpm.cli.utils.services import get_database_service
     help='JSON object with complete metadata (e.g., \'{"why_value": {"problem": "...", "desired_outcome": "...", "business_impact": "...", "target_metrics": [...]}}\')'
 )
 @click.pass_context
-def update(ctx: click.Context, work_item_id: int, name: str, description: str, business_context: str, priority: int, phase: str,
-           ownership: str, scope: str, artifacts: str, metadata: str):
+def update(ctx: click.Context, work_item_id: int, name: str, description: str, business_context: str, priority: int,
+           effort_estimate: float, phase: str, ownership: str, scope: str, artifacts: str, metadata: str):
     """
     Update work item fields.
 
@@ -68,10 +69,10 @@ def update(ctx: click.Context, work_item_id: int, name: str, description: str, b
         raise click.Abort()
 
     # Check if any updates provided
-    if not any([name, description, business_context, priority, phase, ownership, scope, artifacts, metadata]):
+    if not any([name, description, business_context, priority, effort_estimate, phase, ownership, scope, artifacts, metadata]):
         console_err.print("\n⚠️  [yellow]No updates specified[/yellow]\n")
         console_err.print("💡 [cyan]Specify at least one field to update:[/cyan]")
-        console_err.print("   --name, --description, --business-context, --priority, --phase")
+        console_err.print("   --name, --description, --business-context, --priority, --effort-estimate, --phase")
         console_err.print("   --ownership, --scope, --artifacts, --metadata\n")
         console_err.print("Example:")
         console_err.print(f"   apm work-item update {work_item_id} --name \"New name\" --priority 1\n")
@@ -166,8 +167,10 @@ def update(ctx: click.Context, work_item_id: int, name: str, description: str, b
         updates['business_context'] = business_context
     if priority:
         updates['priority'] = priority
+    if effort_estimate is not None:
+        updates['effort_estimate_hours'] = effort_estimate
     if phase:
-        updates['phase'] = phase
+        updates['phase'] = Phase(phase)
     if metadata_updates:
         updates.update(metadata_updates)
 
@@ -189,6 +192,8 @@ def update(ctx: click.Context, work_item_id: int, name: str, description: str, b
             console.print(f"   Business context: → {ctx_preview}")
         if priority:
             console.print(f"   Priority: → P{priority}")
+        if effort_estimate is not None:
+            console.print(f"   Effort estimate: → {effort_estimate}h")
         if phase:
             console.print(f"   Phase: → {phase}")
         if ownership:

@@ -63,6 +63,7 @@ from agentpm.utils.graph_builders import (
     find_root_nodes,
     find_leaf_nodes,
     get_node_depth,
+    _normalize_file_path_to_module,
 )
 from agentpm.utils.ignore_patterns import IgnorePatternMatcher
 
@@ -400,19 +401,24 @@ class DependencyGraphService:
         if self._graph is None:
             self.build_graph()
 
-        # Normalize module path
+        # Normalize module path to match graph node format
         try:
             path_obj = Path(module_path)
             if path_obj.is_absolute():
-                normalized = str(path_obj.relative_to(self.project_path))
+                # Make project-relative first
+                rel_path = str(path_obj.relative_to(self.project_path))
+                # Then normalize to module format (removes .py, converts / to .)
+                normalized = _normalize_file_path_to_module(rel_path)
             else:
-                normalized = module_path
+                # Already relative, just normalize to module format
+                normalized = _normalize_file_path_to_module(module_path)
         except (ValueError, OSError):
-            normalized = module_path
+            # Path outside project or invalid, normalize as-is
+            normalized = _normalize_file_path_to_module(module_path)
 
         # Check if module exists in graph
         if not self._graph.has_node(normalized):
-            raise ValueError(f"Module not found in graph: {module_path}")
+            raise ValueError(f"Module not found in graph: {module_path} (normalized to: {normalized})")
 
         # Calculate coupling using Layer 1 utility
         coupling_data = calculate_coupling_metrics(self._graph)
@@ -422,6 +428,8 @@ class DependencyGraphService:
 
         metrics = coupling_data[normalized]
 
+        # Return metrics with the normalized module name (canonical representation)
+        # This ensures consistency with graph node names
         return CouplingMetrics(
             module=normalized,
             afferent_coupling=metrics['Ca'],
@@ -567,18 +575,23 @@ class DependencyGraphService:
         if self._graph is None:
             self.build_graph()
 
-        # Normalize module path
+        # Normalize module path to match graph node format
         try:
             path_obj = Path(module_path)
             if path_obj.is_absolute():
-                normalized = str(path_obj.relative_to(self.project_path))
+                # Make project-relative first
+                rel_path = str(path_obj.relative_to(self.project_path))
+                # Then normalize to module format (removes .py, converts / to .)
+                normalized = _normalize_file_path_to_module(rel_path)
             else:
-                normalized = module_path
+                # Already relative, just normalize to module format
+                normalized = _normalize_file_path_to_module(module_path)
         except (ValueError, OSError):
-            normalized = module_path
+            # Path outside project or invalid, normalize as-is
+            normalized = _normalize_file_path_to_module(module_path)
 
         if not self._graph.has_node(normalized):
-            raise ValueError(f"Module not found: {module_path}")
+            raise ValueError(f"Module not found: {module_path} (normalized to: {normalized})")
 
         # Get imports (outgoing edges)
         imports = self._get_reachable_nodes(

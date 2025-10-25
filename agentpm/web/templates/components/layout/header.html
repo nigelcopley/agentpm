@@ -1,21 +1,13 @@
 <!-- Modern Header Component -->
+{% from 'macros/logo.html' import header_logo %}
+
 <header
   x-data="headerController()"
   class="sticky top-0 z-50 border-b border-gray-200 bg-white/90 backdrop-blur shadow-sm"
 >
   <div class="flex h-16 w-full items-center justify-between px-4 sm:px-6 lg:px-8">
     <!-- Logo -->
-    <a href="/" class="flex items-center gap-3">
-      <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/90 text-white shadow-brand">
-        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h12M4 18h8"></path>
-        </svg>
-      </span>
-      <span class="hidden sm:block">
-        <span class="block text-base font-semibold text-gray-900">APM (Agent Project Manager)</span>
-        <span class="block text-xs font-medium uppercase tracking-wide text-gray-500">Agent Project Manager</span>
-      </span>
-    </a>
+    {{ header_logo(size='32', show_text=true) }}
 
     <!-- Search -->
     <div class="mx-4 hidden flex-1 items-center md:flex">

@@ -8,7 +8,15 @@
     <div class="px-6 py-8">
         <div class="flex justify-between items-start">
             <div>
-                <h1 class="text-4xl font-bold mb-3">Context #{{ context.id }}</h1>
+                <h1 class="text-4xl font-bold mb-3">
+                    {% if context.what %}
+                        {{ context.what[:50] }}{% if context.what|length > 50 %}...{% endif %}
+                    {% elif context.file_path %}
+                        {{ context.file_path.split('/')[-1] }}
+                    {% else %}
+                        Context #{{ context.id }}
+                    {% endif %}
+                </h1>
                 <p class="text-white/90 text-lg">{{ context.context_type.value.replace('_', ' ').title() if context.context_type else 'Context' }}</p>
                 <div class="mt-4 flex items-center space-x-6 text-sm">
                     <div class="flex items-center">
@@ -130,7 +138,11 @@
                 <div class="bg-white rounded-lg shadow-lg p-6">
                     <h2 class="text-xl font-semibold text-gray-900 mb-4">Context Data</h2>
                     <div class="bg-gray-50 rounded p-4">
-                        <pre class="text-sm text-gray-700 whitespace-pre-wrap">{{ context.context_data|tojson(indent=2) }}</pre>
+                        {% if context.context_data is mapping %}
+                            <pre class="text-sm text-gray-700 whitespace-pre-wrap">{{ context.context_data|tojson(indent=2) }}</pre>
+                        {% else %}
+                            <div class="text-sm text-gray-700">{{ context.context_data|markdown_to_text }}</div>
+                        {% endif %}
                     </div>
                 </div>
                 {% endif %}
@@ -140,45 +152,45 @@
                 <div class="bg-white rounded-lg shadow-lg p-6">
                     <h2 class="text-xl font-semibold text-gray-900 mb-4">Six W Analysis</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {% if context.six_w.who %}
+                        {% if context.who %}
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Who</label>
-                            <p class="text-gray-900">{{ context.six_w.who }}</p>
+                            <p class="text-gray-900">{{ context.who }}</p>
                         </div>
                         {% endif %}
                         
-                        {% if context.six_w.what %}
+                        {% if context.what %}
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">What</label>
-                            <p class="text-gray-900">{{ context.six_w.what }}</p>
+                            <p class="text-gray-900">{{ context.what }}</p>
                         </div>
                         {% endif %}
                         
-                        {% if context.six_w.when %}
+                        {% if context.when_context %}
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">When</label>
-                            <p class="text-gray-900">{{ context.six_w.when }}</p>
+                            <p class="text-gray-900">{{ context.when_context }}</p>
                         </div>
                         {% endif %}
                         
-                        {% if context.six_w.where %}
+                        {% if context.where %}
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Where</label>
-                            <p class="text-gray-900">{{ context.six_w.where }}</p>
+                            <p class="text-gray-900">{{ context.where }}</p>
                         </div>
                         {% endif %}
                         
-                        {% if context.six_w.why %}
+                        {% if context.why %}
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Why</label>
-                            <p class="text-gray-900">{{ context.six_w.why }}</p>
+                            <p class="text-gray-900">{{ context.why }}</p>
                         </div>
                         {% endif %}
                         
-                        {% if context.six_w.how %}
+                        {% if context.how %}
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">How</label>
-                            <p class="text-gray-900">{{ context.six_w.how }}</p>
+                            <p class="text-gray-900">{{ context.how }}</p>
                         </div>
                         {% endif %}
                     </div>

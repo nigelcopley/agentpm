@@ -46,10 +46,11 @@
                     <h2 class="text-xl font-semibold text-gray-900">Basic Information</h2>
                     
                     <div>
-                        <label for="title" class="block text-sm font-medium text-gray-700 mb-1">Title *</label>
-                        <input type="text" id="title" name="title" required
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                               placeholder="Enter context title">
+                        <label for="context_data" class="block text-sm font-medium text-gray-700 mb-1">Context Description</label>
+                        <textarea id="context_data" name="context_data" rows="3"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                  placeholder="Brief description of this context"></textarea>
+                        <p class="text-sm text-gray-500 mt-1">This will be used as the context identifier</p>
                     </div>
                     
                     <div>
@@ -96,36 +97,41 @@
                     </div>
                 </div>
 
-                <!-- Context Data -->
+                <!-- Additional Context Data -->
                 <div class="space-y-4">
-                    <h2 class="text-xl font-semibold text-gray-900">Context Data</h2>
+                    <h2 class="text-xl font-semibold text-gray-900">Additional Context Data</h2>
                     
                     <div>
-                        <label for="context_data" class="block text-sm font-medium text-gray-700 mb-1">Context Data</label>
-                        <textarea id="context_data" name="context_data" rows="8"
+                        <label for="additional_context_data" class="block text-sm font-medium text-gray-700 mb-1">Additional Context Data</label>
+                        <textarea id="additional_context_data" name="additional_context_data" rows="8"
                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                                  placeholder="Enter context data (supports Markdown)"></textarea>
+                                  placeholder="Enter additional context data (supports Markdown)"></textarea>
                         <p class="text-sm text-gray-500 mt-1">Supports Markdown formatting</p>
                     </div>
                 </div>
 
-                <!-- Additional Information -->
+                <!-- File Information (for resource files) -->
                 <div class="space-y-4">
-                    <h2 class="text-xl font-semibold text-gray-900">Additional Information</h2>
+                    <h2 class="text-xl font-semibold text-gray-900">File Information</h2>
                     
                     <div>
-                        <label for="source" class="block text-sm font-medium text-gray-700 mb-1">Source</label>
-                        <input type="text" id="source" name="source"
+                        <label for="file_path" class="block text-sm font-medium text-gray-700 mb-1">File Path</label>
+                        <input type="text" id="file_path" name="file_path"
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                               placeholder="Source of this context">
+                               placeholder="Path to the resource file (optional)">
+                        <p class="text-sm text-gray-500 mt-1">Only for resource file contexts</p>
                     </div>
                     
                     <div>
-                        <label for="tags" class="block text-sm font-medium text-gray-700 mb-1">Tags</label>
-                        <input type="text" id="tags" name="tags"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                               placeholder="Enter tags separated by commas">
-                        <p class="text-sm text-gray-500 mt-1">Separate multiple tags with commas</p>
+                        <label for="resource_type" class="block text-sm font-medium text-gray-700 mb-1">Resource Type</label>
+                        <select id="resource_type" name="resource_type"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                            <option value="">Select resource type</option>
+                            <option value="sop">Standard Operating Procedure</option>
+                            <option value="code">Code</option>
+                            <option value="specification">Specification</option>
+                            <option value="documentation">Documentation</option>
+                        </select>
                     </div>
                 </div>
 
@@ -163,21 +169,21 @@ document.getElementById('entity_type').addEventListener('change', function() {
             {% for work_item in work_items %}
             const option = document.createElement('option');
             option.value = '{{ work_item.id }}';
-            option.textContent = '{{ work_item.name }}';
+            option.textContent = '{{ work_item.name|e }}';
             entityIdSelect.appendChild(option);
             {% endfor %}
         } else if (entityType === 'task') {
             {% for task in tasks %}
             const option = document.createElement('option');
             option.value = '{{ task.id }}';
-            option.textContent = '{{ task.name }}';
+            option.textContent = '{{ task.name|e }}';
             entityIdSelect.appendChild(option);
             {% endfor %}
         } else if (entityType === 'idea') {
             {% for idea in ideas %}
             const option = document.createElement('option');
             option.value = '{{ idea.id }}';
-            option.textContent = '{{ idea.title }}';
+            option.textContent = '{{ idea.title|e }}';
             entityIdSelect.appendChild(option);
             {% endfor %}
         }
