@@ -60,6 +60,14 @@ def build_project_context(db, project_id: int, project_root: Path) -> Dict[str, 
     tech_stack_raw = project_row['tech_stack'] or '{}'
     tech_stack = json.loads(tech_stack_raw) if isinstance(tech_stack_raw, str) else tech_stack_raw
 
+    # Normalize tech_stack to dict (handle old list format)
+    if isinstance(tech_stack, list):
+        # Old format was a list, convert to empty dict
+        tech_stack = {}
+    elif not isinstance(tech_stack, dict):
+        # Unexpected format, use empty dict
+        tech_stack = {}
+
     # Build context
     context = {
         'business_domain': project_row['description'] or 'Software Development',
@@ -247,6 +255,7 @@ def generate_intelligent(
         display_project_analysis(context)
 
         # Confirm if not force
+        should_delete_existing = force
         if not force and not dry_run:
             # Check if agents already exist
             with db.connect() as conn:
@@ -261,6 +270,8 @@ def generate_intelligent(
                 if not click.confirm("Regenerate agents? (This will replace existing agents)"):
                     console.print("❌ Cancelled", style="red")
                     return
+                # User confirmed, mark for deletion
+                should_delete_existing = True
 
         # Determine paths
         if template_dir:
@@ -305,8 +316,8 @@ def generate_intelligent(
         ) as progress:
             task = progress.add_task("Generating agents...", total=None)
 
-            # Delete existing agents if force
-            if force and not dry_run:
+            # Delete existing agents if force or user confirmed
+            if should_delete_existing and not dry_run:
                 with db.connect() as conn:
                     conn.execute(
                         "DELETE FROM agents WHERE project_id = ?",
