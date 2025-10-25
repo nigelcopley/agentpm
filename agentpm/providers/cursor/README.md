@@ -1,0 +1,203 @@
+# Cursor Provider for APM (Agent Project Manager)
+
+Installable provider that integrates APM (Agent Project Manager) with Cursor IDE.
+
+## Features
+
+- **Rules System**: 6 consolidated rules covering workflow, testing, CLI, database, and documentation patterns
+- **Memory Sync**: Bi-directional sync between AIPM learnings and Cursor memories
+- **Indexing Config**: Optimized `.cursorignore` for fast search
+- **Custom Modes**: Phase-specific modes (D1-E1) matching AIPM workflow (P1)
+- **Guardrails**: Security configuration for safe auto-execution (P1)
+
+## Installation
+
+```bash
+# Basic installation
+apm provider install cursor
+
+# With tech stack
+apm provider install cursor --tech-stack Python --tech-stack SQLite
+
+# Minimal installation (rules only)
+apm provider install cursor --no-memories --no-modes
+```
+
+## Usage
+
+### Verify Installation
+
+```bash
+apm provider verify cursor
+```
+
+### Sync Memories
+
+```bash
+# Sync AIPM learnings to Cursor memories
+apm provider sync-memories cursor
+
+# Automatic sync (configure in .aipm/config.yaml)
+memory_sync_interval_hours: 1
+```
+
+### Check Status
+
+```bash
+apm provider status cursor
+```
+
+### Uninstall
+
+```bash
+apm provider uninstall cursor
+```
+
+## Architecture
+
+### Three-Layer Pattern
+
+```
+Layer 1: Models (Pydantic)
+  ├── models.py - Domain models
+
+Layer 2: Adapters (DB Conversion)
+  ├── adapters.py - Database ↔ Model conversion
+
+Layer 3: Methods (Business Logic)
+  ├── methods.py - Installation, verification, memory sync
+```
+
+### Database Tables
+
+- `provider_installations`: Installation metadata
+- `provider_files`: Installed file tracking
+- `cursor_memories`: Memory sync state
+
+### Files Installed
+
+```
+.cursor/
+├── rules/
+│   ├── aipm-master.mdc
+│   ├── python-implementation.mdc
+│   ├── testing-standards.mdc
+│   ├── cli-development.mdc
+│   ├── database-patterns.mdc
+│   └── documentation-quality.mdc
+├── memories/
+│   └── learning-*.md (synced from AIPM)
+├── .cursorignore
+└── modes/ (P1)
+    ├── aipm-discovery.json
+    ├── aipm-planning.json
+    ├── aipm-implementation.json
+    ├── aipm-review.json
+    ├── aipm-operations.json
+    └── aipm-evolution.json
+```
+
+## Configuration
+
+Configuration stored in database `provider_installations.config` JSON field:
+
+```python
+{
+    "project_name": "APM (Agent Project Manager)",
+    "project_path": "/path/to/project",
+    "tech_stack": ["Python", "SQLite"],
+    "rules_enabled": true,
+    "memory_sync_enabled": true,
+    "memory_sync_direction": "to_cursor",
+    "memory_sync_interval_hours": 1,
+    "modes_enabled": true,
+    "indexing_enabled": true,
+    "guardrails_enabled": true,
+    "exclude_patterns": [
+        ".aipm/",
+        "htmlcov/",
+        ".pytest_cache/",
+        "**/__pycache__/",
+        "*.pyc"
+    ]
+}
+```
+
+## Memory Sync
+
+AIPM learnings automatically sync to Cursor memories:
+
+```bash
+# Manual sync
+apm provider sync-memories cursor
+
+# Check sync status
+apm provider status cursor
+```
+
+Memory format:
+```markdown
+# Learning: Database Migration Pattern
+
+Category: pattern
+Tags: database, migration, sqlalchemy
+
+## Content
+
+When creating database migrations...
+```
+
+## Verification
+
+Installation integrity checked via SHA-256 hashes:
+
+```bash
+apm provider verify cursor
+```
+
+Checks:
+- All files exist
+- File hashes match (detect modifications)
+- Database records consistent
+
+## Development
+
+### Adding New Rule
+
+1. Create template: `templates/rules/new-rule.mdc.j2`
+2. Add to `CursorConfig.rules_to_install`
+3. Update `TemplateMethods.render_rule()`
+
+### Adding New Mode
+
+1. Create template: `templates/modes/new-mode.json.j2`
+2. Add to `CursorConfig.modes_to_install`
+3. Implement in `InstallationMethods._install_modes()`
+
+## Troubleshooting
+
+### Rules not appearing in Cursor
+
+1. Restart Cursor IDE
+2. Check `.cursor/rules/` directory exists
+3. Run: `apm provider verify cursor`
+
+### Memory sync not working
+
+1. Check installation: `apm provider status cursor`
+2. Verify learnings exist: `sqlite3 .aipm/data/aipm.db "SELECT * FROM learnings"`
+3. Force sync: `apm provider sync-memories cursor`
+
+### Modified files detected
+
+If files manually edited:
+```bash
+# Re-install to restore
+apm provider install cursor
+```
+
+## Related
+
+- Architecture: `docs/architecture/design/cursor-provider-architecture.md`
+- WI-118: Cursor Rules Consolidation
+- WI-120: Cursor Provider System

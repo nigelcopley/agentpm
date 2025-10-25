@@ -1,0 +1,41 @@
+{% if edit_mode %}
+  <!-- Edit Mode: Textarea + Save/Cancel -->
+  <form hx-post="/project/{{ project.id }}/update-description"
+        hx-target="#project-description-container"
+        hx-swap="innerHTML">
+    <textarea name="description"
+              class="form-control {% if error %}is-invalid{% endif %}"
+              rows="4"
+              maxlength="1000"
+              autofocus>{{ project.description or '' }}</textarea>
+    {% if error %}
+      <div class="invalid-feedback d-block">{{ error }}</div>
+    {% endif %}
+    <div class="mt-2">
+      <button type="submit" class="btn btn-sm btn-success">
+        <i class="bi bi-check"></i> Save
+      </button>
+      <button type="button"
+              class="btn btn-sm btn-secondary"
+              hx-get="/project/{{ project.id }}/settings/description"
+              hx-target="#project-description-container"
+              hx-swap="innerHTML">
+        <i class="bi bi-x"></i> Cancel
+      </button>
+    </div>
+  </form>
+{% else %}
+  <!-- Display Mode: Value + Edit Button -->
+  <div class="d-flex align-items-start">
+    <p id="project-description-display" class="mb-0 me-2">
+      {{ project.description or '<em class="text-muted">No description set</em>' | safe }}
+    </p>
+    <button class="btn btn-sm btn-link p-0"
+            hx-get="/project/{{ project.id }}/settings/description?edit=true"
+            hx-target="#project-description-container"
+            hx-swap="innerHTML"
+            title="Edit description">
+      <i class="bi bi-pencil text-primary"></i>
+    </button>
+  </div>
+{% endif %}

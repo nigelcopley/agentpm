@@ -1,0 +1,13 @@
+{
+  "session_id": "session-2025-01-15-01",
+  "status": "completed",
+  "duration_minutes": 110,
+  "participants": [
+    "nigel.copley"
+  ],
+  "summary": "Wrapped up implementation tasks and prepared QA handoff.",
+  "next_steps": [
+    "Coordinate staging verification",
+    "Prepare release notes"
+  ]
+}

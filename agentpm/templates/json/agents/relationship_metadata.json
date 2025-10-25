@@ -1,0 +1,14 @@
+{
+  "phases": [
+    "discovery",
+    "planning"
+  ],
+  "conditions": "delegate when confidence_score < 0.7 or task_type == 'research'",
+  "handoff_notes": "Primary orchestrator should brief context assembly before delegating.",
+  "escalation_path": [
+    {
+      "role": "principal-orchestrator",
+      "reason": "Blockers lasting more than one session"
+    }
+  ]
+}

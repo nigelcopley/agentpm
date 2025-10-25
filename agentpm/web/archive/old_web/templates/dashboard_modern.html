@@ -1,0 +1,300 @@
+{% extends "layouts/modern_base.html" %}
+
+{% block title %}{{ metrics.project_name or 'APM (Agent Project Manager)' }} - Dashboard{% endblock %}
+
+{% block content %}
+<!-- Project Overview -->
+<div class="mb-8">
+    <div class="card">
+        <div class="card-header">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">
+                        <svg class="w-8 h-8 inline-block mr-3 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h12a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1V8z" clip-rule="evenodd"></path>
+                        </svg>
+                        {{ metrics.project_name or 'APM (Agent Project Manager) Project' }}
+                    </h1>
+                    <p class="mt-2 text-lg text-gray-600">AI Project Manager Dashboard</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <span class="badge badge-success">
+                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                        {{ metrics.project_status or 'Active' }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Summary Metrics -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="card">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <div class="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h12a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1V8z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Total Work Items</p>
+                <p class="text-2xl font-bold text-gray-900">{{ metrics.total_work_items or 0 }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <div class="w-12 h-12 bg-warning rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Total Tasks</p>
+                <p class="text-2xl font-bold text-gray-900">{{ metrics.total_tasks or 0 }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <div class="w-12 h-12 bg-success rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Completed Tasks</p>
+                <p class="text-2xl font-bold text-gray-900">{{ metrics.completed_tasks or 0 }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <div class="w-12 h-12 bg-info rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h12a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1V8z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Active Projects</p>
+                <p class="text-2xl font-bold text-gray-900">{{ metrics.active_projects or 0 }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+    <!-- Recent Work Items -->
+    <div class="card">
+        <div class="card-header">
+            <div class="flex items-center justify-between">
+                <h3 class="card-title">Recent Work Items</h3>
+                <a href="/work-items" class="btn btn-sm btn-secondary">View All</a>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if recent_work_items %}
+            <div class="space-y-3">
+                {% for work_item in recent_work_items[:5] %}
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div class="flex items-center space-x-3">
+                        <div class="flex-shrink-0">
+                            {% if work_item.status.value == 'completed' %}
+                            <div class="w-5 h-5 bg-success rounded-full flex items-center justify-center">
+                                <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                            {% elif work_item.status.value == 'in_progress' %}
+                            <div class="w-5 h-5 bg-warning rounded-full flex items-center justify-center">
+                                <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                            {% else %}
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded-full"></div>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-gray-900">
+                                <a href="/work-items/{{ work_item.id }}" class="hover:text-primary">{{ work_item.name }}</a>
+                            </h4>
+                            <p class="text-sm text-gray-500">{{ work_item.type.value.replace('_', ' ').title() }}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="badge badge-{{ work_item.status.value|lower|replace('_', '-') }}">
+                            {{ work_item.status.value.replace('_', ' ').title() }}
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-8">
+                <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                </svg>
+                <h4 class="text-lg font-medium text-gray-900 mb-2">No work items yet</h4>
+                <p class="text-gray-500 mb-4">Create your first work item to get started.</p>
+                <a href="/work-items/create" class="btn btn-primary">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Create Work Item
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Tasks -->
+    <div class="card">
+        <div class="card-header">
+            <div class="flex items-center justify-between">
+                <h3 class="card-title">Recent Tasks</h3>
+                <a href="/tasks" class="btn btn-sm btn-secondary">View All</a>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if recent_tasks %}
+            <div class="space-y-3">
+                {% for task in recent_tasks[:5] %}
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div class="flex items-center space-x-3">
+                        <div class="flex-shrink-0">
+                            {% if task.status.value == 'completed' %}
+                            <div class="w-5 h-5 bg-success rounded-full flex items-center justify-center">
+                                <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                            {% elif task.status.value == 'in_progress' %}
+                            <div class="w-5 h-5 bg-warning rounded-full flex items-center justify-center">
+                                <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                            {% else %}
+                            <div class="w-5 h-5 border-2 border-gray-300 rounded-full"></div>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-gray-900">
+                                <a href="/tasks/{{ task.id }}" class="hover:text-primary">{{ task.name }}</a>
+                            </h4>
+                            <p class="text-sm text-gray-500">{{ task.type.value.replace('_', ' ').title() }} • {{ task.effort_hours }}h</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="badge badge-{{ task.status.value|lower|replace('_', '-') }}">
+                            {{ task.status.value.replace('_', ' ').title() }}
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-8">
+                <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                </svg>
+                <h4 class="text-lg font-medium text-gray-900 mb-2">No tasks yet</h4>
+                <p class="text-gray-500 mb-4">Create your first task to get started.</p>
+                <a href="/tasks/create" class="btn btn-primary">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Create Task
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <a href="/work-items" class="card hover:shadow-lg transition-shadow">
+        <div class="card-body text-center">
+            <div class="w-12 h-12 bg-primary rounded-lg flex items-center justify-center mx-auto mb-4">
+                <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h12a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1V8z" clip-rule="evenodd"></path>
+                </svg>
+            </div>
+            <h3 class="font-semibold text-gray-900">Work Items</h3>
+            <p class="text-sm text-gray-500">Manage project work items</p>
+        </div>
+    </a>
+
+    <a href="/tasks" class="card hover:shadow-lg transition-shadow">
+        <div class="card-body text-center">
+            <div class="w-12 h-12 bg-warning rounded-lg flex items-center justify-center mx-auto mb-4">
+                <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" clip-rule="evenodd"></path>
+                </svg>
+            </div>
+            <h3 class="font-semibold text-gray-900">Tasks</h3>
+            <p class="text-sm text-gray-500">Track individual tasks</p>
+        </div>
+    </a>
+
+    <a href="/projects" class="card hover:shadow-lg transition-shadow">
+        <div class="card-body text-center">
+            <div class="w-12 h-12 bg-info rounded-lg flex items-center justify-center mx-auto mb-4">
+                <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h12a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1V8z" clip-rule="evenodd"></path>
+                </svg>
+            </div>
+            <h3 class="font-semibold text-gray-900">Projects</h3>
+            <p class="text-sm text-gray-500">Manage projects</p>
+        </div>
+    </a>
+
+    <a href="/contexts" class="card hover:shadow-lg transition-shadow">
+        <div class="card-body text-center">
+            <div class="w-12 h-12 bg-success rounded-lg flex items-center justify-center mx-auto mb-4">
+                <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h12a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1V8z" clip-rule="evenodd"></path>
+                </svg>
+            </div>
+            <h3 class="font-semibold text-gray-900">Context</h3>
+            <p class="text-sm text-gray-500">View project context</p>
+        </div>
+    </a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Dashboard JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    // Add hover effects to quick action cards
+    const quickActionCards = document.querySelectorAll('.card[href]');
+    quickActionCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+});
+</script>
+{% endblock %}

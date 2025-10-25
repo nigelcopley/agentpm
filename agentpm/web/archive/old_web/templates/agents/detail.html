@@ -1,0 +1,132 @@
+{% extends "layouts/modern_base.html" %}
+{% from 'macros/breadcrumb.html' import breadcrumb %}
+{% from 'macros/quick_actions.html' import quick_actions %}
+
+{% block title %}{{ agent.display_name or agent.role }} - Agent Detail{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+{{ breadcrumb([
+    {'label': 'Dashboard', 'url': '/'},
+    {'label': 'Agents', 'url': '/agents'},
+    {'label': agent.display_name or agent.role, 'url': None}
+]) }}
+
+<!-- Page Header -->
+<div class="mb-8 flex items-start justify-between">
+    <div>
+        <h1 class="text-3xl font-bold text-gray-900">{{ agent.display_name or agent.role }}</h1>
+        <p class="mt-2 text-lg text-gray-600">{{ agent.description or 'AI Project Management Agent' }}</p>
+    </div>
+    {{ quick_actions('Actions', [
+        {'label': 'Edit Agent', 'url': '/agents/' ~ agent.id ~ '/edit', 'icon': 'pencil'},
+        {'label': 'View SOP', 'url': '#sop', 'icon': 'file-text'},
+        {'divider': True},
+        {'label': 'Deactivate', 'url': '/agents/' ~ agent.id ~ '/deactivate', 'icon': 'pause-circle'}
+    ], button_class='btn-secondary') }}
+</div>
+
+<!-- Agent Info Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+    <!-- Status Card -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Status & Metadata</h3>
+        </div>
+        <div class="card-body">
+            <dl class="space-y-3">
+                <div class="flex justify-between">
+                    <dt class="font-medium text-gray-700">Status:</dt>
+                    <dd>
+                        <span class="badge {% if agent.is_active %}badge-success{% else %}badge-gray{% endif %}">
+                            {{ 'Active' if agent.is_active else 'Inactive' }}
+                        </span>
+                    </dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="font-medium text-gray-700">Role:</dt>
+                    <dd class="text-gray-900">{{ agent.role }}</dd>
+                </div>
+                {% if agent.tier %}
+                <div class="flex justify-between">
+                    <dt class="font-medium text-gray-700">Tier:</dt>
+                    <dd><span class="badge badge-info">Tier {{ agent.tier }}</span></dd>
+                </div>
+                {% endif %}
+                {% if agent.agent_type %}
+                <div class="flex justify-between">
+                    <dt class="font-medium text-gray-700">Type:</dt>
+                    <dd class="text-gray-900">{{ agent.agent_type }}</dd>
+                </div>
+                {% endif %}
+            </dl>
+        </div>
+    </div>
+
+    <!-- Capabilities Card -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Capabilities</h3>
+        </div>
+        <div class="card-body">
+            {% if agent.capabilities %}
+            <ul class="space-y-2">
+                {% for capability in agent.capabilities %}
+                <li class="flex items-start">
+                    <i class="bi bi-check-circle text-success mt-0.5 mr-2"></i>
+                    <span class="text-gray-700">{{ capability }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-gray-500 text-sm">No capabilities defined</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- SOP Section -->
+{% if agent.sop_content %}
+<div class="card mb-8" id="sop">
+    <div class="card-header">
+        <h3 class="card-title">Standard Operating Procedure (SOP)</h3>
+    </div>
+    <div class="card-body prose max-w-none">
+        {{ agent.sop_content | safe }}
+    </div>
+</div>
+{% endif %}
+
+<!-- Assigned Tasks -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Assigned Tasks</h3>
+    </div>
+    <div class="card-body">
+        {% if agent.assigned_tasks and agent.assigned_tasks | length > 0 %}
+        <div class="space-y-2">
+            {% for task in agent.assigned_tasks %}
+            <a href="/tasks/{{ task.id }}" class="block p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h4 class="font-medium text-gray-900">{{ task.name }}</h4>
+                        <p class="text-sm text-gray-600 mt-1">{{ task.description[:100] }}...</p>
+                    </div>
+                    <span class="badge badge-{{ 'success' if task.status == 'done' else 'warning' }}">
+                        {{ task.status }}
+                    </span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-12">
+            <i class="bi bi-inbox text-6xl text-gray-300"></i>
+            <h3 class="mt-4 text-lg font-semibold text-gray-900">No Assigned Tasks</h3>
+            <p class="mt-2 text-gray-600">This agent has no tasks currently assigned</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

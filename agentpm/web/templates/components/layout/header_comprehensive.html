@@ -1,0 +1,371 @@
+<!-- Comprehensive Header Component -->
+<header
+  x-data="headerController()"
+  class="sticky top-0 z-50 border-b border-gray-200 bg-white/90 backdrop-blur shadow-sm"
+>
+  <div class="flex h-16 w-full items-center justify-between px-4 sm:px-6 lg:px-8">
+    <!-- Logo -->
+    <a href="/" class="flex items-center gap-3">
+      <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/90 text-white shadow-brand">
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h12M4 18h8"></path>
+        </svg>
+      </span>
+      <span class="hidden sm:block">
+        <span class="block text-base font-semibold text-gray-900">APM (Agent Project Manager)</span>
+        <span class="block text-xs font-medium uppercase tracking-wide text-gray-500">AI Project Manager</span>
+      </span>
+    </a>
+
+    <!-- Collapsible Search -->
+    <div class="mx-4 flex-1 items-center md:flex">
+      <div class="relative w-full max-w-xl" x-show="searchOpen" x-transition>
+        <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35M5 11a6 6 0 1 1 12 0 6 6 0 0 1-12 0Z" />
+          </svg>
+        </span>
+        <input
+          x-ref="search"
+          x-model="searchQuery"
+          @keydown.enter.prevent="submitSearch"
+          @keydown.escape="searchOpen = false"
+          type="search"
+          name="global-search"
+          autocomplete="off"
+          placeholder="Search ideas, work items, tasks, agents..."
+          class="w-full rounded-xl border border-gray-200 bg-white py-2 pl-10 pr-12 text-sm text-gray-700 shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
+        />
+        <span class="pointer-events-none absolute inset-y-0 right-3 hidden items-center gap-1 rounded-md border border-gray-200 bg-gray-50 px-2 text-xs font-medium text-gray-500 sm:flex">
+          <span class="font-mono">⌘K</span>
+        </span>
+      </div>
+    </div>
+
+    {% set current_path = request.path %}
+
+    <!-- Desktop Navigation -->
+    <nav class="hidden items-center gap-1 rounded-full bg-gray-100/80 p-1 md:flex">
+      <!-- Dashboard -->
+      <a href="/dashboard"
+         class="rounded-full px-3 py-1.5 text-sm font-medium transition {{ 'bg-white text-primary shadow-sm' if current_path == '/dashboard' or current_path == '/' else 'text-gray-600 hover:text-primary' }}">
+        <span class="flex items-center gap-2">
+          <i class="bi bi-speedometer2"></i>
+          Dashboard
+        </span>
+      </a>
+
+      <!-- Ideas - Single link -->
+      <a href="/ideas"
+         class="rounded-full px-3 py-1.5 text-sm font-medium transition {{ 'bg-white text-primary shadow-sm' if current_path.startswith('/ideas') else 'text-gray-600 hover:text-primary' }}">
+        <span class="flex items-center gap-2">
+          <i class="bi bi-lightbulb"></i>
+          Ideas
+        </span>
+      </a>
+
+      <!-- Work Items - Single link -->
+      <a href="/work-items"
+         class="rounded-full px-3 py-1.5 text-sm font-medium transition {{ 'bg-white text-primary shadow-sm' if current_path.startswith('/work-items') else 'text-gray-600 hover:text-primary' }}">
+        <span class="flex items-center gap-2">
+          <i class="bi bi-kanban"></i>
+          Work Items
+        </span>
+      </a>
+
+      <!-- Tasks - Single link -->
+      <a href="/tasks"
+         class="rounded-full px-3 py-1.5 text-sm font-medium transition {{ 'bg-white text-primary shadow-sm' if current_path.startswith('/tasks') else 'text-gray-600 hover:text-primary' }}">
+        <span class="flex items-center gap-2">
+          <i class="bi bi-list-task"></i>
+          Tasks
+        </span>
+      </a>
+
+      <!-- Documents - Single link -->
+      <a href="/documents"
+         class="rounded-full px-3 py-1.5 text-sm font-medium transition {{ 'bg-white text-primary shadow-sm' if current_path.startswith('/documents') else 'text-gray-600 hover:text-primary' }}">
+        <span class="flex items-center gap-2">
+          <i class="bi bi-file-earmark-text"></i>
+          Documents
+        </span>
+      </a>
+
+      <!-- Context dropdown -->
+      <div class="relative" x-data="{ open: false }">
+        <button
+          type="button"
+          @click="open = !open"
+          class="rounded-full px-3 py-1.5 text-sm font-medium transition {{ 'bg-white text-primary shadow-sm' if current_path.startswith('/context') or current_path.startswith('/agents') or current_path.startswith('/rules') else 'text-gray-600 hover:text-primary' }}"
+        >
+          <span class="flex items-center gap-1.5">
+            <i class="bi bi-layers"></i>
+            Context
+            <i class="bi bi-chevron-down text-xs"></i>
+          </span>
+        </button>
+        <div
+          x-cloak
+          x-show="open"
+          x-transition
+          @click.away="open = false"
+          class="absolute left-0 mt-2 w-48 rounded-lg border border-gray-200 bg-white p-1 shadow-lg z-50"
+        >
+          <a href="/context" class="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-primary/10 hover:text-primary" @click="open = false">
+            <i class="bi bi-layers"></i>
+            Context Overview
+          </a>
+          <a href="/context/files" class="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-primary/10 hover:text-primary" @click="open = false">
+            <i class="bi bi-folder"></i>
+            Context Files
+          </a>
+          <a href="/context/evidence" class="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-primary/10 hover:text-primary" @click="open = false">
+            <i class="bi bi-file-earmark-check"></i>
+            Evidence
+          </a>
+          <a href="/context/events" class="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-primary/10 hover:text-primary" @click="open = false">
+            <i class="bi bi-calendar-event"></i>
+            Events
+          </a>
+          <a href="/agents" class="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-primary/10 hover:text-primary" @click="open = false">
+            <i class="bi bi-robot"></i>
+            Agents
+          </a>
+          <a href="/rules" class="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-primary/10 hover:text-primary" @click="open = false">
+            <i class="bi bi-shield-check"></i>
+            Rules
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Quick Actions -->
+    <div class="flex items-center gap-2">
+      <!-- WebSocket Status Indicator -->
+      <div class="hidden sm:flex items-center gap-1 text-xs text-gray-500" title="WebSocket status">
+        <i id="ws-status-indicator" class="bi bi-wifi text-gray-400"></i>
+      </div>
+
+      <button
+        @click="searchOpen = !searchOpen; if (searchOpen) { $nextTick(() => $refs.search?.focus()) }"
+        class="hidden rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-600 shadow-sm transition hover:border-primary/30 hover:text-primary sm:inline-flex"
+        title="Search"
+      >
+        <i class="bi bi-search"></i>
+      </button>
+      
+      <div class="relative hidden sm:block" x-data="{ open: false }">
+        <button
+          type="button"
+          class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary shadow-sm"
+          @click="open = !open"
+          :aria-expanded="open.toString()"
+        >
+          <i class="bi bi-gear-fill"></i>
+        </button>
+        <div
+          x-cloak
+          x-show="open"
+          x-transition
+          @click.away="open = false"
+          class="absolute right-0 mt-2 w-52 rounded-lg border border-gray-200 bg-white p-2 shadow-lg z-50"
+          style="max-width: calc(100vw - 2rem);"
+        >
+          <a href="/settings" class="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-primary/10 hover:text-primary">
+            <i class="bi bi-gear"></i>
+            Project Settings
+          </a>
+          <a href="/system/health" class="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-primary/10 hover:text-primary">
+            <i class="bi bi-heart-pulse"></i>
+            System Health
+          </a>
+          <a href="/system/database" class="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-primary/10 hover:text-primary">
+            <i class="bi bi-database"></i>
+            Database
+          </a>
+          <button type="button" class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-gray-700 hover:bg-primary/10 hover:text-primary" @click="showNotifications">
+            <i class="bi bi-bell"></i>
+            Notifications
+          </button>
+          <hr class="my-1 border-gray-200">
+          <button type="button" class="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm text-gray-700 hover:bg-primary/10 hover:text-primary" @click="console.log('Button clicked'); window.ModalSystem.showKeyboardShortcuts(); open = false">
+            <span class="flex items-center gap-2">
+              <i class="bi bi-keyboard"></i>
+              Keyboard Shortcuts
+            </span>
+            <kbd class="rounded border border-gray-300 bg-gray-50 px-1.5 py-0.5 font-mono text-xs">?</kbd>
+          </button>
+        </div>
+      </div>
+      
+      <button
+        type="button"
+        class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 shadow-sm transition hover:border-primary/40 hover:text-primary md:hidden"
+        @click="mobileOpen = !mobileOpen"
+        :aria-expanded="mobileOpen.toString()"
+      >
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile Search -->
+  <div class="border-t border-gray-200 bg-white px-4 py-3 md:hidden">
+    <div class="relative">
+      <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400">
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35M5 11a6 6 0 1 1 12 0 6 6 0 0 1-12 0Z" />
+        </svg>
+      </span>
+      <input
+        type="search"
+        x-model="searchQuery"
+        @keydown.enter.prevent="submitSearch"
+        class="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-3 text-sm text-gray-700 shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
+        placeholder="Search the workspace..."
+      />
+    </div>
+  </div>
+
+  <!-- Mobile Menu -->
+  <nav
+    x-cloak
+    x-show="mobileOpen"
+    x-transition
+    class="border-t border-gray-200 bg-white md:hidden"
+  >
+    <div class="space-y-2 px-4 py-4">
+      <!-- Dashboard -->
+      <a href="/dashboard"
+         class="block rounded-lg px-3 py-2 text-sm font-medium transition {{ 'bg-primary/10 text-primary' if current_path == '/dashboard' or current_path == '/' else 'text-gray-700 hover:bg-gray-50' }}">
+        <i class="bi bi-speedometer2 mr-2"></i>Dashboard
+      </a>
+
+      <!-- Ideas Section -->
+      <div class="border-t border-gray-100 pt-2 mt-2">
+        <div class="px-3 py-1 text-xs font-semibold uppercase tracking-wider text-gray-500">Ideas</div>
+        <a href="/ideas"
+           class="block rounded-lg px-3 py-2 text-sm font-medium transition {{ 'bg-primary/10 text-primary' if current_path.startswith('/ideas') else 'text-gray-700 hover:bg-gray-50' }}">
+          <i class="bi bi-lightbulb mr-2"></i>All Ideas
+        </a>
+        <a href="/ideas/1/elements"
+           class="block rounded-lg px-3 py-2 text-sm font-medium transition {{ 'bg-primary/10 text-primary' if current_path.startswith('/ideas') and '/elements' in current_path else 'text-gray-700 hover:bg-gray-50' }}">
+          <i class="bi bi-list-ul mr-2"></i>Idea Elements
+        </a>
+      </div>
+
+      <!-- Work Items Section -->
+      <div class="border-t border-gray-100 pt-2 mt-2">
+        <div class="px-3 py-1 text-xs font-semibold uppercase tracking-wider text-gray-500">Work Items</div>
+        <a href="/work-items"
+           class="block rounded-lg px-3 py-2 text-sm font-medium transition {{ 'bg-primary/10 text-primary' if current_path.startswith('/work-items') else 'text-gray-700 hover:bg-gray-50' }}">
+          <i class="bi bi-list-task mr-2"></i>All Work Items
+        </a>
+        <a href="/work-items/1/tasks"
+           class="block rounded-lg px-3 py-2 text-sm font-medium transition {{ 'bg-primary/10 text-primary' if current_path.startswith('/work-items') and '/tasks' in current_path else 'text-gray-700 hover:bg-gray-50' }}">
+          <i class="bi bi-check2-square mr-2"></i>Work Item Tasks
+        </a>
+        <a href="/work-items/1/dependencies"
+           class="block rounded-lg px-3 py-2 text-sm font-medium transition {{ 'bg-primary/10 text-primary' if current_path.startswith('/work-items') and '/dependencies' in current_path else 'text-gray-700 hover:bg-gray-50' }}">
+          <i class="bi bi-diagram-3 mr-2"></i>Dependencies
+        </a>
+      </div>
+
+      <!-- Context Section -->
+      <div class="border-t border-gray-100 pt-2 mt-2">
+        <div class="px-3 py-1 text-xs font-semibold uppercase tracking-wider text-gray-500">Context</div>
+        <a href="/context"
+           class="block rounded-lg px-3 py-2 text-sm font-medium transition {{ 'bg-primary/10 text-primary' if current_path == '/context' else 'text-gray-700 hover:bg-gray-50' }}">
+          <i class="bi bi-layers mr-2"></i>Context Overview
+        </a>
+        <a href="/context/documents"
+           class="block rounded-lg px-3 py-2 text-sm font-medium transition {{ 'bg-primary/10 text-primary' if current_path.startswith('/context/documents') else 'text-gray-700 hover:bg-gray-50' }}">
+          <i class="bi bi-journal-text mr-2"></i>Documents
+        </a>
+        <a href="/context/evidence"
+           class="block rounded-lg px-3 py-2 text-sm font-medium transition {{ 'bg-primary/10 text-primary' if current_path.startswith('/context/evidence') else 'text-gray-700 hover:bg-gray-50' }}">
+          <i class="bi bi-file-earmark-check mr-2"></i>Evidence
+        </a>
+        <a href="/context/events"
+           class="block rounded-lg px-3 py-2 text-sm font-medium transition {{ 'bg-primary/10 text-primary' if current_path.startswith('/context/events') else 'text-gray-700 hover:bg-gray-50' }}">
+          <i class="bi bi-calendar-event mr-2"></i>Events
+        </a>
+        <a href="/context/sessions"
+           class="block rounded-lg px-3 py-2 text-sm font-medium transition {{ 'bg-primary/10 text-primary' if current_path.startswith('/context/sessions') else 'text-gray-700 hover:bg-gray-50' }}">
+          <i class="bi bi-clock-history mr-2"></i>Sessions
+        </a>
+      </div>
+
+      <!-- System Section -->
+      <div class="border-t border-gray-100 pt-2 mt-2">
+        <div class="px-3 py-1 text-xs font-semibold uppercase tracking-wider text-gray-500">System</div>
+        <a href="/agents"
+           class="block rounded-lg px-3 py-2 text-sm font-medium transition {{ 'bg-primary/10 text-primary' if current_path.startswith('/agents') else 'text-gray-700 hover:bg-gray-50' }}">
+          <i class="bi bi-robot mr-2"></i>Agents
+        </a>
+        <a href="/rules"
+           class="block rounded-lg px-3 py-2 text-sm font-medium transition {{ 'bg-primary/10 text-primary' if current_path.startswith('/rules') else 'text-gray-700 hover:bg-gray-50' }}">
+          <i class="bi bi-shield-check mr-2"></i>Rules
+        </a>
+        <a href="/system/health"
+           class="block rounded-lg px-3 py-2 text-sm font-medium transition {{ 'bg-primary/10 text-primary' if current_path.startswith('/system/health') else 'text-gray-700 hover:bg-gray-50' }}">
+          <i class="bi bi-heart-pulse mr-2"></i>System Health
+        </a>
+        <a href="/system/database"
+           class="block rounded-lg px-3 py-2 text-sm font-medium transition {{ 'bg-primary/10 text-primary' if current_path.startswith('/system/database') else 'text-gray-700 hover:bg-gray-50' }}">
+          <i class="bi bi-database mr-2"></i>Database
+        </a>
+        <a href="/settings"
+           class="block rounded-lg px-3 py-2 text-sm font-medium transition {{ 'bg-primary/10 text-primary' if current_path.startswith('/settings') else 'text-gray-700 hover:bg-gray-50' }}">
+          <i class="bi bi-gear mr-2"></i>Project Settings
+        </a>
+        <a href="/system/settings"
+           class="block rounded-lg px-3 py-2 text-sm font-medium transition {{ 'bg-primary/10 text-primary' if current_path.startswith('/system/settings') else 'text-gray-700 hover:bg-gray-50' }}">
+          <i class="bi bi-sliders mr-2"></i>System Settings
+        </a>
+      </div>
+    </div>
+  </nav>
+
+</header>
+
+<script>
+  // Global keyboard shortcuts
+  window.addEventListener('keydown', (event) => {
+    // ⌘K / Ctrl+K: Focus search
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+      event.preventDefault();
+      const header = document.querySelector('header[x-data*="headerController"]');
+      if (!header || !header.__x) return;
+      
+      // Open search if not already open
+      if (!header.__x.$data.searchOpen) {
+        header.__x.$data.searchOpen = true;
+        header.__x.$nextTick(() => {
+          const searchInput = header.querySelector('input[name="global-search"]') || header.querySelector('input[type="search"]');
+          if (searchInput) {
+            searchInput.focus();
+            searchInput.select();
+          }
+        });
+      } else {
+        const searchInput = header.querySelector('input[name="global-search"]') || header.querySelector('input[type="search"]');
+        if (searchInput) {
+          searchInput.focus();
+          searchInput.select();
+        }
+      }
+    }
+
+    // ?: Show keyboard shortcuts help
+    if (event.key === '?' && !event.shiftKey && !event.metaKey && !event.ctrlKey && !event.altKey) {
+      // Only trigger if not in an input field
+      if (event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') {
+        event.preventDefault();
+        window.ModalSystem.showKeyboardShortcuts();
+      }
+    }
+  });
+</script>

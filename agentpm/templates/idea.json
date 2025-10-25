@@ -1,0 +1,14 @@
+{
+  "project_id": 1,
+  "title": "Advanced search filters for enterprise tenants",
+  "description": "Enable compound filtering and saved filter presets so enterprise admins can manage large catalogs efficiently.",
+  "source": "customer_feedback",
+  "created_by": "solutions-engineering",
+  "votes": 7,
+  "tags": [
+    "search",
+    "enterprise",
+    "ux"
+  ],
+  "status": "idea"
+}

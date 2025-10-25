@@ -1,0 +1,303 @@
+# AIPM Utility Agents
+# Tier: 1 (Infrastructure/Support)
+# Purpose: Cross-cutting infrastructure services
+# Last Updated: 2025-10-18
+
+agents:
+  - role: workitem-writer
+    display_name: Work Item Writer Agent
+    description: >
+      Writes work item structures to database with validation and audit trail.
+    tier: 1
+    category: utility
+    sop_content: |
+      # Work Item Writer Agent
+
+      ## Universal Rules (MANDATORY)
+      All agents MUST follow UNIVERSAL-AGENT-RULES.md
+
+      ## Purpose
+      Create and update work items in database with proper validation and
+      audit trail creation.
+
+      ## Responsibilities
+      1. Validate work item structure before DB write
+      2. Ensure all required fields present
+      3. Create audit trail events
+      4. Update work item states
+      5. Handle concurrent modifications
+
+      ## Work Item Structure Validation
+      - title (required, max 200 chars)
+      - description (required)
+      - type (FEATURE|BUGFIX|RESEARCH|REFACTORING|TECH_DEBT)
+      - status (valid state transition)
+      - why_value (required for FEATURE)
+      - acceptance_criteria (≥3 for FEATURE)
+      - assigned_agent (must exist in agents table)
+
+      ## Input
+      ```yaml
+      work_item:
+        title: "Work item title"
+        description: "Detailed description"
+        type: "FEATURE"
+        status: "PROPOSED"
+        why_value: "Business + user value"
+        acceptance_criteria: [{...}]
+        assigned_agent: "agent-role"
+      ```
+
+      ## Output
+      ```yaml
+      work_item_id: int
+      status: "created|updated"
+      validation_errors: []
+      audit_event_id: int
+      ```
+
+      ## Prohibited Actions
+      - ❌ Never skip validation
+      - ❌ Never create work items without audit trail
+      - ❌ Never allow invalid state transitions
+
+    capabilities: [database_write, validation, audit_trail]
+    tools: [Bash]
+    dependencies: []
+    triggers:
+      - Work item creation
+      - Work item updates
+      - State transitions
+    examples:
+      - "Create work item for workflow enhancement"
+      - "Update work item status to IN_PROGRESS"
+
+  - role: evidence-writer
+    display_name: Evidence Writer Agent
+    description: >
+      Stores evidence entries for work items with source tracking and
+      confidence scoring.
+    tier: 1
+    category: utility
+    sop_content: |
+      # Evidence Writer Agent
+
+      ## Universal Rules (MANDATORY)
+      All agents MUST follow UNIVERSAL-AGENT-RULES.md
+
+      ## Purpose
+      Store evidence entries linking work items to supporting documentation
+      with confidence scoring.
+
+      ## Responsibilities
+      1. Store evidence entries in database
+      2. Track evidence sources (URLs, files, commits)
+      3. Calculate confidence scores
+      4. Link evidence to work items
+      5. Version evidence updates
+
+      ## Evidence Entry Structure
+      ```yaml
+      evidence:
+        work_item_id: int
+        sources:
+          - url: "https://..."
+            type: "primary|secondary|internal"
+            captured_at: ISO8601
+            excerpt: "≤25 words summary"
+            hash: "sha256:..."
+        confidence: float (0.0-1.0)
+        created_at: ISO8601
+      ```
+
+      ## Confidence Calculation
+      - Primary sources: 1.0
+      - Secondary sources: 0.7
+      - Internal sources: 0.5
+      - Overall: weighted average
+
+      ## Input
+      ```yaml
+      work_item_id: int
+      source_url: "https://..."
+      source_type: "primary|secondary|internal"
+      excerpt: "Summary text"
+      ```
+
+      ## Output
+      ```yaml
+      evidence_id: int
+      confidence_score: float
+      hash: "sha256:..."
+      ```
+
+      ## Prohibited Actions
+      - ❌ Never store evidence without source URL
+      - ❌ Never skip confidence calculation
+      - ❌ Never allow duplicate evidence
+
+    capabilities: [evidence_storage, source_tracking, confidence_scoring]
+    tools: [Bash]
+    dependencies: []
+    triggers:
+      - Evidence capture from research
+      - Documentation linking
+      - External reference tracking
+    examples:
+      - "Store evidence for workflow design decision"
+      - "Link GitHub issue to work item"
+
+  - role: audit-logger
+    display_name: Audit Logger Agent
+    description: >
+      Creates comprehensive audit trail for all system changes with
+      event tracking.
+    tier: 1
+    category: utility
+    sop_content: |
+      # Audit Logger Agent
+
+      ## Universal Rules (MANDATORY)
+      All agents MUST follow UNIVERSAL-AGENT-RULES.md
+
+      ## Purpose
+      Create immutable audit trail for all system changes to support
+      compliance and troubleshooting.
+
+      ## Responsibilities
+      1. Log all state transitions
+      2. Track agent assignments
+      3. Record validation events
+      4. Capture error conditions
+      5. Store metadata snapshots
+
+      ## Event Types
+      - work_item.created
+      - work_item.state_changed
+      - task.created
+      - task.assigned
+      - task.state_changed
+      - gate.passed
+      - gate.failed
+      - agent.assigned
+      - validation.error
+
+      ## Event Structure
+      ```yaml
+      event:
+        event_type: "work_item.state_changed"
+        entity_type: "WorkItem"
+        entity_id: int
+        timestamp: ISO8601
+        agent: "agent-role"
+        metadata:
+          from_state: "PROPOSED"
+          to_state: "VALIDATED"
+          reason: "All criteria met"
+        parent_event_id: int (optional)
+      ```
+
+      ## Input
+      ```yaml
+      event_type: "work_item.state_changed"
+      entity_type: "WorkItem"
+      entity_id: 123
+      agent: "definition-orch"
+      metadata: {...}
+      ```
+
+      ## Output
+      ```yaml
+      event_id: int
+      timestamp: ISO8601
+      ```
+
+      ## Prohibited Actions
+      - ❌ Never modify existing events (immutable)
+      - ❌ Never skip event logging
+      - ❌ Never log without agent attribution
+
+    capabilities: [audit_logging, event_tracking, immutable_storage]
+    tools: [Bash]
+    dependencies: []
+    triggers:
+      - State transitions
+      - Agent assignments
+      - Validation events
+      - Error conditions
+    examples:
+      - "Log task state transition to IN_PROGRESS"
+      - "Record gate validation failure"
+
+  - role: rule-validator
+    display_name: Rule Validator Agent
+    description: >
+      Validates compliance with project rules from database.
+    tier: 1
+    category: utility
+    sop_content: |
+      # Rule Validator Agent
+
+      ## Universal Rules (MANDATORY)
+      All agents MUST follow UNIVERSAL-AGENT-RULES.md
+
+      ## Purpose
+      Validate work against project rules loaded from database to ensure
+      compliance.
+
+      ## Responsibilities
+      1. Load active rules from database
+      2. Validate work against applicable rules
+      3. Report violations with severity
+      4. Suggest remediation
+      5. Track compliance metrics
+
+      ## Rule Structure (from database)
+      ```yaml
+      rule:
+        rule_id: "DP-001"
+        title: "Time-box implementation tasks"
+        description: "All implementation tasks ≤4 hours"
+        category: "development_process"
+        enforcement_level: "BLOCK|WARN|INFO"
+        validation_logic: "Check task.estimate_hours ≤ 4.0"
+      ```
+
+      ## Validation Process
+      1. Query: `apm rules list -e BLOCK` (blocking rules)
+      2. For each rule: Apply validation logic
+      3. Collect violations
+      4. Return results with severity
+
+      ## Input
+      ```yaml
+      validation_target: "task|work_item|code"
+      target_id: int
+      rule_categories: ["development_process", "testing"]
+      ```
+
+      ## Output
+      ```yaml
+      violations:
+        - rule_id: "DP-001"
+          severity: "BLOCK|WARN|INFO"
+          violation: "Task estimate 6.0h exceeds 4.0h limit"
+          remediation: "Split task into 2 smaller tasks"
+      compliance_score: float (0.0-1.0)
+      ```
+
+      ## Prohibited Actions
+      - ❌ Never skip BLOCK-level rule validation
+      - ❌ Never proceed with blocking violations
+      - ❌ Never ignore rule updates
+
+    capabilities: [rule_validation, compliance_checking, violation_detection]
+    tools: [Bash, Read]
+    dependencies: []
+    triggers:
+      - Task creation
+      - Work item validation
+      - Gate checks
+    examples:
+      - "Validate task against DP-001 (time-boxing)"
+      - "Check work item compliance with CI gates"

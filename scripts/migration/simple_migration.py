@@ -1,0 +1,101 @@
+#!/usr/bin/env python3
+"""
+Simple Database Migration Script
+
+This script directly updates the status values in the database
+by temporarily disabling constraints.
+"""
+
+import sqlite3
+import sys
+from pathlib import Path
+
+# Status mappings for the 6-state system
+STATUS_MAPPINGS = {
+    'proposed': 'draft',
+    'accepted': 'active',
+    'in_progress': 'active',
+    'completed': 'done',
+    # These remain unchanged
+    'review': 'review',
+    'archived': 'archived',
+    'cancelled': 'cancelled',
+}
+
+def migrate_database(db_path: Path):
+    """Simple database migration to 6-state system."""
+    if not db_path.exists():
+        print(f"❌ Database {db_path} does not exist")
+        return False
+    
+    print(f"🔍 Migrating database: {db_path}")
+    print(f"📋 Status mappings:")
+    for old, new in STATUS_MAPPINGS.items():
+        if old != new:
+            print(f"  {old} → {new}")
+    
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        # Disable all constraints temporarily
+        cursor.execute("PRAGMA foreign_keys=OFF;")
+        cursor.execute("PRAGMA ignore_check_constraints=ON;")
+        
+        # Update work items
+        work_item_changes = 0
+        for old_status, new_status in STATUS_MAPPINGS.items():
+            if old_status != new_status:
+                cursor.execute("SELECT COUNT(*) FROM work_items WHERE status = ?;", (old_status,))
+                count = cursor.fetchone()[0]
+                if count > 0:
+                    print(f"  Work items: {count} records '{old_status}' → '{new_status}'")
+                    cursor.execute("UPDATE work_items SET status = ? WHERE status = ?;", 
+                                 (new_status, old_status))
+                    work_item_changes += count
+        
+        # Update tasks
+        task_changes = 0
+        for old_status, new_status in STATUS_MAPPINGS.items():
+            if old_status != new_status:
+                cursor.execute("SELECT COUNT(*) FROM tasks WHERE status = ?;", (old_status,))
+                count = cursor.fetchone()[0]
+                if count > 0:
+                    print(f"  Tasks: {count} records '{old_status}' → '{new_status}'")
+                    cursor.execute("UPDATE tasks SET status = ? WHERE status = ?;", 
+                                 (new_status, old_status))
+                    task_changes += count
+        
+        print(f"  Total changes: {work_item_changes} work items, {task_changes} tasks")
+        
+        # Re-enable constraints
+        cursor.execute("PRAGMA foreign_keys=ON;")
+        cursor.execute("PRAGMA ignore_check_constraints=OFF;")
+        
+        conn.commit()
+        conn.close()
+        
+        print("✅ Database migration complete!")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Error migrating database: {e}")
+        return False
+
+def main():
+    """Main script execution."""
+    db_path = Path('.aipm/data/aipm.db')
+    
+    success = migrate_database(db_path)
+    
+    if success:
+        print(f"\n✅ Database migration finished!")
+        print(f"\n🔧 Next steps:")
+        print(f"  1. Test the CLI: apm status")
+        print(f"  2. Verify all status values are correct")
+    else:
+        print(f"\n❌ Migration failed")
+        sys.exit(1)
+
+if __name__ == '__main__':
+    main()

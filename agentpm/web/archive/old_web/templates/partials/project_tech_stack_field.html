@@ -1,0 +1,47 @@
+{% if edit_mode %}
+  <!-- Edit Mode: Textarea + Save/Cancel -->
+  <form hx-post="/project/{{ project.id }}/update-tech-stack"
+        hx-target="#project-tech-stack-container"
+        hx-swap="innerHTML">
+    <textarea name="tech_stack"
+              class="form-control {% if error %}is-invalid{% endif %}"
+              rows="3"
+              maxlength="500"
+              autofocus>{{ project.tech_stack | join(', ') if project.tech_stack else '' }}</textarea>
+    {% if error %}
+      <div class="invalid-feedback d-block">{{ error }}</div>
+    {% endif %}
+    <div class="mt-2">
+      <button type="submit" class="btn btn-sm btn-success">
+        <i class="bi bi-check"></i> Save
+      </button>
+      <button type="button"
+              class="btn btn-sm btn-secondary"
+              hx-get="/project/{{ project.id }}/settings/tech-stack"
+              hx-target="#project-tech-stack-container"
+              hx-swap="innerHTML">
+        <i class="bi bi-x"></i> Cancel
+      </button>
+    </div>
+  </form>
+{% else %}
+  <!-- Display Mode: Value + Edit Button -->
+  <div class="d-flex align-items-start">
+    <div id="project-tech-stack-display" class="me-2">
+      {% if project.tech_stack %}
+        {% for tech in project.tech_stack %}
+          <span class="badge badge-info me-1 mb-1">{{ tech }}</span>
+        {% endfor %}
+      {% else %}
+        <em class="text-muted">No technologies specified</em>
+      {% endif %}
+    </div>
+    <button class="btn btn-sm btn-link p-0"
+            hx-get="/project/{{ project.id }}/settings/tech-stack?edit=true"
+            hx-target="#project-tech-stack-container"
+            hx-swap="innerHTML"
+            title="Edit technology stack">
+      <i class="bi bi-pencil text-primary"></i>
+    </button>
+  </div>
+{% endif %}

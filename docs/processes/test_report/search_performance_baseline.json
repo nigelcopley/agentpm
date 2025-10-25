@@ -1,0 +1,1834 @@
+{
+  "timestamp": "2025-10-21T12:38:33.624308",
+  "analysis_type": "search_performance_baseline",
+  "performance": {
+    "summary": {
+      "total_benchmarks": 24,
+      "avg_execution_time_ms": 0.6834069887797037,
+      "median_execution_time_ms": 0.43511390686035156,
+      "max_execution_time_ms": 1.6739368438720703,
+      "min_execution_time_ms": 0.39696693420410156,
+      "avg_relevance_score": 0.0,
+      "avg_result_count": 0
+    },
+    "by_entity_type": {
+      "all": {
+        "benchmark_count": 6,
+        "avg_execution_time_ms": 1.3155937194824219,
+        "max_execution_time_ms": 1.6739368438720703,
+        "avg_relevance_score": 0.0,
+        "avg_result_count": 0
+      },
+      "work_items": {
+        "benchmark_count": 6,
+        "avg_execution_time_ms": 0.41611989339192706,
+        "max_execution_time_ms": 0.4608631134033203,
+        "avg_relevance_score": 0.0,
+        "avg_result_count": 0
+      },
+      "tasks": {
+        "benchmark_count": 6,
+        "avg_execution_time_ms": 0.5027453104654948,
+        "max_execution_time_ms": 0.8702278137207031,
+        "avg_relevance_score": 0.0,
+        "avg_result_count": 0
+      },
+      "ideas": {
+        "benchmark_count": 6,
+        "avg_execution_time_ms": 0.4991690317789714,
+        "max_execution_time_ms": 0.8819103240966797,
+        "avg_relevance_score": 0.0,
+        "avg_result_count": 0
+      }
+    },
+    "performance_issues": [
+      {
+        "type": "low_relevance",
+        "query": "oauth",
+        "entity_type": "all",
+        "avg_relevance": 0.0,
+        "threshold": 0.3
+      },
+      {
+        "type": "low_relevance",
+        "query": "oauth",
+        "entity_type": "work_items",
+        "avg_relevance": 0.0,
+        "threshold": 0.3
+      },
+      {
+        "type": "low_relevance",
+        "query": "oauth",
+        "entity_type": "tasks",
+        "avg_relevance": 0.0,
+        "threshold": 0.3
+      },
+      {
+        "type": "low_relevance",
+        "query": "oauth",
+        "entity_type": "ideas",
+        "avg_relevance": 0.0,
+        "threshold": 0.3
+      },
+      {
+        "type": "low_relevance",
+        "query": "authentication",
+        "entity_type": "all",
+        "avg_relevance": 0.0,
+        "threshold": 0.3
+      },
+      {
+        "type": "low_relevance",
+        "query": "authentication",
+        "entity_type": "work_items",
+        "avg_relevance": 0.0,
+        "threshold": 0.3
+      },
+      {
+        "type": "low_relevance",
+        "query": "authentication",
+        "entity_type": "tasks",
+        "avg_relevance": 0.0,
+        "threshold": 0.3
+      },
+      {
+        "type": "low_relevance",
+        "query": "authentication",
+        "entity_type": "ideas",
+        "avg_relevance": 0.0,
+        "threshold": 0.3
+      },
+      {
+        "type": "low_relevance",
+        "query": "database schema",
+        "entity_type": "all",
+        "avg_relevance": 0.0,
+        "threshold": 0.3
+      },
+      {
+        "type": "low_relevance",
+        "query": "database schema",
+        "entity_type": "work_items",
+        "avg_relevance": 0.0,
+        "threshold": 0.3
+      },
+      {
+        "type": "low_relevance",
+        "query": "database schema",
+        "entity_type": "tasks",
+        "avg_relevance": 0.0,
+        "threshold": 0.3
+      },
+      {
+        "type": "low_relevance",
+        "query": "database schema",
+        "entity_type": "ideas",
+        "avg_relevance": 0.0,
+        "threshold": 0.3
+      },
+      {
+        "type": "low_relevance",
+        "query": "user management system",
+        "entity_type": "all",
+        "avg_relevance": 0.0,
+        "threshold": 0.3
+      },
+      {
+        "type": "low_relevance",
+        "query": "user management system",
+        "entity_type": "work_items",
+        "avg_relevance": 0.0,
+        "threshold": 0.3
+      },
+      {
+        "type": "low_relevance",
+        "query": "user management system",
+        "entity_type": "tasks",
+        "avg_relevance": 0.0,
+        "threshold": 0.3
+      },
+      {
+        "type": "low_relevance",
+        "query": "user management system",
+        "entity_type": "ideas",
+        "avg_relevance": 0.0,
+        "threshold": 0.3
+      },
+      {
+        "type": "low_relevance",
+        "query": "api endpoint validation",
+        "entity_type": "all",
+        "avg_relevance": 0.0,
+        "threshold": 0.3
+      },
+      {
+        "type": "low_relevance",
+        "query": "api endpoint validation",
+        "entity_type": "work_items",
+        "avg_relevance": 0.0,
+        "threshold": 0.3
+      },
+      {
+        "type": "low_relevance",
+        "query": "api endpoint validation",
+        "entity_type": "tasks",
+        "avg_relevance": 0.0,
+        "threshold": 0.3
+      },
+      {
+        "type": "low_relevance",
+        "query": "api endpoint validation",
+        "entity_type": "ideas",
+        "avg_relevance": 0.0,
+        "threshold": 0.3
+      },
+      {
+        "type": "low_relevance",
+        "query": "project configuration",
+        "entity_type": "all",
+        "avg_relevance": 0.0,
+        "threshold": 0.3
+      },
+      {
+        "type": "low_relevance",
+        "query": "project configuration",
+        "entity_type": "work_items",
+        "avg_relevance": 0.0,
+        "threshold": 0.3
+      },
+      {
+        "type": "low_relevance",
+        "query": "project configuration",
+        "entity_type": "tasks",
+        "avg_relevance": 0.0,
+        "threshold": 0.3
+      },
+      {
+        "type": "low_relevance",
+        "query": "project configuration",
+        "entity_type": "ideas",
+        "avg_relevance": 0.0,
+        "threshold": 0.3
+      }
+    ],
+    "recommendations": [
+      {
+        "priority": "medium",
+        "issue": "Poor relevance scoring",
+        "recommendation": "Use FTS5 ranking algorithms",
+        "expected_improvement": "Better result ranking and relevance"
+      },
+      {
+        "priority": "high",
+        "issue": "Multiple performance issues detected",
+        "recommendation": "Comprehensive search system overhaul with FTS5",
+        "expected_improvement": "Significant performance and relevance improvements"
+      }
+    ]
+  },
+  "database_structure": {
+    "tables": {
+      "projects": {
+        "row_count": 1,
+        "column_count": 9,
+        "columns": [
+          {
+            "name": "id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "name",
+            "type": "TEXT"
+          },
+          {
+            "name": "description",
+            "type": "TEXT"
+          },
+          {
+            "name": "path",
+            "type": "TEXT"
+          },
+          {
+            "name": "tech_stack",
+            "type": "TEXT"
+          },
+          {
+            "name": "detected_frameworks",
+            "type": "TEXT"
+          },
+          {
+            "name": "status",
+            "type": "TEXT"
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP"
+          },
+          {
+            "name": "updated_at",
+            "type": "TIMESTAMP"
+          }
+        ]
+      },
+      "sqlite_sequence": {
+        "row_count": 10,
+        "column_count": 2,
+        "columns": [
+          {
+            "name": "name",
+            "type": ""
+          },
+          {
+            "name": "seq",
+            "type": ""
+          }
+        ]
+      },
+      "rules": {
+        "row_count": 25,
+        "column_count": 13,
+        "columns": [
+          {
+            "name": "id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "project_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "rule_id",
+            "type": "TEXT"
+          },
+          {
+            "name": "name",
+            "type": "TEXT"
+          },
+          {
+            "name": "description",
+            "type": "TEXT"
+          },
+          {
+            "name": "category",
+            "type": "TEXT"
+          },
+          {
+            "name": "enforcement_level",
+            "type": "TEXT"
+          },
+          {
+            "name": "validation_logic",
+            "type": "TEXT"
+          },
+          {
+            "name": "error_message",
+            "type": "TEXT"
+          },
+          {
+            "name": "config",
+            "type": "TEXT"
+          },
+          {
+            "name": "enabled",
+            "type": "INTEGER"
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP"
+          },
+          {
+            "name": "updated_at",
+            "type": "TIMESTAMP"
+          }
+        ]
+      },
+      "ideas": {
+        "row_count": 0,
+        "column_count": 14,
+        "columns": [
+          {
+            "name": "id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "project_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "title",
+            "type": "TEXT"
+          },
+          {
+            "name": "description",
+            "type": "TEXT"
+          },
+          {
+            "name": "source",
+            "type": "TEXT"
+          },
+          {
+            "name": "created_by",
+            "type": "TEXT"
+          },
+          {
+            "name": "votes",
+            "type": "INTEGER"
+          },
+          {
+            "name": "tags",
+            "type": "TEXT"
+          },
+          {
+            "name": "status",
+            "type": "TEXT"
+          },
+          {
+            "name": "rejection_reason",
+            "type": "TEXT"
+          },
+          {
+            "name": "converted_to_work_item_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "converted_at",
+            "type": "TIMESTAMP"
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP"
+          },
+          {
+            "name": "updated_at",
+            "type": "TIMESTAMP"
+          }
+        ]
+      },
+      "sessions": {
+        "row_count": 0,
+        "column_count": 17,
+        "columns": [
+          {
+            "name": "id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "session_id",
+            "type": "TEXT"
+          },
+          {
+            "name": "project_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "tool_name",
+            "type": "TEXT"
+          },
+          {
+            "name": "llm_model",
+            "type": "TEXT"
+          },
+          {
+            "name": "tool_version",
+            "type": "TEXT"
+          },
+          {
+            "name": "start_time",
+            "type": "TIMESTAMP"
+          },
+          {
+            "name": "end_time",
+            "type": "TIMESTAMP"
+          },
+          {
+            "name": "duration_minutes",
+            "type": "INTEGER"
+          },
+          {
+            "name": "status",
+            "type": "TEXT"
+          },
+          {
+            "name": "session_type",
+            "type": "TEXT"
+          },
+          {
+            "name": "exit_reason",
+            "type": "TEXT"
+          },
+          {
+            "name": "developer_name",
+            "type": "TEXT"
+          },
+          {
+            "name": "developer_email",
+            "type": "TEXT"
+          },
+          {
+            "name": "metadata",
+            "type": "TEXT"
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP"
+          },
+          {
+            "name": "updated_at",
+            "type": "TIMESTAMP"
+          }
+        ]
+      },
+      "agent_relationships": {
+        "row_count": 0,
+        "column_count": 7,
+        "columns": [
+          {
+            "name": "id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "agent_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "related_agent_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "relationship_type",
+            "type": "TEXT"
+          },
+          {
+            "name": "metadata",
+            "type": "TEXT"
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP"
+          },
+          {
+            "name": "updated_at",
+            "type": "TIMESTAMP"
+          }
+        ]
+      },
+      "agent_tools": {
+        "row_count": 0,
+        "column_count": 8,
+        "columns": [
+          {
+            "name": "id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "agent_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "phase",
+            "type": "TEXT"
+          },
+          {
+            "name": "tool_name",
+            "type": "TEXT"
+          },
+          {
+            "name": "priority",
+            "type": "INTEGER"
+          },
+          {
+            "name": "config",
+            "type": "TEXT"
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP"
+          },
+          {
+            "name": "updated_at",
+            "type": "TIMESTAMP"
+          }
+        ]
+      },
+      "task_dependencies": {
+        "row_count": 0,
+        "column_count": 6,
+        "columns": [
+          {
+            "name": "id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "task_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "depends_on_task_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "dependency_type",
+            "type": "TEXT"
+          },
+          {
+            "name": "notes",
+            "type": "TEXT"
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP"
+          }
+        ]
+      },
+      "task_blockers": {
+        "row_count": 0,
+        "column_count": 10,
+        "columns": [
+          {
+            "name": "id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "task_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "blocker_type",
+            "type": "TEXT"
+          },
+          {
+            "name": "blocker_task_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "blocker_description",
+            "type": "TEXT"
+          },
+          {
+            "name": "blocker_reference",
+            "type": "TEXT"
+          },
+          {
+            "name": "is_resolved",
+            "type": "INTEGER"
+          },
+          {
+            "name": "resolved_at",
+            "type": "TIMESTAMP"
+          },
+          {
+            "name": "resolution_notes",
+            "type": "TEXT"
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP"
+          }
+        ]
+      },
+      "work_item_dependencies": {
+        "row_count": 0,
+        "column_count": 6,
+        "columns": [
+          {
+            "name": "id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "work_item_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "depends_on_work_item_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "dependency_type",
+            "type": "TEXT"
+          },
+          {
+            "name": "notes",
+            "type": "TEXT"
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP"
+          }
+        ]
+      },
+      "work_item_summaries": {
+        "row_count": 0,
+        "column_count": 9,
+        "columns": [
+          {
+            "name": "id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "work_item_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "session_date",
+            "type": "TEXT"
+          },
+          {
+            "name": "session_duration_hours",
+            "type": "REAL"
+          },
+          {
+            "name": "summary_text",
+            "type": "TEXT"
+          },
+          {
+            "name": "context_metadata",
+            "type": "TEXT"
+          },
+          {
+            "name": "created_at",
+            "type": "TEXT"
+          },
+          {
+            "name": "created_by",
+            "type": "TEXT"
+          },
+          {
+            "name": "summary_type",
+            "type": "TEXT"
+          }
+        ]
+      },
+      "schema_migrations": {
+        "row_count": 18,
+        "column_count": 7,
+        "columns": [
+          {
+            "name": "id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "version",
+            "type": "TEXT"
+          },
+          {
+            "name": "description",
+            "type": "TEXT"
+          },
+          {
+            "name": "applied_at",
+            "type": "TIMESTAMP"
+          },
+          {
+            "name": "rollback_at",
+            "type": "TIMESTAMP"
+          },
+          {
+            "name": "rollback_reason",
+            "type": "TEXT"
+          },
+          {
+            "name": "applied_by",
+            "type": "TEXT"
+          }
+        ]
+      },
+      "contexts": {
+        "row_count": 0,
+        "column_count": 15,
+        "columns": [
+          {
+            "name": "id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "project_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "context_type",
+            "type": "TEXT"
+          },
+          {
+            "name": "file_path",
+            "type": "TEXT"
+          },
+          {
+            "name": "file_hash",
+            "type": "TEXT"
+          },
+          {
+            "name": "resource_type",
+            "type": "TEXT"
+          },
+          {
+            "name": "entity_type",
+            "type": "TEXT"
+          },
+          {
+            "name": "entity_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "six_w_data",
+            "type": "TEXT"
+          },
+          {
+            "name": "confidence_score",
+            "type": "REAL"
+          },
+          {
+            "name": "confidence_band",
+            "type": "TEXT"
+          },
+          {
+            "name": "confidence_factors",
+            "type": "TEXT"
+          },
+          {
+            "name": "context_data",
+            "type": "TEXT"
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP"
+          },
+          {
+            "name": "updated_at",
+            "type": "TIMESTAMP"
+          }
+        ]
+      },
+      "evidence_sources": {
+        "row_count": 0,
+        "column_count": 11,
+        "columns": [
+          {
+            "name": "id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "entity_type",
+            "type": "TEXT"
+          },
+          {
+            "name": "entity_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "url",
+            "type": "TEXT"
+          },
+          {
+            "name": "source_type",
+            "type": "TEXT"
+          },
+          {
+            "name": "excerpt",
+            "type": "TEXT"
+          },
+          {
+            "name": "captured_at",
+            "type": "TIMESTAMP"
+          },
+          {
+            "name": "content_hash",
+            "type": "TEXT"
+          },
+          {
+            "name": "confidence",
+            "type": "REAL"
+          },
+          {
+            "name": "created_by",
+            "type": "TEXT"
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP"
+          }
+        ]
+      },
+      "agents": {
+        "row_count": 5,
+        "column_count": 15,
+        "columns": [
+          {
+            "name": "id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "project_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "role",
+            "type": "TEXT"
+          },
+          {
+            "name": "display_name",
+            "type": "TEXT"
+          },
+          {
+            "name": "description",
+            "type": "TEXT"
+          },
+          {
+            "name": "sop_content",
+            "type": "TEXT"
+          },
+          {
+            "name": "capabilities",
+            "type": "TEXT"
+          },
+          {
+            "name": "is_active",
+            "type": "INTEGER"
+          },
+          {
+            "name": "agent_type",
+            "type": "TEXT"
+          },
+          {
+            "name": "file_path",
+            "type": "TEXT"
+          },
+          {
+            "name": "generated_at",
+            "type": "TIMESTAMP"
+          },
+          {
+            "name": "tier",
+            "type": "INTEGER"
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP"
+          },
+          {
+            "name": "updated_at",
+            "type": "TIMESTAMP"
+          },
+          {
+            "name": "metadata",
+            "type": "TEXT"
+          }
+        ]
+      },
+      "session_events": {
+        "row_count": 0,
+        "column_count": 12,
+        "columns": [
+          {
+            "name": "id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "project_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "event_type",
+            "type": "TEXT"
+          },
+          {
+            "name": "event_category",
+            "type": "TEXT"
+          },
+          {
+            "name": "event_severity",
+            "type": "TEXT"
+          },
+          {
+            "name": "session_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "timestamp",
+            "type": "TEXT"
+          },
+          {
+            "name": "source",
+            "type": "TEXT"
+          },
+          {
+            "name": "event_data",
+            "type": "TEXT"
+          },
+          {
+            "name": "work_item_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "task_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP"
+          }
+        ]
+      },
+      "work_items": {
+        "row_count": 9,
+        "column_count": 18,
+        "columns": [
+          {
+            "name": "id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "project_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "parent_work_item_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "name",
+            "type": "TEXT"
+          },
+          {
+            "name": "description",
+            "type": "TEXT"
+          },
+          {
+            "name": "type",
+            "type": "TEXT"
+          },
+          {
+            "name": "business_context",
+            "type": "TEXT"
+          },
+          {
+            "name": "metadata",
+            "type": "TEXT"
+          },
+          {
+            "name": "effort_estimate_hours",
+            "type": "REAL"
+          },
+          {
+            "name": "priority",
+            "type": "INTEGER"
+          },
+          {
+            "name": "status",
+            "type": "TEXT"
+          },
+          {
+            "name": "phase",
+            "type": "TEXT"
+          },
+          {
+            "name": "due_date",
+            "type": "TIMESTAMP"
+          },
+          {
+            "name": "not_before",
+            "type": "TIMESTAMP"
+          },
+          {
+            "name": "is_continuous",
+            "type": "INTEGER"
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP"
+          },
+          {
+            "name": "updated_at",
+            "type": "TIMESTAMP"
+          },
+          {
+            "name": "originated_from_idea_id",
+            "type": "INTEGER"
+          }
+        ]
+      },
+      "tasks": {
+        "row_count": 10,
+        "column_count": 17,
+        "columns": [
+          {
+            "name": "id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "work_item_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "name",
+            "type": "TEXT"
+          },
+          {
+            "name": "description",
+            "type": "TEXT"
+          },
+          {
+            "name": "type",
+            "type": "TEXT"
+          },
+          {
+            "name": "quality_metadata",
+            "type": "TEXT"
+          },
+          {
+            "name": "effort_hours",
+            "type": "REAL"
+          },
+          {
+            "name": "priority",
+            "type": "INTEGER"
+          },
+          {
+            "name": "due_date",
+            "type": "TIMESTAMP"
+          },
+          {
+            "name": "assigned_to",
+            "type": "TEXT"
+          },
+          {
+            "name": "status",
+            "type": "TEXT"
+          },
+          {
+            "name": "blocked_reason",
+            "type": "TEXT"
+          },
+          {
+            "name": "phase",
+            "type": "TEXT"
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP"
+          },
+          {
+            "name": "updated_at",
+            "type": "TIMESTAMP"
+          },
+          {
+            "name": "started_at",
+            "type": "TIMESTAMP"
+          },
+          {
+            "name": "completed_at",
+            "type": "TIMESTAMP"
+          }
+        ]
+      },
+      "summaries": {
+        "row_count": 0,
+        "column_count": 11,
+        "columns": [
+          {
+            "name": "id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "entity_type",
+            "type": "TEXT"
+          },
+          {
+            "name": "entity_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "summary_type",
+            "type": "TEXT"
+          },
+          {
+            "name": "summary_text",
+            "type": "TEXT"
+          },
+          {
+            "name": "context_metadata",
+            "type": "TEXT"
+          },
+          {
+            "name": "created_at",
+            "type": "TEXT"
+          },
+          {
+            "name": "created_by",
+            "type": "TEXT"
+          },
+          {
+            "name": "session_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "session_date",
+            "type": "TEXT"
+          },
+          {
+            "name": "session_duration_hours",
+            "type": "REAL"
+          }
+        ]
+      },
+      "document_references": {
+        "row_count": 0,
+        "column_count": 24,
+        "columns": [
+          {
+            "name": "id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "entity_type",
+            "type": "TEXT"
+          },
+          {
+            "name": "entity_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "file_path",
+            "type": "TEXT"
+          },
+          {
+            "name": "document_type",
+            "type": "TEXT"
+          },
+          {
+            "name": "title",
+            "type": "TEXT"
+          },
+          {
+            "name": "description",
+            "type": "TEXT"
+          },
+          {
+            "name": "file_size_bytes",
+            "type": "INTEGER"
+          },
+          {
+            "name": "content_hash",
+            "type": "TEXT"
+          },
+          {
+            "name": "format",
+            "type": "TEXT"
+          },
+          {
+            "name": "created_by",
+            "type": "TEXT"
+          },
+          {
+            "name": "created_at",
+            "type": "TIMESTAMP"
+          },
+          {
+            "name": "updated_at",
+            "type": "TIMESTAMP"
+          },
+          {
+            "name": "category",
+            "type": "TEXT"
+          },
+          {
+            "name": "document_type_dir",
+            "type": "TEXT"
+          },
+          {
+            "name": "segment_type",
+            "type": "TEXT"
+          },
+          {
+            "name": "component",
+            "type": "TEXT"
+          },
+          {
+            "name": "domain",
+            "type": "TEXT"
+          },
+          {
+            "name": "audience",
+            "type": "TEXT"
+          },
+          {
+            "name": "maturity",
+            "type": "TEXT"
+          },
+          {
+            "name": "priority",
+            "type": "TEXT"
+          },
+          {
+            "name": "tags",
+            "type": "TEXT"
+          },
+          {
+            "name": "phase",
+            "type": "TEXT"
+          },
+          {
+            "name": "work_item_id",
+            "type": "INTEGER"
+          }
+        ]
+      },
+      "provider_installations": {
+        "row_count": 0,
+        "column_count": 12,
+        "columns": [
+          {
+            "name": "id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "project_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "provider_type",
+            "type": "TEXT"
+          },
+          {
+            "name": "provider_version",
+            "type": "TEXT"
+          },
+          {
+            "name": "install_path",
+            "type": "TEXT"
+          },
+          {
+            "name": "status",
+            "type": "TEXT"
+          },
+          {
+            "name": "config",
+            "type": "TEXT"
+          },
+          {
+            "name": "installed_files",
+            "type": "TEXT"
+          },
+          {
+            "name": "file_hashes",
+            "type": "TEXT"
+          },
+          {
+            "name": "installed_at",
+            "type": "TEXT"
+          },
+          {
+            "name": "updated_at",
+            "type": "TEXT"
+          },
+          {
+            "name": "last_verified_at",
+            "type": "TEXT"
+          }
+        ]
+      },
+      "provider_files": {
+        "row_count": 0,
+        "column_count": 6,
+        "columns": [
+          {
+            "name": "id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "installation_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "file_path",
+            "type": "TEXT"
+          },
+          {
+            "name": "file_hash",
+            "type": "TEXT"
+          },
+          {
+            "name": "file_type",
+            "type": "TEXT"
+          },
+          {
+            "name": "installed_at",
+            "type": "TEXT"
+          }
+        ]
+      },
+      "cursor_memories": {
+        "row_count": 0,
+        "column_count": 13,
+        "columns": [
+          {
+            "name": "id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "project_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "name",
+            "type": "TEXT"
+          },
+          {
+            "name": "description",
+            "type": "TEXT"
+          },
+          {
+            "name": "category",
+            "type": "TEXT"
+          },
+          {
+            "name": "content",
+            "type": "TEXT"
+          },
+          {
+            "name": "tags",
+            "type": "TEXT"
+          },
+          {
+            "name": "file_path",
+            "type": "TEXT"
+          },
+          {
+            "name": "file_hash",
+            "type": "TEXT"
+          },
+          {
+            "name": "source_learning_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "last_synced_at",
+            "type": "TEXT"
+          },
+          {
+            "name": "created_at",
+            "type": "TEXT"
+          },
+          {
+            "name": "updated_at",
+            "type": "TEXT"
+          }
+        ]
+      },
+      "memory_files": {
+        "row_count": 0,
+        "column_count": 19,
+        "columns": [
+          {
+            "name": "id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "project_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "session_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "file_type",
+            "type": "TEXT"
+          },
+          {
+            "name": "file_path",
+            "type": "TEXT"
+          },
+          {
+            "name": "file_hash",
+            "type": "TEXT"
+          },
+          {
+            "name": "content",
+            "type": "TEXT"
+          },
+          {
+            "name": "source_tables",
+            "type": "TEXT"
+          },
+          {
+            "name": "template_version",
+            "type": "TEXT"
+          },
+          {
+            "name": "confidence_score",
+            "type": "REAL"
+          },
+          {
+            "name": "completeness_score",
+            "type": "REAL"
+          },
+          {
+            "name": "validation_status",
+            "type": "TEXT"
+          },
+          {
+            "name": "generated_by",
+            "type": "TEXT"
+          },
+          {
+            "name": "generation_duration_ms",
+            "type": "INTEGER"
+          },
+          {
+            "name": "generated_at",
+            "type": "TEXT"
+          },
+          {
+            "name": "validated_at",
+            "type": "TEXT"
+          },
+          {
+            "name": "expires_at",
+            "type": "TEXT"
+          },
+          {
+            "name": "created_at",
+            "type": "TEXT"
+          },
+          {
+            "name": "updated_at",
+            "type": "TEXT"
+          }
+        ]
+      },
+      "session_checkpoints": {
+        "row_count": 0,
+        "column_count": 12,
+        "columns": [
+          {
+            "name": "id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "session_id",
+            "type": "INTEGER"
+          },
+          {
+            "name": "checkpoint_name",
+            "type": "TEXT"
+          },
+          {
+            "name": "created_at",
+            "type": "TEXT"
+          },
+          {
+            "name": "work_items_snapshot",
+            "type": "TEXT"
+          },
+          {
+            "name": "tasks_snapshot",
+            "type": "TEXT"
+          },
+          {
+            "name": "context_snapshot",
+            "type": "TEXT"
+          },
+          {
+            "name": "session_notes",
+            "type": "TEXT"
+          },
+          {
+            "name": "created_by",
+            "type": "TEXT"
+          },
+          {
+            "name": "restore_count",
+            "type": "INTEGER"
+          },
+          {
+            "name": "size_bytes",
+            "type": "INTEGER"
+          },
+          {
+            "name": "updated_at",
+            "type": "TEXT"
+          }
+        ]
+      }
+    },
+    "indexes": {
+      "sqlite_autoindex_projects_1": {
+        "sql": null
+      },
+      "sqlite_autoindex_rules_1": {
+        "sql": null
+      },
+      "sqlite_autoindex_sessions_1": {
+        "sql": null
+      },
+      "sqlite_autoindex_agent_relationships_1": {
+        "sql": null
+      },
+      "sqlite_autoindex_agent_tools_1": {
+        "sql": null
+      },
+      "sqlite_autoindex_task_dependencies_1": {
+        "sql": null
+      },
+      "sqlite_autoindex_work_item_dependencies_1": {
+        "sql": null
+      },
+      "sqlite_autoindex_schema_migrations_1": {
+        "sql": null
+      },
+      "idx_projects_status": {
+        "sql": "CREATE INDEX idx_projects_status ON projects(status)"
+      },
+      "idx_projects_name": {
+        "sql": "CREATE INDEX idx_projects_name ON projects(name)"
+      },
+      "idx_rules_project": {
+        "sql": "CREATE INDEX idx_rules_project ON rules(project_id)"
+      },
+      "idx_rules_enforcement": {
+        "sql": "CREATE INDEX idx_rules_enforcement ON rules(enforcement_level)"
+      },
+      "idx_task_deps_task": {
+        "sql": "CREATE INDEX idx_task_deps_task ON task_dependencies(task_id)"
+      },
+      "idx_task_deps_depends": {
+        "sql": "CREATE INDEX idx_task_deps_depends ON task_dependencies(depends_on_task_id)"
+      },
+      "idx_task_blockers_task": {
+        "sql": "CREATE INDEX idx_task_blockers_task ON task_blockers(task_id)"
+      },
+      "idx_task_blockers_blocker": {
+        "sql": "CREATE INDEX idx_task_blockers_blocker ON task_blockers(blocker_task_id)"
+      },
+      "idx_task_blockers_resolved": {
+        "sql": "CREATE INDEX idx_task_blockers_resolved ON task_blockers(is_resolved)"
+      },
+      "idx_wi_deps_wi": {
+        "sql": "CREATE INDEX idx_wi_deps_wi ON work_item_dependencies(work_item_id)"
+      },
+      "idx_wi_deps_depends": {
+        "sql": "CREATE INDEX idx_wi_deps_depends ON work_item_dependencies(depends_on_work_item_id)"
+      },
+      "idx_wi_summaries_wi": {
+        "sql": "CREATE INDEX idx_wi_summaries_wi ON work_item_summaries(work_item_id, session_date DESC)"
+      },
+      "idx_wi_summaries_date": {
+        "sql": "CREATE INDEX idx_wi_summaries_date ON work_item_summaries(session_date DESC)"
+      },
+      "idx_wi_summaries_type": {
+        "sql": "CREATE INDEX idx_wi_summaries_type ON work_item_summaries(work_item_id, summary_type, session_date DESC)"
+      },
+      "idx_agent_relationships_agent": {
+        "sql": "CREATE INDEX idx_agent_relationships_agent ON agent_relationships(agent_id)"
+      },
+      "idx_agent_relationships_related": {
+        "sql": "CREATE INDEX idx_agent_relationships_related ON agent_relationships(related_agent_id)"
+      },
+      "idx_agent_tools_agent": {
+        "sql": "CREATE INDEX idx_agent_tools_agent ON agent_tools(agent_id)"
+      },
+      "idx_agent_tools_phase": {
+        "sql": "CREATE INDEX idx_agent_tools_phase ON agent_tools(phase, priority)"
+      },
+      "sqlite_autoindex_contexts_1": {
+        "sql": null
+      },
+      "idx_contexts_project": {
+        "sql": "CREATE INDEX idx_contexts_project ON contexts(project_id)"
+      },
+      "idx_contexts_type": {
+        "sql": "CREATE INDEX idx_contexts_type ON contexts(context_type)"
+      },
+      "idx_contexts_entity": {
+        "sql": "CREATE INDEX idx_contexts_entity ON contexts(entity_type, entity_id)"
+      },
+      "sqlite_autoindex_agents_1": {
+        "sql": null
+      },
+      "idx_agents_project": {
+        "sql": "CREATE INDEX idx_agents_project ON agents(project_id)"
+      },
+      "idx_agents_role": {
+        "sql": "CREATE INDEX idx_agents_role ON agents(project_id, role)"
+      },
+      "idx_agents_active": {
+        "sql": "CREATE INDEX idx_agents_active ON agents(is_active)"
+      },
+      "idx_agents_type": {
+        "sql": "CREATE INDEX idx_agents_type ON agents(agent_type)"
+      },
+      "idx_session_events_session": {
+        "sql": "CREATE INDEX idx_session_events_session\n        ON session_events(session_id, timestamp DESC)\n    "
+      },
+      "idx_session_events_type": {
+        "sql": "CREATE INDEX idx_session_events_type\n        ON session_events(event_type, timestamp DESC)\n    "
+      },
+      "idx_session_events_category": {
+        "sql": "CREATE INDEX idx_session_events_category\n        ON session_events(event_category, timestamp DESC)\n    "
+      },
+      "idx_session_events_entity": {
+        "sql": "CREATE INDEX idx_session_events_entity\n        ON session_events(work_item_id, task_id, timestamp DESC)\n    "
+      },
+      "idx_work_items_status": {
+        "sql": "CREATE INDEX idx_work_items_status ON work_items(status)"
+      },
+      "idx_work_items_type": {
+        "sql": "CREATE INDEX idx_work_items_type ON work_items(type)"
+      },
+      "idx_work_items_project_id": {
+        "sql": "CREATE INDEX idx_work_items_project_id ON work_items(project_id)"
+      },
+      "idx_work_items_phase": {
+        "sql": "CREATE INDEX idx_work_items_phase ON work_items(phase)"
+      },
+      "idx_work_items_phase_status": {
+        "sql": "CREATE INDEX idx_work_items_phase_status ON work_items(phase, status)"
+      },
+      "idx_tasks_status": {
+        "sql": "CREATE INDEX idx_tasks_status ON tasks(status)"
+      },
+      "idx_tasks_blocked": {
+        "sql": "CREATE INDEX idx_tasks_blocked ON tasks(status) WHERE status = 'blocked'"
+      },
+      "idx_tasks_work_item_id": {
+        "sql": "CREATE INDEX idx_tasks_work_item_id ON tasks(work_item_id)"
+      },
+      "idx_tasks_phase": {
+        "sql": "CREATE INDEX idx_tasks_phase ON tasks(phase)"
+      },
+      "idx_tasks_phase_status": {
+        "sql": "CREATE INDEX idx_tasks_phase_status ON tasks(phase, status)"
+      },
+      "idx_summaries_entity": {
+        "sql": "CREATE INDEX idx_summaries_entity \n        ON summaries(entity_type, entity_id, created_at DESC)\n    "
+      },
+      "idx_summaries_recent": {
+        "sql": "CREATE INDEX idx_summaries_recent \n        ON summaries(created_at DESC)\n    "
+      },
+      "idx_summaries_session": {
+        "sql": "CREATE INDEX idx_summaries_session \n        ON summaries(session_id, created_at DESC)\n    "
+      },
+      "idx_summaries_type": {
+        "sql": "CREATE INDEX idx_summaries_type \n        ON summaries(entity_type, summary_type, created_at DESC)\n    "
+      },
+      "idx_summaries_text": {
+        "sql": "CREATE INDEX idx_summaries_text \n        ON summaries(summary_text)\n    "
+      },
+      "sqlite_autoindex_document_references_1": {
+        "sql": null
+      },
+      "idx_doc_category": {
+        "sql": "CREATE INDEX idx_doc_category\n        ON document_references(category)\n    "
+      },
+      "idx_doc_type_dir": {
+        "sql": "CREATE INDEX idx_doc_type_dir\n        ON document_references(document_type_dir)\n    "
+      },
+      "idx_doc_cat_type": {
+        "sql": "CREATE INDEX idx_doc_cat_type\n        ON document_references(category, document_type_dir)\n    "
+      },
+      "idx_doc_component": {
+        "sql": "CREATE INDEX idx_doc_component\n        ON document_references(component)\n    "
+      },
+      "idx_doc_domain": {
+        "sql": "CREATE INDEX idx_doc_domain\n        ON document_references(domain)\n    "
+      },
+      "idx_doc_work_item": {
+        "sql": "CREATE INDEX idx_doc_work_item\n        ON document_references(work_item_id)\n    "
+      },
+      "idx_doc_audience": {
+        "sql": "CREATE INDEX idx_doc_audience\n        ON document_references(audience)\n    "
+      },
+      "idx_doc_maturity": {
+        "sql": "CREATE INDEX idx_doc_maturity\n        ON document_references(maturity)\n    "
+      },
+      "sqlite_autoindex_provider_installations_1": {
+        "sql": null
+      },
+      "idx_provider_installations_project": {
+        "sql": "CREATE INDEX idx_provider_installations_project\n        ON provider_installations(project_id)\n    "
+      },
+      "idx_provider_installations_type": {
+        "sql": "CREATE INDEX idx_provider_installations_type\n        ON provider_installations(provider_type)\n    "
+      },
+      "sqlite_autoindex_provider_files_1": {
+        "sql": null
+      },
+      "idx_provider_files_installation": {
+        "sql": "CREATE INDEX idx_provider_files_installation\n        ON provider_files(installation_id)\n    "
+      },
+      "idx_provider_files_type": {
+        "sql": "CREATE INDEX idx_provider_files_type\n        ON provider_files(file_type)\n    "
+      },
+      "sqlite_autoindex_cursor_memories_1": {
+        "sql": null
+      },
+      "idx_cursor_memories_project": {
+        "sql": "CREATE INDEX idx_cursor_memories_project\n        ON cursor_memories(project_id)\n    "
+      },
+      "idx_cursor_memories_category": {
+        "sql": "CREATE INDEX idx_cursor_memories_category\n        ON cursor_memories(category)\n    "
+      },
+      "idx_cursor_memories_source_learning": {
+        "sql": "CREATE INDEX idx_cursor_memories_source_learning\n        ON cursor_memories(source_learning_id)\n    "
+      },
+      "idx_cursor_memories_sync": {
+        "sql": "CREATE INDEX idx_cursor_memories_sync\n        ON cursor_memories(last_synced_at)\n    "
+      },
+      "sqlite_autoindex_memory_files_1": {
+        "sql": null
+      },
+      "idx_memory_files_project": {
+        "sql": "CREATE INDEX idx_memory_files_project\n        ON memory_files(project_id)\n    "
+      },
+      "idx_memory_files_type": {
+        "sql": "CREATE INDEX idx_memory_files_type\n        ON memory_files(file_type)\n    "
+      },
+      "idx_memory_files_validation": {
+        "sql": "CREATE INDEX idx_memory_files_validation\n        ON memory_files(validation_status)\n    "
+      },
+      "idx_memory_files_generated": {
+        "sql": "CREATE INDEX idx_memory_files_generated\n        ON memory_files(generated_at)\n    "
+      },
+      "idx_memory_files_expires": {
+        "sql": "CREATE INDEX idx_memory_files_expires\n        ON memory_files(expires_at)\n    "
+      },
+      "idx_checkpoints_session": {
+        "sql": "CREATE INDEX idx_checkpoints_session\n        ON session_checkpoints(session_id, created_at DESC)\n    "
+      },
+      "idx_checkpoints_name": {
+        "sql": "CREATE INDEX idx_checkpoints_name\n        ON session_checkpoints(session_id, checkpoint_name)\n    "
+      },
+      "idx_checkpoints_created": {
+        "sql": "CREATE INDEX idx_checkpoints_created\n        ON session_checkpoints(created_at DESC)\n    "
+      }
+    },
+    "search_optimization_opportunities": []
+  },
+  "fts5_migration_readiness": {
+    "overall_score": 55.00000000000001,
+    "factors": {
+      "performance_issues": {
+        "score": 60,
+        "max_score": 100,
+        "description": "Current search performance problems"
+      },
+      "database_structure": {
+        "score": 0,
+        "max_score": 50,
+        "description": "Database structure suitability for FTS5"
+      },
+      "search_complexity": {
+        "score": 50,
+        "max_score": 50,
+        "description": "Search system complexity"
+      }
+    },
+    "recommendations": [
+      {
+        "priority": "medium",
+        "action": "Plan FTS5 migration with careful testing",
+        "reason": "Moderate benefits expected"
+      }
+    ]
+  }
+}

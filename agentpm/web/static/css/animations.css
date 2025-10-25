@@ -1,0 +1,688 @@
+/**
+ * APM (Agent Project Manager) Animations & Micro-Interactions
+ * Smooth, delightful animations for enhanced user experience
+ *
+ * Features:
+ * - GPU-accelerated transforms and opacity
+ * - 60fps performance target
+ * - Respects prefers-reduced-motion
+ * - Timing functions optimized for natural motion
+ *
+ * @version 1.0.0
+ * @author APM (Agent Project Manager) (WI-36 Task #187)
+ * @date 2025-10-09
+ */
+
+/* ==========================================
+   Timing Variables (from royal-theme.css)
+   ========================================== */
+:root {
+    --timing-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --timing-standard: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    --timing-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+    --timing-bounce: 600ms cubic-bezier(0.68, -0.55, 0.27, 1.55);
+}
+
+/* ==========================================
+   Button Interactions
+   ========================================== */
+
+/* Ripple Effect (Click Animation) */
+.btn-ripple {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-ripple::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.6);
+    transform: translate(-50%, -50%);
+    opacity: 0;
+}
+
+.btn-ripple:active::after {
+    width: 300px;
+    height: 300px;
+    opacity: 1;
+    transition: width 0.5s ease, height 0.5s ease, opacity 0.3s ease;
+}
+
+/* Button Lift on Hover */
+.btn-lift {
+    transition: transform var(--timing-fast), box-shadow var(--timing-fast);
+}
+
+.btn-lift:hover {
+    transform: translateY(-2px);
+}
+
+.btn-lift:active {
+    transform: translateY(0);
+}
+
+/* Button Glow on Hover */
+.btn-glow:hover {
+    box-shadow: 0 0 20px rgba(124, 58, 237, 0.5);
+}
+
+/* ==========================================
+   Card Interactions
+   ========================================== */
+
+/* Card Hover Lift */
+.card-lift {
+    transition: transform var(--timing-standard), box-shadow var(--timing-standard);
+}
+
+.card-lift:hover {
+    transform: translateY(-4px) scale(1.01);
+}
+
+/* Card Fade In (On Page Load) */
+.card-fade-in {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Stagger Card Animations */
+.card-fade-in:nth-child(1) { animation-delay: 0ms; }
+.card-fade-in:nth-child(2) { animation-delay: 100ms; }
+.card-fade-in:nth-child(3) { animation-delay: 200ms; }
+.card-fade-in:nth-child(4) { animation-delay: 300ms; }
+.card-fade-in:nth-child(5) { animation-delay: 400ms; }
+
+/* ==========================================
+   Badge Interactions
+   ========================================== */
+
+/* Badge Bounce on Hover */
+.badge-bounce {
+    transition: transform var(--timing-fast);
+}
+
+.badge-bounce:hover {
+    animation: bounce 0.5s ease;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+}
+
+/* Badge Pulse (For Notifications) */
+.badge-pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+}
+
+/* ==========================================
+   Toggle Switch Animations
+   ========================================== */
+
+/* Smooth Slide Animation */
+.form-check-input[type="checkbox"] {
+    transition: all var(--timing-standard);
+}
+
+.form-check-input[type="checkbox"]:checked {
+    animation: toggleOn var(--timing-bounce);
+}
+
+@keyframes toggleOn {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* ==========================================
+   Progress Bar Animations
+   ========================================== */
+
+/* Shimmer Animation (Continuous) */
+.progress-shimmer .progress-bar::after {
+    animation: shimmer 2s infinite linear;
+}
+
+@keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+/* Progress Fill Animation (On Load) */
+.progress-fill {
+    animation: fillProgress 1.5s ease-out;
+}
+
+@keyframes fillProgress {
+    from { width: 0; }
+}
+
+/* Progress Pulse (When Complete) */
+.progress-complete .progress-bar {
+    animation: progressPulse 0.6s ease;
+}
+
+@keyframes progressPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+}
+
+/* ==========================================
+   Toast Notifications
+   ========================================== */
+
+/* Slide In from Right */
+.toast-slide-in {
+    animation: slideInRight var(--timing-standard) ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Slide Out to Right (On Dismiss) */
+.toast-slide-out {
+    animation: slideOutRight var(--timing-standard) ease-in;
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Toast Bounce on Entry */
+.toast-bounce {
+    animation: bounceIn 0.6s ease;
+}
+
+@keyframes bounceIn {
+    0% {
+        transform: translateX(100%) scale(0.3);
+        opacity: 0;
+    }
+    50% {
+        transform: translateX(-10px) scale(1.05);
+        opacity: 1;
+    }
+    70% {
+        transform: translateX(5px) scale(0.95);
+    }
+    100% {
+        transform: translateX(0) scale(1);
+    }
+}
+
+/* ==========================================
+   Modal Animations
+   ========================================== */
+
+/* Fade + Scale In */
+.modal-fade-scale .modal-dialog {
+    animation: fadeScaleIn var(--timing-slow) ease-out;
+}
+
+@keyframes fadeScaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Slide Down from Top */
+.modal-slide-down .modal-dialog {
+    animation: slideDown var(--timing-slow) ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ==========================================
+   Table Row Interactions
+   ========================================== */
+
+/* Row Highlight on Hover */
+.table-hover tbody tr {
+    transition: all var(--timing-fast);
+}
+
+.table-hover tbody tr:hover {
+    background: rgba(124, 58, 237, 0.08);
+    transform: scale(1.005);
+}
+
+/* Row Expand Animation (For Expandable Rows) */
+.table-row-expanded {
+    animation: expandRow var(--timing-standard) ease-out;
+}
+
+@keyframes expandRow {
+    from {
+        opacity: 0;
+        max-height: 0;
+    }
+    to {
+        opacity: 1;
+        max-height: 500px;
+    }
+}
+
+/* ==========================================
+   Form Input Interactions
+   ========================================== */
+
+/* Focus Glow Animation */
+.form-control:focus {
+    animation: focusGlow 0.3s ease;
+}
+
+@keyframes focusGlow {
+    0% {
+        box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.5);
+    }
+    100% {
+        box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.3);
+    }
+}
+
+/* Input Shake on Error */
+.input-error {
+    animation: shake 0.4s ease;
+    border-color: var(--royal-danger, #EF4444);
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+}
+
+/* ==========================================
+   Loading States
+   ========================================== */
+
+/* Spinner Rotation */
+.spinner-rotate {
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Skeleton Loading (Shimmer Effect) */
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        #f0f0f0 0%,
+        #e0e0e0 50%,
+        #f0f0f0 100%
+    );
+    background-size: 200% 100%;
+    animation: skeletonShimmer 1.5s infinite;
+}
+
+@keyframes skeletonShimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Pulse Loading (For Elements Waiting for Data) */
+.loading-pulse {
+    animation: loadingPulse 1.5s infinite;
+}
+
+@keyframes loadingPulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* ==========================================
+   Dropdown Menu Animations
+   ========================================== */
+
+/* Fade + Slide Down */
+.dropdown-menu.show {
+    animation: dropdownSlideIn var(--timing-fast) ease-out;
+}
+
+@keyframes dropdownSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ==========================================
+   Page Transitions
+   ========================================== */
+
+/* Fade In (Entire Page) */
+.page-fade-in {
+    animation: pageFadeIn var(--timing-slow) ease-out;
+}
+
+@keyframes pageFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Slide Up (Content Sections) */
+.section-slide-up {
+    animation: sectionSlideUp 0.8s ease-out;
+}
+
+@keyframes sectionSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ==========================================
+   Icon Animations
+   ========================================== */
+
+/* Icon Bounce (On Interaction) */
+.icon-bounce {
+    transition: transform var(--timing-fast);
+}
+
+.icon-bounce:hover {
+    animation: iconBounce 0.4s ease;
+}
+
+@keyframes iconBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+}
+
+/* Icon Rotate (For Refresh/Loading) */
+.icon-rotate {
+    animation: iconRotate 1s linear infinite;
+}
+
+@keyframes iconRotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Icon Pulse (For Active/Selected States) */
+.icon-pulse {
+    animation: iconPulse 2s infinite;
+}
+
+@keyframes iconPulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+/* ==========================================
+   Alert Animations
+   ========================================== */
+
+/* Alert Slide In from Top */
+.alert-slide-in {
+    animation: alertSlideIn 0.4s ease-out;
+}
+
+@keyframes alertSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Alert Shake (For Errors) */
+.alert-shake {
+    animation: alertShake 0.5s ease;
+}
+
+@keyframes alertShake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+/* ==========================================
+   Breadcrumb Animations
+   ========================================== */
+
+/* Breadcrumb Fade In (Staggered) */
+.breadcrumb-item {
+    animation: breadcrumbFadeIn 0.4s ease-out;
+}
+
+.breadcrumb-item:nth-child(1) { animation-delay: 0ms; }
+.breadcrumb-item:nth-child(2) { animation-delay: 50ms; }
+.breadcrumb-item:nth-child(3) { animation-delay: 100ms; }
+.breadcrumb-item:nth-child(4) { animation-delay: 150ms; }
+
+@keyframes breadcrumbFadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* ==========================================
+   Utility Animation Classes
+   ========================================== */
+
+/* Fade In */
+.animate-fade-in {
+    animation: fadeIn var(--timing-slow) ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Slide In from Left */
+.animate-slide-left {
+    animation: slideLeft var(--timing-standard) ease-out;
+}
+
+@keyframes slideLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Scale Up */
+.animate-scale-up {
+    animation: scaleUp var(--timing-standard) ease-out;
+}
+
+@keyframes scaleUp {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Rotate In */
+.animate-rotate-in {
+    animation: rotateIn var(--timing-slow) ease-out;
+}
+
+@keyframes rotateIn {
+    from {
+        opacity: 0;
+        transform: rotate(-90deg);
+    }
+    to {
+        opacity: 1;
+        transform: rotate(0);
+    }
+}
+
+/* ==========================================
+   HTMX Loading Indicators
+   ========================================== */
+
+/* HTMX Swapping Animation */
+.htmx-swapping {
+    opacity: 0;
+    transition: opacity var(--timing-fast);
+}
+
+/* HTMX Settling Animation */
+.htmx-settling {
+    opacity: 0;
+}
+
+.htmx-settled {
+    opacity: 1;
+    transition: opacity var(--timing-standard);
+}
+
+/* HTMX Request Indicator */
+.htmx-request .htmx-indicator {
+    display: inline-block;
+    animation: fadeIn var(--timing-fast);
+}
+
+.htmx-indicator {
+    display: none;
+}
+
+/* ==========================================
+   Accessibility (Reduced Motion)
+   ========================================== */
+
+/* Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    /* Disable all custom animations */
+    .btn-ripple::after,
+    .card-lift:hover,
+    .badge-bounce:hover,
+    .progress-bar::after,
+    .skeleton,
+    .loading-pulse,
+    .icon-rotate,
+    .icon-pulse {
+        animation: none !important;
+    }
+}
+
+/* ==========================================
+   Performance Hints
+   ========================================== */
+
+/* Will-change for elements that will animate frequently */
+.btn,
+.card,
+.badge,
+.progress-bar,
+.toast,
+.modal-dialog {
+    will-change: transform;
+}
+
+/* Remove will-change after animation completes */
+.btn:not(:hover):not(:active),
+.card:not(:hover),
+.badge:not(:hover) {
+    will-change: auto;
+}

@@ -1,0 +1,25 @@
+{% extends "layouts/modern_base.html" %}
+
+{% block title %}Work Item Not Found{% endblock %}
+
+{% block content %}
+<div id="work-item-detail" class="max-w-3xl mx-auto">
+  <div class="card">
+    <div class="card-header">
+      <h1 class="card-title text-xl font-semibold text-gray-900">Work Item Unavailable</h1>
+    </div>
+    <div class="card-body space-y-4">
+      <p class="text-sm text-gray-600">
+        The requested work item <span class="font-semibold">#{{ requested_work_item_id }}</span> could not be located in the current database snapshot.
+      </p>
+      <p class="text-sm text-gray-600">
+        The dashboard is still operational, but this specific record is missing. Refresh your project data or choose a different work item from the list below.
+      </p>
+      <a href="/work-items" class="btn btn-primary inline-flex items-center gap-2">
+        <i class="bi bi-kanban"></i>
+        View All Work Items
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

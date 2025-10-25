@@ -1,0 +1,432 @@
+---
+globs:
+  - "tests/**/*.py"
+  - "**/*_test.py"
+  - "**/test_*.py"
+description: Testing patterns and coverage requirements
+priority: 85
+---
+
+# Testing Standards
+
+## 1. Test Organization
+
+### Arrange-Act-Assert Pattern (AAA)
+
+**All tests must follow AAA pattern:**
+
+```python
+def test_create_work_item_success():
+    """Test creating a work item with valid data"""
+    # Arrange: Set up test data and dependencies
+    db = DatabaseService(":memory:")
+    methods = WorkItemMethods(db)
+    work_item_data = WorkItemCreate(name="Test Feature", type="feature")
+
+    # Act: Execute the operation
+    result = methods.create_work_item(work_item_data)
+
+    # Assert: Verify the outcome
+    assert result.success is True
+    assert result.data is not None
+    assert result.data.name == "Test Feature"
+    assert result.data.status == "draft"
+```
+
+### Descriptive Test Names
+
+**Use format: `test_<operation>_<condition>_<expected_result>`**
+
+```python
+# ✅ CORRECT: Clear, descriptive names
+def test_create_work_item_with_valid_data_succeeds():
+    pass
+
+def test_create_work_item_with_empty_name_raises_validation_error():
+    pass
+
+def test_get_work_item_with_nonexistent_id_returns_none():
+    pass
+
+# ❌ INCORRECT: Vague names
+def test_create():
+    pass
+
+def test_error():
+    pass
+
+def test_work_item():
+    pass
+```
+
+### Class-Based Test Suites
+
+**Group related tests in classes:**
+
+```python
+import pytest
+from agentpm.core.database.service import DatabaseService
+from agentpm.work_items.methods.work_item_methods import WorkItemMethods
+
+class TestWorkItemCreation:
+    """Tests for work item creation"""
+
+    @pytest.fixture(autouse=True)
+    def setup_method(self, tmp_path):
+        """Set up test database for each test"""
+        self.db = DatabaseService(":memory:")
+        self.methods = WorkItemMethods(self.db)
+
+    def test_create_with_valid_data_succeeds(self):
+        """Creating work item with valid data succeeds"""
+        # Test implementation
+        pass
+
+    def test_create_with_empty_name_fails(self):
+        """Creating work item with empty name fails validation"""
+        # Test implementation
+        pass
+
+    def test_create_with_invalid_type_fails(self):
+        """Creating work item with invalid type fails validation"""
+        # Test implementation
+        pass
+```
+
+---
+
+## 2. Coverage Requirements
+
+### Overall Coverage: ≥ 90%
+
+**APM (Agent Project Manager) requires high test coverage:**
+
+```bash
+# Run tests with coverage
+pytest tests/ -v --cov=agentpm --cov-report=term-missing
+
+# Generate HTML coverage report
+pytest tests/ -v --cov=agentpm --cov-report=html
+
+# View report
+open htmlcov/index.html
+```
+
+### Coverage by Code Type
+
+| Code Type | Coverage Requirement | Rationale |
+|-----------|---------------------|-----------|
+| **Critical paths** | 100% | Workflow gates, state transitions, data integrity |
+| **User-facing code** | ≥ 95% | CLI commands, public APIs, error messages |
+| **Data layer** | ≥ 90% | Adapters, methods, database operations |
+| **Security code** | 100% | Authentication, validation, input sanitization |
+| **Utility code** | ≥ 85% | Helpers, formatters, converters |
+
+### Query Testing Rules
+
+```bash
+# Get testing requirements from database
+apm rules list --category=testing
+
+# Get specific testing rule details
+apm rules show TES-001  # Project-relative imports
+apm rules show TES-004  # >90% coverage
+apm rules show TES-005  # AAA pattern
+```
+
+---
+
+## 3. Fixture Patterns
+
+### Pytest Fixtures for Setup
+
+**Use fixtures for common test setup:**
+
+```python
+import pytest
+from pathlib import Path
+from agentpm.core.database.service import DatabaseService
+from agentpm.work_items.methods.work_item_methods import WorkItemMethods
+
+@pytest.fixture
+def temp_db(tmp_path):
+    """Provide temporary database for tests"""
+    db_path = tmp_path / "test.db"
+    db = DatabaseService(str(db_path))
+    # Initialize schema
+    db.execute("""
+        CREATE TABLE work_items (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            status TEXT NOT NULL
+        )
+    """)
+    yield db
+    # Cleanup happens automatically with tmp_path
+
+@pytest.fixture
+def work_item_methods(temp_db):
+    """Provide WorkItemMethods instance with test database"""
+    return WorkItemMethods(temp_db)
+
+@pytest.fixture
+def sample_work_item(work_item_methods):
+    """Create a sample work item for tests"""
+    work_item_data = WorkItemCreate(name="Test Feature", type="feature")
+    result = work_item_methods.create_work_item(work_item_data)
+    return result.data
+```
+
+### Temporary Directories for Database Tests
+
+**Always use `tmp_path` fixture for database tests:**
+
+```python
+def test_database_migration(tmp_path):
+    """Test database migration with temporary directory"""
+    # Arrange
+    db_path = tmp_path / "test.db"
+    db = DatabaseService(str(db_path))
+
+    # Act
+    migrator = DatabaseMigrator(db)
+    result = migrator.migrate_to_version(5)
+
+    # Assert
+    assert result.success is True
+    assert db.get_schema_version() == 5
+```
+
+### Mock External Dependencies
+
+**Use pytest-mock or unittest.mock for external dependencies:**
+
+```python
+import pytest
+from unittest.mock import Mock, patch
+
+def test_external_api_call_success(mocker):
+    """Test external API call with mocked response"""
+    # Arrange
+    mock_response = Mock()
+    mock_response.json.return_value = {"status": "success"}
+    mocker.patch("requests.get", return_value=mock_response)
+
+    service = ExternalService()
+
+    # Act
+    result = service.fetch_data()
+
+    # Assert
+    assert result["status"] == "success"
+```
+
+---
+
+## 4. Test Categories
+
+### Unit Tests: Individual Methods
+
+**Test single functions or methods in isolation:**
+
+```python
+def test_calculate_confidence_with_high_evidence():
+    """Calculate confidence with high evidence count"""
+    # Arrange
+    evidence_count = 10
+    source_quality = 0.9
+
+    # Act
+    confidence = calculate_confidence(evidence_count, source_quality)
+
+    # Assert
+    assert confidence == 0.9  # 10 * 0.9 / 10 = 0.9
+```
+
+### Integration Tests: Component Interaction
+
+**Test multiple components working together:**
+
+```python
+def test_work_item_creation_workflow(temp_db):
+    """Test complete work item creation workflow"""
+    # Arrange
+    methods = WorkItemMethods(temp_db)
+    task_methods = TaskMethods(temp_db)
+
+    # Act: Create work item
+    work_item_data = WorkItemCreate(name="Feature", type="feature")
+    wi_result = methods.create_work_item(work_item_data)
+
+    # Act: Create task for work item
+    task_data = TaskCreate(
+        name="Implement feature",
+        work_item_id=wi_result.data.id,
+        effort_hours=3.0
+    )
+    task_result = task_methods.create_task(task_data)
+
+    # Assert: Both created successfully
+    assert wi_result.success is True
+    assert task_result.success is True
+    assert task_result.data.work_item_id == wi_result.data.id
+```
+
+### End-to-End Tests: Full Workflow Validation
+
+**Test complete workflows from CLI to database:**
+
+```python
+from click.testing import CliRunner
+from agentpm.cli.main import cli
+
+def test_work_item_creation_via_cli(tmp_path):
+    """Test work item creation through CLI"""
+    # Arrange
+    runner = CliRunner()
+    project_path = tmp_path / "test_project"
+
+    # Act: Run CLI command
+    result = runner.invoke(cli, [
+        "work-item",
+        "create",
+        "Test Feature",
+        "--type", "feature",
+        "--project-path", str(project_path)
+    ])
+
+    # Assert: Command succeeded
+    assert result.exit_code == 0
+    assert "Work item created" in result.output
+
+    # Assert: Work item exists in database
+    db = DatabaseService(str(project_path / ".aipm" / "data" / "aipm.db"))
+    work_items = db.fetch_all("SELECT * FROM work_items WHERE name = 'Test Feature'")
+    assert len(work_items) == 1
+```
+
+---
+
+## 5. Quality Checks
+
+### Running Tests Locally
+
+```bash
+# Run all tests with coverage
+pytest tests/ -v --cov=agentpm --cov-report=term-missing
+
+# Run specific test file
+pytest tests/test_work_items.py -v
+
+# Run specific test class
+pytest tests/test_work_items.py::TestWorkItemCreation -v
+
+# Run specific test method
+pytest tests/test_work_items.py::TestWorkItemCreation::test_create_with_valid_data -v
+
+# Run tests matching pattern
+pytest tests/ -k "create" -v
+
+# Run tests with detailed output
+pytest tests/ -vv
+
+# Run tests and stop on first failure
+pytest tests/ -x
+```
+
+### Coverage Report Analysis
+
+```bash
+# Generate HTML coverage report
+pytest tests/ --cov=agentpm --cov-report=html
+
+# Open coverage report
+open htmlcov/index.html
+
+# View missing lines in terminal
+pytest tests/ --cov=agentpm --cov-report=term-missing
+
+# Generate coverage XML (for CI)
+pytest tests/ --cov=agentpm --cov-report=xml
+```
+
+### Pre-Commit Test Checks
+
+**Before committing, always run:**
+
+```bash
+# 1. Run full test suite with coverage
+pytest tests/ -v --cov=agentpm --cov-report=term-missing
+
+# 2. Verify coverage ≥ 90%
+# Check output: "TOTAL" line should show ≥ 90%
+
+# 3. Run linter
+ruff check agentpm/
+
+# 4. Check formatting
+black --check agentpm/
+
+# 5. Validate work item/task
+apm work-item validate <id>
+```
+
+---
+
+## 6. Project-Relative Imports (MANDATORY)
+
+**Always use project-relative imports in tests:**
+
+```python
+# ✅ CORRECT: Project-relative imports
+from agentpm.models.work_item import WorkItem
+from agentpm.core.database.service import DatabaseService
+from agentpm.work_items.methods.work_item_methods import WorkItemMethods
+
+# ❌ INCORRECT: Absolute imports
+import sys
+sys.path.append("/absolute/path/to/project")
+from models.work_item import WorkItem
+```
+
+**Rule**: TES-001 - Project-relative imports only
+
+---
+
+## 7. Quick Checklist
+
+Before committing test code, verify:
+
+- [ ] AAA pattern used (Arrange-Act-Assert)
+- [ ] Descriptive test names (`test_<operation>_<condition>_<result>`)
+- [ ] Fixtures used for common setup
+- [ ] Temporary directories used for database tests
+- [ ] External dependencies mocked
+- [ ] Project-relative imports only
+- [ ] Test coverage ≥ 90%
+- [ ] All tests passing
+- [ ] Error cases tested with pytest.raises
+
+---
+
+## 8. Testing Rules Query
+
+**Get testing rules from database:**
+
+```bash
+# Query all testing rules
+apm rules list --category=testing
+
+# Query specific testing rules
+apm rules show TES-001  # Project-relative imports
+apm rules show TES-004  # >90% coverage
+apm rules show TES-005  # AAA pattern
+apm rules show TES-008  # Project-relative only
+apm rules show TES-009  # Enforce >90% coverage
+```
+
+---
+
+**Version**: 1.0.0
+**Last Updated**: 2025-10-20
+**Priority**: 85 (auto-attach for `tests/**/*.py`)

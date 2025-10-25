@@ -1,0 +1,168 @@
+{#
+  Empty State Macro
+
+  Renders a consistent empty state component with icon, heading, description, and optional CTA.
+
+  Usage:
+    {% from 'macros/empty_state.html' import render as empty_state %}
+
+    {{ empty_state(
+        icon='clipboard-check',
+        heading='No work items found',
+        description='Work items track features, bugs, and improvements. Create one to start planning.',
+        cta_text='Create Work Item',
+        cta_url='/work-items/create'
+    ) }}
+
+  Parameters:
+    - icon (str): Bootstrap Icons name (without 'bi-' prefix) - default: 'inbox'
+    - heading (str): Main heading text - default: 'No items found'
+    - description (str): Explanatory text below heading - default: ''
+    - cta_text (str, optional): Call-to-action button text - default: None
+    - cta_url (str, optional): Call-to-action button URL - default: None
+    - cta_icon (str, optional): Icon for CTA button - default: 'plus'
+    - size (str): Size variant ('normal' or 'compact') - default: 'normal'
+#}
+
+{% macro render(
+    icon='inbox',
+    heading='No items found',
+    description='',
+    cta_text=None,
+    cta_url=None,
+    cta_icon='plus',
+    size='normal'
+) %}
+
+{% set py_class = 'py-12' if size == 'normal' else 'py-8' %}
+{% set icon_size = 'text-5xl' if size == 'normal' else 'text-4xl' %}
+{% set icon_bg_size = 'w-24 h-24' if size == 'normal' else 'w-20 h-20' %}
+
+<div class="text-center {{ py_class }}">
+    <!-- Icon Container -->
+    <div class="{{ icon_bg_size }} mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
+        <i class="bi bi-{{ icon }} text-gray-400 {{ icon_size }}" aria-hidden="true"></i>
+    </div>
+
+    <!-- Heading -->
+    <h3 class="text-lg font-medium text-gray-900 mb-2">{{ heading }}</h3>
+
+    <!-- Description -->
+    {% if description %}
+    <p class="text-gray-500 mb-6">{{ description }}</p>
+    {% endif %}
+
+    <!-- Call to Action -->
+    {% if cta_text and cta_url %}
+    <a href="{{ cta_url }}" class="btn btn-primary">
+        <i class="bi bi-{{ cta_icon }} mr-2"></i>
+        {{ cta_text }}
+    </a>
+    {% endif %}
+</div>
+
+{% endmacro %}
+
+
+{#
+  Compact Empty State Macro
+
+  Renders a minimal empty state for secondary views (inside tables, cards, etc.)
+
+  Usage:
+    {% from 'macros/empty_state.html' import compact as empty_state_compact %}
+
+    {{ empty_state_compact(
+        icon='info-circle',
+        message='No agents configured for this project.',
+        cta_text='Generate Agents',
+        cta_url='/agents/generate'
+    ) }}
+#}
+
+{% macro compact(
+    icon='info-circle',
+    message='No items found',
+    cta_text=None,
+    cta_url=None
+) %}
+
+<div class="px-6 py-12 text-center text-sm text-gray-500">
+    <i class="bi bi-{{ icon }} text-lg text-gray-400" aria-hidden="true"></i>
+    <p class="mt-2">{{ message }}</p>
+
+    {% if cta_text and cta_url %}
+    <a href="{{ cta_url }}" class="mt-4 inline-flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-medium text-primary transition hover:bg-primary/20">
+        <i class="bi bi-plus"></i>
+        {{ cta_text }}
+    </a>
+    {% endif %}
+</div>
+
+{% endmacro %}
+
+
+{#
+  Filter-Aware Empty State
+
+  Shows different message when filters are active vs no data exists.
+
+  Usage:
+    {% from 'macros/empty_state.html' import filter_aware %}
+
+    {{ filter_aware(
+        icon='search',
+        no_results_heading='No results found',
+        no_results_description='Try adjusting your search terms or filters.',
+        no_data_heading='No work items yet',
+        no_data_description='Create your first work item to get started.',
+        has_filters=active_filters|length > 0,
+        clear_filters_url='/work-items',
+        cta_text='Create Work Item',
+        cta_url='/work-items/create'
+    ) }}
+#}
+
+{% macro filter_aware(
+    icon='search',
+    no_results_heading='No results found',
+    no_results_description='Try adjusting your filters.',
+    no_data_heading='No items yet',
+    no_data_description='Get started by creating your first item.',
+    has_filters=False,
+    clear_filters_url=None,
+    cta_text=None,
+    cta_url=None
+) %}
+
+<div class="text-center py-12">
+    <div class="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
+        <i class="bi bi-{{ icon }} text-gray-400 text-5xl" aria-hidden="true"></i>
+    </div>
+
+    {% if has_filters %}
+        <!-- Filtered State -->
+        <h3 class="text-lg font-medium text-gray-900 mb-2">{{ no_results_heading }}</h3>
+        <p class="text-gray-500 mb-6">{{ no_results_description }}</p>
+
+        {% if clear_filters_url %}
+        <a href="{{ clear_filters_url }}" class="btn btn-secondary">
+            <i class="bi bi-x-circle mr-2"></i>
+            Clear Filters
+        </a>
+        {% endif %}
+    {% else %}
+        <!-- Empty State -->
+        <h3 class="text-lg font-medium text-gray-900 mb-2">{{ no_data_heading }}</h3>
+        <p class="text-gray-500 mb-6">{{ no_data_description }}</p>
+
+        {% if cta_text and cta_url %}
+        <a href="{{ cta_url }}" class="btn btn-primary">
+            <i class="bi bi-plus mr-2"></i>
+            {{ cta_text }}
+        </a>
+        {% endif %}
+    {% endif %}
+</div>
+
+{% endmacro %}

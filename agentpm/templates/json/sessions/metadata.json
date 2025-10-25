@@ -1,0 +1,73 @@
+{
+  "work_items_touched": [
+    101,
+    118
+  ],
+  "tasks_completed": [
+    415
+  ],
+  "git_commits": [
+    "e1a23bc",
+    "f4b56de"
+  ],
+  "decisions_made": [
+    {
+      "decision": "Adopt caching layer for search filters",
+      "rationale": "Reduces repeated DB hits by 60%",
+      "timestamp": "2025-01-15T17:05:22"
+    }
+  ],
+  "blockers_resolved": [
+    312
+  ],
+  "commands_executed": 47,
+  "errors": [
+    {
+      "error_type": "ImportError",
+      "error_message": "No module named 'uvicorn'",
+      "timestamp": "2025-01-15T16:44:10",
+      "resolution": "pip install uvicorn",
+      "resolved_at": "2025-01-15T16:52:03",
+      "impact": "Blocked task 415 for 8 minutes",
+      "task_blocked": 415
+    }
+  ],
+  "session_summary": "Built filter builder, added unit tests, and migrated API.",
+  "current_status": "Filters service partially integrated; awaiting staging verification.",
+  "next_session": "Finish integration tests and roll out to beta tenants.",
+  "active_work_items": [
+    101
+  ],
+  "active_tasks": [
+    418
+  ],
+  "blockers_encountered": [
+    {
+      "description": "Staging database missing new index.",
+      "owner": "database-team",
+      "status": "open"
+    }
+  ],
+  "next_steps": [
+    "Coordinate with DBA to add index",
+    "Run load test after index ready"
+  ],
+  "next_session_priority": "Verify staging performance and prepare release notes.",
+  "uncommitted_files": [
+    "services/search-service/filter_service.py",
+    "tests/test_filter_service.py"
+  ],
+  "current_branch": "feature/search-filters",
+  "recent_commits": [
+    {
+      "sha": "e1a23bc",
+      "message": "feat: add filter builder skeleton",
+      "author": "nigel.copley"
+    }
+  ],
+  "tool_specific": {
+    "claude_code": {
+      "transcript_path": "/logs/claude/session-2025-01-15.md"
+    }
+  }
+}

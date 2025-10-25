@@ -1,0 +1,870 @@
+{% extends "layouts/modern_base.html" %}
+{% from 'macros/breadcrumb.html' import breadcrumb %}
+{% from 'macros/skeleton.html' import skeleton_metric, skeleton_text %}
+{% from 'macros/quick_actions.html' import quick_actions %}
+
+{% block title %}{{ detail.project.name }} - APM (Agent Project Manager){% endblock %}
+
+{% block content %}
+{# Enhanced breadcrumb with Dashboard → Projects → Project Name path #}
+{{ breadcrumb([
+    {'label': 'Projects', 'url': '/projects'},
+    {'label': detail.project.name, 'url': None}
+], show_home=True) }}
+<!-- Project Overview -->
+<div class="row mb-4 animate-slide-in">
+    <div class="col-md-8">
+        <div class="card metric-card shadow-soft">
+            <div class="card-body">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex-1">
+                        <h2 class="card-title flex items-center gap-2">
+                            <i class="bi bi-folder2-open text-gradient" aria-hidden="true"></i>
+                            <span>{{ detail.project.name }}</span>
+                        </h2>
+                        <p class="card-text mt-2 flex flex-wrap gap-2">
+                            <span class="badge badge-primary">{{ detail.project.status.value }}</span>
+                            {% if detail.project.project_type %}
+                                <span class="badge badge-info">
+                                    <i class="bi bi-tag" aria-hidden="true"></i> {{ detail.project.project_type.value.title() }}
+                                </span>
+                            {% endif %}
+                            {% if detail.project.team %}
+                                <span class="badge badge-gray">
+                                    <i class="bi bi-people" aria-hidden="true"></i> {{ detail.project.team }}
+                                </span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    {# Quick Actions Dropdown #}
+                    <div class="flex-shrink-0">
+                        {{ quick_actions('Actions', [
+                            {'label': 'Edit Project', 'url': '/projects/' ~ detail.project.id ~ '/edit', 'icon': 'pencil'},
+                            {'label': 'View Context', 'url': '/projects/' ~ detail.project.id ~ '/context', 'icon': 'diagram-3'},
+                            {'divider': True},
+                            {'label': 'Export Data', 'url': '/projects/' ~ detail.project.id ~ '/export', 'icon': 'download'},
+                            {'label': 'Duplicate', 'url': '/projects/' ~ detail.project.id ~ '/duplicate', 'icon': 'copy'},
+                            {'divider': True},
+                            {'label': 'Archive Project', 'url': '/projects/' ~ detail.project.id ~ '/archive', 'icon': 'archive'}
+                        ], button_class='btn-sm btn-secondary', align='right') }}
+                    </div>
+                </div>
+                {% if detail.project.description %}
+                <p class="text-muted">{{ detail.project.description }}</p>
+                {% endif %}
+
+                <!-- NEW: Business Context (Migration 0011) -->
+                {% if detail.project.business_domain or detail.project.business_description %}
+                <div class="mt-3 p-3 bg-dark bg-opacity-25 rounded">
+                    <h6 class="text-primary mb-2"><i class="bi bi-briefcase"></i> Business Context</h6>
+                    {% if detail.project.business_domain %}
+                    <p class="mb-2"><strong>Domain:</strong> {{ detail.project.business_domain }}</p>
+                    {% endif %}
+                    {% if detail.project.business_description %}
+                    <p class="mb-0"><strong>Description:</strong> {{ detail.project.business_description }}</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- Enhanced: 6W Framework Context -->
+                {% if detail.project_context and detail.project_context.six_w %}
+                <div class="mt-3 p-3 bg-gradient-to-r from-blue-900/20 to-purple-900/20 rounded border border-blue-500/30">
+                    <h6 class="text-primary mb-3">
+                        <i class="bi bi-diagram-3"></i> 6W Framework Context
+                        {% if detail.project_context.confidence_score is not none %}
+                        <span class="badge badge-{{ 'success' if detail.project_context.confidence_band and detail.project_context.confidence_band.value == 'GREEN' else 'warning' if detail.project_context.confidence_band and detail.project_context.confidence_band.value == 'YELLOW' else 'danger' }} ms-2">
+                            {{ (detail.project_context.confidence_score * 100) | round(1) }}% confidence
+                        </span>
+                        {% endif %}
+                    </h6>
+                    
+                    <div class="row g-3">
+                        <!-- WHO -->
+                        {% if detail.project_context.six_w.end_users or detail.project_context.six_w.implementers or detail.project_context.six_w.reviewers %}
+                        <div class="col-md-6">
+                            <h6 class="text-info"><i class="bi bi-people"></i> WHO</h6>
+                            {% if detail.project_context.six_w.end_users %}
+                            <p class="mb-1"><strong>End Users:</strong> {{ detail.project_context.six_w.end_users | join(', ') }}</p>
+                            {% endif %}
+                            {% if detail.project_context.six_w.implementers %}
+                            <p class="mb-1"><strong>Implementers:</strong> {{ detail.project_context.six_w.implementers | join(', ') }}</p>
+                            {% endif %}
+                            {% if detail.project_context.six_w.reviewers %}
+                            <p class="mb-0"><strong>Reviewers:</strong> {{ detail.project_context.six_w.reviewers | join(', ') }}</p>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        <!-- WHAT -->
+                        {% if detail.project_context.six_w.functional_requirements or detail.project_context.six_w.technical_constraints or detail.project_context.six_w.acceptance_criteria %}
+                        <div class="col-md-6">
+                            <h6 class="text-success"><i class="bi bi-list-check"></i> WHAT</h6>
+                            {% if detail.project_context.six_w.functional_requirements %}
+                            <p class="mb-1"><strong>Requirements:</strong> {{ detail.project_context.six_w.functional_requirements | join(', ') }}</p>
+                            {% endif %}
+                            {% if detail.project_context.six_w.technical_constraints %}
+                            <p class="mb-1"><strong>Constraints:</strong> {{ detail.project_context.six_w.technical_constraints | join(', ') }}</p>
+                            {% endif %}
+                            {% if detail.project_context.six_w.acceptance_criteria %}
+                            <p class="mb-0"><strong>Acceptance:</strong> {{ detail.project_context.six_w.acceptance_criteria | join(', ') }}</p>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        <!-- WHERE -->
+                        {% if detail.project_context.six_w.affected_services or detail.project_context.six_w.repositories or detail.project_context.six_w.deployment_targets %}
+                        <div class="col-md-6">
+                            <h6 class="text-warning"><i class="bi bi-geo-alt"></i> WHERE</h6>
+                            {% if detail.project_context.six_w.affected_services %}
+                            <p class="mb-1"><strong>Services:</strong> {{ detail.project_context.six_w.affected_services | join(', ') }}</p>
+                            {% endif %}
+                            {% if detail.project_context.six_w.repositories %}
+                            <p class="mb-1"><strong>Repositories:</strong> {{ detail.project_context.six_w.repositories | join(', ') }}</p>
+                            {% endif %}
+                            {% if detail.project_context.six_w.deployment_targets %}
+                            <p class="mb-0"><strong>Deployment:</strong> {{ detail.project_context.six_w.deployment_targets | join(', ') }}</p>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        <!-- WHEN -->
+                        {% if detail.project_context.six_w.deadline or detail.project_context.six_w.dependencies_timeline %}
+                        <div class="col-md-6">
+                            <h6 class="text-danger"><i class="bi bi-clock"></i> WHEN</h6>
+                            {% if detail.project_context.six_w.deadline %}
+                            <p class="mb-1"><strong>Deadline:</strong> {{ detail.project_context.six_w.deadline.strftime('%Y-%m-%d %H:%M') if detail.project_context.six_w.deadline else 'N/A' }}</p>
+                            {% endif %}
+                            {% if detail.project_context.six_w.dependencies_timeline %}
+                            <p class="mb-0"><strong>Dependencies:</strong> {{ detail.project_context.six_w.dependencies_timeline | join(', ') }}</p>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        <!-- WHY -->
+                        {% if detail.project_context.six_w.business_value or detail.project_context.six_w.risk_if_delayed %}
+                        <div class="col-md-6">
+                            <h6 class="text-purple"><i class="bi bi-question-circle"></i> WHY</h6>
+                            {% if detail.project_context.six_w.business_value %}
+                            <p class="mb-1"><strong>Business Value:</strong> {{ detail.project_context.six_w.business_value }}</p>
+                            {% endif %}
+                            {% if detail.project_context.six_w.risk_if_delayed %}
+                            <p class="mb-0"><strong>Risk if Delayed:</strong> {{ detail.project_context.six_w.risk_if_delayed }}</p>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        <!-- HOW -->
+                        {% if detail.project_context.six_w.suggested_approach or detail.project_context.six_w.existing_patterns %}
+                        <div class="col-md-6">
+                            <h6 class="text-cyan"><i class="bi bi-gear"></i> HOW</h6>
+                            {% if detail.project_context.six_w.suggested_approach %}
+                            <p class="mb-1"><strong>Approach:</strong> {{ detail.project_context.six_w.suggested_approach }}</p>
+                            {% endif %}
+                            {% if detail.project_context.six_w.existing_patterns %}
+                            <p class="mb-0"><strong>Patterns:</strong> {{ detail.project_context.six_w.existing_patterns | join(', ') }}</p>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <small class="text-muted">Created: {{ detail.project.created_at.strftime('%Y-%m-%d %H:%M') if detail.project.created_at else 'N/A' }}</small>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <small class="text-muted">Updated: {{ detail.project.updated_at.strftime('%Y-%m-%d %H:%M') if detail.project.updated_at else 'N/A' }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card metric-card shadow-soft h-100">
+            <div class="card-body text-center d-flex flex-column justify-content-center">
+                <i class="bi bi-diagram-3 text-primary" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                <h4 class="mt-3 mb-3">Project Intelligence</h4>
+                <a href="/projects/{{ detail.project.id }}/context" class="btn btn-primary">
+                    <i class="bi bi-eye"></i> View 6W Context
+                </a>
+                <small class="text-muted mt-2">
+                    WHO • WHAT • WHERE<br>WHEN • WHY • HOW
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Skeleton Loading State for Metrics #}
+<div id="metrics-skeleton" class="hidden" aria-busy="true" aria-label="Loading metrics">
+    <div class="row mb-4 g-4">
+        {{ skeleton_metric(count=4, class='') }}
+    </div>
+</div>
+
+<!-- Summary Metrics -->
+<div id="metrics-content" class="row mb-4 g-4">
+    <div class="col-md-3">
+        <div class="card metric-card shadow-soft h-100" role="article" aria-label="Work Items metric">
+            <div class="card-body text-center">
+                <i class="bi bi-kanban text-primary" style="font-size: 2rem; opacity: 0.3;" aria-hidden="true"></i>
+                <h3 class="display-6 mt-2">{{ detail.total_work_items }}</h3>
+                <p class="metric-label">Work Items</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card metric-card shadow-soft h-100" role="article" aria-label="Tasks metric">
+            <div class="card-body text-center">
+                <i class="bi bi-check2-square text-success" style="font-size: 2rem; opacity: 0.3;" aria-hidden="true"></i>
+                <h3 class="display-6 mt-2">{{ detail.total_tasks }}</h3>
+                <p class="metric-label">Tasks</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card metric-card shadow-soft h-100" role="article" aria-label="Agents metric">
+            <div class="card-body text-center">
+                <i class="bi bi-people text-info" style="font-size: 2rem; opacity: 0.3;" aria-hidden="true"></i>
+                <h3 class="display-6 mt-2">{{ detail.total_agents }}</h3>
+                <p class="metric-label">Agents</p>
+                <a href="/agents" class="btn btn-sm btn-outline-primary mt-2" aria-label="View all agents">
+                    <i class="bi bi-arrow-right" aria-hidden="true"></i> View All
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card metric-card shadow-soft h-100" role="article" aria-label="Rules metric">
+            <div class="card-body text-center">
+                <i class="bi bi-shield-check text-warning" style="font-size: 2rem; opacity: 0.3;" aria-hidden="true"></i>
+                <h3 class="display-6 mt-2">{{ detail.total_rules }}</h3>
+                <p class="metric-label">Rules</p>
+                <a href="/rules" class="btn btn-sm btn-outline-primary mt-2" aria-label="View all rules">
+                    <i class="bi bi-arrow-right" aria-hidden="true"></i> View All
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Status Distributions with Chart.js (Phase 4) -->
+<div class="row mb-4 g-4">
+    <div class="col-md-6">
+        <div class="card metric-card shadow-soft h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-pie-chart text-primary"></i> Work Item Status Distribution
+                </h5>
+                {% if detail.work_item_status_dist %}
+                    <div class="chart-container" style="position: relative; height: 300px;">
+                        <canvas id="workItemStatusChart"></canvas>
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center mt-5">No work items yet</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card metric-card shadow-soft h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-bar-chart text-success"></i> Task Status Distribution
+                </h5>
+                {% if detail.task_status_dist %}
+                    <div class="chart-container" style="position: relative; height: 300px;">
+                        <canvas id="taskStatusChart"></canvas>
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center mt-5">No tasks yet</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Time-Boxing Compliance & Progress -->
+<div class="row mb-4 g-4">
+    <div class="col-md-4">
+        <div class="card metric-card shadow-soft h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-speedometer text-warning"></i> Time-Boxing Compliance
+                </h5>
+                <div class="chart-container" style="position: relative; height: 250px;">
+                    <canvas id="complianceGaugeChart"></canvas>
+                </div>
+                <div class="text-center mt-2">
+                    {% if compliance_rate >= 90 %}
+                        <span class="badge badge-success">Excellent</span>
+                    {% elif compliance_rate >= 70 %}
+                        <span class="badge badge-warning">Good</span>
+                    {% else %}
+                        <span class="badge badge-error">Needs Attention</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card metric-card shadow-soft h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-graph-up text-info"></i> Work Item Progress
+                </h5>
+                {% if wi_progress_labels %}
+                    <div class="chart-container" style="position: relative; height: 250px;">
+                        <canvas id="workItemProgressChart"></canvas>
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center mt-5">No work items to display</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity & Context -->
+<div class="row mb-4 g-4">
+    <!-- Recent Events -->
+    {% if detail.recent_events %}
+    <div class="col-md-6">
+        <div class="card metric-card shadow-soft h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-activity text-primary"></i> Recent Events
+                </h5>
+                <div class="timeline">
+                    {% for event in detail.recent_events[:5] %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-primary"></div>
+                        <div class="timeline-content">
+                            <h6 class="timeline-title">{{ event.event_type.value if event.event_type else 'Event' }}</h6>
+                            <p class="timeline-text">{{ event.message or 'No description available' }}</p>
+                            <small class="text-muted">
+                                {{ event.timestamp.strftime('%Y-%m-%d %H:%M') if event.timestamp else 'Unknown time' }}
+                            </small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if detail.recent_events | length > 5 %}
+                <div class="text-center mt-3">
+                    <a href="/events" class="btn btn-sm btn-outline-primary">
+                        View All Events ({{ detail.recent_events | length }})
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Summaries -->
+    {% if detail.recent_summaries %}
+    <div class="col-md-6">
+        <div class="card metric-card shadow-soft h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-journal-text text-success"></i> Recent Summaries
+                </h5>
+                <div class="summary-list">
+                    {% for summary in detail.recent_summaries[:5] %}
+                    <div class="summary-item mb-3 p-3 bg-dark bg-opacity-25 rounded">
+                        <h6 class="summary-title text-primary">
+                            {{ summary.summary_type.value if summary.summary_type else 'Summary' }}
+                            {% if summary.summary_type %}
+                            <span class="badge badge-info ms-2">{{ summary.summary_type.value }}</span>
+                            {% endif %}
+                        </h6>
+                        <p class="summary-content text-muted mb-2">
+                            {{ summary.summary_text[:200] }}{% if summary.summary_text | length > 200 %}...{% endif %}
+                        </p>
+                        <small class="text-muted">
+                            {{ summary.created_at.strftime('%Y-%m-%d %H:%M') if summary.created_at else 'Unknown time' }}
+                        </small>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if detail.recent_summaries | length > 5 %}
+                <div class="text-center mt-3">
+                    <a href="/summaries" class="btn btn-sm btn-outline-success">
+                        View All Summaries ({{ detail.recent_summaries | length }})
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Context Quality & Plugin Intelligence -->
+{% if detail.project_context %}
+<div class="row mb-4 g-4">
+    <!-- Context Quality Metrics -->
+    <div class="col-md-6">
+        <div class="card metric-card shadow-soft h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-shield-check text-warning"></i> Context Quality
+                </h5>
+                <div class="quality-metrics">
+                    {% if detail.project_context.confidence_score is not none %}
+                    <div class="metric-item mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>Confidence Score</span>
+                            <span class="badge badge-{{ 'success' if detail.project_context.confidence_band and detail.project_context.confidence_band.value == 'GREEN' else 'warning' if detail.project_context.confidence_band and detail.project_context.confidence_band.value == 'YELLOW' else 'danger' }}">
+                                {{ (detail.project_context.confidence_score * 100) | round(1) }}%
+                            </span>
+                        </div>
+                        <div class="progress mt-1" style="height: 6px;">
+                            <div class="progress-bar bg-{{ 'success' if detail.project_context.confidence_band and detail.project_context.confidence_band.value == 'GREEN' else 'warning' if detail.project_context.confidence_band and detail.project_context.confidence_band.value == 'YELLOW' else 'danger' }}" 
+                                 style="width: {{ (detail.project_context.confidence_score * 100) | round(1) }}%"></div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if detail.project_context.confidence_factors %}
+                    <div class="metric-item">
+                        <h6 class="text-info">Confidence Factors</h6>
+                        <ul class="list-unstyled">
+                            {% for factor, score in detail.project_context.confidence_factors.items() %}
+                            <li class="d-flex justify-content-between">
+                                <span>{{ factor.replace('_', ' ').title() }}</span>
+                                <span class="text-muted">
+                                    {% if score is number %}
+                                        {{ (score * 100) | round(1) }}%
+                                    {% else %}
+                                        {{ score }}
+                                    {% endif %}
+                                </span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    {% if detail.project_context.updated_at %}
+                    <div class="metric-item mt-3">
+                        <small class="text-muted">
+                            <i class="bi bi-clock"></i> Last Updated: {{ detail.project_context.updated_at.strftime('%Y-%m-%d %H:%M') }}
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Plugin Intelligence -->
+    <div class="col-md-6">
+        <div class="card metric-card shadow-soft h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-puzzle text-info"></i> Plugin Intelligence
+                </h5>
+                <div class="plugin-info">
+                    {% if detail.project.tech_stack %}
+                    <div class="tech-stack mb-3">
+                        <h6 class="text-primary">Detected Tech Stack</h6>
+                        <div class="tech-badges">
+                            {% for tech in detail.project.tech_stack %}
+                            <span class="badge badge-secondary me-1 mb-1">{{ tech }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if detail.project.detected_frameworks %}
+                    <div class="frameworks mb-3">
+                        <h6 class="text-success">Detected Frameworks</h6>
+                        <div class="framework-badges">
+                            {% for framework in detail.project.detected_frameworks %}
+                            <span class="badge badge-success me-1 mb-1">{{ framework }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="plugin-status">
+                        <h6 class="text-warning">Plugin Status</h6>
+                        <p class="text-muted mb-0">
+                            <i class="bi bi-check-circle text-success"></i> Context assembly active
+                            <br>
+                            <i class="bi bi-check-circle text-success"></i> 6W framework enabled
+                            <br>
+                            <i class="bi bi-check-circle text-success"></i> Confidence scoring active
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+/* Timeline styles for recent events */
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, #3b82f6, #8b5cf6);
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -22px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #1e293b;
+}
+
+.timeline-content {
+    background: rgba(30, 41, 59, 0.3);
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 3px solid #3b82f6;
+}
+
+.timeline-title {
+    margin-bottom: 5px;
+    color: #3b82f6;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.timeline-text {
+    margin-bottom: 8px;
+    color: #cbd5e1;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+/* Summary list styles */
+.summary-item {
+    border-left: 3px solid #10b981;
+    transition: all 0.3s ease;
+}
+
+.summary-item:hover {
+    background: rgba(16, 185, 129, 0.1) !important;
+    transform: translateX(5px);
+}
+
+.summary-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.summary-content {
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+/* Quality metrics styles */
+.quality-metrics .metric-item {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.quality-metrics .metric-item:last-child {
+    border-bottom: none;
+}
+
+.progress {
+    background-color: rgba(30, 41, 59, 0.5);
+    border-radius: 3px;
+}
+
+/* Plugin intelligence styles */
+.tech-badges, .framework-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.plugin-status p {
+    line-height: 1.6;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .timeline {
+        padding-left: 20px;
+    }
+    
+    .timeline::before {
+        left: 10px;
+    }
+    
+    .timeline-marker {
+        left: -17px;
+        width: 10px;
+        height: 10px;
+    }
+    
+    .timeline-content {
+        padding: 12px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Skeleton loading state management
+    const metricsSkeleton = document.getElementById('metrics-skeleton');
+    const metricsContent = document.getElementById('metrics-content');
+
+    // Show skeleton briefly on page load for better perceived performance
+    if (metricsSkeleton && metricsContent) {
+        metricsSkeleton.classList.remove('hidden');
+        metricsContent.style.display = 'none';
+
+        setTimeout(() => {
+            metricsSkeleton.classList.add('hidden');
+            metricsContent.style.display = '';
+        }, 400); // Brief loading state
+    }
+
+    // Chart initialization
+    const chartTheme = window.AIPM_CHART_THEME;
+    const palette = chartTheme?.palette || {};
+    const textColor = palette.textLight || '#e2e8f0';
+    const gridColor = palette.midnight || '#2d3748';
+    const borderColor = palette.navy || '#1a1d29';
+    const tickColor = palette.slate || '#94a3b8';
+
+    function percentageLabel(context) {
+        const label = context.label || '';
+        const value = context.parsed || 0;
+        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+        const percentage = total ? ((value / total) * 100).toFixed(1) : '0.0';
+        return `${label}: ${value} (${percentage}%)`;
+    }
+
+    // 1. Work Item Status Chart (Donut)
+    {% if detail.work_item_status_dist %}
+    const wiStatusCtx = document.getElementById('workItemStatusChart').getContext('2d');
+    const wiStatusLabels = {{ wi_status_labels | tojson }};
+    const wiStatusData = {{ wi_status_data | tojson }};
+    const wiStatusColors = chartTheme.getStatusColors(wiStatusLabels);
+
+    new Chart(wiStatusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: wiStatusLabels,
+            datasets: [{
+                data: wiStatusData,
+                backgroundColor: wiStatusColors,
+                borderWidth: 2,
+                borderColor
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: textColor,
+                        padding: 10
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: percentageLabel
+                    }
+                }
+            }
+        }
+    });
+    {% endif %}
+
+    // 2. Task Status Chart (Donut)
+    {% if detail.task_status_dist %}
+    const taskStatusCtx = document.getElementById('taskStatusChart').getContext('2d');
+    const taskStatusLabels = {{ task_status_labels | tojson }};
+    const taskStatusData = {{ task_status_data | tojson }};
+    const taskStatusColors = chartTheme.getStatusColors(taskStatusLabels);
+
+    new Chart(taskStatusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: taskStatusLabels,
+            datasets: [{
+                data: taskStatusData,
+                backgroundColor: taskStatusColors,
+                borderWidth: 2,
+                borderColor
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: textColor,
+                        padding: 10
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: percentageLabel
+                    }
+                }
+            }
+        }
+    });
+    {% endif %}
+
+    // 3. Time-Boxing Compliance Gauge (Doughnut with center text)
+    const complianceCtx = document.getElementById('complianceGaugeChart').getContext('2d');
+    const complianceRate = {{ compliance_rate }};
+    const nonCompliance = 100 - complianceRate;
+    const complianceColor = chartTheme.getComplianceColor(complianceRate);
+    const complianceBackground = palette.midnight || '#2d3748';
+
+    new Chart(complianceCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Compliant', 'Non-Compliant'],
+            datasets: [{
+                data: [complianceRate, nonCompliance],
+                backgroundColor: [complianceColor, complianceBackground],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%',
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.label}: ${context.parsed.toFixed(1)}%`;
+                        }
+                    }
+                }
+            }
+        },
+        plugins: [{
+            id: 'centerText',
+            beforeDraw: function(chart) {
+                const ctx = chart.ctx;
+                const width = chart.width;
+                const height = chart.height;
+
+                ctx.restore();
+                const fontSize = (height / 114).toFixed(2);
+                ctx.font = `bold ${fontSize}em sans-serif`;
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = textColor;
+
+                const text = complianceRate.toFixed(1) + '%';
+                const textX = Math.round((width - ctx.measureText(text).width) / 2);
+                const textY = height / 2;
+
+                ctx.fillText(text, textX, textY);
+                ctx.save();
+            }
+        }]
+    });
+
+    // 4. Work Item Progress Chart (Horizontal Bar)
+    {% if wi_progress_labels %}
+    const wiProgressCtx = document.getElementById('workItemProgressChart').getContext('2d');
+    const wiProgressLabels = {{ wi_progress_labels | tojson }};
+    const wiProgressData = {{ wi_progress_data | tojson }};
+    const progressBackground = palette.green || '#43e97b';
+    const progressBorder = palette.greenDark || progressBackground;
+
+    new Chart(wiProgressCtx, {
+        type: 'bar',
+        data: {
+            labels: wiProgressLabels,
+            datasets: [{
+                label: 'Progress (%)',
+                data: wiProgressData,
+                backgroundColor: progressBackground,
+                borderColor: progressBorder,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        color: tickColor,
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    },
+                    grid: {
+                        color: gridColor
+                    }
+                },
+                y: {
+                    ticks: {
+                        color: textColor
+                    },
+                    grid: {
+                        display: false
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Progress: ' + context.parsed.x.toFixed(1) + '%';
+                        }
+                    }
+                }
+            }
+        }
+    });
+    {% endif %}
+});
+</script>
+{% endblock %}

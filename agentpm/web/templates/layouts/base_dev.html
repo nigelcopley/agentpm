@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}APM (Agent Project Manager){% endblock %}</title>
+    
+    <!-- Local CSS -->
+    <!-- Theme System CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme-system.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <!-- Searchable Select Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/searchable-select.css') }}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body class="h-full bg-gray-50" x-data="{ sidebarOpen: false }" x-cloak>
+    <!-- Header -->
+    {% include 'components/layout/header_comprehensive.html' %}
+    
+    <!-- Main Content -->
+    <main class="min-h-screen">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Notifications -->
+    {% include 'components/notifications.html' %}
+    
+    <!-- Searchable Select Script -->
+    <script src="{{ url_for('static', filename='js/searchable-select.js') }}"></script>
+    
+    <!-- JavaScript Bundle (Development) -->
+    {% if built_files.main_js %}
+    <script type="module" src="{{ url_for('static', filename='js/dist/' + built_files.main_js) }}"></script>
+    {% endif %}
+    {% if built_files.main_legacy_js %}
+    <script nomodule src="{{ url_for('static', filename='js/dist/' + built_files.main_legacy_js) }}"></script>
+    {% endif %}
+    
+    {% block extra_js %}{% endblock %}
+    
+    <!-- APM (Agent Project Manager) Modal System -->
+    <script src="{{ url_for('static', filename='js/modal-system.js') }}"></script>
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + K for search
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                console.log('Search shortcut triggered');
+                // Focus search input if available
+                const searchInput = document.querySelector('input[type="search"], input[placeholder*="search" i]');
+                if (searchInput) {
+                    searchInput.focus();
+                }
+            }
+            
+            // Ctrl/Cmd + / for keyboard shortcuts help
+            if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+                e.preventDefault();
+                console.log('Keyboard shortcuts help triggered');
+                ModalSystem.showKeyboardShortcuts();
+            }
+        });
+        
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, checking modal system');
+            const modal = document.getElementById('global-modal');
+            console.log('Modal element on DOM load:', modal);
+            if (modal) {
+                console.log('Modal element found');
+            } else {
+                console.log('Modal element not found');
+            }
+        });
+    </script>
+    
+    <!-- Global Modal -->
+    <div id="global-modal" 
+         x-show="$store.modal.open"
+         x-cloak
+         @keydown.escape.window="$store.modal.hide()" 
+         class="fixed inset-0 z-[9999] flex items-center justify-center bg-gray-900/50 backdrop-blur-sm">
+        
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4" 
+             @click.away="$store.modal.hide()">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Keyboard Shortcuts</h3>
+                    <button @click="$store.modal.hide()" class="text-gray-400 hover:text-gray-600">
+                        <i class="bi bi-x text-xl"></i>
+                    </button>
+                </div>
+                
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">Search</span>
+                        <kbd class="px-2 py-1 bg-gray-100 rounded text-xs">Ctrl+K</kbd>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">Show shortcuts</span>
+                        <kbd class="px-2 py-1 bg-gray-100 rounded text-xs">Ctrl+/</kbd>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">Close modal</span>
+                        <kbd class="px-2 py-1 bg-gray-100 rounded text-xs">Esc</kbd>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

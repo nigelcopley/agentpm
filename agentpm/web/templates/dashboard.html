@@ -1,0 +1,354 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ project.name if project else 'Dashboard' }} - APM (Agent Project Manager){% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- Polished Hero Section -->
+    <div class="bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 text-white relative overflow-hidden">
+        <!-- Background Pattern -->
+        <div class="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.05"%3E%3Ccircle cx="30" cy="30" r="2"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
+        
+        <div class="relative max-w-full px-6 py-16">
+            <div class="flex items-center justify-between">
+                <div class="flex-1 max-w-4xl">
+                    <div class="flex items-center space-x-4 mb-4">
+                        <div class="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                            <i class="bi bi-kanban text-2xl"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-4xl font-bold tracking-tight">{{ project.name if project else 'APM (Agent Project Manager)' }}</h1>
+                            <p class="text-slate-300 text-lg">{{ project.description if project and project.description else 'AI Project Manager Dashboard' }}</p>
+                        </div>
+                    </div>
+                    
+                    {% if project %}
+                    <!-- Project Stats in Header -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+                        <div class="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
+                            <div class="text-xs text-slate-300 uppercase tracking-wide mb-1">Ideas</div>
+                            <div class="text-2xl font-bold">{{ metrics.total_ideas or 0 }}</div>
+                        </div>
+                        <div class="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
+                            <div class="text-xs text-slate-300 uppercase tracking-wide mb-1">Work Items</div>
+                            <div class="text-2xl font-bold">{{ metrics.total_work_items or 0 }}</div>
+                        </div>
+                        <div class="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
+                            <div class="text-xs text-slate-300 uppercase tracking-wide mb-1">Tasks</div>
+                            <div class="text-2xl font-bold">{{ metrics.total_tasks or 0 }}</div>
+                        </div>
+                        <div class="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
+                            <div class="text-xs text-slate-300 uppercase tracking-wide mb-1">Agents</div>
+                            <div class="text-2xl font-bold">{{ metrics.total_agents or 0 }}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Project Meta -->
+                    <div class="flex flex-wrap gap-3 mt-6">
+                        <span class="bg-white/20 px-3 py-1 rounded-full text-sm">
+                            <i class="bi bi-calendar mr-1"></i>{{ project.created_at.strftime('%Y-%m-%d') if project.created_at else 'N/A' }}
+                        </span>
+                        <span class="bg-white/20 px-3 py-1 rounded-full text-sm">
+                            <i class="bi bi-folder mr-1"></i>{{ project.path.split('/')[-1] if project.path else 'Local' }}
+                        </span>
+                        {% if project.business_domain %}
+                        <span class="bg-white/20 px-3 py-1 rounded-full text-sm">
+                            <i class="bi bi-building mr-1"></i>{{ project.business_domain }}
+                        </span>
+                        {% endif %}
+                        {% if project.project_type %}
+                        <span class="bg-white/20 px-3 py-1 rounded-full text-sm">
+                            <i class="bi bi-diagram-3 mr-1"></i>{{ project.project_type.value.replace('_', ' ').title() }}
+                        </span>
+                        {% endif %}
+                        {% if project.team %}
+                        <span class="bg-white/20 px-3 py-1 rounded-full text-sm">
+                            <i class="bi bi-people mr-1"></i>{{ project.team }}
+                        </span>
+                        {% endif %}
+                        <span class="bg-white/20 px-3 py-1 rounded-full text-sm">
+                            <i class="bi bi-circle-fill mr-1"></i>{{ project.status.value.replace('_', ' ').title() if project.status else 'Unknown' }}
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="max-w-full px-6 py-4">
+        <div class="bg-white rounded-lg border border-gray-200 shadow-sm">
+            <div class="px-6 py-4">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                    <!-- Primary Actions -->
+                    <a href="/work-items/create" class="flex flex-col items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
+                        <i class="bi bi-plus-circle text-blue-600 text-2xl mb-2"></i>
+                        <span class="text-sm font-medium text-blue-800">New Work Item</span>
+                    </a>
+                    <a href="/ideas/create" class="flex flex-col items-center p-4 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors border border-yellow-200">
+                        <i class="bi bi-lightbulb text-yellow-600 text-2xl mb-2"></i>
+                        <span class="text-sm font-medium text-yellow-800">New Idea</span>
+                    </a>
+                    <a href="/context/create" class="flex flex-col items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors border border-purple-200">
+                        <i class="bi bi-file-text text-purple-600 text-2xl mb-2"></i>
+                        <span class="text-sm font-medium text-purple-800">Add Context</span>
+                    </a>
+                    
+                    <!-- Navigation Actions -->
+                    <a href="/work-items" class="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors border border-gray-200">
+                        <i class="bi bi-kanban text-gray-600 text-2xl mb-2"></i>
+                        <span class="text-sm font-medium text-gray-800">View Work Items</span>
+                    </a>
+                    <a href="/ideas" class="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors border border-gray-200">
+                        <i class="bi bi-lightbulb text-gray-600 text-2xl mb-2"></i>
+                        <span class="text-sm font-medium text-gray-800">View Ideas</span>
+                    </a>
+                    <a href="/context/files" class="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors border border-gray-200">
+                        <i class="bi bi-folder text-gray-600 text-2xl mb-2"></i>
+                        <span class="text-sm font-medium text-gray-800">Context Files</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Full-Width Main Content -->
+    <div class="max-w-full px-6 py-8">
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            
+            <!-- 6Ws Context - Takes 2 columns -->
+            <div class="xl:col-span-2">
+                {% if project_contexts %}
+                <div class="bg-white rounded-lg border border-gray-200 shadow-sm">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold text-gray-900">6Ws Context Framework</h2>
+                        <p class="text-sm text-gray-500">Project understanding framework</p>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-6">
+                            {% for context in project_contexts %}
+                            {% if context.six_w %}
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="font-semibold text-gray-900">{{ context.context_type.value.replace('_', ' ').title() }}</h3>
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                                        {% if context.confidence_score and context.confidence_score >= 0.8 %}bg-green-100 text-green-800
+                                        {% elif context.confidence_score and context.confidence_score >= 0.6 %}bg-yellow-100 text-yellow-800
+                                        {% else %}bg-red-100 text-red-800{% endif %}">
+                                        {{ "%.0f"|format((context.confidence_score or 0) * 100) }}%
+                                    </span>
+                                </div>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {% if context.who %}
+                                    <div class="md:col-span-2">
+                                        <div class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">WHO</div>
+                                        <div class="text-sm text-gray-700">{{ context.who }}</div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if context.what %}
+                                    <div class="md:col-span-2">
+                                        <div class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">WHAT</div>
+                                        <div class="text-sm text-gray-700">{{ context.what }}</div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if context.where %}
+                                    <div>
+                                        <div class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">WHERE</div>
+                                        <div class="text-sm text-gray-700">{{ context.where }}</div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if context.when_context %}
+                                    <div>
+                                        <div class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">WHEN</div>
+                                        <div class="text-sm text-gray-700">{{ context.when_context }}</div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if context.why %}
+                                    <div class="md:col-span-2">
+                                        <div class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">WHY</div>
+                                        <div class="text-sm text-gray-700">{{ context.why }}</div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if context.how %}
+                                    <div class="md:col-span-2">
+                                        <div class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">HOW</div>
+                                        <div class="text-sm text-gray-700">{{ context.how }}</div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="bg-white rounded-lg border border-gray-200 shadow-sm">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold text-gray-900">6Ws Context Framework</h2>
+                        <p class="text-sm text-gray-500">Project understanding framework</p>
+                    </div>
+                    <div class="p-8 text-center">
+                        <i class="bi bi-info-circle text-4xl text-gray-300 mb-4"></i>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">No 6Ws Context Available</h3>
+                        <p class="text-gray-500 mb-4">Create 6Ws context to better understand your project.</p>
+                        <a href="/context/create" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
+                            <i class="bi bi-plus mr-2"></i>Create Context
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Status & Activity - Takes 1 column -->
+            <div class="space-y-6">
+                <!-- Status Overview -->
+                {% if work_item_status_counts or task_status_counts or idea_status_counts %}
+                <div class="bg-white rounded-lg border border-gray-200 shadow-sm">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold text-gray-900">Status Overview</h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4">
+                            {% if work_item_status_counts %}
+                            <div>
+                                <div class="text-sm font-medium text-gray-700 mb-2">Work Items</div>
+                                <div class="space-y-1">
+                                    {% for status, count in work_item_status_counts.items() %}
+                                    {% if count > 0 %}
+                                    <div class="flex justify-between items-center text-sm">
+                                        <span class="text-gray-600">{{ status.replace('_', ' ').title() }}</span>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                                            {% if status == 'active' %}bg-green-100 text-green-800
+                                            {% elif status == 'done' %}bg-blue-100 text-blue-800
+                                            {% elif status == 'blocked' %}bg-red-100 text-red-800
+                                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                            {{ count }}
+                                        </span>
+                                    </div>
+                                    {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if task_status_counts %}
+                            <div>
+                                <div class="text-sm font-medium text-gray-700 mb-2">Tasks</div>
+                                <div class="space-y-1">
+                                    {% for status, count in task_status_counts.items() %}
+                                    {% if count > 0 %}
+                                    <div class="flex justify-between items-center text-sm">
+                                        <span class="text-gray-600">{{ status.replace('_', ' ').title() }}</span>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                                            {% if status == 'done' %}bg-green-100 text-green-800
+                                            {% elif status == 'active' %}bg-blue-100 text-blue-800
+                                            {% elif status == 'blocked' %}bg-red-100 text-red-800
+                                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                            {{ count }}
+                                        </span>
+                                    </div>
+                                    {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if idea_status_counts %}
+                            <div>
+                                <div class="text-sm font-medium text-gray-700 mb-2">Ideas</div>
+                                <div class="space-y-1">
+                                    {% for status, count in idea_status_counts.items() %}
+                                    {% if count > 0 %}
+                                    <div class="flex justify-between items-center text-sm">
+                                        <span class="text-gray-600">{{ status.replace('_', ' ').title() }}</span>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                                            {% if status == 'converted' %}bg-green-100 text-green-800
+                                            {% elif status == 'accepted' %}bg-blue-100 text-blue-800
+                                            {% elif status == 'rejected' %}bg-red-100 text-red-800
+                                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                            {{ count }}
+                                        </span>
+                                    </div>
+                                    {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Recent Activity -->
+                {% if recent_work_items or recent_tasks or recent_ideas %}
+                <div class="bg-white rounded-lg border border-gray-200 shadow-sm">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold text-gray-900">Recent Activity</h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4">
+                            {% if recent_work_items %}
+                            <div>
+                                <div class="text-sm font-medium text-gray-700 mb-2">Work Items</div>
+                                <div class="space-y-2">
+                                    {% for work_item in recent_work_items[:3] %}
+                                    <div class="text-sm">
+                                        <a href="/work-items/{{ work_item.id }}" class="font-medium text-gray-900 hover:text-blue-600">
+                                            {{ work_item.name }}
+                                        </a>
+                                        <div class="text-xs text-gray-500">{{ work_item.status|enum_display if work_item.status else 'Unknown' }}</div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if recent_tasks %}
+                            <div>
+                                <div class="text-sm font-medium text-gray-700 mb-2">Tasks</div>
+                                <div class="space-y-2">
+                                    {% for task in recent_tasks[:3] %}
+                                    <div class="text-sm">
+                                        <span class="font-medium text-gray-900">{{ task.name }}</span>
+                                        <div class="text-xs text-gray-500">{{ task.status|enum_display if task.status else 'Unknown' }}</div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if recent_ideas %}
+                            <div>
+                                <div class="text-sm font-medium text-gray-700 mb-2">Ideas</div>
+                                <div class="space-y-2">
+                                    {% for idea in recent_ideas[:3] %}
+                                    <div class="text-sm">
+                                        <a href="/ideas/{{ idea.id }}" class="font-medium text-gray-900 hover:text-blue-600">
+                                            {{ idea.title }}
+                                        </a>
+                                        <div class="text-xs text-gray-500">{{ idea.status|enum_display if idea.status else 'Unknown' }}</div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+{
+  "end_users": [
+    "platform-operators",
+    "enterprise-admins"
+  ],
+  "implementers": [
+    "search-team",
+    "frontend-guild"
+  ],
+  "reviewers": [
+    "qa-lead",
+    "security-reviewer"
+  ],
+  "functional_requirements": [
+    "Allow composing multiple filters with AND semantics.",
+    "Persist selected filters between sessions."
+  ],
+  "technical_constraints": [
+    "Must continue using Postgres search indices.",
+    "Response payload must stay under 250KB."
+  ],
+  "acceptance_criteria": [
+    "Filters return results within 400ms p95 under expected load.",
+    "UI updates without full page reload."
+  ],
+  "affected_services": [
+    "search-api",
+    "catalog-indexer"
+  ],
+  "repositories": [
+    "services/search-service",
+    "web/app"
+  ],
+  "deployment_targets": [
+    "k8s-prod-search",
+    "edge-cache"
+  ],
+  "deadline": "2025-02-14T18:00:00Z",
+  "dependencies_timeline": [
+    "2025-01-22: schema review approved",
+    "2025-01-31: integration tests passing"
+  ],
+  "business_value": "Reduce search abandonment and unlock advanced analytics.",
+  "risk_if_delayed": "Enterprise renewals at risk if advanced search slips past Q1.",
+  "suggested_approach": "Reuse existing filter builder, add caching for frequent combinations.",
+  "existing_patterns": [
+    "search-service/filtering-pattern",
+    "frontend/filter-component-pattern"
+  ]
+}

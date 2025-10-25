@@ -1,0 +1,3093 @@
+version: 1.0.0
+last_updated: '2025-10-07'
+total_rules: 251
+presets:
+  minimal:
+    name: Minimal
+    description: Solo developer, prototype, learning AIPM - breadth over depth
+    rule_count: 15
+    philosophy: Touch every category lightly, don't overwhelm
+  standard:
+    name: Standard
+    description: Small team, MVP stage, startup - balanced coverage
+    rule_count: 77
+    philosophy: 2-3 essential rules per category
+  professional:
+    name: Professional
+    description: Established team, production system - deep critical areas
+    rule_count: 226
+    philosophy: Comprehensive security, testing, quality standards
+  enterprise:
+    name: Enterprise
+    description: Large organization, compliance-heavy - complete governance
+    rule_count: 251
+    philosophy: All rules enabled, maximum governance
+rules:
+- rule_id: DP-001
+  name: time-boxing-implementation
+  description: "IMPLEMENTATION tasks \u22644h"
+  rationale: Prevents scope creep
+  category: Development Principles
+  enforcement_level: BLOCK
+  presets:
+  - enterprise
+  - professional
+  - standard
+  - minimal
+  config:
+    max_hours: 4.0
+  enabled_by_default: true
+  validation_logic: effort_hours > 4.0
+- rule_id: DP-002
+  name: time-boxing-testing
+  description: "TESTING tasks \u22646h"
+  rationale: Scoped test effort
+  category: Development Principles
+  enforcement_level: BLOCK
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config:
+    max_hours: 6.0
+  enabled_by_default: true
+  validation_logic: effort_hours > 6.0
+- rule_id: DP-003
+  name: time-boxing-design
+  description: "DESIGN tasks \u22648h"
+  rationale: Prevents analysis paralysis
+  category: Development Principles
+  enforcement_level: BLOCK
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config:
+    max_hours: 8.0
+  enabled_by_default: true
+  validation_logic: effort_hours > 8.0
+- rule_id: DP-004
+  name: time-boxing-documentation
+  description: "DOCUMENTATION tasks \u22644h"
+  rationale: Concise docs
+  category: Development Principles
+  enforcement_level: BLOCK
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config:
+    max_hours: 4.0
+  enabled_by_default: true
+  validation_logic: effort_hours > 4.0
+- rule_id: DP-005
+  name: time-boxing-deployment
+  description: "DEPLOYMENT tasks \u22642h"
+  rationale: Automated deployments
+  category: Development Principles
+  enforcement_level: BLOCK
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config:
+    max_hours: 2.0
+  enabled_by_default: true
+  validation_logic: effort_hours > 2.0
+- rule_id: DP-006
+  name: time-boxing-analysis
+  description: "ANALYSIS tasks \u22648h"
+  rationale: Bounded exploration
+  category: Development Principles
+  enforcement_level: BLOCK
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config:
+    max_hours: 8.0
+  enabled_by_default: true
+  validation_logic: effort_hours > 8.0
+- rule_id: DP-007
+  name: time-boxing-research
+  description: "RESEARCH tasks \u226412h"
+  rationale: Focused research
+  category: Development Principles
+  enforcement_level: BLOCK
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config:
+    max_hours: 12.0
+  enabled_by_default: true
+  validation_logic: effort_hours > 12.0
+- rule_id: DP-008
+  name: time-boxing-refactoring
+  description: "REFACTORING tasks \u22646h"
+  rationale: Incremental refactoring
+  category: Development Principles
+  enforcement_level: BLOCK
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config:
+    max_hours: 6.0
+  enabled_by_default: true
+  validation_logic: effort_hours > 6.0
+- rule_id: DP-009
+  name: time-boxing-bugfix
+  description: "BUGFIX tasks \u22644h"
+  rationale: Isolated bug fixes
+  category: Development Principles
+  enforcement_level: BLOCK
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config:
+    max_hours: 4.0
+  enabled_by_default: true
+  validation_logic: effort_hours > 4.0
+- rule_id: DP-010
+  name: time-boxing-hotfix
+  description: "HOTFIX tasks \u22642h"
+  rationale: Emergency fixes
+  category: Development Principles
+  enforcement_level: BLOCK
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config:
+    max_hours: 2.0
+  enabled_by_default: true
+  validation_logic: effort_hours > 2.0
+- rule_id: DP-011
+  name: time-boxing-planning
+  description: "PLANNING tasks \u22648h"
+  rationale: Focused planning
+  category: Development Principles
+  enforcement_level: BLOCK
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config:
+    max_hours: 8.0
+  enabled_by_default: true
+  validation_logic: effort_hours > 8.0
+# DP-012: Removed - duplicate of TEST-001 and TEST-020, replaced by category-specific rules TEST-021 to TEST-026
+- rule_id: DP-013
+  name: quality-unit-test-required
+  description: Unit tests required
+  rationale: Component testing
+  category: Development Principles
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-014
+  name: quality-integration-test-required
+  description: Integration tests required
+  rationale: System testing
+  category: Development Principles
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-015
+  name: quality-e2e-test-required
+  description: E2E tests for critical flows
+  rationale: User journey validation
+  category: Development Principles
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-016
+  name: quality-test-isolation
+  description: Tests must be isolated
+  rationale: Reliable test suite
+  category: Development Principles
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-017
+  name: quality-test-naming
+  description: Test names describe behavior
+  rationale: Readable tests
+  category: Development Principles
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-018
+  name: quality-mock-limit
+  description: Limit mocking (prefer real objects)
+  rationale: Integration confidence
+  category: Development Principles
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-019
+  name: quality-test-performance
+  description: Tests must run in <5min
+  rationale: Fast feedback
+  category: Development Principles
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-020
+  name: quality-no-skip-tests
+  description: No skipped/disabled tests
+  rationale: Complete coverage
+  category: Development Principles
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-021
+  name: code-max-function-lines
+  description: "Functions \u226450 lines"
+  rationale: Maintainability
+  category: Development Principles
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  config:
+    max_lines: 50
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-022
+  name: code-max-file-lines
+  description: "Files \u2264500 lines"
+  rationale: Module cohesion
+  category: Development Principles
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  config:
+    max_lines: 500
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-023
+  name: code-max-complexity
+  description: "Cyclomatic complexity \u226410"
+  rationale: Reduced bugs
+  category: Development Principles
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  config:
+    max_complexity: 10
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-024
+  name: code-max-nesting
+  description: Max 3 levels nesting
+  rationale: Readability
+  category: Development Principles
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-025
+  name: code-no-magic-numbers
+  description: No magic numbers
+  rationale: Self-documenting
+  category: Development Principles
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-026
+  name: code-no-commented-code
+  description: Remove commented code
+  rationale: Clean codebase
+  category: Development Principles
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-027
+  name: code-type-hints-required
+  description: Type hints required (Python)
+  rationale: Static analysis
+  category: Development Principles
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-028
+  name: code-docstring-required
+  description: Public functions need docstrings
+  rationale: Documentation
+  category: Development Principles
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-029
+  name: code-no-print-statements
+  description: No print() in production
+  rationale: Proper logging
+  category: Development Principles
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-030
+  name: code-no-dict-str-any
+  description: No Dict[str, Any] in public APIs
+  rationale: Type safety
+  category: Development Principles
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-031
+  name: code-error-handling
+  description: All exceptions handled
+  rationale: Robustness
+  category: Development Principles
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-032
+  name: code-logging-standards
+  description: Use logging module (not print)
+  rationale: Observability
+  category: Development Principles
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-033
+  name: code-no-global-state
+  description: Avoid global variables
+  rationale: Testability
+  category: Development Principles
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-034
+  name: code-immutability
+  description: Prefer immutable data structures
+  rationale: Fewer bugs
+  category: Development Principles
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-035
+  name: code-single-responsibility
+  description: Functions do one thing
+  rationale: SOLID principles
+  category: Development Principles
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-036
+  name: security-no-hardcoded-secrets
+  description: No secrets in code
+  rationale: Security hygiene
+  category: Development Principles
+  enforcement_level: BLOCK
+  presets:
+  - enterprise
+  - professional
+  - standard
+  - minimal
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-037
+  name: security-input-validation
+  description: Validate all user input
+  rationale: Prevent injection
+  category: Development Principles
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-038
+  name: security-parameterized-queries
+  description: No string concatenation in SQL
+  rationale: SQL injection
+  category: Development Principles
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-039
+  name: security-https-only
+  description: Use HTTPS in production
+  rationale: Data protection
+  category: Development Principles
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-040
+  name: security-auth-required
+  description: Authentication for sensitive endpoints
+  rationale: Access control
+  category: Development Principles
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-041
+  name: security-rate-limiting
+  description: Rate limit public APIs
+  rationale: DoS prevention
+  category: Development Principles
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-042
+  name: security-dependency-scan
+  description: Scan dependencies for vulnerabilities
+  rationale: Supply chain
+  category: Development Principles
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-043
+  name: security-secrets-env-vars
+  description: Secrets in env vars, not code
+  rationale: 12-factor app
+  category: Development Principles
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-044
+  name: security-cors-configured
+  description: CORS properly configured
+  rationale: Cross-origin safety
+  category: Development Principles
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-045
+  name: security-csp-headers
+  description: Content-Security-Policy headers
+  rationale: XSS prevention
+  category: Development Principles
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-046
+  name: perf-api-response-time
+  description: API responses <200ms (p95)
+  rationale: User experience
+  category: Development Principles
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-047
+  name: perf-database-indexes
+  description: Indexed foreign keys
+  rationale: Query performance
+  category: Development Principles
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-048
+  name: perf-n-plus-one-prevention
+  description: No N+1 queries
+  rationale: Database efficiency
+  category: Development Principles
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-049
+  name: perf-caching-strategy
+  description: Cache expensive operations
+  rationale: Response time
+  category: Development Principles
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-050
+  name: perf-pagination-required
+  description: Paginate large result sets
+  rationale: Memory efficiency
+  category: Development Principles
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-051
+  name: perf-async-for-io
+  description: Use async for I/O operations
+  rationale: Concurrency
+  category: Development Principles
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-052
+  name: perf-lazy-loading
+  description: Lazy load relationships
+  rationale: Resource optimization
+  category: Development Principles
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-053
+  name: perf-connection-pooling
+  description: Database connection pooling
+  rationale: Scalability
+  category: Development Principles
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-054
+  name: perf-compression
+  description: Compress API responses
+  rationale: Bandwidth
+  category: Development Principles
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: DP-055
+  name: perf-cdn-for-static
+  description: CDN for static assets
+  rationale: Load time
+  category: Development Principles
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: WR-001
+  name: workflow-quality-gates
+  description: Work items validated before tasks start
+  rationale: Prevents premature work
+  category: Workflow Rules
+  enforcement_level: BLOCK
+  presets:
+  - enterprise
+  - professional
+  - standard
+  - minimal
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: WR-002
+  name: required-tasks-feature
+  description: FEATURE needs DESIGN+IMPL+TEST+DOC
+  rationale: Complete delivery
+  category: Workflow Rules
+  enforcement_level: BLOCK
+  presets:
+  - enterprise
+  - professional
+  - standard
+  - minimal
+  config: {}
+  enabled_by_default: true
+  validation_logic: missing_required_task_types
+- rule_id: WR-003
+  name: required-tasks-bugfix
+  description: BUGFIX needs ANALYSIS+FIX+TEST
+  rationale: Proper bug resolution
+  category: Workflow Rules
+  enforcement_level: BLOCK
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: missing_required_task_types
+- rule_id: WR-004
+  name: workflow-code-review
+  description: Code review required
+  rationale: Quality control
+  category: Workflow Rules
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: WR-005
+  name: workflow-development-approach
+  description: Documents TDD/BDD/DDD
+  rationale: Methodology clarity
+  category: Workflow Rules
+  enforcement_level: ENHANCE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: WR-006
+  name: workflow-test-first
+  description: Tests before implementation (TDD)
+  rationale: Test-driven
+  category: Workflow Rules
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: WR-007
+  name: workflow-deployment-required
+  description: Deployment tasks for releases
+  rationale: Release planning
+  category: Workflow Rules
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: WR-008
+  name: required-tasks-refactoring
+  description: REFACTORING needs ANALYSIS+IMPL+TEST
+  rationale: Safe refactoring
+  category: Workflow Rules
+  enforcement_level: BLOCK
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: missing_required_task_types
+- rule_id: WR-009
+  name: required-tasks-research
+  description: RESEARCH needs ANALYSIS+DOC
+  rationale: Knowledge capture
+  category: Workflow Rules
+  enforcement_level: BLOCK
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: missing_required_task_types
+- rule_id: WR-010
+  name: required-tasks-planning
+  description: PLANNING forbids IMPLEMENTATION
+  rationale: Planning doesn't implement
+  category: Workflow Rules
+  enforcement_level: BLOCK
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: missing_required_task_types
+- rule_id: WR-011
+  name: dep-hard-blocks-start
+  description: Hard dependencies block task start
+  rationale: Sequencing
+  category: Workflow Rules
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: WR-012
+  name: dep-circular-prevention
+  description: No circular dependencies
+  rationale: Valid graphs
+  category: Workflow Rules
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: WR-013
+  name: dep-max-depth
+  description: Max 5 dependency levels
+  rationale: Complexity limit
+  category: Workflow Rules
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: WR-014
+  name: dep-blocker-escalation
+  description: Blockers >72h escalated
+  rationale: Unblock quickly
+  category: Workflow Rules
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: WR-015
+  name: dep-external-blocker-audit
+  description: External blockers require audit trail
+  rationale: Accountability
+  category: Workflow Rules
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: WR-016
+  name: dep-soft-dependency-warn
+  description: Soft dependencies warn only
+  rationale: Informational
+  category: Workflow Rules
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: WR-017
+  name: dep-auto-resolve
+  description: Task completion auto-resolves blockers
+  rationale: Automatic cleanup
+  category: Workflow Rules
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: WR-018
+  name: dep-blocker-daily-review
+  description: Daily blocker review
+  rationale: Active management
+  category: Workflow Rules
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: WR-019
+  name: dep-dependency-documentation
+  description: Document why dependency exists
+  rationale: Clarity
+  category: Workflow Rules
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: WR-020
+  name: dep-max-dependencies
+  description: Max 5 dependencies per task
+  rationale: Complexity limit
+  category: Workflow Rules
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: WR-021
+  name: state-work-item-gates
+  description: "Task state \u2264 work item state"
+  rationale: Hierarchical consistency
+  category: Workflow Rules
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: WR-022
+  name: state-review-different-agent
+  description: Review by different agent
+  rationale: Independent validation
+  category: Workflow Rules
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: WR-023
+  name: state-max-in-progress
+  description: Max 3 tasks in-progress per agent
+  rationale: Focus
+  category: Workflow Rules
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: WR-024
+  name: state-review-sla
+  description: Review within 48h
+  rationale: Prevent bottlenecks
+  category: Workflow Rules
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: WR-025
+  name: state-blocked-escalation
+  description: Blocked >72h requires escalation
+  rationale: Proactive management
+  category: Workflow Rules
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: WR-026
+  name: state-cancelled-requires-reason
+  description: Cancellation needs reason
+  rationale: Audit trail
+  category: Workflow Rules
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: WR-027
+  name: state-archive-after-90d
+  description: Auto-archive completed after 90d
+  rationale: Cleanup
+  category: Workflow Rules
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: WR-028
+  name: state-immutable-completed
+  description: Completed tasks are immutable
+  rationale: Audit integrity
+  category: Workflow Rules
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: WR-029
+  name: state-progress-updates
+  description: Daily updates for in-progress tasks
+  rationale: Visibility
+  category: Workflow Rules
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: WR-030
+  name: state-acceptance-criteria
+  description: Acceptance criteria before validation
+  rationale: Clear goals
+  category: Workflow Rules
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: WR-031
+  name: session-summary-required
+  description: Summary required for sessions >2h
+  rationale: Handover docs
+  category: Workflow Rules
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: WR-032
+  name: session-decisions-documented
+  description: Key decisions logged
+  rationale: Knowledge capture
+  category: Workflow Rules
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: WR-033
+  name: session-blockers-logged
+  description: Blockers logged immediately
+  rationale: Transparency
+  category: Workflow Rules
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: WR-034
+  name: session-max-duration
+  description: "Sessions \u22648h (suggest breaks)"
+  rationale: Developer wellbeing
+  category: Workflow Rules
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  config:
+    max_hours: 8.0
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: WR-035
+  name: session-handover-notes
+  description: Handover notes for next session
+  rationale: Continuity
+  category: Workflow Rules
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: general_violation
+- rule_id: CQ-001
+  name: naming-convention
+  description: Language-specific naming (snake_case, camelCase)
+  rationale: Consistency
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  - minimal
+  config: {}
+  enabled_by_default: true
+  validation_logic: naming_convention_violation
+- rule_id: CQ-002
+  name: naming-descriptive
+  description: Names describe purpose
+  rationale: Readability
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: naming_convention_violation
+- rule_id: CQ-003
+  name: naming-no-abbreviations
+  description: Avoid cryptic abbreviations
+  rationale: Clarity
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: naming_convention_violation
+- rule_id: CQ-004
+  name: naming-boolean-prefix
+  description: 'Booleans: is_/has_/can_'
+  rationale: Semantic clarity
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: naming_convention_violation
+- rule_id: CQ-005
+  name: naming-class-nouns
+  description: Classes are nouns
+  rationale: OOP conventions
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: naming_convention_violation
+- rule_id: CQ-006
+  name: naming-function-verbs
+  description: Functions are verbs
+  rationale: Action clarity
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: naming_convention_violation
+- rule_id: CQ-007
+  name: naming-constants-upper
+  description: Constants in UPPER_SNAKE_CASE
+  rationale: Visual distinction
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: naming_convention_violation
+- rule_id: CQ-008
+  name: naming-private-underscore
+  description: Private methods start with _
+  rationale: Encapsulation
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: naming_convention_violation
+- rule_id: CQ-009
+  name: naming-max-length
+  description: "Names \u226450 characters"
+  rationale: Reasonable length
+  category: Code Quality
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: naming_convention_violation
+- rule_id: CQ-010
+  name: naming-no-single-letter
+  description: No single-letter names (except i, j, k in loops)
+  rationale: Descriptiveness
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: naming_convention_violation
+- rule_id: CQ-011
+  name: file-one-class-per-file
+  description: One class per file (Java/TS style)
+  rationale: Organization
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: file_structure_violation
+- rule_id: CQ-012
+  name: file-module-init
+  description: Proper __init__.py exports (Python)
+  rationale: Clean imports
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: file_structure_violation
+- rule_id: CQ-013
+  name: file-test-colocation
+  description: Tests in tests/ directory
+  rationale: Separation
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: file_structure_violation
+- rule_id: CQ-014
+  name: file-max-imports
+  description: Max 20 imports per file
+  rationale: Coupling limit
+  category: Code Quality
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: import_violation
+- rule_id: CQ-015
+  name: file-no-circular-imports
+  description: No circular imports
+  rationale: Dependency hygiene
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: import_violation
+- rule_id: CQ-016
+  name: file-explicit-exports
+  description: Explicit __all__ in modules
+  rationale: API clarity
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: file_structure_violation
+- rule_id: CQ-017
+  name: file-directory-structure
+  description: Domain-based directories (not by type)
+  rationale: Feature cohesion
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: file_structure_violation
+- rule_id: CQ-018
+  name: file-config-separate
+  description: Config in dedicated files
+  rationale: Separation of concerns
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: file_structure_violation
+- rule_id: CQ-019
+  name: file-no-unused-imports
+  description: Remove unused imports
+  rationale: Clean code
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: import_violation
+- rule_id: CQ-020
+  name: file-import-ordering
+  description: Imports ordered (stdlib, third-party, local)
+  rationale: Readability
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: import_violation
+- rule_id: CQ-021
+  name: func-max-parameters
+  description: "Functions \u22645 parameters"
+  rationale: Simplicity
+  category: Code Quality
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: code_quality_violation
+- rule_id: CQ-022
+  name: func-max-returns
+  description: Single return type
+  rationale: Predictability
+  category: Code Quality
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: code_quality_violation
+- rule_id: CQ-023
+  name: func-early-return
+  description: Use early returns (guard clauses)
+  rationale: Reduced nesting
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: code_quality_violation
+- rule_id: CQ-024
+  name: func-pure-preferred
+  description: Prefer pure functions
+  rationale: Testability
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: code_quality_violation
+- rule_id: CQ-025
+  name: func-no-side-effects
+  description: Document side effects
+  rationale: Predictability
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: code_quality_violation
+- rule_id: CQ-026
+  name: func-single-responsibility
+  description: Functions do one thing
+  rationale: SOLID
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: code_quality_violation
+- rule_id: CQ-027
+  name: func-exception-handling
+  description: Explicit error handling
+  rationale: Robustness
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: code_quality_violation
+- rule_id: CQ-028
+  name: func-type-annotations
+  description: Type hints required (Python 3.9+)
+  rationale: Static analysis
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: code_quality_violation
+- rule_id: CQ-029
+  name: func-default-args-immutable
+  description: Default args must be immutable
+  rationale: Avoid mutable defaults bug
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: code_quality_violation
+- rule_id: CQ-030
+  name: func-no-nested-functions
+  description: Avoid nested functions >2 levels
+  rationale: Complexity
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - minimal
+  config: {}
+  enabled_by_default: true
+  validation_logic: code_quality_violation
+- rule_id: CQ-031
+  name: class-single-responsibility
+  description: Classes have one reason to change
+  rationale: SOLID
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: code_quality_violation
+- rule_id: CQ-032
+  name: class-max-methods
+  description: "Classes \u226420 methods"
+  rationale: Cohesion
+  category: Code Quality
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: code_quality_violation
+- rule_id: CQ-033
+  name: class-composition-over-inheritance
+  description: Prefer composition
+  rationale: Flexibility
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: code_quality_violation
+- rule_id: CQ-034
+  name: class-max-inheritance-depth
+  description: Max 3 levels inheritance
+  rationale: Complexity
+  category: Code Quality
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: code_quality_violation
+- rule_id: CQ-035
+  name: class-dataclass-for-data
+  description: Use dataclass for data containers
+  rationale: Simplicity
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: code_quality_violation
+- rule_id: CQ-036
+  name: class-pydantic-for-validation
+  description: Use Pydantic for validated models
+  rationale: Type safety
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: code_quality_violation
+- rule_id: CQ-037
+  name: class-no-god-objects
+  description: Avoid god objects (>500 lines)
+  rationale: Maintainability
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: code_quality_violation
+- rule_id: CQ-038
+  name: class-interface-segregation
+  description: Small, focused interfaces
+  rationale: SOLID
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: code_quality_violation
+- rule_id: CQ-039
+  name: class-dependency-injection
+  description: Use dependency injection
+  rationale: Testability
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: code_quality_violation
+- rule_id: CQ-040
+  name: class-immutable-preferred
+  description: Prefer immutable classes
+  rationale: Thread safety
+  category: Code Quality
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: code_quality_violation
+- rule_id: DOC-001
+  name: doc-module-docstring
+  description: Every module has docstring
+  rationale: Purpose clarity
+  category: Documentation Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: missing_docstring
+- rule_id: DOC-002
+  name: doc-class-docstring
+  description: Every public class has docstring
+  rationale: Usage docs
+  category: Documentation Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: missing_docstring
+- rule_id: DOC-003
+  name: doc-function-docstring
+  description: Every public function has docstring
+  rationale: API docs
+  category: Documentation Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: missing_docstring
+- rule_id: DOC-004
+  name: doc-parameter-description
+  description: Document all parameters
+  rationale: Usage clarity
+  category: Documentation Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: documentation_violation
+- rule_id: DOC-005
+  name: doc-return-description
+  description: Document return values
+  rationale: Expected output
+  category: Documentation Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: documentation_violation
+- rule_id: DOC-006
+  name: doc-exception-documentation
+  description: Document raised exceptions
+  rationale: Error handling
+  category: Documentation Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: documentation_violation
+- rule_id: DOC-007
+  name: doc-example-in-docstring
+  description: Include usage examples
+  rationale: Learning aid
+  category: Documentation Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: missing_docstring
+- rule_id: DOC-008
+  name: doc-google-style
+  description: Use Google-style docstrings (Python)
+  rationale: Consistency
+  category: Documentation Standards
+  enforcement_level: ENHANCE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: documentation_violation
+- rule_id: DOC-009
+  name: doc-jsdoc-style
+  description: Use JSDoc (JavaScript/TypeScript)
+  rationale: Consistency
+  category: Documentation Standards
+  enforcement_level: ENHANCE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: documentation_violation
+- rule_id: DOC-010
+  name: doc-complexity-explanation
+  description: Complex code needs explanation
+  rationale: Maintainability
+  category: Documentation Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: documentation_violation
+- rule_id: DOC-011
+  name: doc-readme-required
+  description: README.md at project root
+  rationale: Project overview
+  category: Documentation Standards
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  - standard
+  - minimal
+  config: {}
+  enabled_by_default: true
+  validation_logic: missing_readme
+- rule_id: DOC-012
+  name: doc-setup-instructions
+  description: Setup instructions in README
+  rationale: Onboarding
+  category: Documentation Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: documentation_violation
+- rule_id: DOC-013
+  name: doc-api-documentation
+  description: API endpoints documented
+  rationale: Integration
+  category: Documentation Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: documentation_violation
+- rule_id: DOC-014
+  name: doc-architecture-overview
+  description: Architecture documented
+  rationale: System understanding
+  category: Documentation Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: documentation_violation
+- rule_id: DOC-015
+  name: doc-changelog-maintained
+  description: CHANGELOG.md updated
+  rationale: Version history
+  category: Documentation Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: documentation_violation
+- rule_id: DOC-016
+  name: doc-contributing-guide
+  description: CONTRIBUTING.md for open source
+  rationale: Collaboration
+  category: Documentation Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: documentation_violation
+- rule_id: DOC-017
+  name: doc-decision-records
+  description: ADRs for significant decisions
+  rationale: Rationale preservation
+  category: Documentation Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: documentation_violation
+- rule_id: DOC-018
+  name: doc-deployment-guide
+  description: Deployment instructions
+  rationale: Operational knowledge
+  category: Documentation Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: documentation_violation
+- rule_id: DOC-019
+  name: doc-troubleshooting
+  description: Common issues documented
+  rationale: Self-service support
+  category: Documentation Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: documentation_violation
+- rule_id: DOC-020
+  name: doc-breaking-changes
+  description: Breaking changes highlighted
+  rationale: Migration support
+  category: Documentation Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: documentation_violation
+- rule_id: DOC-021
+  name: handover-session-summary
+  description: Session summary >2h required
+  rationale: Context preservation
+  category: Documentation Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - minimal
+  config: {}
+  enabled_by_default: true
+  validation_logic: documentation_violation
+- rule_id: DOC-022
+  name: handover-decisions-logged
+  description: Key decisions logged in summaries
+  rationale: Rationale capture
+  category: Documentation Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: documentation_violation
+- rule_id: DOC-023
+  name: handover-blockers-documented
+  description: Blockers documented with context
+  rationale: Problem clarity
+  category: Documentation Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: documentation_violation
+- rule_id: DOC-024
+  name: handover-next-steps
+  description: Clear next steps for continuation
+  rationale: Actionable handover
+  category: Documentation Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: documentation_violation
+- rule_id: DOC-025
+  name: handover-assumptions-listed
+  description: Assumptions documented
+  rationale: Risk awareness
+  category: Documentation Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: documentation_violation
+- rule_id: WF-001
+  name: git-commit-frequency
+  description: Commit every 30-60min
+  rationale: Incremental progress
+  category: Workflow & Process
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - minimal
+  config: {}
+  enabled_by_default: true
+  validation_logic: commit_frequency_violation
+- rule_id: WF-002
+  name: git-conventional-commits
+  description: Use conventional commits (feat/fix/docs)
+  rationale: Semantic versioning
+  category: Workflow & Process
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: commit_frequency_violation
+- rule_id: WF-003
+  name: git-branch-naming
+  description: 'Branch naming: feature/, bugfix/, hotfix/'
+  rationale: Organization
+  category: Workflow & Process
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: branch_protection_violation
+- rule_id: WF-004
+  name: git-no-direct-main
+  description: No direct commits to main/master
+  rationale: PR workflow
+  category: Workflow & Process
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - minimal
+  config: {}
+  enabled_by_default: true
+  validation_logic: workflow_violation
+- rule_id: WF-005
+  name: git-pr-required
+  description: Pull requests required
+  rationale: Code review
+  category: Workflow & Process
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: workflow_violation
+- rule_id: WF-006
+  name: git-pr-description
+  description: PRs need description + test plan
+  rationale: Context
+  category: Workflow & Process
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: workflow_violation
+- rule_id: WF-007
+  name: git-squash-commits
+  description: Squash commits on merge
+  rationale: Clean history
+  category: Workflow & Process
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: commit_frequency_violation
+- rule_id: WF-008
+  name: git-sign-commits
+  description: Sign commits (GPG)
+  rationale: Security
+  category: Workflow & Process
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: commit_frequency_violation
+- rule_id: WF-009
+  name: git-linear-history
+  description: Rebase, no merge commits
+  rationale: Clean history
+  category: Workflow & Process
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: workflow_violation
+- rule_id: WF-010
+  name: git-protected-branches
+  description: Branch protection on main
+  rationale: Safety
+  category: Workflow & Process
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: branch_protection_violation
+- rule_id: WF-011
+  name: review-required-approvals
+  description: Min 1 approval required
+  rationale: Quality gate
+  category: Workflow & Process
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: workflow_violation
+- rule_id: WF-012
+  name: review-no-self-approve
+  description: Cannot approve own PRs
+  rationale: Independent review
+  category: Workflow & Process
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: workflow_violation
+- rule_id: WF-013
+  name: review-sla-48h
+  description: Reviews within 48h
+  rationale: Prevent bottlenecks
+  category: Workflow & Process
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: workflow_violation
+- rule_id: WF-014
+  name: review-checklist
+  description: Use review checklist
+  rationale: Thoroughness
+  category: Workflow & Process
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: workflow_violation
+- rule_id: WF-015
+  name: review-test-verification
+  description: Reviewer runs tests
+  rationale: Validation
+  category: Workflow & Process
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: workflow_violation
+- rule_id: WF-016
+  name: review-security-check
+  description: Security review for auth/crypto
+  rationale: Security gate
+  category: Workflow & Process
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: workflow_violation
+- rule_id: WF-017
+  name: review-performance-check
+  description: Performance review for DB/API
+  rationale: Performance gate
+  category: Workflow & Process
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: workflow_violation
+- rule_id: WF-018
+  name: review-constructive
+  description: Feedback is constructive
+  rationale: Team culture
+  category: Workflow & Process
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: workflow_violation
+- rule_id: WF-019
+  name: review-blocking-comments
+  description: Address all blocking comments
+  rationale: Quality
+  category: Workflow & Process
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: workflow_violation
+- rule_id: WF-020
+  name: review-approval-revocation
+  description: Re-review after significant changes
+  rationale: Quality assurance
+  category: Workflow & Process
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: workflow_violation
+- rule_id: TC-001
+  name: backend-framework
+  description: Backend framework (Django/Flask/etc)
+  rationale: Pattern guidance
+  category: Technology Constraints
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - minimal
+  config: {}
+  enabled_by_default: true
+  validation_logic: framework_violation
+- rule_id: TC-002
+  name: frontend-framework
+  description: Frontend framework (React/Vue/etc)
+  rationale: UI patterns
+  category: Technology Constraints
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: framework_violation
+- rule_id: TC-003
+  name: database-technology
+  description: Database (PostgreSQL/MySQL/etc)
+  rationale: Data patterns
+  category: Technology Constraints
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: technology_violation
+- rule_id: TC-004
+  name: architecture-style
+  description: Architecture (hexagonal/microservices)
+  rationale: Structure
+  category: Technology Constraints
+  enforcement_level: ENHANCE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: technology_violation
+- rule_id: TC-005
+  name: tc-orm-required
+  description: Use ORM (SQLAlchemy, Django ORM)
+  rationale: Type safety
+  category: Technology Constraints
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: technology_violation
+- rule_id: TC-006
+  name: tc-async-framework
+  description: Async framework (asyncio, trio)
+  rationale: Concurrency
+  category: Technology Constraints
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: framework_violation
+- rule_id: TC-007
+  name: tc-test-framework
+  description: Testing framework (pytest, jest)
+  rationale: Test patterns
+  category: Technology Constraints
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: framework_violation
+- rule_id: TC-008
+  name: tc-logging-framework
+  description: Logging framework (structlog, winston)
+  rationale: Observability
+  category: Technology Constraints
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: framework_violation
+- rule_id: TC-009
+  name: tc-serialization
+  description: Serialization (Pydantic, marshmallow)
+  rationale: Data validation
+  category: Technology Constraints
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: technology_violation
+- rule_id: TC-010
+  name: tc-http-client
+  description: HTTP client (httpx, axios)
+  rationale: API calls
+  category: Technology Constraints
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: technology_violation
+- rule_id: TC-011
+  name: tc-dependency-pinning
+  description: Pin exact versions in production
+  rationale: Reproducibility
+  category: Technology Constraints
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: technology_violation
+- rule_id: TC-012
+  name: tc-dependency-audit
+  description: Monthly dependency security audit
+  rationale: Vulnerability management
+  category: Technology Constraints
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: technology_violation
+- rule_id: TC-013
+  name: tc-max-dependencies
+  description: Max 50 direct dependencies
+  rationale: Complexity limit
+  category: Technology Constraints
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: technology_violation
+- rule_id: TC-014
+  name: tc-no-deprecated-deps
+  description: No deprecated dependencies
+  rationale: Maintenance
+  category: Technology Constraints
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: technology_violation
+- rule_id: TC-015
+  name: tc-license-compliance
+  description: Check dependency licenses
+  rationale: Legal compliance
+  category: Technology Constraints
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: technology_violation
+- rule_id: OPS-001
+  name: ops-automated-deployment
+  description: Deployments via CI/CD (not manual)
+  rationale: Reliability
+  category: Operations Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - minimal
+  config: {}
+  enabled_by_default: true
+  validation_logic: deployment_violation
+- rule_id: OPS-002
+  name: ops-rollback-plan
+  description: Every deployment has rollback plan
+  rationale: Risk mitigation
+  category: Operations Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: operations_violation
+- rule_id: OPS-003
+  name: ops-blue-green
+  description: Blue-green deployments for zero downtime
+  rationale: Availability
+  category: Operations Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: operations_violation
+- rule_id: OPS-004
+  name: ops-database-migrations
+  description: Database migrations versioned
+  rationale: Schema evolution
+  category: Operations Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: operations_violation
+- rule_id: OPS-005
+  name: ops-backward-compatible
+  description: Deployments are backward compatible
+  rationale: Gradual rollout
+  category: Operations Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: operations_violation
+- rule_id: OPS-006
+  name: ops-smoke-tests
+  description: Post-deployment smoke tests
+  rationale: Verification
+  category: Operations Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: operations_violation
+- rule_id: OPS-007
+  name: ops-deployment-checklist
+  description: Use deployment checklist
+  rationale: Consistency
+  category: Operations Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: deployment_violation
+- rule_id: OPS-008
+  name: ops-changelog-update
+  description: Update changelog before deploy
+  rationale: Communication
+  category: Operations Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: operations_violation
+- rule_id: OPS-009
+  name: ops-stakeholder-notification
+  description: Notify stakeholders of deploys
+  rationale: Transparency
+  category: Operations Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: operations_violation
+- rule_id: OPS-010
+  name: ops-deployment-windows
+  description: Deploy during maintenance windows
+  rationale: Risk management
+  category: Operations Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: deployment_violation
+- rule_id: OPS-011
+  name: ops-structured-logging
+  description: Use structured logging (JSON)
+  rationale: Searchability
+  category: Operations Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  config: {}
+  enabled_by_default: true
+  validation_logic: operations_violation
+- rule_id: OPS-012
+  name: ops-error-tracking
+  description: Error tracking (Sentry, Rollbar)
+  rationale: Issue awareness
+  category: Operations Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  config: {}
+  enabled_by_default: true
+  validation_logic: operations_violation
+- rule_id: OPS-013
+  name: ops-metrics-collection
+  description: Collect application metrics
+  rationale: Performance monitoring
+  category: Operations Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  config: {}
+  enabled_by_default: true
+  validation_logic: operations_violation
+- rule_id: OPS-014
+  name: ops-health-checks
+  description: Health check endpoints
+  rationale: Uptime monitoring
+  category: Operations Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  config: {}
+  enabled_by_default: true
+  validation_logic: operations_violation
+- rule_id: OPS-015
+  name: ops-alerting-rules
+  description: Define alerting thresholds
+  rationale: Proactive response
+  category: Operations Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  config: {}
+  enabled_by_default: true
+  validation_logic: operations_violation
+- rule_id: OPS-016
+  name: ops-log-retention
+  description: 90-day log retention
+  rationale: Compliance
+  category: Operations Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  config: {}
+  enabled_by_default: true
+  validation_logic: operations_violation
+- rule_id: OPS-017
+  name: ops-incident-response
+  description: Incident response plan
+  rationale: Crisis management
+  category: Operations Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  config: {}
+  enabled_by_default: true
+  validation_logic: operations_violation
+- rule_id: OPS-018
+  name: ops-postmortem-required
+  description: Postmortems for incidents
+  rationale: Learning
+  category: Operations Standards
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  config: {}
+  enabled_by_default: true
+  validation_logic: operations_violation
+- rule_id: OPS-019
+  name: ops-sla-definition
+  description: Define SLAs for critical services
+  rationale: Expectations
+  category: Operations Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  config: {}
+  enabled_by_default: true
+  validation_logic: operations_violation
+- rule_id: OPS-020
+  name: ops-dashboards
+  description: Operational dashboards
+  rationale: Visibility
+  category: Operations Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  config: {}
+  enabled_by_default: true
+  validation_logic: operations_violation
+- rule_id: GOV-001
+  name: gov-audit-trail
+  description: Complete audit trail for changes
+  rationale: Accountability
+  category: Governance
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  config: {}
+  enabled_by_default: true
+  validation_logic: governance_violation
+- rule_id: GOV-002
+  name: gov-data-retention
+  description: Data retention policy (GDPR)
+  rationale: Legal compliance
+  category: Governance
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  config: {}
+  enabled_by_default: true
+  validation_logic: governance_violation
+- rule_id: GOV-003
+  name: gov-privacy-policy
+  description: Privacy policy documented
+  rationale: User protection
+  category: Governance
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  config: {}
+  enabled_by_default: true
+  validation_logic: governance_violation
+- rule_id: GOV-004
+  name: gov-security-review
+  description: Security review for sensitive features
+  rationale: Risk management
+  category: Governance
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  config: {}
+  enabled_by_default: true
+  validation_logic: governance_violation
+- rule_id: GOV-005
+  name: gov-compliance-check
+  description: Compliance check before release
+  rationale: Legal protection
+  category: Governance
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  config: {}
+  enabled_by_default: true
+  validation_logic: governance_violation
+- rule_id: GOV-006
+  name: gov-license-headers
+  description: License headers in source files
+  rationale: IP protection
+  category: Governance
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  config: {}
+  enabled_by_default: true
+  validation_logic: governance_violation
+- rule_id: GOV-007
+  name: gov-third-party-approval
+  description: Third-party service approval required
+  rationale: Vendor management
+  category: Governance
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  config: {}
+  enabled_by_default: true
+  validation_logic: governance_violation
+- rule_id: GOV-008
+  name: gov-data-classification
+  description: Classify data sensitivity
+  rationale: Data protection
+  category: Governance
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  config: {}
+  enabled_by_default: true
+  validation_logic: governance_violation
+- rule_id: GOV-009
+  name: gov-encryption-required
+  description: Encrypt sensitive data at rest
+  rationale: Security
+  category: Governance
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  config: {}
+  enabled_by_default: true
+  validation_logic: governance_violation
+- rule_id: GOV-010
+  name: gov-backup-strategy
+  description: Regular backups with verification
+  rationale: Data protection
+  category: Governance
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  config: {}
+  enabled_by_default: true
+  validation_logic: governance_violation
+- rule_id: GOV-011
+  name: gov-role-based-access
+  description: Role-based access control
+  rationale: Security
+  category: Governance
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  config: {}
+  enabled_by_default: true
+  validation_logic: governance_violation
+- rule_id: GOV-012
+  name: gov-separation-of-duties
+  description: Separation of duties
+  rationale: Fraud prevention
+  category: Governance
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  config: {}
+  enabled_by_default: true
+  validation_logic: governance_violation
+- rule_id: GOV-013
+  name: gov-onboarding-checklist
+  description: Onboarding checklist for new members
+  rationale: Consistency
+  category: Governance
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  config: {}
+  enabled_by_default: true
+  validation_logic: governance_violation
+- rule_id: GOV-014
+  name: gov-offboarding-process
+  description: Offboarding revokes access
+  rationale: Security
+  category: Governance
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  config: {}
+  enabled_by_default: true
+  validation_logic: governance_violation
+- rule_id: GOV-015
+  name: gov-quarterly-review
+  description: Quarterly governance review
+  rationale: Continuous improvement
+  category: Governance
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  config: {}
+  enabled_by_default: true
+  validation_logic: governance_violation
+# TEST-001: Removed - duplicate of DP-012 and TEST-020, replaced by category-specific rules TEST-021 to TEST-026
+- rule_id: TEST-002
+  name: test-unit-required
+  description: Unit tests for all logic
+  rationale: Component testing
+  category: Testing Standards
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: missing_unit_tests
+- rule_id: TEST-003
+  name: test-integration-required
+  description: Integration tests for APIs
+  rationale: System testing
+  category: Testing Standards
+  enforcement_level: LIMIT
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: missing_integration_tests
+- rule_id: TEST-004
+  name: test-e2e-critical-paths
+  description: E2E for critical user flows
+  rationale: Journey validation
+  category: Testing Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: testing_violation
+- rule_id: TEST-005
+  name: test-fast-suite
+  description: Test suite <5min
+  rationale: Fast feedback
+  category: Testing Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: testing_violation
+- rule_id: TEST-006
+  name: test-parallel-execution
+  description: Tests run in parallel
+  rationale: Speed
+  category: Testing Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: testing_violation
+- rule_id: TEST-007
+  name: test-no-flaky-tests
+  description: No flaky tests allowed
+  rationale: Reliability
+  category: Testing Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  - minimal
+  config: {}
+  enabled_by_default: true
+  validation_logic: testing_violation
+- rule_id: TEST-008
+  name: test-seed-data
+  description: Use fixtures/factories for test data
+  rationale: Consistency
+  category: Testing Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: testing_violation
+- rule_id: TEST-009
+  name: test-teardown-cleanup
+  description: Tests clean up after themselves
+  rationale: Isolation
+  category: Testing Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config: {}
+  enabled_by_default: true
+  validation_logic: testing_violation
+- rule_id: TEST-010
+  name: test-assertions-clear
+  description: Clear assertion messages
+  rationale: Debuggability
+  category: Testing Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: testing_violation
+- rule_id: TEST-011
+  name: test-edge-cases
+  description: Test edge cases and errors
+  rationale: Robustness
+  category: Testing Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: testing_violation
+- rule_id: TEST-012
+  name: test-boundary-conditions
+  description: Test boundary values
+  rationale: Correctness
+  category: Testing Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: testing_violation
+- rule_id: TEST-013
+  name: test-negative-cases
+  description: Test error paths
+  rationale: Error handling
+  category: Testing Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: testing_violation
+- rule_id: TEST-014
+  name: test-concurrency
+  description: Test concurrent access
+  rationale: Thread safety
+  category: Testing Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: testing_violation
+- rule_id: TEST-015
+  name: test-performance
+  description: Performance tests for critical paths
+  rationale: Regression detection
+  category: Testing Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: testing_violation
+- rule_id: TEST-016
+  name: test-security
+  description: Security tests for auth/crypto
+  rationale: Vulnerability prevention
+  category: Testing Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: testing_violation
+- rule_id: TEST-017
+  name: test-regression
+  description: Regression tests for fixed bugs
+  rationale: Prevent reoccurrence
+  category: Testing Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: testing_violation
+- rule_id: TEST-018
+  name: test-mock-sparingly
+  description: Prefer real objects over mocks
+  rationale: Integration confidence
+  category: Testing Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: testing_violation
+- rule_id: TEST-019
+  name: test-snapshot-review
+  description: Review snapshot changes
+  rationale: Intentional updates
+  category: Testing Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config: {}
+  enabled_by_default: true
+  validation_logic: testing_violation
+# TEST-020: Removed - duplicate of DP-012 and TEST-001, replaced by category-specific rules TEST-021 to TEST-026
+- rule_id: TEST-021
+  name: test-critical-paths-coverage
+  description: Critical paths coverage requirement
+  rationale: Core business logic must be thoroughly tested
+  category: Testing Standards
+  enforcement_level: BLOCK
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config:
+    min_coverage: 95.0
+    path_patterns: ["**/core/**", "**/business/**", "**/critical/**", "**/engine/**", "**/workflow/**", "**/rules/**"]
+  enabled_by_default: true
+  validation_logic: category_coverage("critical_paths") < min_coverage
+- rule_id: TEST-022
+  name: test-user-facing-coverage
+  description: User-facing code coverage requirement
+  rationale: User interactions must be reliable
+  category: Testing Standards
+  enforcement_level: BLOCK
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config:
+    min_coverage: 85.0
+    path_patterns: ["**/api/**", "**/cli/**", "**/web/**", "**/ui/**", "**/endpoints/**", "**/routes/**"]
+  enabled_by_default: true
+  validation_logic: category_coverage("user_facing") < min_coverage
+- rule_id: TEST-023
+  name: test-data-layer-coverage
+  description: Data layer coverage requirement
+  rationale: Data integrity is critical
+  category: Testing Standards
+  enforcement_level: BLOCK
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config:
+    min_coverage: 90.0
+    path_patterns: ["**/database/**", "**/models/**", "**/storage/**", "**/persistence/**", "**/repositories/**", "**/adapters/**"]
+  enabled_by_default: true
+  validation_logic: category_coverage("data_layer") < min_coverage
+- rule_id: TEST-024
+  name: test-security-coverage
+  description: Security code coverage requirement
+  rationale: Security vulnerabilities must be prevented
+  category: Testing Standards
+  enforcement_level: BLOCK
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config:
+    min_coverage: 95.0
+    path_patterns: ["**/security/**", "**/auth/**", "**/validation/**", "**/crypto/**", "**/permissions/**", "**/middleware/**"]
+  enabled_by_default: true
+  validation_logic: category_coverage("security") < min_coverage
+- rule_id: TEST-025
+  name: test-utilities-coverage
+  description: Utilities code coverage requirement
+  rationale: Helper functions should be tested for reliability
+  category: Testing Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  - standard
+  config:
+    min_coverage: 70.0
+    path_patterns: ["**/utils/**", "**/helpers/**", "**/common/**", "**/lib/**", "**/shared/**"]
+  enabled_by_default: true
+  validation_logic: category_coverage("utilities") < min_coverage
+- rule_id: TEST-026
+  name: test-framework-integration-coverage
+  description: Framework integration coverage requirement
+  rationale: Integration points need basic testing
+  category: Testing Standards
+  enforcement_level: GUIDE
+  presets:
+  - enterprise
+  - professional
+  config:
+    min_coverage: 50.0
+    path_patterns: ["**/framework/**", "**/integration/**", "**/adapters/**", "**/templates/**", "**/static/**", "**/assets/**"]
+  enabled_by_default: true
+  validation_logic: category_coverage("framework_integration") < min_coverage

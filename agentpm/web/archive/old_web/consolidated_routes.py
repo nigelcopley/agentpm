@@ -1,0 +1,525 @@
+"""
+Consolidated Blueprint Structure for APM (Agent Project Manager) Web Application
+
+This module implements a consolidated, "less is more" route structure that combines
+multiple nested routes into single, comprehensive views.
+
+Design Principles:
+- Single comprehensive views instead of multiple nested routes
+- All related information in one place
+- Tabbed/sectioned interfaces within detail views
+- Reduced navigation complexity
+- Better user experience with fewer page loads
+
+Blueprint Organization:
+- dashboard: Main dashboard and overview
+- ideas: Ideas management (list + comprehensive detail)
+- work_items: Work items management (list + comprehensive detail)
+- context: Context management (overview + type-specific lists)
+- agents: Agent management (list + comprehensive detail)
+- rules: Rules management (list + comprehensive detail)
+- system: System administration and monitoring
+- search: Search functionality
+
+Route Principles:
+1. Consolidated Design: Single views with all related information
+2. Tabbed Interfaces: Use tabs/sections within detail views
+3. Consistent Naming: Plural for collections, singular for individual resources
+4. Read-Only: Only GET methods for viewing data
+5. System-Aligned: Routes match actual database capabilities
+"""
+
+from flask import Blueprint, render_template, request, redirect, url_for, jsonify
+from typing import Dict, List, Any, Optional
+import logging
+
+# Create consolidated blueprints
+dashboard_bp = Blueprint('dashboard', __name__, url_prefix='')
+ideas_bp = Blueprint('ideas', __name__, url_prefix='/ideas')
+work_items_bp = Blueprint('work_items', __name__, url_prefix='/work-items')
+context_bp = Blueprint('context', __name__, url_prefix='/context')
+agents_bp = Blueprint('agents', __name__, url_prefix='/agents')
+rules_bp = Blueprint('rules', __name__, url_prefix='/rules')
+system_bp = Blueprint('system', __name__, url_prefix='/system')
+search_bp = Blueprint('search', __name__, url_prefix='/search')
+
+logger = logging.getLogger(__name__)
+
+def get_database_service():
+    """Get database service instance"""
+    from ...core.database.service import DatabaseService
+    return DatabaseService('.aipm/data/aipm.db')
+
+# ============================================================================
+# DASHBOARD BLUEPRINT
+# ============================================================================
+
+@dashboard_bp.route('/')
+def dashboard_home():
+    """Dashboard home - main entry point"""
+    # Import the existing dashboard logic from main.py
+    from ..routes.main import _render_project_detail
+    from ...core.database.methods import projects
+    
+    db = get_database_service()
+    projects_list = projects.list_projects(db)
+    
+    if not projects_list:
+        return render_template('no_project.html')
+    
+    return _render_project_detail(db, projects_list[0])
+
+@dashboard_bp.route('/dashboard')
+def dashboard():
+    """Main dashboard with project overview"""
+    return dashboard_home()  # Reuse the same logic
+
+@dashboard_bp.route('/overview')
+def overview():
+    """System overview with key metrics"""
+    return dashboard_home()  # Reuse the same logic
+
+@dashboard_bp.route('/settings')
+def project_settings():
+    """
+    Project settings view.
+    
+    Since the main dashboard is essentially the project portal,
+    this provides project-level configuration and settings.
+    
+    Includes:
+    - Project information and metadata
+    - Project configuration
+    - Workflow settings
+    - Agent configuration
+    - Rule settings
+    - Context settings
+    - Integration settings
+    """
+    # For now, redirect to the main dashboard until we create the settings template
+    return redirect(url_for('dashboard.dashboard_home'))
+
+# ============================================================================
+# IDEAS BLUEPRINT
+# ============================================================================
+
+@ideas_bp.route('/')
+def ideas_list():
+    """Ideas list view"""
+    from ...core.database.service import DatabaseService
+    from ...core.database.methods import ideas
+    
+    db = DatabaseService('.aipm/data/aipm.db')
+    # Get project ID for ideas
+    from ...core.database.methods import projects
+    projects_list = projects.list_projects(db)
+    project_id = projects_list[0].id if projects_list else 1
+    ideas_list = ideas.list_ideas(db, project_id=project_id)
+    
+    # Calculate status distribution
+    status_distribution = {}
+    for idea in ideas_list:
+        status = idea.status
+        status_distribution[status] = status_distribution.get(status, 0) + 1
+    
+    return render_template('ideas/list.html', 
+                         ideas=ideas_list, 
+                         status_distribution=status_distribution)
+
+@ideas_bp.route('/<int:idea_id>')
+def idea_detail(idea_id: int):
+    """
+    Comprehensive idea detail view.
+    
+    Includes:
+    - Idea information
+    - Elements (when implemented)
+    - Context and relationships
+    - Voting history
+    - Transition history
+    - Related work items (if converted)
+    """
+    # Fetch idea data
+    from ...core.database.service import DatabaseService
+    from ...core.database.methods import ideas
+    
+    db = DatabaseService('.aipm/data/aipm.db')
+    # Get project ID for ideas
+    from ...core.database.methods import projects
+    projects_list = projects.list_projects(db)
+    project_id = projects_list[0].id if projects_list else 1
+    
+    idea = ideas.get_idea(db, idea_id)
+    
+    if not idea:
+        from flask import abort
+        abort(404, description=f"Idea {idea_id} not found")
+    
+    return render_template('idea_detail.html', idea=idea, idea_id=idea_id)
+
+# ============================================================================
+# WORK ITEMS BLUEPRINT
+# ============================================================================
+
+@work_items_bp.route('/')
+def work_items_list():
+    """Work items list view"""
+    return render_template('work-items/list.html')
+
+@work_items_bp.route('/<int:work_item_id>')
+def work_item_detail(work_item_id: int):
+    """
+    Comprehensive work item detail view.
+    
+    Includes:
+    - Work item information
+    - Tasks list (with links to task details)
+    - Dependencies (visual and list)
+    - Context (6W framework)
+    - Summaries (progress, decisions, etc.)
+    - Related ideas (if converted from)
+    - Agent assignments
+    - Timeline and history
+    """
+    # Fetch work item data
+    from ...core.database.service import DatabaseService
+    from ...core.database.methods import work_items as wi_methods, tasks as task_methods
+    
+    db = DatabaseService('.aipm/data/aipm.db')
+    work_item = wi_methods.get_work_item(db, work_item_id)
+    
+    if not work_item:
+        from flask import abort
+        abort(404, description=f"Work item {work_item_id} not found")
+    
+    # Get related tasks
+    tasks = task_methods.list_tasks(db, work_item_id=work_item_id)
+    
+    # Calculate task counts for the template
+    tasks_count = len(tasks)
+    completed_tasks = sum(1 for task in tasks if task.status.value == 'done')
+    in_progress_tasks = sum(1 for task in tasks if task.status.value in ['in_progress', 'active'])
+    blocked_tasks = sum(1 for task in tasks if task.status.value == 'blocked')
+    
+    return render_template('work-items/detail.html', 
+                         work_item=work_item, 
+                         work_item_id=work_item_id,
+                         tasks=tasks,
+                         tasks_count=tasks_count,
+                         completed_tasks=completed_tasks,
+                         in_progress_tasks=in_progress_tasks,
+                         blocked_tasks=blocked_tasks)
+
+@work_items_bp.route('/<int:work_item_id>/tasks/<int:task_id>')
+def work_item_task_detail(work_item_id: int, task_id: int):
+    """
+    Comprehensive task detail view.
+    
+    Includes:
+    - Task information
+    - Task dependencies (visual and list)
+    - Task context (6W framework)
+    - Task summaries (progress, decisions, etc.)
+    - Agent assignments
+    - Timeline and history
+    - Related work item context
+    """
+    # Fetch task data
+    from ...core.database.service import DatabaseService
+    from ...core.database.methods import tasks as task_methods, work_items as wi_methods
+    
+    db = DatabaseService('.aipm/data/aipm.db')
+    task = task_methods.get_task(db, task_id)
+    work_item = wi_methods.get_work_item(db, work_item_id)
+    
+    if not task:
+        from flask import abort
+        abort(404, description=f"Task {task_id} not found")
+    
+    if not work_item:
+        from flask import abort
+        abort(404, description=f"Work item {work_item_id} not found")
+    
+    # Create detail object that the template expects
+    detail = {
+        'task': task,
+        'work_item': work_item
+    }
+    
+    return render_template('tasks/detail.html', 
+                         detail=detail,
+                         work_item_id=work_item_id, 
+                         task_id=task_id)
+
+# ============================================================================
+# CONTEXT BLUEPRINT
+# ============================================================================
+
+@context_bp.route('/')
+def context_overview():
+    """
+    Comprehensive context overview.
+    
+    Includes:
+    - All context types in sections
+    - Recent documents, evidence, events, sessions
+    - Context quality metrics
+    - Confidence scores
+    - Quick access to all context types
+    """
+    # Use existing contexts list template for now
+    from ...core.database.service import DatabaseService
+    from ...core.database.methods import contexts
+    
+    db = DatabaseService('.aipm/data/aipm.db')
+    contexts_list = contexts.list_contexts(db)
+    
+    # Create view object that the template expects
+    view = {
+        'contexts': contexts_list,
+        'total_contexts': len(contexts_list),
+        'confidence_band_counts': {
+            'high': 0,
+            'medium': 0,
+            'low': 0
+        },
+        'entity_type_counts': {
+            'work_item': 0,
+            'task': 0,
+            'idea': 0,
+            'agent': 0
+        }
+    }
+    
+    return render_template('contexts/list.html', view=view)
+
+@context_bp.route('/documents')
+def context_documents_list():
+    """Context documents list"""
+    # Use existing context files list template
+    # Create a basic view object for the template
+    view = {
+        'project': {'name': 'APM (Agent Project Manager) Project'},
+        'context_files': [],
+        'total_size': 0
+    }
+    return render_template('context_files_list.html', view=view)
+
+@context_bp.route('/evidence')
+def context_evidence_list():
+    """Context evidence list"""
+    # Use existing research evidence template
+    return render_template('research/evidence.html')
+
+@context_bp.route('/events')
+def context_events_list():
+    """Context events list"""
+    # For now, redirect to context overview
+    return redirect(url_for('context.context_overview'))
+
+@context_bp.route('/sessions')
+def context_sessions_list():
+    """Context sessions list"""
+    # For now, redirect to context overview
+    return redirect(url_for('context.context_overview'))
+
+# ============================================================================
+# AGENTS BLUEPRINT
+# ============================================================================
+
+@agents_bp.route('/')
+def agents_list():
+    """Agents list view"""
+    from ...core.database.service import DatabaseService
+    from ...core.database.methods import agents
+    
+    db = DatabaseService('.aipm/data/aipm.db')
+    agents_list = agents.list_agents(db)
+    
+    # Create agents object with total count
+    agents_data = {
+        'agents': agents_list,
+        'total_agents': len(agents_list)
+    }
+    
+    return render_template('agents/list.html', agents=agents_data)
+
+@agents_bp.route('/<int:agent_id>')
+def agent_detail(agent_id: int):
+    """
+    Comprehensive agent detail view.
+    
+    Includes:
+    - Agent information
+    - Capabilities and roles
+    - Current assignments
+    - Generation tracking
+    - Performance metrics
+    - Configuration details
+    - Usage history
+    """
+    # Fetch agent data
+    from ...core.database.service import DatabaseService
+    from ...core.database.methods import agents
+    
+    db = DatabaseService('.aipm/data/aipm.db')
+    agent = agents.get_agent(db, agent_id)
+    
+    if not agent:
+        from flask import abort
+        abort(404, description=f"Agent {agent_id} not found")
+    
+    return render_template('agents/detail.html', agent=agent, agent_id=agent_id)
+
+# ============================================================================
+# RULES BLUEPRINT
+# ============================================================================
+
+@rules_bp.route('/')
+def rules_list():
+    """Rules list view"""
+    # Use existing rules list template
+    return render_template('rules_list.html')
+
+@rules_bp.route('/<int:rule_id>')
+def rule_detail(rule_id: int):
+    """
+    Comprehensive rule detail view.
+    
+    Includes:
+    - Rule information
+    - Category and enforcement level
+    - Current status and configuration
+    - Validation results
+    - Usage statistics
+    - Related rules
+    - History and changes
+    """
+    # For now, redirect to rules list until we create the detail template
+    return redirect(url_for('rules.rules_list'))
+
+# ============================================================================
+# SYSTEM BLUEPRINT
+# ============================================================================
+
+@system_bp.route('/health')
+def system_health():
+    """System health check"""
+    return jsonify({'status': 'ok', 'service': 'aipm-v2-dashboard'})
+
+@system_bp.route('/database')
+def system_database():
+    """Database metrics"""
+    return render_template('system/database.html')
+
+@system_bp.route('/context-files')
+def system_context_files():
+    """
+    Context files list with inline preview/download.
+    
+    Includes:
+    - Files list with metadata
+    - Inline preview capability
+    - Download links
+    - File management (when implemented)
+    """
+    return render_template('system/context-files.html')
+
+@system_bp.route('/logs')
+def system_logs():
+    """System logs"""
+    return render_template('system/logs.html')
+
+@system_bp.route('/metrics')
+def system_metrics():
+    """System metrics"""
+    return render_template('system/metrics.html')
+
+@system_bp.route('/settings')
+def system_settings():
+    """System settings"""
+    return render_template('system/settings.html')
+
+# ============================================================================
+# SEARCH BLUEPRINT
+# ============================================================================
+
+@search_bp.route('/')
+def search():
+    """
+    Search results with inline suggestions.
+    
+    Includes:
+    - Search results
+    - Inline suggestions
+    - Search filters
+    - Result categories
+    """
+    # Create a basic search model for the template
+    search_model = {
+        'query': request.args.get('q', ''),
+        'results': [],
+        'total': 0
+    }
+    return render_template('search/results.html', model=search_model)
+
+@search_bp.route('/history')
+def search_history():
+    """Search history"""
+    return render_template('search/history.html')
+
+# ============================================================================
+# UTILITY FUNCTIONS
+# ============================================================================
+
+def get_blueprint_info() -> Dict[str, Any]:
+    """Get information about all registered blueprints"""
+    blueprints = [
+        {'name': 'dashboard', 'prefix': '', 'routes': len(dashboard_bp.url_map.iter_rules())},
+        {'name': 'ideas', 'prefix': '/ideas', 'routes': len(ideas_bp.url_map.iter_rules())},
+        {'name': 'work_items', 'prefix': '/work-items', 'routes': len(work_items_bp.url_map.iter_rules())},
+        {'name': 'context', 'prefix': '/context', 'routes': len(context_bp.url_map.iter_rules())},
+        {'name': 'agents', 'prefix': '/agents', 'routes': len(agents_bp.url_map.iter_rules())},
+        {'name': 'rules', 'prefix': '/rules', 'routes': len(rules_bp.url_map.iter_rules())},
+        {'name': 'system', 'prefix': '/system', 'routes': len(system_bp.url_map.iter_rules())},
+        {'name': 'search', 'prefix': '/search', 'routes': len(search_bp.url_map.iter_rules())},
+    ]
+    return {'blueprints': blueprints, 'total': len(blueprints)}
+
+def validate_blueprint_structure() -> Dict[str, Any]:
+    """Validate that all blueprints follow the consolidated structure"""
+    issues = []
+    warnings = []
+    
+    # Check for consolidated design (single comprehensive views)
+    # Check for consistent naming patterns
+    # Check for logical grouping
+    # Check for system alignment
+    # Check for read-only design
+    
+    return {
+        'valid': len(issues) == 0,
+        'issues': issues,
+        'warnings': warnings
+    }
+
+def get_all_routes() -> List[Dict[str, Any]]:
+    """Get all routes from all blueprints"""
+    all_routes = []
+    
+    blueprints = [
+        dashboard_bp, ideas_bp, work_items_bp, context_bp,
+        agents_bp, rules_bp, system_bp, search_bp
+    ]
+    
+    for bp in blueprints:
+        for rule in bp.url_map.iter_rules():
+            all_routes.append({
+                'blueprint': bp.name,
+                'endpoint': rule.endpoint,
+                'methods': list(rule.methods),
+                'rule': str(rule),
+                'arguments': list(rule.arguments)
+            })
+    
+    return all_routes

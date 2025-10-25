@@ -1,0 +1,654 @@
+/**
+ * APM (Agent Project Manager) Theme System - Tailwind v4 Native
+ * Comprehensive theme system using @theme directive
+ * 
+ * Features:
+ * - Multiple theme variants (light, dark, royal, modern)
+ * - Native Tailwind v4 @theme directive
+ * - AIPM-specific design tokens
+ * - Theme switching capabilities
+ * 
+ * @version 2.0.0
+ * @author APM (Agent Project Manager)
+ */
+
+@import "tailwindcss";
+
+/* ==========================================
+   Light Theme (Default)
+   ========================================== */
+
+@theme {
+  /* Primary Brand Colors (Indigo) */
+  --color-primary-50: #eef2ff;
+  --color-primary-100: #e0e7ff;
+  --color-primary-200: #c7d2fe;
+  --color-primary-300: #a5b4fc;
+  --color-primary-400: #818cf8;
+  --color-primary-500: #6366f1; /* Base */
+  --color-primary-600: #4f46e5; /* Hover */
+  --color-primary-700: #4338ca;
+  --color-primary-800: #3730a3;
+  --color-primary-900: #312e81;
+
+  /* Secondary Accent Colors (Purple) */
+  --color-secondary-50: #f5f3ff;
+  --color-secondary-100: #ede9fe;
+  --color-secondary-200: #ddd6fe;
+  --color-secondary-300: #c4b5fd;
+  --color-secondary-400: #a78bfa;
+  --color-secondary-500: #8b5cf6; /* Base */
+  --color-secondary-600: #7c3aed; /* Hover */
+  --color-secondary-700: #6d28d9;
+  --color-secondary-800: #5b21b6;
+  --color-secondary-900: #4c1d95;
+
+  /* Accent Colors (Pink) */
+  --color-accent-50: #fdf2f8;
+  --color-accent-100: #fce7f3;
+  --color-accent-200: #fbcfe8;
+  --color-accent-300: #f9a8d4;
+  --color-accent-400: #f472b6;
+  --color-accent-500: #ec4899; /* Base */
+  --color-accent-600: #db2777; /* Hover */
+  --color-accent-700: #be185d;
+  --color-accent-800: #9d174d;
+  --color-accent-900: #831843;
+
+  /* Status Colors */
+  --color-success-50: #ecfdf5;
+  --color-success-100: #d1fae5;
+  --color-success-200: #a7f3d0;
+  --color-success-300: #6ee7b7;
+  --color-success-400: #34d399;
+  --color-success-500: #10b981;
+  --color-success-600: #059669;
+  --color-success-700: #047857;
+  --color-success-800: #065f46;
+  --color-success-900: #064e3b;
+
+  --color-warning-50: #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-200: #fde68a;
+  --color-warning-300: #fcd34d;
+  --color-warning-400: #fbbf24;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+  --color-warning-800: #92400e;
+  --color-warning-900: #78350f;
+
+  --color-error-50: #fef2f2;
+  --color-error-100: #fee2e2;
+  --color-error-200: #fecaca;
+  --color-error-300: #fca5a5;
+  --color-error-400: #f87171;
+  --color-error-500: #ef4444;
+  --color-error-600: #dc2626;
+  --color-error-700: #b91c1c;
+  --color-error-800: #991b1b;
+  --color-error-900: #7f1d1d;
+
+  --color-info-50: #eff6ff;
+  --color-info-100: #dbeafe;
+  --color-info-200: #bfdbfe;
+  --color-info-300: #93c5fd;
+  --color-info-400: #60a5fa;
+  --color-info-500: #3b82f6;
+  --color-info-600: #2563eb;
+  --color-info-700: #1d4ed8;
+  --color-info-800: #1e40af;
+  --color-info-900: #1e3a8a;
+
+  /* Neutral Colors (Gray) */
+  --color-neutral-50: #f9fafb;
+  --color-neutral-100: #f3f4f6;
+  --color-neutral-200: #e5e7eb;
+  --color-neutral-300: #d1d5db;
+  --color-neutral-400: #9ca3af;
+  --color-neutral-500: #6b7280;
+  --color-neutral-600: #4b5563;
+  --color-neutral-700: #374151;
+  --color-neutral-800: #1f2937;
+  --color-neutral-900: #111827;
+
+  /* Surface Colors */
+  --color-surface-primary: #ffffff;
+  --color-surface-secondary: #f9fafb;
+  --color-surface-tertiary: #f3f4f6;
+  --color-surface-elevated: #ffffff;
+  --color-surface-overlay: #000000;
+
+  /* Text Colors */
+  --color-text-primary: #111827;
+  --color-text-secondary: #374151;
+  --color-text-tertiary: #6b7280;
+  --color-text-inverse: #ffffff;
+  --color-text-disabled: #9ca3af;
+
+  /* Border Colors */
+  --color-border-primary: #e5e7eb;
+  --color-border-secondary: #d1d5db;
+  --color-border-focus: #6366f1;
+  --color-border-error: #ef4444;
+
+  /* AIPM-Specific: Confidence Bands */
+  --color-confidence-green: #10b981;
+  --color-confidence-yellow: #f59e0b;
+  --color-confidence-red: #ef4444;
+
+  /* AIPM-Specific: Phase Colors (6-phase workflow) */
+  --color-phase-d1: #6366f1; /* Discovery - Primary */
+  --color-phase-p1: #8b5cf6; /* Planning - Secondary */
+  --color-phase-i1: #3b82f6; /* Implementation - Info */
+  --color-phase-r1: #f59e0b; /* Review - Warning */
+  --color-phase-o1: #10b981; /* Operations - Success */
+  --color-phase-e1: #ec4899; /* Evolution - Accent */
+
+  /* Typography */
+  --font-family-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-family-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+
+  /* Spacing */
+  --spacing-18: 4.5rem;
+  --spacing-72: 18rem;
+  --spacing-84: 21rem;
+  --spacing-96: 24rem;
+
+  /* Border Radius */
+  --radius-4xl: 2rem;
+
+  /* Shadows */
+  --shadow-brand: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-brand-lg: 0 10px 20px -5px rgba(37, 99, 235, 0.2);
+
+  /* Z-Index */
+  --z-60: 60;
+  --z-70: 70;
+  --z-80: 80;
+  --z-90: 90;
+  --z-100: 100;
+}
+
+/* ==========================================
+   Dark Theme
+   ========================================== */
+
+.theme-dark {
+  /* Primary Colors (adjusted for dark mode) */
+  --color-primary-50: #312e81;
+  --color-primary-100: #3730a3;
+  --color-primary-200: #4338ca;
+  --color-primary-300: #4f46e5;
+  --color-primary-400: #6366f1;
+  --color-primary-500: #818cf8;
+  --color-primary-600: #a5b4fc;
+  --color-primary-700: #c7d2fe;
+  --color-primary-800: #e0e7ff;
+  --color-primary-900: #eef2ff;
+
+  /* Secondary Colors */
+  --color-secondary-50: #4c1d95;
+  --color-secondary-100: #5b21b6;
+  --color-secondary-200: #6d28d9;
+  --color-secondary-300: #7c3aed;
+  --color-secondary-400: #8b5cf6;
+  --color-secondary-500: #a78bfa;
+  --color-secondary-600: #c4b5fd;
+  --color-secondary-700: #ddd6fe;
+  --color-secondary-800: #ede9fe;
+  --color-secondary-900: #f5f3ff;
+
+  /* Accent Colors */
+  --color-accent-50: #831843;
+  --color-accent-100: #9d174d;
+  --color-accent-200: #be185d;
+  --color-accent-300: #db2777;
+  --color-accent-400: #ec4899;
+  --color-accent-500: #f472b6;
+  --color-accent-600: #f9a8d4;
+  --color-accent-700: #fbcfe8;
+  --color-accent-800: #fce7f3;
+  --color-accent-900: #fdf2f8;
+
+  /* Success Colors */
+  --color-success-50: #064e3b;
+  --color-success-100: #065f46;
+  --color-success-200: #047857;
+  --color-success-300: #059669;
+  --color-success-400: #10b981;
+  --color-success-500: #34d399;
+  --color-success-600: #6ee7b7;
+  --color-success-700: #a7f3d0;
+  --color-success-800: #d1fae5;
+  --color-success-900: #ecfdf5;
+
+  /* Warning Colors */
+  --color-warning-50: #78350f;
+  --color-warning-100: #92400e;
+  --color-warning-200: #b45309;
+  --color-warning-300: #d97706;
+  --color-warning-400: #f59e0b;
+  --color-warning-500: #fbbf24;
+  --color-warning-600: #fcd34d;
+  --color-warning-700: #fde68a;
+  --color-warning-800: #fef3c7;
+  --color-warning-900: #fffbeb;
+
+  /* Error Colors */
+  --color-error-50: #7f1d1d;
+  --color-error-100: #991b1b;
+  --color-error-200: #b91c1c;
+  --color-error-300: #dc2626;
+  --color-error-400: #ef4444;
+  --color-error-500: #f87171;
+  --color-error-600: #fca5a5;
+  --color-error-700: #fecaca;
+  --color-error-800: #fee2e2;
+  --color-error-900: #fef2f2;
+
+  /* Info Colors */
+  --color-info-50: #1e3a8a;
+  --color-info-100: #1e40af;
+  --color-info-200: #1d4ed8;
+  --color-info-300: #2563eb;
+  --color-info-400: #3b82f6;
+  --color-info-500: #60a5fa;
+  --color-info-600: #93c5fd;
+  --color-info-700: #bfdbfe;
+  --color-info-800: #dbeafe;
+  --color-info-900: #eff6ff;
+
+  /* Neutral Colors (inverted for dark mode) */
+  --color-neutral-50: #111827;
+  --color-neutral-100: #1f2937;
+  --color-neutral-200: #374151;
+  --color-neutral-300: #4b5563;
+  --color-neutral-400: #6b7280;
+  --color-neutral-500: #9ca3af;
+  --color-neutral-600: #d1d5db;
+  --color-neutral-700: #e5e7eb;
+  --color-neutral-800: #f3f4f6;
+  --color-neutral-900: #f9fafb;
+
+  /* Surface Colors */
+  --color-surface-primary: #111827;
+  --color-surface-secondary: #1f2937;
+  --color-surface-tertiary: #374151;
+  --color-surface-elevated: #1f2937;
+  --color-surface-overlay: #000000;
+
+  /* Text Colors */
+  --color-text-primary: #f9fafb;
+  --color-text-secondary: #d1d5db;
+  --color-text-tertiary: #9ca3af;
+  --color-text-inverse: #111827;
+  --color-text-disabled: #6b7280;
+
+  /* Border Colors */
+  --color-border-primary: #374151;
+  --color-border-secondary: #4b5563;
+  --color-border-focus: #818cf8;
+  --color-border-error: #f87171;
+
+  /* AIPM-Specific Colors (adjusted for dark mode) */
+  --color-confidence-green: #34d399;
+  --color-confidence-yellow: #fbbf24;
+  --color-confidence-red: #f87171;
+
+  /* Phase Colors (adjusted for dark mode) */
+  --color-phase-d1: #818cf8;
+  --color-phase-p1: #a78bfa;
+  --color-phase-i1: #60a5fa;
+  --color-phase-r1: #fbbf24;
+  --color-phase-o1: #34d399;
+  --color-phase-e1: #f472b6;
+}
+
+/* ==========================================
+   Royal Theme
+   ========================================== */
+
+.theme-royal {
+  /* Royal Purple Primary */
+  --color-primary-50: #f5f3ff;
+  --color-primary-100: #ede9fe;
+  --color-primary-200: #ddd6fe;
+  --color-primary-300: #c4b5fd;
+  --color-primary-400: #a78bfa;
+  --color-primary-500: #7c3aed;
+  --color-primary-600: #6d28d9;
+  --color-primary-700: #5b21b6;
+  --color-primary-800: #4c1d95;
+  --color-primary-900: #3b0764;
+
+  /* Gold Secondary */
+  --color-secondary-50: #fffbeb;
+  --color-secondary-100: #fef3c7;
+  --color-secondary-200: #fde68a;
+  --color-secondary-300: #fcd34d;
+  --color-secondary-400: #fbbf24;
+  --color-secondary-500: #f59e0b;
+  --color-secondary-600: #d97706;
+  --color-secondary-700: #b45309;
+  --color-secondary-800: #92400e;
+  --color-secondary-900: #78350f;
+
+  /* Accent (Deep Purple) */
+  --color-accent-50: #faf5ff;
+  --color-accent-100: #f3e8ff;
+  --color-accent-200: #e9d5ff;
+  --color-accent-300: #d8b4fe;
+  --color-accent-400: #c4b5fd;
+  --color-accent-500: #9333ea;
+  --color-accent-600: #7e22ce;
+  --color-accent-700: #6d28d9;
+  --color-accent-800: #5b21b6;
+  --color-accent-900: #4c1d95;
+
+  /* Success (Emerald) */
+  --color-success-50: #ecfdf5;
+  --color-success-100: #d1fae5;
+  --color-success-200: #a7f3d0;
+  --color-success-300: #6ee7b7;
+  --color-success-400: #34d399;
+  --color-success-500: #10b981;
+  --color-success-600: #059669;
+  --color-success-700: #047857;
+  --color-success-800: #065f46;
+  --color-success-900: #064e3b;
+
+  /* Warning (Amber) */
+  --color-warning-50: #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-200: #fde68a;
+  --color-warning-300: #fcd34d;
+  --color-warning-400: #fbbf24;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+  --color-warning-800: #92400e;
+  --color-warning-900: #78350f;
+
+  /* Error (Rose) */
+  --color-error-50: #fff1f2;
+  --color-error-100: #ffe4e6;
+  --color-error-200: #fecdd3;
+  --color-error-300: #fda4af;
+  --color-error-400: #fb7185;
+  --color-error-500: #f43f5e;
+  --color-error-600: #e11d48;
+  --color-error-700: #be123c;
+  --color-error-800: #9f1239;
+  --color-error-900: #881337;
+
+  /* Info (Sky) */
+  --color-info-50: #f0f9ff;
+  --color-info-100: #e0f2fe;
+  --color-info-200: #bae6fd;
+  --color-info-300: #7dd3fc;
+  --color-info-400: #38bdf8;
+  --color-info-500: #0ea5e9;
+  --color-info-600: #0284c7;
+  --color-info-700: #0369a1;
+  --color-info-800: #075985;
+  --color-info-900: #0c4a6e;
+
+  /* Neutral (Slate) */
+  --color-neutral-50: #f8fafc;
+  --color-neutral-100: #f1f5f9;
+  --color-neutral-200: #e2e8f0;
+  --color-neutral-300: #cbd5e1;
+  --color-neutral-400: #94a3b8;
+  --color-neutral-500: #64748b;
+  --color-neutral-600: #475569;
+  --color-neutral-700: #334155;
+  --color-neutral-800: #1e293b;
+  --color-neutral-900: #0f172a;
+
+  /* Surface Colors */
+  --color-surface-primary: #ffffff;
+  --color-surface-secondary: #f8fafc;
+  --color-surface-tertiary: #f1f5f9;
+  --color-surface-elevated: #ffffff;
+  --color-surface-overlay: #000000;
+
+  /* Text Colors */
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-tertiary: #94a3b8;
+  --color-text-inverse: #ffffff;
+  --color-text-disabled: #94a3b8;
+
+  /* Border Colors */
+  --color-border-primary: #e2e8f0;
+  --color-border-secondary: #cbd5e1;
+  --color-border-focus: #7c3aed;
+  --color-border-error: #f43f5e;
+
+  /* AIPM-Specific Colors */
+  --color-confidence-green: #10b981;
+  --color-confidence-yellow: #f59e0b;
+  --color-confidence-red: #f43f5e;
+
+  /* Phase Colors (Royal variants) */
+  --color-phase-d1: #7c3aed;
+  --color-phase-p1: #9333ea;
+  --color-phase-i1: #0ea5e9;
+  --color-phase-r1: #f59e0b;
+  --color-phase-o1: #10b981;
+  --color-phase-e1: #f43f5e;
+}
+
+/* ==========================================
+   Modern Theme
+   ========================================== */
+
+.theme-modern {
+  /* Modern Blue Primary */
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
+
+  /* Modern Teal Secondary */
+  --color-secondary-50: #f0fdfa;
+  --color-secondary-100: #ccfbf1;
+  --color-secondary-200: #99f6e4;
+  --color-secondary-300: #5eead4;
+  --color-secondary-400: #2dd4bf;
+  --color-secondary-500: #14b8a6;
+  --color-secondary-600: #0d9488;
+  --color-secondary-700: #0f766e;
+  --color-secondary-800: #115e59;
+  --color-secondary-900: #134e4a;
+
+  /* Accent (Violet) */
+  --color-accent-50: #f5f3ff;
+  --color-accent-100: #ede9fe;
+  --color-accent-200: #ddd6fe;
+  --color-accent-300: #c4b5fd;
+  --color-accent-400: #a78bfa;
+  --color-accent-500: #8b5cf6;
+  --color-accent-600: #7c3aed;
+  --color-accent-700: #6d28d9;
+  --color-accent-800: #5b21b6;
+  --color-accent-900: #4c1d95;
+
+  /* Success (Green) */
+  --color-success-50: #f0fdf4;
+  --color-success-100: #dcfce7;
+  --color-success-200: #bbf7d0;
+  --color-success-300: #86efac;
+  --color-success-400: #4ade80;
+  --color-success-500: #22c55e;
+  --color-success-600: #16a34a;
+  --color-success-700: #15803d;
+  --color-success-800: #166534;
+  --color-success-900: #14532d;
+
+  /* Warning (Orange) */
+  --color-warning-50: #fff7ed;
+  --color-warning-100: #ffedd5;
+  --color-warning-200: #fed7aa;
+  --color-warning-300: #fdba74;
+  --color-warning-400: #fb923c;
+  --color-warning-500: #f97316;
+  --color-warning-600: #ea580c;
+  --color-warning-700: #c2410c;
+  --color-warning-800: #9a3412;
+  --color-warning-900: #7c2d12;
+
+  /* Error (Red) */
+  --color-error-50: #fef2f2;
+  --color-error-100: #fee2e2;
+  --color-error-200: #fecaca;
+  --color-error-300: #fca5a5;
+  --color-error-400: #f87171;
+  --color-error-500: #ef4444;
+  --color-error-600: #dc2626;
+  --color-error-700: #b91c1c;
+  --color-error-800: #991b1b;
+  --color-error-900: #7f1d1d;
+
+  /* Info (Cyan) */
+  --color-info-50: #ecfeff;
+  --color-info-100: #cffafe;
+  --color-info-200: #a5f3fc;
+  --color-info-300: #67e8f9;
+  --color-info-400: #22d3ee;
+  --color-info-500: #06b6d4;
+  --color-info-600: #0891b2;
+  --color-info-700: #0e7490;
+  --color-info-800: #155e75;
+  --color-info-900: #164e63;
+
+  /* Neutral (Gray) */
+  --color-neutral-50: #f9fafb;
+  --color-neutral-100: #f3f4f6;
+  --color-neutral-200: #e5e7eb;
+  --color-neutral-300: #d1d5db;
+  --color-neutral-400: #9ca3af;
+  --color-neutral-500: #6b7280;
+  --color-neutral-600: #4b5563;
+  --color-neutral-700: #374151;
+  --color-neutral-800: #1f2937;
+  --color-neutral-900: #111827;
+
+  /* Surface Colors */
+  --color-surface-primary: #ffffff;
+  --color-surface-secondary: #f9fafb;
+  --color-surface-tertiary: #f3f4f6;
+  --color-surface-elevated: #ffffff;
+  --color-surface-overlay: #000000;
+
+  /* Text Colors */
+  --color-text-primary: #111827;
+  --color-text-secondary: #4b5563;
+  --color-text-tertiary: #9ca3af;
+  --color-text-inverse: #ffffff;
+  --color-text-disabled: #9ca3af;
+
+  /* Border Colors */
+  --color-border-primary: #e5e7eb;
+  --color-border-secondary: #d1d5db;
+  --color-border-focus: #3b82f6;
+  --color-border-error: #ef4444;
+
+  /* AIPM-Specific Colors */
+  --color-confidence-green: #22c55e;
+  --color-confidence-yellow: #f97316;
+  --color-confidence-red: #ef4444;
+
+  /* Phase Colors (Modern variants) */
+  --color-phase-d1: #3b82f6;
+  --color-phase-p1: #14b8a6;
+  --color-phase-i1: #8b5cf6;
+  --color-phase-r1: #f97316;
+  --color-phase-o1: #22c55e;
+  --color-phase-e1: #06b6d4;
+}
+
+/* ==========================================
+   Utility Classes
+   ========================================== */
+
+/* Theme-aware utility classes */
+.bg-surface-primary { background-color: var(--color-surface-primary); }
+.bg-surface-secondary { background-color: var(--color-surface-secondary); }
+.bg-surface-tertiary { background-color: var(--color-surface-tertiary); }
+.bg-surface-elevated { background-color: var(--color-surface-elevated); }
+
+.text-primary { color: var(--color-text-primary); }
+.text-secondary { color: var(--color-text-secondary); }
+.text-tertiary { color: var(--color-text-tertiary); }
+.text-inverse { color: var(--color-text-inverse); }
+.text-disabled { color: var(--color-text-disabled); }
+
+.border-primary { border-color: var(--color-border-primary); }
+.border-secondary { border-color: var(--color-border-secondary); }
+.border-focus { border-color: var(--color-border-focus); }
+.border-error { border-color: var(--color-border-error); }
+
+/* AIPM-specific utility classes */
+.bg-phase-d1 { background-color: var(--color-phase-d1); }
+.bg-phase-p1 { background-color: var(--color-phase-p1); }
+.bg-phase-i1 { background-color: var(--color-phase-i1); }
+.bg-phase-r1 { background-color: var(--color-phase-r1); }
+.bg-phase-o1 { background-color: var(--color-phase-o1); }
+.bg-phase-e1 { background-color: var(--color-phase-e1); }
+
+.text-phase-d1 { color: var(--color-phase-d1); }
+.text-phase-p1 { color: var(--color-phase-p1); }
+.text-phase-i1 { color: var(--color-phase-i1); }
+.text-phase-r1 { color: var(--color-phase-r1); }
+.text-phase-o1 { color: var(--color-phase-o1); }
+.text-phase-e1 { color: var(--color-phase-e1); }
+
+.bg-confidence-green { background-color: var(--color-confidence-green); }
+.bg-confidence-yellow { background-color: var(--color-confidence-yellow); }
+.bg-confidence-red { background-color: var(--color-confidence-red); }
+
+.text-confidence-green { color: var(--color-confidence-green); }
+.text-confidence-yellow { color: var(--color-confidence-yellow); }
+.text-confidence-red { color: var(--color-confidence-red); }
+
+/* Smooth transitions for theme switching */
+* {
+  transition: background-color 200ms ease, 
+              border-color 200ms ease, 
+              color 200ms ease;
+}
+
+/* ==========================================
+   Accessibility
+   ========================================== */
+
+/* Focus styles */
+*:focus {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --color-border-primary: #000000;
+    --color-text-primary: #000000;
+    --color-text-secondary: #000000;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

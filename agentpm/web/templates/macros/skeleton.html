@@ -1,0 +1,310 @@
+{#
+  Skeleton Loader Macros
+
+  APM (Agent Project Manager) Design System Component
+  Version: 1.0.0
+
+  Description:
+    Skeleton loading states for better perceived performance during data fetching.
+    Uses Tailwind's animate-pulse utility for smooth animation.
+
+  Usage:
+    {% from 'macros/skeleton.html' import skeleton_card, skeleton_table, skeleton_list %}
+
+  Features:
+    - Smooth pulse animation
+    - Multiple component variants (card, table, list)
+    - Configurable sizes and counts
+    - Maintains layout structure during load
+    - WCAG 2.1 AA compliant
+
+  Design System Reference:
+    - docs/architecture/web/component-snippets.md (Lines 822-829)
+    - docs/architecture/web/design-system.md (Loading States section)
+#}
+
+{#
+  Skeleton Card Loader
+
+  Displays a placeholder card with skeleton elements while content loads.
+
+  Usage:
+    {{ skeleton_card() }}
+    {{ skeleton_card(count=3, show_avatar=False) }}
+
+  Parameters:
+    - count (int): Number of skeleton cards to render (default: 1)
+    - show_avatar (bool): Show avatar placeholder (default: True)
+    - class (str): Additional CSS classes
+#}
+{% macro skeleton_card(count=1, show_avatar=True, class='') %}
+{% for i in range(count) %}
+<div class="card p-6 {{ class }} {% if not loop.first %}mt-4{% endif %}">
+  <div class="animate-pulse">
+    {# Header with optional avatar #}
+    <div class="flex items-start space-x-4 mb-4">
+      {% if show_avatar %}
+      <div class="w-12 h-12 bg-gray-200 rounded-full flex-shrink-0"></div>
+      {% endif %}
+      <div class="flex-1 space-y-3">
+        <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+        <div class="h-3 bg-gray-200 rounded w-1/2"></div>
+      </div>
+    </div>
+
+    {# Content lines #}
+    <div class="space-y-3">
+      <div class="h-3 bg-gray-200 rounded"></div>
+      <div class="h-3 bg-gray-200 rounded"></div>
+      <div class="h-3 bg-gray-200 rounded w-5/6"></div>
+    </div>
+
+    {# Footer actions #}
+    <div class="flex items-center gap-3 mt-6">
+      <div class="h-8 bg-gray-200 rounded w-24"></div>
+      <div class="h-8 bg-gray-200 rounded w-20"></div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endmacro %}
+
+
+{#
+  Skeleton Table Loader
+
+  Displays a placeholder table with skeleton rows.
+
+  Usage:
+    {{ skeleton_table() }}
+    {{ skeleton_table(rows=10, columns=5) }}
+
+  Parameters:
+    - rows (int): Number of skeleton rows (default: 5)
+    - columns (int): Number of columns (default: 4)
+    - show_header (bool): Show table header (default: True)
+    - class (str): Additional CSS classes
+#}
+{% macro skeleton_table(rows=5, columns=4, show_header=True, class='') %}
+<div class="overflow-x-auto {{ class }}">
+  <table class="table">
+    {% if show_header %}
+    <thead>
+      <tr>
+        {% for col in range(columns) %}
+        <th>
+          <div class="animate-pulse">
+            <div class="h-4 bg-gray-200 rounded w-full"></div>
+          </div>
+        </th>
+        {% endfor %}
+      </tr>
+    </thead>
+    {% endif %}
+    <tbody>
+      {% for row in range(rows) %}
+      <tr>
+        {% for col in range(columns) %}
+        <td>
+          <div class="animate-pulse">
+            <div class="h-4 bg-gray-200 rounded {% if col == 0 %}w-3/4{% elif col == columns - 1 %}w-1/2{% else %}w-full{% endif %}"></div>
+          </div>
+        </td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endmacro %}
+
+
+{#
+  Skeleton List Loader
+
+  Displays a placeholder list with skeleton items.
+
+  Usage:
+    {{ skeleton_list() }}
+    {{ skeleton_list(items=8, show_icon=True) }}
+
+  Parameters:
+    - items (int): Number of skeleton list items (default: 5)
+    - show_icon (bool): Show icon placeholder (default: True)
+    - show_meta (bool): Show metadata line (default: True)
+    - class (str): Additional CSS classes
+#}
+{% macro skeleton_list(items=5, show_icon=True, show_meta=True, class='') %}
+<div class="space-y-4 {{ class }}">
+  {% for i in range(items) %}
+  <div class="flex items-start space-x-4 animate-pulse">
+    {# Icon/Avatar placeholder #}
+    {% if show_icon %}
+    <div class="w-10 h-10 bg-gray-200 rounded flex-shrink-0"></div>
+    {% endif %}
+
+    {# Content #}
+    <div class="flex-1 space-y-2">
+      <div class="h-4 bg-gray-200 rounded w-2/3"></div>
+      {% if show_meta %}
+      <div class="h-3 bg-gray-200 rounded w-1/3"></div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endmacro %}
+
+
+{#
+  Skeleton Text Block
+
+  Simple text block skeleton for paragraphs and content areas.
+
+  Usage:
+    {{ skeleton_text() }}
+    {{ skeleton_text(lines=5, vary_width=True) }}
+
+  Parameters:
+    - lines (int): Number of skeleton text lines (default: 3)
+    - vary_width (bool): Vary line widths for natural look (default: True)
+    - class (str): Additional CSS classes
+#}
+{% macro skeleton_text(lines=3, vary_width=True, class='') %}
+<div class="animate-pulse space-y-3 {{ class }}">
+  {% for i in range(lines) %}
+  <div class="h-4 bg-gray-200 rounded {% if vary_width %}{% if loop.last %}w-5/6{% elif loop.index == lines - 1 %}w-4/5{% else %}w-full{% endif %}{% else %}w-full{% endif %}"></div>
+  {% endfor %}
+</div>
+{% endmacro %}
+
+
+{#
+  Skeleton Metric Card
+
+  Displays a placeholder for metric/stat cards commonly used in dashboards.
+
+  Usage:
+    {{ skeleton_metric() }}
+    {{ skeleton_metric(count=4) }}
+
+  Parameters:
+    - count (int): Number of skeleton metric cards (default: 1)
+    - class (str): Additional CSS classes for container
+#}
+{% macro skeleton_metric(count=1, class='') %}
+{% if count > 1 %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-{{ [count, 4]|min }} gap-6 {{ class }}">
+  {% for i in range(count) %}
+  <div class="card p-6">
+    <div class="animate-pulse space-y-4">
+      <div class="h-3 bg-gray-200 rounded w-1/2"></div>
+      <div class="h-8 bg-gray-200 rounded w-3/4"></div>
+      <div class="h-2 bg-gray-200 rounded w-full"></div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card p-6 {{ class }}">
+  <div class="animate-pulse space-y-4">
+    <div class="h-3 bg-gray-200 rounded w-1/2"></div>
+    <div class="h-8 bg-gray-200 rounded w-3/4"></div>
+    <div class="h-2 bg-gray-200 rounded w-full"></div>
+  </div>
+</div>
+{% endif %}
+{% endmacro %}
+
+
+{#
+  Skeleton Form
+
+  Displays a placeholder for form fields during load.
+
+  Usage:
+    {{ skeleton_form() }}
+    {{ skeleton_form(fields=5, show_submit=True) }}
+
+  Parameters:
+    - fields (int): Number of form fields (default: 3)
+    - show_submit (bool): Show submit button placeholder (default: True)
+    - class (str): Additional CSS classes
+#}
+{% macro skeleton_form(fields=3, show_submit=True, class='') %}
+<div class="space-y-6 {{ class }}">
+  {% for i in range(fields) %}
+  <div class="animate-pulse space-y-2">
+    <div class="h-4 bg-gray-200 rounded w-1/4"></div>
+    <div class="h-10 bg-gray-200 rounded w-full"></div>
+  </div>
+  {% endfor %}
+
+  {% if show_submit %}
+  <div class="animate-pulse pt-2">
+    <div class="h-10 bg-gray-200 rounded w-32"></div>
+  </div>
+  {% endif %}
+</div>
+{% endmacro %}
+
+
+{#
+  Examples:
+
+  1. Loading work items list:
+     {% if loading %}
+       {{ skeleton_list(items=10, show_icon=True) }}
+     {% else %}
+       <!-- Actual work items -->
+     {% endif %}
+
+  2. Loading dashboard metrics:
+     {% if loading %}
+       {{ skeleton_metric(count=4) }}
+     {% else %}
+       <!-- Actual metrics -->
+     {% endif %}
+
+  3. Loading table data:
+     {% if loading %}
+       {{ skeleton_table(rows=15, columns=5) }}
+     {% else %}
+       <!-- Actual table -->
+     {% endif %}
+
+  4. Loading card content:
+     {% if loading %}
+       {{ skeleton_card(count=3, show_avatar=True) }}
+     {% else %}
+       <!-- Actual cards -->
+     {% endif %}
+
+  5. Loading form:
+     {% if loading %}
+       {{ skeleton_form(fields=6, show_submit=True) }}
+     {% else %}
+       <!-- Actual form -->
+     {% endif %}
+
+  Accessibility Notes:
+  - Skeleton loaders are visual hints only
+  - Use aria-busy="true" on container during load
+  - Announce "Loading content" to screen readers
+  - Remove aria-busy when content loads
+
+  Example with accessibility:
+  <div aria-busy="true" aria-label="Loading work items">
+    {{ skeleton_list(items=5) }}
+  </div>
+
+  Color Palette:
+  - Background: bg-gray-200 (light gray for contrast)
+  - Animation: Tailwind's animate-pulse (1.5s ease-in-out)
+  - Works on both white and gray-50 backgrounds
+
+  Performance:
+  - Pure CSS animation (no JavaScript)
+  - GPU-accelerated via Tailwind
+  - Minimal DOM impact (simple divs)
+#}

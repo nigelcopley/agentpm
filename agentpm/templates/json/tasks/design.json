@@ -1,0 +1,30 @@
+{
+  "design_approach": "[TODO: Summarize architecture decisions, data flow, and component responsibilities]",
+  "architecture_diagram": "[TODO: Path to architecture diagram (e.g., docs/diagrams/component-design.png)]",
+  "api_contracts": [
+    {
+      "name": "[TODO: API endpoint name]",
+      "status": "draft",
+      "link": "[TODO: Link to API contract documentation]"
+    }
+  ],
+  "ambiguities": [
+    {
+      "question": "[TODO: Document unresolved design questions]",
+      "owner": "[TODO: Who is responsible for resolving this]",
+      "status": "open",
+      "resolution": null
+    }
+  ],
+  "decision_log": [
+    {
+      "decision": "[TODO: Key design decisions made]",
+      "rationale": "[TODO: Why this decision was made]",
+      "date": "[TODO: Decision date]"
+    }
+  ],
+  "constraints": [
+    "[TODO: List technical, business, or performance constraints]"
+  ],
+  "notes": "[TODO: Document open questions and attach design review outcomes as they are resolved]"
+}

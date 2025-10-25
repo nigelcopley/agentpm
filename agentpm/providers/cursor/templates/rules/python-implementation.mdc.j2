@@ -1,0 +1,457 @@
+---
+globs:
+  - "**/*.py"
+  - "!tests/**/*.py"
+description: Python implementation patterns for APM (Agent Project Manager)
+priority: 80
+---
+
+# Python Implementation Standards
+
+## 1. Three-Layer Architecture (MANDATORY)
+
+APM (Agent Project Manager) uses a strict three-layer pattern for all data operations:
+
+### Layer 1: Models (Pydantic)
+
+**Purpose**: Define data structures with validation
+**Location**: `agentpm/models/`
+
+**Pattern**:
+```python
+from pydantic import BaseModel, Field
+from datetime import datetime
+from typing import Optional
+
+class WorkItem(BaseModel):
+    """Work item domain model"""
+    id: Optional[int] = None
+    name: str = Field(..., min_length=1, max_length=200)
+    status: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        frozen = False
+        validate_assignment = True
+```
+
+**Query database rules**:
+```bash
+apm rules list --category=python_patterns
+```
+
+### Layer 2: Adapters
+
+**Purpose**: Convert between Pydantic models and database rows
+**Location**: `agentpm/{domain}/adapters/`
+
+**Pattern**:
+```python
+from agentpm.models.work_item import WorkItem
+from sqlite3 import Row
+from typing import Dict, Any
+
+class WorkItemAdapter:
+    """Convert WorkItem between model and database representations"""
+
+    @staticmethod
+    def to_dict(work_item: WorkItem) -> Dict[str, Any]:
+        """Convert Pydantic model to database dict"""
+        return {
+            "id": work_item.id,
+            "name": work_item.name,
+            "status": work_item.status,
+            "created_at": work_item.created_at.isoformat()
+        }
+
+    @staticmethod
+    def from_row(row: Row) -> WorkItem:
+        """Convert database row to Pydantic model"""
+        return WorkItem(
+            id=row["id"],
+            name=row["name"],
+            status=row["status"],
+            created_at=datetime.fromisoformat(row["created_at"])
+        )
+```
+
+### Layer 3: Methods
+
+**Purpose**: Business logic and database operations
+**Location**: `agentpm/{domain}/methods/`
+
+**Pattern**:
+```python
+from agentpm.models.work_item import WorkItem
+from agentpm.work_items.adapters.work_item_adapter import WorkItemAdapter
+from agentpm.core.database.service import DatabaseService
+from typing import List, Optional
+
+class WorkItemMethods:
+    """Business logic for work items"""
+
+    def __init__(self, db: DatabaseService):
+        self.db = db
+
+    def get_work_item(self, work_item_id: int) -> Optional[WorkItem]:
+        """Get work item by ID"""
+        row = self.db.fetch_one(
+            "SELECT * FROM work_items WHERE id = ?",
+            (work_item_id,)
+        )
+        if row:
+            return WorkItemAdapter.from_row(row)
+        return None
+
+    def list_work_items(self, status: Optional[str] = None) -> List[WorkItem]:
+        """List work items with optional status filter"""
+        if status:
+            rows = self.db.fetch_all(
+                "SELECT * FROM work_items WHERE status = ?",
+                (status,)
+            )
+        else:
+            rows = self.db.fetch_all("SELECT * FROM work_items")
+
+        return [WorkItemAdapter.from_row(row) for row in rows]
+```
+
+---
+
+## 2. Type Safety
+
+### Type Hints (REQUIRED)
+
+**All functions must have type hints:**
+
+```python
+# ✅ CORRECT
+def calculate_confidence(
+    evidence_count: int,
+    source_quality: float
+) -> float:
+    """Calculate confidence score"""
+    return min(1.0, (evidence_count * source_quality) / 10)
+
+# ❌ INCORRECT
+def calculate_confidence(evidence_count, source_quality):
+    return min(1.0, (evidence_count * source_quality) / 10)
+```
+
+### Pydantic Validation
+
+**Use Pydantic models for data validation:**
+
+```python
+from pydantic import BaseModel, Field, validator
+
+class TaskCreate(BaseModel):
+    """Task creation request"""
+    name: str = Field(..., min_length=1, max_length=200)
+    effort_hours: float = Field(..., gt=0, le=4.0)
+    type: str = Field(..., pattern="^(IMPLEMENTATION|TESTING|DOCUMENTATION)$")
+
+    @validator("effort_hours")
+    def validate_time_box(cls, v, values):
+        """Enforce time-boxing rules"""
+        task_type = values.get("type")
+        if task_type == "IMPLEMENTATION" and v > 4.0:
+            raise ValueError("IMPLEMENTATION tasks must be ≤ 4 hours")
+        return v
+```
+
+### No Dict[str, Any] in Public APIs
+
+```python
+# ✅ CORRECT: Typed model
+def create_work_item(work_item: WorkItemCreate) -> WorkItem:
+    """Create work item with validated data"""
+    pass
+
+# ❌ INCORRECT: Untyped dict
+def create_work_item(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Create work item - no type safety"""
+    pass
+```
+
+---
+
+## 3. Code Quality
+
+### Black Formatting
+
+**Line length: 100 characters**
+
+```bash
+# Format code
+black --line-length 100 agentpm/
+
+# Check formatting
+black --check --line-length 100 agentpm/
+```
+
+### Ruff Linting
+
+**Strict mode with project-specific rules**
+
+```bash
+# Run linter
+ruff check agentpm/
+
+# Fix auto-fixable issues
+ruff check --fix agentpm/
+```
+
+### Import Organization
+
+**Use isort for consistent imports:**
+
+```python
+# Standard library
+from datetime import datetime
+from typing import Optional, List
+
+# Third-party
+from pydantic import BaseModel
+import click
+
+# Local application
+from agentpm.models.work_item import WorkItem
+from agentpm.core.database.service import DatabaseService
+```
+
+### Docstrings
+
+**All public functions require docstrings:**
+
+```python
+def calculate_6w_confidence(context: Dict[str, Any]) -> float:
+    """
+    Calculate 6W context confidence score.
+
+    Args:
+        context: Dictionary with WHO, WHAT, WHEN, WHERE, WHY, HOW keys
+
+    Returns:
+        Confidence score between 0.0 and 1.0
+
+    Raises:
+        ValueError: If context is missing required keys
+    """
+    required_keys = ["WHO", "WHAT", "WHEN", "WHERE", "WHY", "HOW"]
+    if not all(k in context for k in required_keys):
+        raise ValueError(f"Context must contain: {required_keys}")
+
+    # Calculate confidence based on completeness
+    completeness = sum(1 for k in required_keys if context[k]) / len(required_keys)
+    return round(completeness, 2)
+```
+
+---
+
+## 4. Error Handling
+
+### Custom Exceptions
+
+**Define domain-specific exceptions:**
+
+```python
+# agentpm/exceptions.py
+
+class AIpmException(Exception):
+    """Base exception for APM (Agent Project Manager)"""
+    pass
+
+class ValidationError(AIpmException):
+    """Validation failed"""
+    pass
+
+class GateValidationError(AIpmException):
+    """Quality gate validation failed"""
+    def __init__(self, phase: str, missing_criteria: List[str]):
+        self.phase = phase
+        self.missing_criteria = missing_criteria
+        super().__init__(
+            f"{phase} gate validation failed. Missing: {', '.join(missing_criteria)}"
+        )
+
+class WorkItemNotFoundError(AIpmException):
+    """Work item not found"""
+    pass
+```
+
+### ServiceResult Pattern
+
+**Use ServiceResult for operations that can fail:**
+
+```python
+from typing import Generic, TypeVar, Optional
+from pydantic import BaseModel
+
+T = TypeVar('T')
+
+class ServiceResult(BaseModel, Generic[T]):
+    """Result wrapper for service operations"""
+    success: bool
+    data: Optional[T] = None
+    error: Optional[str] = None
+
+    class Config:
+        arbitrary_types_allowed = True
+
+# Usage
+def create_work_item(name: str) -> ServiceResult[WorkItem]:
+    """Create work item with error handling"""
+    try:
+        # Validate input
+        if not name or len(name) < 1:
+            return ServiceResult(
+                success=False,
+                error="Name must be at least 1 character"
+            )
+
+        # Create work item
+        work_item = WorkItem(name=name, status="draft")
+
+        return ServiceResult(
+            success=True,
+            data=work_item
+        )
+    except Exception as e:
+        return ServiceResult(
+            success=False,
+            error=f"Failed to create work item: {str(e)}"
+        )
+```
+
+### Actionable Error Messages
+
+```python
+# ✅ CORRECT: Actionable error
+raise ValueError(
+    "Task effort (5.0 hours) exceeds limit for IMPLEMENTATION tasks (4.0 hours). "
+    "Break task into smaller units or change type to DESIGN."
+)
+
+# ❌ INCORRECT: Vague error
+raise ValueError("Invalid effort")
+```
+
+---
+
+## 5. DatabaseService Pattern
+
+### Always Use DatabaseService
+
+**DO NOT use raw SQLite connections:**
+
+```python
+# ✅ CORRECT: Use DatabaseService
+from agentpm.core.database.service import DatabaseService
+
+class WorkItemMethods:
+    def __init__(self, db: DatabaseService):
+        self.db = db
+
+    def get_work_item(self, work_item_id: int) -> Optional[WorkItem]:
+        row = self.db.fetch_one(
+            "SELECT * FROM work_items WHERE id = ?",
+            (work_item_id,)
+        )
+        return WorkItemAdapter.from_row(row) if row else None
+
+# ❌ INCORRECT: Raw SQLite
+import sqlite3
+
+def get_work_item(work_item_id: int):
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+    # ... raw SQL operations
+```
+
+### Transaction Handling
+
+```python
+def update_work_item_with_tasks(
+    work_item_id: int,
+    updates: Dict[str, Any],
+    new_tasks: List[TaskCreate]
+) -> ServiceResult[WorkItem]:
+    """Update work item and create tasks in transaction"""
+    try:
+        with self.db.transaction():
+            # Update work item
+            self.db.execute(
+                "UPDATE work_items SET name = ?, status = ? WHERE id = ?",
+                (updates["name"], updates["status"], work_item_id)
+            )
+
+            # Create tasks
+            for task in new_tasks:
+                self.db.execute(
+                    "INSERT INTO tasks (name, work_item_id, effort_hours) VALUES (?, ?, ?)",
+                    (task.name, work_item_id, task.effort_hours)
+                )
+
+        # Fetch updated work item
+        work_item = self.get_work_item(work_item_id)
+        return ServiceResult(success=True, data=work_item)
+
+    except Exception as e:
+        return ServiceResult(success=False, error=str(e))
+```
+
+---
+
+## 6. When to Use This Rule
+
+**This rule applies when:**
+- Writing or editing Python source files
+- Creating new services, adapters, or methods
+- Refactoring existing code
+- Implementing business logic
+- Working with database operations
+
+**This rule does NOT apply to:**
+- Test files (see `testing-standards.mdc`)
+- CLI commands (see `cli-development.mdc`)
+- Database adapters specifically (see `database-patterns.mdc`)
+
+---
+
+## 7. Quick Checklist
+
+Before committing Python code, verify:
+
+- [ ] Type hints on all functions
+- [ ] Pydantic models for data validation
+- [ ] Three-layer architecture followed (Models → Adapters → Methods)
+- [ ] DatabaseService used (no raw SQLite)
+- [ ] Custom exceptions for domain errors
+- [ ] Docstrings on public functions
+- [ ] Code formatted with Black (line length 100)
+- [ ] Linting passes with Ruff
+- [ ] Imports organized with isort
+- [ ] Error messages are actionable
+
+---
+
+## 8. Database Rules Query
+
+**Get Python-specific rules from database:**
+
+```bash
+# Query Python coding rules
+apm rules list --category=python_patterns
+
+# Query specific rule details
+apm rules show DP-001  # Hexagonal Architecture
+apm rules show DP-002  # Domain-Driven Design
+apm rules show DP-006  # Three-Layer Pattern
+```
+
+---
+
+**Version**: 1.0.0
+**Last Updated**: 2025-10-20
+**Priority**: 80 (auto-attach for `**/*.py`)

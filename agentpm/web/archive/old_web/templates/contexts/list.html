@@ -1,0 +1,213 @@
+{% extends "layouts/modern_base.html" %}
+{% from 'macros/breadcrumb.html' import breadcrumb %}
+{% from 'macros/skeleton.html' import skeleton_table %}
+
+{% block title %}Contexts - APM (Agent Project Manager){% endblock %}
+
+{% block content %}
+{{ breadcrumb([
+    {'label': 'Contexts', 'url': None}
+]) }}
+<section class="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+        <h1 class="text-3xl font-semibold text-gray-900">Contexts</h1>
+        <p class="mt-2 text-sm text-gray-500">Inspect context freshness, confidence, and plugin facts across the workspace.</p>
+    </div>
+    <div class="flex items-center gap-2">
+        <span class="inline-flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-medium text-primary shadow-sm">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 13a9 9 0 0 1 18 0v1a3 3 0 0 1-3 3h-1l-1.5 2-1.5-2H9" />
+            </svg>
+            {{ view.total_contexts }} total contexts
+        </span>
+    </div>
+</section>
+
+<!-- Stats -->
+<section class="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="Context statistics">
+    {% for band, count in view.confidence_band_counts.items() %}
+    <article class="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+        <header class="flex items-center justify-between">
+            <span class="text-sm font-medium text-gray-500">Confidence</span>
+            <span class="badge bg-confidence-{{ band if band in ['green','yellow','red'] else 'gray' }} capitalize">{{ band }}</span>
+        </header>
+        <div class="mt-4 text-3xl font-semibold text-gray-900" aria-label="{{ count }} contexts">{{ count }}</div>
+        <p class="mt-3 text-xs text-gray-500">Contexts in the {{ band }} band.</p>
+    </article>
+    {% endfor %}
+
+    {% for entity_type, count in view.entity_type_counts.items() %}
+    <article class="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+        <header class="flex items-center justify-between">
+            <span class="text-sm font-medium text-gray-500">Entity Type</span>
+            <span class="badge badge-info capitalize">{{ entity_type.replace('_', ' ') }}</span>
+        </header>
+        <div class="mt-4 text-3xl font-semibold text-gray-900">{{ count }}</div>
+        <p class="mt-3 text-xs text-gray-500">Contexts linked to {{ entity_type.replace('_', ' ').lower() }} entities.</p>
+    </article>
+    {% endfor %}
+</section>
+
+<!-- Filters -->
+<section class="mb-8 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm" aria-label="Context filters">
+    <header class="mb-4 flex items-center justify-between">
+        <h2 class="text-lg font-semibold text-gray-900">Filters</h2>
+        {% if view.entity_type_filter or view.confidence_band_filter or view.freshness_filter %}
+        <a href="/contexts" class="text-sm font-medium text-primary hover:text-primary-dark" aria-label="Clear all filters">Clear all</a>
+        {% endif %}
+    </header>
+    <form method="GET" class="grid gap-4 md:grid-cols-3" id="context-filters-form">
+        <label class="space-y-2">
+            <span class="text-sm font-medium text-gray-600">Entity Type</span>
+            <select
+                name="entity_type"
+                class="form-select"
+                aria-label="Filter by entity type"
+                aria-describedby="entity-type-help">
+                <option value="">All types</option>
+                <option value="project" {% if view.entity_type_filter == 'project' %}selected{% endif %}>Project</option>
+                <option value="work_item" {% if view.entity_type_filter == 'work_item' %}selected{% endif %}>Work Item</option>
+                <option value="task" {% if view.entity_type_filter == 'task' %}selected{% endif %}>Task</option>
+            </select>
+        </label>
+        <label class="space-y-2">
+            <span class="text-sm font-medium text-gray-600">Confidence Band</span>
+            <select
+                name="confidence_band"
+                class="form-select"
+                aria-label="Filter by confidence band"
+                aria-describedby="confidence-band-help">
+                <option value="">All bands</option>
+                <option value="green" {% if view.confidence_band_filter == 'green' %}selected{% endif %}>Green (High)</option>
+                <option value="yellow" {% if view.confidence_band_filter == 'yellow' %}selected{% endif %}>Yellow (Medium)</option>
+                <option value="red" {% if view.confidence_band_filter == 'red' %}selected{% endif %}>Red (Low)</option>
+            </select>
+        </label>
+        <label class="space-y-2">
+            <span class="text-sm font-medium text-gray-600">Freshness</span>
+            <select
+                name="freshness"
+                class="form-select"
+                aria-label="Filter by context freshness"
+                aria-describedby="freshness-help">
+                <option value="">All ages</option>
+                <option value="fresh" {% if view.freshness_filter == 'fresh' %}selected{% endif %}>Fresh (≤7 days)</option>
+                <option value="stale" {% if view.freshness_filter == 'stale' %}selected{% endif %}>Stale (8-30 days)</option>
+                <option value="very_stale" {% if view.freshness_filter == 'very_stale' %}selected{% endif %}>Very stale (&gt;30 days)</option>
+            </select>
+        </label>
+        <div class="md:col-span-3">
+            <button type="submit" class="btn btn-primary" aria-label="Apply filters">
+                Apply filters
+            </button>
+        </div>
+    </form>
+</section>
+
+<!-- Loading State -->
+<div id="contexts-loading" class="hidden" aria-live="polite" aria-busy="true" aria-label="Loading contexts">
+    {{ skeleton_table(rows=10, columns=9) }}
+</div>
+
+<!-- Context Table -->
+<section id="contexts-table" class="rounded-2xl border border-gray-100 bg-white shadow-sm" aria-label="Contexts table">
+    <header class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+        <h2 class="text-lg font-semibold text-gray-900">Contexts</h2>
+        <span class="text-sm text-gray-500" aria-live="polite">Showing {{ view.contexts_list|length }} records</span>
+    </header>
+    {% if view.contexts_list %}
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-100 text-left text-sm">
+            <thead class="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                <tr>
+                    <th class="px-6 py-3">Entity</th>
+                    <th class="px-4 py-3">Context</th>
+                    <th class="px-4 py-3">Confidence</th>
+                    <th class="px-4 py-3">6W Coverage</th>
+                    <th class="px-4 py-3">Freshness</th>
+                    <th class="px-4 py-3">Plugin Facts</th>
+                    <th class="px-4 py-3">Amalgamations</th>
+                    <th class="px-4 py-3">Last Updated</th>
+                    <th class="px-4 py-3 text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 bg-white">
+                {% for context in view.contexts_list %}
+                <tr class="transition hover:bg-primary/5">
+                    <td class="px-6 py-4 align-top">
+                        <div class="font-medium text-gray-900">{{ context.entity_name or 'Unknown' }}</div>
+                        <div class="mt-1 flex items-center gap-2 text-xs text-gray-500">
+                            <span class="rounded-full bg-gray-100 px-2 py-0.5 text-gray-600">{{ context.entity_type.replace('_', ' ').title() }}</span>
+                            <span>#{{ context.entity_id }}</span>
+                        </div>
+                    </td>
+                    <td class="px-4 py-4 align-top">
+                        <span class="badge badge-info">{{ context.context_type.replace('_', ' ').title() }}</span>
+                    </td>
+                    <td class="px-4 py-4 align-top">
+                        <div class="flex items-center gap-3">
+                            <div class="h-2 w-24 overflow-hidden rounded-full bg-gray-100" role="progressbar" aria-valuenow="{{ (context.confidence_score * 100)|round }}" aria-valuemin="0" aria-valuemax="100" aria-label="Confidence score">
+                                <span class="block h-full rounded-full {{ 'bg-confidence-green' if context.confidence_band == 'green' else 'bg-confidence-yellow' if context.confidence_band == 'yellow' else 'bg-confidence-red' if context.confidence_band == 'red' else 'bg-gray-300' }}" style="width: {{ (context.confidence_score * 100)|round }}%"></span>
+                            </div>
+                            <span class="text-sm text-gray-600" aria-hidden="true">{{ '%.1f'|format(context.confidence_score * 100) }}%</span>
+                        </div>
+                        <span class="mt-2 inline-flex rounded-full px-2 py-0.5 text-xs font-semibold bg-confidence-{{ context.confidence_band if context.confidence_band in ['green','yellow','red'] else 'gray' }}" aria-label="Confidence band: {{ context.confidence_band.title() if context.confidence_band else 'Unknown' }}">
+                            {{ context.confidence_band.title() if context.confidence_band else 'Unknown' }}
+                        </span>
+                    </td>
+                    <td class="px-4 py-4 align-top">
+                        <div class="flex items-center gap-3">
+                            <div class="h-2 w-24 overflow-hidden rounded-full bg-gray-100" role="progressbar" aria-valuenow="{{ context.six_w_completeness|round }}" aria-valuemin="0" aria-valuemax="100" aria-label="Six W completeness">
+                                <span class="block h-full rounded-full bg-primary" style="width: {{ context.six_w_completeness|round }}%"></span>
+                            </div>
+                            <span class="text-sm text-gray-600" aria-hidden="true">{{ context.six_w_completeness|round }}%</span>
+                        </div>
+                        <span class="mt-2 block text-xs text-gray-500" aria-label="Six W coverage indicator">6W coverage</span>
+                    </td>
+                    <td class="px-4 py-4 align-top">
+                        {% set freshness_label = 'Fresh' if context.freshness_days <= 7 else 'Stale' if context.freshness_days <= 30 else 'Very Stale' %}
+                        <div class="text-sm text-gray-700">{{ freshness_label }}</div>
+                        <div class="text-xs text-gray-400">{{ context.freshness_days }} days ago</div>
+                    </td>
+                    <td class="px-4 py-4 align-top text-sm text-gray-600">{{ context.plugin_facts_count }}</td>
+                    <td class="px-4 py-4 align-top text-sm text-gray-600">{{ context.amalgamations_count }}</td>
+                    <td class="px-4 py-4 align-top text-sm text-gray-600">{{ context.updated_at.strftime('%Y-%m-%d %H:%M') if context.updated_at else '—' }}</td>
+                    <td class="px-4 py-4 align-top text-right">
+                        <a href="/contexts/{{ context.id }}" class="text-sm font-medium text-primary hover:text-primary-dark">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
+        <svg class="h-12 w-12 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13a9 9 0 1 1 9 9" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 10h.01M15 10h.01M9.75 15a3.24 3.24 0 0 0 4.5 0" />
+        </svg>
+        <h3 class="text-lg font-medium text-gray-900">No contexts yet</h3>
+        <p class="max-w-md text-sm text-gray-500">Run <code class="rounded bg-gray-100 px-2 py-0.5">apm context refresh</code> to generate fresh context data.</p>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Show loading state when filters are applied
+document.addEventListener('DOMContentLoaded', function() {
+    const filterForm = document.getElementById('context-filters-form');
+    if (filterForm) {
+        filterForm.addEventListener('submit', function() {
+            const loadingDiv = document.getElementById('contexts-loading');
+            const tableDiv = document.getElementById('contexts-table');
+            if (loadingDiv && tableDiv) {
+                loadingDiv.classList.remove('hidden');
+                tableDiv.classList.add('hidden');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

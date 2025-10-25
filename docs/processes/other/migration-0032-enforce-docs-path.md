@@ -1,0 +1,286 @@
+# Migration 0032: Enforce docs/ Path Structure
+
+**Migration File**: `migration_0032_enforce_docs_path.py`
+**Created**: 2025-10-19
+**Author**: Implementation Orchestrator
+**Task**: #589
+
+---
+
+## Summary
+
+Adds CHECK constraint to `document_references.file_path` column to enforce standardized `docs/` directory structure for all documentation, with explicit exceptions for legitimate non-docs paths.
+
+**Impact**: All future document references must follow the docs/ structure (or match exception patterns)
+
+---
+
+## Motivation
+
+Following migration 0031 which migrated existing documents to `docs/` structure, this migration enforces the pattern going forward by adding a database-level CHECK constraint. This prevents accidentally adding documents outside the standardized structure.
+
+**Benefits**:
+1. **Structural consistency**: All documentation follows same organizational pattern
+2. **Early validation**: Constraint fails at INSERT/UPDATE time (not later discovery)
+3. **Self-documenting**: Database schema explicitly shows allowed path patterns
+4. **Migration safety**: Existing non-compliant paths preserved (grandfathered in)
+
+---
+
+## Changes
+
+### Schema Modification
+
+**Table**: `document_references`
+**Column**: `file_path`
+**Action**: Add CHECK constraint
+
+### CHECK Constraint Logic
+
+```sql
+CHECK (
+    -- Primary rule: Must start with 'docs/'
+    file_path LIKE 'docs/%'
+
+    -- Exception 1: Project root markdown files
+    OR file_path IN ('CHANGELOG.md', 'README.md', 'LICENSE.md')
+
+    -- Exception 2: Project root artifacts (deployment, gates, etc.)
+    OR (file_path LIKE '%.md' AND file_path NOT LIKE '%/%')
+
+    -- Exception 3: Module documentation
+    OR file_path GLOB 'agentpm/*/README.md'
+
+    -- Exception 4: Test reports and test code
+    OR file_path LIKE 'testing/%'
+    OR file_path LIKE 'tests/%'
+)
+```
+
+### Allowed Path Patterns
+
+1. **docs/** - All documentation (primary pattern)
+   - `docs/architecture/other/design-system.md` ✅
+   - `docs/testing/other/report.md` ✅
+   - `docs/guides/user/workflow.md` ✅
+
+2. **Project root** - Standard files + artifacts
+   - `CHANGELOG.md` ✅
+   - `README.md` ✅
+   - `LICENSE.md` ✅
+   - `O1-DEPLOYMENT-ARTIFACT-v0.1.1.md` ✅ (root .md)
+   - `R1-GATE-VALIDATION-REPORT.md` ✅ (root .md)
+
+3. **Module documentation**
+   - `agentpm/web/README.md` ✅
+   - `agentpm/cli/README.md` ✅
+
+4. **Test directories**
+   - `testing/cli-e2e-test/E2E_TEST_REPORT.md` ✅
+   - `tests/cli/commands/TEST_SUMMARY_INIT.md` ✅
+   - `tests/cli/commands/test_init_comprehensive.py` ✅
+
+### Rejected Path Patterns
+
+- `random-file.txt` ❌ (not .md, not in allowed locations)
+- `somewhere/doc.md` ❌ (not docs/, not exception pattern)
+- `src/README.md` ❌ (not agentpm/*/README.md pattern)
+- `reports/analysis.md` ❌ (should be docs/reports/*)
+
+---
+
+## Implementation
+
+### Migration Approach
+
+SQLite doesn't support `ALTER TABLE ADD CONSTRAINT CHECK`, so migration uses table recreation pattern:
+
+1. Create new table `document_references_new` with CHECK constraint
+2. Copy all data from old table (preserves existing non-compliant paths)
+3. Drop old table
+4. Rename new table to `document_references`
+5. Recreate all indexes
+
+**Critical**: Data copy happens BEFORE constraint is active, so existing non-compliant paths are grandfathered in.
+
+### Upgrade Function
+
+```python
+def upgrade(conn: sqlite3.Connection) -> None:
+    """Add CHECK constraint to enforce docs/ path structure"""
+    # 1. Create new table with constraint
+    # 2. Copy all existing data (grandfathers existing paths)
+    # 3. Drop old table
+    # 4. Rename new table
+    # 5. Recreate indexes
+```
+
+### Downgrade Function
+
+```python
+def downgrade(conn: sqlite3.Connection) -> None:
+    """Remove CHECK constraint (revert to original schema)"""
+    # 1. Create table without docs/ constraint
+    # 2. Copy all data back
+    # 3. Drop constrained table
+    # 4. Rename to original name
+    # 5. Recreate indexes
+```
+
+---
+
+## Testing
+
+### Test Cases
+
+**1. Invalid Path (Should Fail)**
+```bash
+sqlite3 .aipm/data/aipm.db "INSERT INTO document_references (...)
+VALUES ('somewhere/bad.md', ...)"
+# Result: CHECK constraint failed ✅
+```
+
+**2. Valid docs/ Path (Should Succeed)**
+```bash
+sqlite3 .aipm/data/aipm.db "INSERT INTO document_references (...)
+VALUES ('docs/testing/other/test.md', ...)"
+# Result: Success ✅
+```
+
+**3. Exception: Root .md (Should Succeed)**
+```bash
+sqlite3 .aipm/data/aipm.db "INSERT INTO document_references (...)
+VALUES ('DEPLOYMENT-v1.0.0.md', ...)"
+# Result: Success ✅
+```
+
+**4. Exception: Test Directory (Should Succeed)**
+```bash
+sqlite3 .aipm/data/aipm.db "INSERT INTO document_references (...)
+VALUES ('testing/e2e/REPORT.md', ...)"
+# Result: Success ✅
+```
+
+### Test Results
+
+All test cases passed:
+- ❌ Invalid paths rejected with clear error message
+- ✅ Valid docs/ paths accepted
+- ✅ Exception patterns (root .md, tests/, etc.) accepted
+- ✅ Existing non-compliant paths preserved
+
+---
+
+## Rollback
+
+Migration includes full rollback support via `downgrade()` function.
+
+**Rollback Command**:
+```bash
+apm migrate --rollback migration_0032
+```
+
+**Rollback Safety**:
+- ✅ Preserves all data
+- ✅ Recreates original schema
+- ✅ Rebuilds all indexes
+- ✅ Removes CHECK constraint completely
+
+---
+
+## Impact Assessment
+
+### Breaking Changes
+
+**NONE** - Constraint only affects NEW document references.
+
+### Non-Breaking Changes
+
+**Validation at INSERT/UPDATE time**: Future `apm document add` commands must use docs/ paths (or exception patterns).
+
+### Grandfathered Data
+
+Existing 7 non-compliant paths remain in database:
+```
+1. CHANGELOG.md                                  ✅ Now matches exception
+2. O1-DEPLOYMENT-ARTIFACT-v0.1.1.md             ✅ Now matches exception
+3. R1-GATE-VALIDATION-REPORT.md                 ✅ Now matches exception
+4. agentpm/web/README.md                        ✅ Now matches exception
+5. testing/cli-e2e-test/E2E_TEST_REPORT.md      ✅ Now matches exception
+6. tests/cli/commands/TEST_SUMMARY_INIT.md      ✅ Now matches exception
+7. tests/cli/commands/test_init_comprehensive.py ✅ Now matches exception
+```
+
+**All grandfathered paths now match exception patterns** - no technical debt!
+
+---
+
+## Related Work
+
+- **Migration 0031**: Migrated existing documents to docs/ structure
+- **Task 593**: Verified migration 0031 success
+- **Task 589**: Added CHECK constraint (this migration)
+
+---
+
+## Future Improvements
+
+### CLI Validation
+
+Update `apm document add` command to validate paths BEFORE attempting database insert:
+
+```python
+def validate_document_path(file_path: str) -> bool:
+    """Validate path matches docs/ structure or exception patterns"""
+    if file_path.startswith('docs/'):
+        return True
+    if file_path in ['CHANGELOG.md', 'README.md', 'LICENSE.md']:
+        return True
+    # ... check other exception patterns
+    return False
+```
+
+### Path Suggestions
+
+When user provides invalid path, suggest correct alternative:
+
+```bash
+$ apm document add --file-path="reports/analysis.md" ...
+❌ Error: Path must start with 'docs/' (or match exception pattern)
+💡 Suggestion: Use 'docs/reports/other/analysis.md'
+```
+
+### Documentation Updates
+
+- User guide: Explain docs/ structure requirements
+- Developer guide: Document exception patterns
+- Migration guide: How to handle special cases
+
+---
+
+## Acceptance Criteria
+
+- [x] CHECK constraint added to file_path column
+- [x] Primary rule enforces docs/ prefix
+- [x] Exception patterns allow legitimate non-docs paths
+- [x] All existing data preserved (grandfathered)
+- [x] Invalid paths rejected at INSERT time
+- [x] Valid docs/ paths accepted
+- [x] Exception paths (root .md, tests/, etc.) accepted
+- [x] Rollback function implemented and tested
+- [x] Migration documentation complete
+
+---
+
+## Conclusion
+
+Migration 0032 successfully enforces `docs/` path structure while maintaining backward compatibility through carefully designed exception patterns. All existing "non-compliant" paths now match exception patterns, eliminating technical debt.
+
+**Status**: ✅ COMPLETE
+**Result**: Database-enforced documentation structure with zero breaking changes
+
+---
+
+**Reviewed By**: Implementation Orchestrator
+**Date**: 2025-10-19
+**Task**: #589 - Add Database CHECK Constraint ✅

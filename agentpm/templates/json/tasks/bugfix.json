@@ -1,0 +1,14 @@
+{
+  "reproduction_steps": "[TODO: Provide step-by-step instructions to reproduce the bug]",
+  "environment": "[TODO: Specify environment where bug occurs (e.g., 'Production build 2025.01.15')]",
+  "expected_behavior": "[TODO: Describe what should happen]",
+  "actual_behavior": "[TODO: Describe what actually happens, including error messages]",
+  "root_cause": "[TODO: Identify root cause after investigation]",
+  "fix_description": "[TODO: Describe the fix implementation]",
+  "verification_steps": "[TODO: Define how to verify the fix works]",
+  "fix_verified": false,
+  "regression_tests": [
+    "[TODO: List regression test commands or test paths]"
+  ],
+  "notes": "[TODO: Link related incidents, tickets, or pager alerts for historical context]"
+}

@@ -1,0 +1,75 @@
+# AIPM Slash Commands
+
+Custom Claude Code slash commands for AIPM workflows.
+
+## Available Commands
+
+### /aipm:handover
+Generate intelligent session handover summaries for database storage.
+
+**Purpose**: AI analyzes session activity and creates current_status and next_session summaries before closing.
+
+**Usage**:
+```
+/aipm:handover
+```
+
+## Installation
+
+### Manual Installation
+```bash
+# Create directory
+mkdir -p ~/.claude/commands/aipm
+
+# Copy commands
+cp agentpm/cli/commands/slash_commands/*.md ~/.claude/commands/aipm/
+```
+
+### Via CLI (Future)
+```bash
+apm commands install    # Install all AIPM slash commands to ~/.claude/
+apm commands update     # Update installed commands
+apm commands list       # Show installed commands
+```
+
+## Command Structure
+
+Commands are stored in:
+- **Source**: `agentpm/cli/commands/slash_commands/` (version controlled)
+- **Deployed**: `~/.claude/commands/aipm/` (user installation)
+
+## Creating New Commands
+
+1. Create markdown file in `agentpm/cli/commands/slash_commands/`
+2. Add frontmatter with `description` and `allowed-tools`
+3. Write clear, actionable instructions for Claude
+4. Test locally: `cp command.md ~/.claude/commands/aipm/`
+5. Use in Claude Code: `/aipm:command-name`
+
+## Frontmatter Template
+
+```markdown
+---
+description: Brief command description
+allowed-tools: Bash(apm:*), Bash(git:*)
+---
+
+# /aipm:command-name - Title
+
+## Objective
+What this command achieves
+
+## Process
+Step-by-step instructions for Claude
+
+## Success Criteria
+How to verify it worked
+```
+
+## Design Principles
+
+1. **Actionable**: Tell Claude exactly what to do, not vague guidance
+2. **Specific**: Use exact commands, file paths, field names
+3. **Validated**: Include verification steps
+4. **Focused**: One command = one clear purpose
+5. **Database-First**: Store results in AIPM database, not files

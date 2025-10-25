@@ -1,0 +1,217 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Rules Management - APM (Agent Project Manager){% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Page Header -->
+    <div class="bg-gradient-to-r from-orange-500 to-red-600 rounded-lg p-6 text-white">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold mb-2">Rules Management</h1>
+                <p class="text-orange-100">Manage system rules, validation, and quality gates</p>
+            </div>
+            <div class="bg-white/20 p-3 rounded-full">
+                <i class="bi bi-shield-check text-3xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rules Overview -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <div class="flex items-center">
+                <div class="bg-orange-50 rounded-full p-3 mr-4">
+                    <i class="bi bi-shield-check text-2xl text-orange-500"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Total Rules</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ rules.total_rules or 0 }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <div class="flex items-center">
+                <div class="bg-green-50 rounded-full p-3 mr-4">
+                    <i class="bi bi-check-circle text-2xl text-green-500"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Active Rules</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ rules.active_count or 0 }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <div class="flex items-center">
+                <div class="bg-blue-50 rounded-full p-3 mr-4">
+                    <i class="bi bi-gear text-2xl text-blue-500"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Quality Gates</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ rules.quality_gates_count or 0 }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <div class="flex items-center">
+                <div class="bg-purple-50 rounded-full p-3 mr-4">
+                    <i class="bi bi-exclamation-triangle text-2xl text-purple-500"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Blocking Rules</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ rules.blocking_count or 0 }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters and Actions -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+            <div class="flex items-center space-x-4">
+                <div class="relative">
+                    <input type="text" placeholder="Search rules..." 
+                           class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                    <i class="bi bi-search absolute left-3 top-2.5 text-gray-400"></i>
+                </div>
+                <select class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                    <option value="">All Categories</option>
+                    <option value="workflow_gates">Workflow Gates</option>
+                    <option value="testing_standards">Testing Standards</option>
+                    <option value="code_quality">Code Quality</option>
+                    <option value="documentation_standards">Documentation Standards</option>
+                    <option value="security">Security</option>
+                </select>
+                <select class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                    <option value="">All Types</option>
+                    <option value="BLOCK">Blocking</option>
+                    <option value="WARN">Warning</option>
+                    <option value="INFO">Information</option>
+                </select>
+            </div>
+            <div class="flex items-center space-x-3">
+                <a href="/" class="text-gray-600 hover:text-gray-800">
+                    <i class="bi bi-arrow-left mr-2"></i>Back to Dashboard
+                </a>
+                <button class="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors">
+                    <i class="bi bi-plus mr-2"></i>Add Rule
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rules List -->
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        {% if rules.rules %}
+        <div class="divide-y divide-gray-200">
+            {% for rule in rules.rules %}
+            <div class="p-6 hover:bg-gray-50 transition-colors">
+                <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-3 mb-2">
+                            <h3 class="text-lg font-semibold text-gray-900">{{ rule.name or 'Untitled Rule' }}</h3>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                {% if rule.type == 'BLOCK' %}bg-red-100 text-red-800
+                                {% elif rule.type == 'WARN' %}bg-yellow-100 text-yellow-800
+                                {% else %}bg-blue-100 text-blue-800{% endif %}">
+                                <i class="bi bi-circle-fill mr-1 text-xs"></i>{{ rule.type or 'INFO' }}
+                            </span>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                {{ rule.category or 'general' }}
+                            </span>
+                        </div>
+                        <div class="text-gray-600 mb-3">
+                            {% if rule.description %}
+                                {% set description_text = rule.description|markdown_to_text(150) %}
+                                <p>{{ description_text }}</p>
+                            {% else %}
+                                <p class="text-gray-500 italic">No description provided</p>
+                            {% endif %}
+                        </div>
+                        <div class="flex items-center space-x-6 text-sm text-gray-500">
+                            <span>
+                                <i class="bi bi-tag mr-1"></i>{{ rule.category or 'Uncategorized' }}
+                            </span>
+                            <span>
+                                <i class="bi bi-calendar mr-1"></i>{{ rule.created_at.strftime('%Y-%m-%d') if rule.created_at else 'N/A' }}
+                            </span>
+                            <span>
+                                <i class="bi bi-person mr-1"></i>{{ rule.created_by or 'System' }}
+                            </span>
+                            {% if rule.priority %}
+                            <span>
+                                <i class="bi bi-flag mr-1"></i>{{ rule.priority }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        {% if rule.tags and rule.tags|length > 0 %}
+                        <div class="mt-3">
+                            <div class="flex flex-wrap gap-2">
+                                {% for tag in rule.tags[:5] %}
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                    {{ tag }}
+                                </span>
+                                {% endfor %}
+                                {% if rule.tags|length > 5 %}
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                    +{{ rule.tags|length - 5 }} more
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="flex items-center space-x-2 ml-4">
+                        <a href="/rules/{{ rule.id }}" 
+                           class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-orange-600 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors">
+                            <i class="bi bi-eye mr-1"></i>View
+                        </a>
+                        <button class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                            <i class="bi bi-three-dots"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="p-12 text-center">
+            <div class="bg-orange-50 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-4">
+                <i class="bi bi-shield-check text-4xl text-orange-500"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">No rules configured yet</h3>
+            <p class="text-gray-600 mb-6">System rules are managed through the AIPM CLI. Use <code class="bg-gray-100 px-2 py-1 rounded">apm rules list</code> to view all rules.</p>
+            <div class="space-y-3">
+                <button class="bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors">
+                    <i class="bi bi-plus mr-2"></i>Add Your First Rule
+                </button>
+                <div class="text-sm text-gray-500">
+                    <p>Or use the CLI: <code class="bg-gray-100 px-2 py-1 rounded">apm rules create</code></p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Pagination (if needed) -->
+    {% if rules.rules and rules.rules|length > 10 %}
+    <div class="bg-white rounded-lg shadow-lg p-4">
+        <div class="flex items-center justify-between">
+            <p class="text-sm text-gray-700">Showing 1-{{ rules.rules|length }} of {{ rules.rules|length }} rules</p>
+            <div class="flex items-center space-x-2">
+                <button class="px-3 py-1 text-sm text-gray-500 hover:text-gray-700" disabled>
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <span class="px-3 py-1 text-sm bg-orange-100 text-orange-800 rounded">1</span>
+                <button class="px-3 py-1 text-sm text-gray-500 hover:text-gray-700" disabled>
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

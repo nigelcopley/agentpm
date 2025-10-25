@@ -1,0 +1,115 @@
+
+[96m================================================================================[0m
+[96mAPM (Agent Project Manager) Web Route Testing[0m
+[96mBase URL: http://127.0.0.1:5002[0m
+[96mTotal Routes: 28[0m
+[96m================================================================================[0m
+
+[91m✗[0m Dashboard                                [91m500 ERROR[0m
+  [91m→ 500 error in page content[0m
+[91m✗[0m Work Items List                          [91m500 ERROR[0m
+  [91m→ 500 error in page content[0m
+[91m✗[0m Work Item Detail (ID=1)                  [91m500 ERROR[0m
+  [91m→ 500 error in page content[0m
+[91m✗[0m Tasks List                               [91m500 ERROR[0m
+  [91m→ 500 error in page content[0m
+[91m✗[0m Task Detail (ID=1)                       [91m500 ERROR[0m
+  [91m→ 500 error in page content[0m
+[91m✗[0m Projects List                            [91m500 ERROR[0m
+  [91m→ 500 error in page content[0m
+[91m✗[0m Project Detail (ID=1)                    [91m500 ERROR[0m
+  [91m→ 500 error in page content[0m
+[91m✗[0m Project Settings                         [91m500 ERROR[0m
+  [91m→ Internal server error[0m
+[91m✗[0m Agents List                              [91m500 ERROR[0m
+  [91m→ 500 error in page content[0m
+[91m✗[0m Agent Detail (ID=1)                      [91m500 ERROR[0m
+  [91m→ Missing template: agents/detail.html[0m
+[91m✗[0m Rules List                               [91m500 ERROR[0m
+  [91m→ 500 error in page content[0m
+[93m✗[0m Rule Detail (ID=1)                       [93m404 NOT FOUND[0m
+  [93m→ Route not registered in Flask app[0m
+[93m✗[0m Documents List                           [93m404 NOT FOUND[0m
+  [93m→ Route not registered in Flask app[0m
+[91m✗[0m Research Documents                       [91m500 ERROR[0m
+  [91m→ Internal server error[0m
+[93m✗[0m Evidence List                            [93m404 NOT FOUND[0m
+  [93m→ Route not registered in Flask app[0m
+[91m✗[0m Research Evidence                        [91m500 ERROR[0m
+  [91m→ Internal server error[0m
+[91m✗[0m Search Page                              [91m500 ERROR[0m
+  [91m→ 500 error in page content[0m
+[91m✗[0m Search Results                           [91m500 ERROR[0m
+  [91m→ 500 error in page content[0m
+[91m✗[0m Contexts List                            [91m500 ERROR[0m
+  [91m→ Missing template: components/layout/sidebar.html[0m
+[91m✗[0m Context Detail (ID=1)                    [91m500 ERROR[0m
+  [91m→ Attribute error: module &#39;agentpm.core.database.methods.contexts&#39; has no attribute &#39;get_related_contexts&#39;[0m
+[91m✗[0m Ideas List                               [91m500 ERROR[0m
+  [91m→ 500 error in page content[0m
+[91m✗[0m Idea Detail (ID=1)                       [91m500 ERROR[0m
+  [91m→ 500 error in page content[0m
+[91m✗[0m Sessions List                            [91m500 ERROR[0m
+  [91m→ Internal server error[0m
+[93m✗[0m Session Detail (ID=1)                    [93m404 NOT FOUND[0m
+  [93m→ Route not registered in Flask app[0m
+[93m✗[0m Events List                              [93m404 NOT FOUND[0m
+  [93m→ Route not registered in Flask app[0m
+[91m✗[0m Database Metrics                         [91m500 ERROR[0m
+  [91m→ Missing template: system/database.html[0m
+[91m✗[0m Workflow Visualization                   [91m500 ERROR[0m
+  [91m→ Attribute error: &#39;DatabaseService&#39; object has no attribute &#39;execute&#39;[0m
+[91m✗[0m Health Check                             [91m500 ERROR[0m
+  [91m→ Internal server error[0m
+
+[96m================================================================================[0m
+[96mSUMMARY[0m
+[96m================================================================================[0m
+
+Total Routes Tested: 28
+[92mSuccessful (200 OK): 0 (0.0%)[0m
+[91mFailed: 28 (100.0%)[0m
+
+[93mFAILURES BY TYPE:[0m
+
+[93mSERVER_ERROR:[0m 23 routes
+  • /                              - 500 error in page content
+  • /work-items                    - 500 error in page content
+  • /work-items/1                  - 500 error in page content
+  • /tasks                         - 500 error in page content
+  • /tasks/1                       - 500 error in page content
+  • /projects                      - 500 error in page content
+  • /projects/1                    - 500 error in page content
+  • /projects/1/settings           - Internal server error
+  • /agents                        - 500 error in page content
+  • /agents/1                      - Missing template: agents/detail.html
+  • /rules                         - 500 error in page content
+  • /research/documents            - Internal server error
+  • /research/evidence             - Internal server error
+  • /search                        - 500 error in page content
+  • /search?q=test                 - 500 error in page content
+  • /contexts                      - Missing template: components/layout/sidebar.html
+  • /contexts/1                    - Attribute error: module &#39;agentpm.core.database.methods.contexts&#39; has no attribute &#39;get_related_contexts&#39;
+  • /ideas                         - 500 error in page content
+  • /ideas/1                       - 500 error in page content
+  • /sessions                      - Internal server error
+  • /system/database               - Missing template: system/database.html
+  • /workflow                      - Attribute error: &#39;DatabaseService&#39; object has no attribute &#39;execute&#39;
+  • /system/health                 - Internal server error
+
+[93mNOT_FOUND:[0m 5 routes
+  • /rules/1                       - Route not registered in Flask app
+  • /documents                     - Route not registered in Flask app
+  • /evidence                      - Route not registered in Flask app
+  • /sessions/1                    - Route not registered in Flask app
+  • /events                        - Route not registered in Flask app
+
+[96mRECOMMENDATIONS:[0m
+
+[91m500 Errors:[0m Check error logs and fix template/backend issues
+  → Create template: agents/detail.html
+  → Create template: components/layout/sidebar.html
+  → Create template: system/database.html
+
+[93m404 Routes:[0m Add route handlers in Flask blueprints
+

@@ -1,0 +1,12 @@
+{
+  "tool_name": "shell",
+  "operation": "bash_command",
+  "command": "pytest tests/test_filter_service.py",
+  "file_path": null,
+  "success": true,
+  "duration_ms": 1285,
+  "error_message": null,
+  "lines_added": 0,
+  "lines_removed": 0,
+  "files_changed": 0
+}

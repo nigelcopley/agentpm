@@ -1,0 +1,18 @@
+{
+  "max_hours": 4.0,
+  "task_types": [
+    "implementation",
+    "bugfix"
+  ],
+  "exceptions": {
+    "feature": 6.0
+  },
+  "escalation": {
+    "notify_roles": [
+      "principal-orchestrator",
+      "project-manager"
+    ],
+    "threshold": "after_second_violation"
+  },
+  "notes": "Adjust limits and escalation paths per project governance policy."
+}

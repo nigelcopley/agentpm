@@ -1,0 +1,86 @@
+{% extends "layouts/modern_base.html" %}
+{% from 'macros/breadcrumb.html' import breadcrumb %}
+
+{% block title %}Database Metrics{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+{{ breadcrumb([
+    {'label': 'Dashboard', 'url': '/'},
+    {'label': 'System', 'url': '#'},
+    {'label': 'Database Metrics', 'url': None}
+]) }}
+
+<!-- Page Header -->
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900">Database Metrics</h1>
+    <p class="mt-2 text-lg text-gray-600">SQLite database statistics and health monitoring</p>
+</div>
+
+<!-- Database Stats -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <div class="card text-center">
+        <div class="card-body">
+            <i class="bi bi-database text-primary text-4xl opacity-40"></i>
+            <h3 class="text-3xl font-bold text-gray-900 mt-3">{{ metrics.db_size_mb }}MB</h3>
+            <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mt-2">Database Size</p>
+        </div>
+    </div>
+
+    <div class="card text-center">
+        <div class="card-body">
+            <i class="bi bi-table text-primary text-4xl opacity-40"></i>
+            <h3 class="text-3xl font-bold text-gray-900 mt-3">{{ metrics.total_tables }}</h3>
+            <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mt-2">Total Tables</p>
+        </div>
+    </div>
+
+    <div class="card text-center">
+        <div class="card-body">
+            <i class="bi bi-file-earmark-text text-primary text-4xl opacity-40"></i>
+            <h3 class="text-3xl font-bold text-gray-900 mt-3">{{ metrics.total_records }}</h3>
+            <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mt-2">Total Records</p>
+        </div>
+    </div>
+
+    <div class="card text-center">
+        <div class="card-body">
+            <i class="bi bi-lightning text-primary text-4xl opacity-40"></i>
+            <h3 class="text-3xl font-bold text-gray-900 mt-3">{{ metrics.avg_query_time_ms }}ms</h3>
+            <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mt-2">Avg Query Time</p>
+        </div>
+    </div>
+</div>
+
+<!-- Table Statistics -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Table Statistics</h3>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th scope="col">Table Name</th>
+                        <th scope="col">Record Count</th>
+                        <th scope="col">Size (KB)</th>
+                        <th scope="col">Last Updated</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for table in metrics.table_stats %}
+                    <tr>
+                        <td class="font-medium">{{ table.name }}</td>
+                        <td>{{ table.count }}</td>
+                        <td>{{ table.size_kb }}</td>
+                        <td>{{ table.last_updated }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,397 @@
+{% extends "layouts/modern_base.html" %}
+{% from "components/skeleton_loaders.html" import metric_card_skeleton, work_item_card_skeleton, grid_skeleton %}
+{% from "macros/breadcrumb.html" import breadcrumb %}
+{% from "macros/skeleton.html" import skeleton_card, skeleton_metric %}
+
+{% block title %}Work Items - APM (Agent Project Manager) Dashboard{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb Navigation -->
+{{ breadcrumb([
+    {'label': 'Work Items', 'url': None}
+]) }}
+
+<!-- Page Header -->
+<div class="mb-8">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Work Items</h1>
+            <p class="mt-2 text-lg text-gray-600">Manage and track your project work items</p>
+        </div>
+        <div class="flex items-center space-x-3">
+            <button class="btn btn-secondary" onclick="exportWorkItems()">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Export
+            </button>
+            <a href="/work-items/create" class="btn btn-primary">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                New Work Item
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Metrics Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="card">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h12a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1V8z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Total Work Items</p>
+                <p class="text-2xl font-bold text-gray-900">{{ metrics.total_work_items or 0 }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <div class="w-8 h-8 bg-warning rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Active</p>
+                <p class="text-2xl font-bold text-gray-900">{{ metrics.active_work_items or 0 }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <div class="w-8 h-8 bg-success rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Done</p>
+                <p class="text-2xl font-bold text-gray-900">{{ metrics.done_work_items or 0 }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <div class="w-8 h-8 bg-error rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Blocked</p>
+                <p class="text-2xl font-bold text-gray-900">{{ metrics.blocked_work_items or 0 }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters and Search -->
+<div class="card mb-6" x-data="{ filtering: false }">
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <!-- Search -->
+        <div class="flex-1 max-w-md">
+            <label for="work-items-search" class="sr-only">Search work items</label>
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </div>
+                <input
+                    type="text"
+                    class="form-input pl-10"
+                    placeholder="Search work items..."
+                    id="work-items-search"
+                    aria-label="Search work items by name or description"
+                    @input="filtering = true; setTimeout(() => filtering = false, 300)"
+                >
+                <!-- Loading indicator -->
+                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none" x-show="filtering" x-cloak>
+                    <svg class="animate-spin h-5 w-5 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="flex items-center gap-4">
+            <!-- Status Filter -->
+            <div class="flex items-center gap-2">
+                <label for="status-filter" class="text-sm font-medium text-gray-700">Status:</label>
+                <select
+                    class="form-select"
+                    id="status-filter"
+                    aria-label="Filter work items by status"
+                    @change="filtering = true; setTimeout(() => filtering = false, 300)">
+                    <option value="">All Status</option>
+                    <option value="draft">Draft</option>
+                    <option value="ready">Ready</option>
+                    <option value="active">Active</option>
+                    <option value="review">Review</option>
+                    <option value="blocked">Blocked</option>
+                    <option value="done">Done</option>
+                    <option value="archived">Archived</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
+            </div>
+
+            <!-- Type Filter -->
+            <div class="flex items-center gap-2">
+                <label for="type-filter" class="text-sm font-medium text-gray-700">Type:</label>
+                <select
+                    class="form-select"
+                    id="type-filter"
+                    aria-label="Filter work items by type"
+                    @change="filtering = true; setTimeout(() => filtering = false, 300)">
+                    <option value="">All Types</option>
+                    <option value="feature">Feature</option>
+                    <option value="enhancement">Enhancement</option>
+                    <option value="bugfix">Bug Fix</option>
+                    <option value="analysis">Analysis</option>
+                    <option value="research">Research</option>
+                    <option value="documentation">Documentation</option>
+                    <option value="maintenance">Maintenance</option>
+                </select>
+            </div>
+
+            <!-- Priority Filter -->
+            <div class="flex items-center gap-2">
+                <label for="priority-filter" class="text-sm font-medium text-gray-700">Priority:</label>
+                <select
+                    class="form-select"
+                    id="priority-filter"
+                    aria-label="Filter work items by priority"
+                    @change="filtering = true; setTimeout(() => filtering = false, 300)">
+                    <option value="">All Priorities</option>
+                    <option value="1">Critical (P1)</option>
+                    <option value="2">High (P2)</option>
+                    <option value="3">Medium (P3)</option>
+                    <option value="4">Low (P4)</option>
+                    <option value="5">Very Low (P5)</option>
+                </select>
+            </div>
+
+            <!-- Clear Filters -->
+            <button
+                class="btn btn-sm btn-secondary"
+                onclick="clearFilters()"
+                aria-label="Clear all filters">
+                Clear Filters
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter Status Message -->
+    <div x-show="filtering" x-cloak class="mt-3 text-sm text-gray-600 flex items-center gap-2">
+        <svg class="animate-spin h-4 w-4 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span aria-live="polite">Filtering work items...</span>
+    </div>
+</div>
+
+<!-- Work Items Grid -->
+<div id="work-items-container" aria-live="polite" aria-busy="false">
+  {% if work_items %}
+  <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      {% for item in work_items %}
+      <div class="work-item-row"
+           data-work-item-id="{{ item.work_item.id }}"
+           data-type="{{ item.work_item.type.value }}"
+           data-status="{{ item.work_item.status.value }}"
+           data-priority="{{ item.work_item.priority }}">
+          {% set work_item = item.work_item %}
+          {% set project_name = item.project_name %}
+          {% set tasks_count = item.tasks_count %}
+          {% set completed_tasks = item.completed_tasks %}
+          {% set in_progress_tasks = item.in_progress_tasks %}
+          {% set blocked_tasks = item.blocked_tasks %}
+          {% set total_effort_hours = item.total_effort_hours %}
+          {% set progress_percent = item.progress_percent %}
+          {% set time_boxing = item.time_boxing %}
+          {% set documents_count = item.documents_count %}
+          {% set latest_activity_at = item.latest_activity_at %}
+          {% set show_actions = true %}
+          {% include 'components/cards/work_item_card.html' %}
+      </div>
+      {% endfor %}
+  </div>
+  {% else %}
+  <!-- Empty State -->
+  <div class="text-center py-12">
+      <div class="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
+          <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+          </svg>
+      </div>
+      <h3 class="text-lg font-medium text-gray-900 mb-2">No work items found</h3>
+      <p class="text-gray-500 mb-6">Get started by creating your first work item.</p>
+      <a href="/work-items/create" class="btn btn-primary">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+          </svg>
+          Create Work Item
+      </a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Skeleton Loader (hidden by default, shown during initial page load) -->
+<div id="work-items-skeleton" class="hidden">
+  <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+    {{ skeleton_card(count=6, show_avatar=False) }}
+  </div>
+</div>
+
+<!-- Pagination -->
+<div class="mt-8 flex items-center justify-between">
+    <div class="text-sm text-gray-700">
+        Showing <span class="visible-count">{{ work_items|length }}</span> of {{ metrics.total_work_items or 0 }} work items
+    </div>
+    
+    <div class="flex items-center space-x-2">
+        <button class="btn btn-sm btn-secondary" disabled>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            Previous
+        </button>
+        
+        <span class="px-3 py-1 text-sm text-gray-700">Page 1 of 1</span>
+        
+        <button class="btn btn-sm btn-secondary" disabled>
+            Next
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Work Items List Specific JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize filters
+    const searchInput = document.getElementById('work-items-search');
+    const statusFilter = document.getElementById('status-filter');
+    const typeFilter = document.getElementById('type-filter');
+    const priorityFilter = document.getElementById('priority-filter');
+    
+    // Search functionality
+    if (searchInput) {
+        const debouncedSearch = AIPM.utils.debounce((query) => {
+            filterWorkItems();
+        }, 300);
+        
+        searchInput.addEventListener('input', (e) => {
+            debouncedSearch(e.target.value);
+        });
+    }
+    
+    // Filter functionality
+    [statusFilter, typeFilter, priorityFilter].forEach(filter => {
+        if (filter) {
+            filter.addEventListener('change', filterWorkItems);
+        }
+    });
+    
+    function filterWorkItems() {
+        const searchQuery = searchInput ? searchInput.value.toLowerCase() : '';
+        const statusValue = statusFilter ? statusFilter.value : '';
+        const typeValue = typeFilter ? typeFilter.value : '';
+        const priorityValue = priorityFilter ? priorityFilter.value : '';
+        
+        const rows = document.querySelectorAll('.work-item-row');
+        let visibleCount = 0;
+        
+        rows.forEach(row => {
+            let visible = true;
+            
+            // Search filter
+            if (searchQuery) {
+                const text = row.textContent.toLowerCase();
+                if (!text.includes(searchQuery)) {
+                    visible = false;
+                }
+            }
+            
+            // Status filter
+            if (statusValue && row.getAttribute('data-status') !== statusValue) {
+                visible = false;
+            }
+            
+            // Type filter
+            if (typeValue && row.getAttribute('data-type') !== typeValue) {
+                visible = false;
+            }
+            
+            // Priority filter
+            if (priorityValue && row.getAttribute('data-priority') !== priorityValue) {
+                visible = false;
+            }
+            
+            row.style.display = visible ? '' : 'none';
+            if (visible) visibleCount++;
+        });
+        
+        // Update visible count
+        const countElements = document.querySelectorAll('.visible-count');
+        countElements.forEach(el => {
+            el.textContent = visibleCount;
+        });
+    }
+});
+
+function clearFilters() {
+    const searchInput = document.getElementById('work-items-search');
+    const statusFilter = document.getElementById('status-filter');
+    const typeFilter = document.getElementById('type-filter');
+    const priorityFilter = document.getElementById('priority-filter');
+    
+    if (searchInput) searchInput.value = '';
+    if (statusFilter) statusFilter.value = '';
+    if (typeFilter) typeFilter.value = '';
+    if (priorityFilter) priorityFilter.value = '';
+    
+    // Show all rows
+    const rows = document.querySelectorAll('.work-item-row');
+    rows.forEach(row => {
+        row.style.display = '';
+    });
+    
+    // Update count
+    const countElements = document.querySelectorAll('.visible-count');
+    countElements.forEach(el => {
+        el.textContent = rows.length;
+    });
+}
+
+function exportWorkItems() {
+    AIPM.utils.showToast('Exporting work items...', 'info');
+    // TODO: Implement export functionality
+    console.log('Exporting work items');
+}
+</script>
+{% endblock %}

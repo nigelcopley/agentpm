@@ -1,0 +1,506 @@
+"""
+apm task dependency commands - Dependency and blocker management
+
+Provides commands for managing task dependencies and blockers.
+Integrates with WorkflowService to enforce dependency completion before task start.
+
+Commands:
+- add-dependency: Add hard/soft dependency between tasks
+- add-blocker: Add task or external blocker
+- list-dependencies: Show task dependencies (prerequisites and dependents)
+- list-blockers: Show task blockers (with resolution status)
+- resolve-blocker: Mark blocker as resolved
+
+Features:
+- Circular dependency detection
+- Hard vs soft dependency types
+- External blocker tracking
+- Auto-resolution when blocker tasks complete
+"""
+
+import click
+from rich.table import Table
+from agentpm.cli.utils.project import ensure_project_root
+from agentpm.cli.utils.services import get_database_service
+from agentpm.cli.utils.validation import validate_task_exists
+from agentpm.core.database.methods import dependencies as dep_methods
+from agentpm.core.database.methods import tasks as task_methods
+
+
+@click.command(name='add-dependency')
+@click.argument('task_id', type=int)
+@click.option(
+    '--depends-on', 'depends_on_task_id',
+    type=int,
+    required=True,
+    help='Task ID that this task depends on (prerequisite)'
+)
+@click.option(
+    '--type', 'dep_type',
+    type=click.Choice(['hard', 'soft'], case_sensitive=False),
+    default='hard',
+    help='Dependency type (hard blocks start, soft warns only)'
+)
+@click.option(
+    '--notes',
+    help='Optional notes about this dependency'
+)
+@click.pass_context
+def add_dependency(ctx: click.Context, task_id: int, depends_on_task_id: int, dep_type: str, notes: str):
+    """
+    Add dependency between tasks (task depends on another task).
+
+    \b
+    Hard dependency: Task cannot start until prerequisite completes
+    Soft dependency: Warning logged but task can start
+
+    \b
+    Examples:
+      apm task add-dependency 5 --depends-on 3              # Hard dependency
+      apm task add-dependency 5 --depends-on 4 --type soft  # Soft dependency
+      apm task add-dependency 5 --depends-on 3 --notes "Needs auth schema first"
+
+    \b
+    Workflow Impact:
+      With hard dependency: apm task start 5 → BLOCKED until task 3 completes
+      With soft dependency: apm task start 5 → Allowed (warning logged)
+    """
+    console = ctx.obj['console']
+    project_root = ensure_project_root(ctx)
+    db = get_database_service(project_root)
+
+    # Validate both tasks exist
+    validate_task_exists(db, task_id, ctx)
+    validate_task_exists(db, depends_on_task_id, ctx)
+
+    # Get task details for display
+    task = task_methods.get_task(db, task_id)
+    dep_task = task_methods.get_task(db, depends_on_task_id)
+
+    try:
+        # Add dependency (with circular detection)
+        dependency = dep_methods.add_task_dependency(
+            db,
+            task_id,
+            depends_on_task_id,
+            dependency_type=dep_type,
+            notes=notes
+        )
+
+        # Success message
+        console.print(f"\n✅ [green]Dependency added:[/green]")
+        console.print(f"   Task #{task_id} '{task.name}'")
+        console.print(f"   {'→ DEPENDS ON →' if dep_type == 'hard' else '→ soft depends on →'}")
+        console.print(f"   Task #{depends_on_task_id} '{dep_task.name}'")
+
+        if dep_type == 'hard':
+            console.print(f"\n⚠️  [yellow]Workflow Impact:[/yellow]")
+            console.print(f"   Task #{task_id} cannot start until Task #{depends_on_task_id} completes")
+        else:
+            console.print(f"\n💡 [cyan]Soft Dependency:[/cyan]")
+            console.print(f"   Task #{task_id} can start (warning will be logged)")
+
+        if notes:
+            console.print(f"\n📝 [dim]Notes: {notes}[/dim]")
+
+        console.print()
+
+    except Exception as e:
+        if "circular" in str(e).lower() or "cycle" in str(e).lower():
+            console.print(f"\n❌ [red]Circular dependency detected![/red]")
+            console.print(f"   Adding this dependency would create a cycle")
+            console.print(f"\n💡 [yellow]Dependency chain would be circular:[/yellow]")
+            console.print(f"   Task #{task_id} → Task #{depends_on_task_id} → ... → Task #{task_id}")
+            console.print(f"\n   Break the cycle by removing a dependency in the chain\n")
+            raise click.Abort()
+        else:
+            console.print(f"\n❌ [red]Error adding dependency:[/red] {e}\n")
+            raise click.Abort()
+
+
+@click.command(name='add-blocker')
+@click.argument('task_id', type=int)
+@click.option(
+    '--task', 'blocker_task_id',
+    type=int,
+    help='Task ID that is blocking this task'
+)
+@click.option(
+    '--external',
+    help='External blocker description (e.g., "Waiting on API approval")'
+)
+@click.option(
+    '--reference',
+    help='External reference (ticket ID, URL, etc.)'
+)
+@click.pass_context
+def add_blocker(ctx: click.Context, task_id: int, blocker_task_id: int, external: str, reference: str):
+    """
+    Add blocker to task (internal task or external factor).
+
+    \b
+    Blocker types:
+      --task: Another AIPM task is blocking this one
+      --external: External factor (API approval, legal review, etc.)
+
+    \b
+    Examples:
+      apm task add-blocker 5 --task 3                           # Task 3 blocks Task 5
+      apm task add-blocker 5 --external "Waiting on API approval"
+      apm task add-blocker 5 --external "Legal review" --reference "LEGAL-123"
+
+    \b
+    Workflow Impact:
+      Task 5 cannot complete (→ REVIEW/COMPLETED) until blocker resolved
+      Use 'apm task resolve-blocker <id>' to mark blocker resolved
+    """
+    console = ctx.obj['console']
+    project_root = ensure_project_root(ctx)
+    db = get_database_service(project_root)
+
+    # Validate task exists
+    validate_task_exists(db, task_id, ctx)
+    task = task_methods.get_task(db, task_id)
+
+    # Validate blocker type
+    if not blocker_task_id and not external:
+        console.print("\n❌ [red]Must specify --task or --external[/red]\n")
+        console.print("💡 Examples:")
+        console.print("   apm task add-blocker 5 --task 3")
+        console.print("   apm task add-blocker 5 --external \"Waiting on approval\"\n")
+        raise click.Abort()
+
+    if blocker_task_id and external:
+        console.print("\n❌ [red]Cannot specify both --task and --external[/red]\n")
+        console.print("💡 Use one or the other:")
+        console.print("   --task for internal blocker (another AIPM task)")
+        console.print("   --external for external blocker (approval, review, etc.)\n")
+        raise click.Abort()
+
+    try:
+        if blocker_task_id:
+            # Internal task blocker
+            validate_task_exists(db, blocker_task_id, ctx)
+            blocker_task = task_methods.get_task(db, blocker_task_id)
+
+            blocker = dep_methods.add_task_blocker(
+                db,
+                task_id,
+                blocker_type='task',
+                blocker_task_id=blocker_task_id
+            )
+
+            console.print(f"\n🚧 [yellow]Blocker added:[/yellow]")
+            console.print(f"   Task #{task_id} '{task.name}'")
+            console.print(f"   BLOCKED BY →")
+            console.print(f"   Task #{blocker_task_id} '{blocker_task.name}'\n")
+
+        else:
+            # External blocker
+            blocker = dep_methods.add_task_blocker(
+                db,
+                task_id,
+                blocker_type='external',
+                blocker_description=external,
+                blocker_reference=reference
+            )
+
+            console.print(f"\n🚧 [yellow]External blocker added:[/yellow]")
+            console.print(f"   Task #{task_id} '{task.name}'")
+            console.print(f"   BLOCKED BY → {external}")
+            if reference:
+                console.print(f"   Reference: {reference}")
+            console.print()
+
+        console.print("⚠️  [yellow]Workflow Impact:[/yellow]")
+        console.print(f"   Task #{task_id} cannot complete until blocker resolved")
+        console.print(f"   Use 'apm task resolve-blocker {blocker.id}' when ready\n")
+
+    except Exception as e:
+        console.print(f"\n❌ [red]Error adding blocker:[/red] {e}\n")
+        raise click.Abort()
+
+
+@click.command(name='list-dependencies')
+@click.argument('task_id', type=int)
+@click.option(
+    '--format',
+    type=click.Choice(['table', 'json'], case_sensitive=False),
+    default='table',
+    help='Output format'
+)
+@click.pass_context
+def list_dependencies(ctx: click.Context, task_id: int, format: str):
+    """
+    List task dependencies (what it depends on and what depends on it).
+
+    \b
+    Shows bidirectional relationships:
+      Prerequisites: Tasks that must complete before this can start
+      Dependents: Tasks that depend on this completing
+
+    \b
+    Example:
+      apm task list-dependencies 5
+      apm task list-dependencies 5 --format=json
+    """
+    console = ctx.obj['console']
+    project_root = ensure_project_root(ctx)
+    db = get_database_service(project_root)
+
+    validate_task_exists(db, task_id, ctx)
+    task = task_methods.get_task(db, task_id)
+
+    # Get dependencies (what this task depends on)
+    prerequisites = dep_methods.get_task_dependencies(db, task_id)
+
+    # Get dependents (what depends on this task)
+    dependents = dep_methods.get_tasks_depending_on(db, task_id)
+
+    if format == 'json':
+        import json
+        output = {
+            'task_id': task_id,
+            'task_name': task.name,
+            'prerequisites': [
+                {
+                    'depends_on_task_id': d.depends_on_task_id,
+                    'type': d.dependency_type,
+                    'notes': d.notes
+                }
+                for d in prerequisites
+            ],
+            'dependents': [
+                {
+                    'dependent_task_id': d.task_id,
+                    'type': d.dependency_type
+                }
+                for d in dependents
+            ]
+        }
+        console.print(json.dumps(output, indent=2))
+    else:
+        # Rich table display
+        console.print(f"\n📊 [bold cyan]Dependencies for Task #{task_id}: {task.name}[/bold cyan]\n")
+
+        # Prerequisites table
+        if prerequisites:
+            table = Table(title="⬆️  Prerequisites (must complete first)")
+            table.add_column("Task ID", style="cyan")
+            table.add_column("Task Name", style="bold")
+            table.add_column("Type", style="magenta")
+            table.add_column("Status", style="yellow")
+
+            for dep in prerequisites:
+                dep_task = task_methods.get_task(db, dep.depends_on_task_id)
+                if dep_task:
+                    table.add_row(
+                        str(dep.depends_on_task_id),
+                        dep_task.name,
+                        dep.dependency_type,
+                        dep_task.status.value
+                    )
+
+            console.print(table)
+            console.print()
+        else:
+            console.print("   [dim]No prerequisites[/dim]\n")
+
+        # Dependents table
+        if dependents:
+            table = Table(title="⬇️  Dependents (waiting on this)")
+            table.add_column("Task ID", style="cyan")
+            table.add_column("Task Name", style="bold")
+            table.add_column("Type", style="magenta")
+            table.add_column("Status", style="yellow")
+
+            for dep in dependents:
+                dependent_task = task_methods.get_task(db, dep.task_id)
+                if dependent_task:
+                    table.add_row(
+                        str(dep.task_id),
+                        dependent_task.name,
+                        dep.dependency_type,
+                        dependent_task.status.value
+                    )
+
+            console.print(table)
+            console.print()
+        else:
+            console.print("   [dim]No dependent tasks[/dim]\n")
+
+
+@click.command(name='list-blockers')
+@click.argument('task_id', type=int)
+@click.option(
+    '--unresolved-only',
+    is_flag=True,
+    help='Show only unresolved blockers'
+)
+@click.option(
+    '--format',
+    type=click.Choice(['table', 'json'], case_sensitive=False),
+    default='table',
+    help='Output format'
+)
+@click.pass_context
+def list_blockers(ctx: click.Context, task_id: int, unresolved_only: bool, format: str):
+    """
+    List task blockers (what's blocking completion).
+
+    \b
+    Blocker types:
+      task: Another AIPM task blocking this one
+      external: External factor (approval, review, etc.)
+
+    \b
+    Examples:
+      apm task list-blockers 5                   # All blockers
+      apm task list-blockers 5 --unresolved-only # Active blockers only
+      apm task list-blockers 5 --format=json     # JSON output
+    """
+    console = ctx.obj['console']
+    project_root = ensure_project_root(ctx)
+    db = get_database_service(project_root)
+
+    validate_task_exists(db, task_id, ctx)
+    task = task_methods.get_task(db, task_id)
+
+    # Get blockers
+    blockers = dep_methods.get_task_blockers(db, task_id, unresolved_only=unresolved_only)
+
+    if format == 'json':
+        import json
+        output = {
+            'task_id': task_id,
+            'task_name': task.name,
+            'blockers': [
+                {
+                    'id': b.id,
+                    'type': b.blocker_type,
+                    'blocker_task_id': b.blocker_task_id,
+                    'description': b.blocker_description,
+                    'reference': b.blocker_reference,
+                    'resolved': b.is_resolved
+                }
+                for b in blockers
+            ]
+        }
+        console.print(json.dumps(output, indent=2))
+    else:
+        # Rich table display
+        filter_text = " (Unresolved Only)" if unresolved_only else ""
+        console.print(f"\n🚧 [bold yellow]Blockers for Task #{task_id}: {task.name}{filter_text}[/bold yellow]\n")
+
+        if not blockers:
+            console.print("   ✅ [green]No blockers![/green]")
+            if not unresolved_only:
+                console.print("   Task can proceed to completion\n")
+            return
+
+        table = Table(title=f"{len(blockers)} Blocker(s)")
+        table.add_column("ID", style="cyan")
+        table.add_column("Type", style="magenta")
+        table.add_column("Description", style="bold")
+        table.add_column("Status", style="yellow")
+
+        for b in blockers:
+            if b.blocker_type == 'task' and b.blocker_task_id:
+                blocker_task = task_methods.get_task(db, b.blocker_task_id)
+                desc = f"Task #{b.blocker_task_id}: {blocker_task.name if blocker_task else 'Unknown'}"
+            else:
+                desc = b.blocker_description
+                if b.blocker_reference:
+                    desc += f" ({b.blocker_reference})"
+
+            status = "✅ Resolved" if b.is_resolved else "🚧 Unresolved"
+
+            table.add_row(
+                str(b.id),
+                b.blocker_type,
+                desc,
+                status
+            )
+
+        console.print(table)
+        console.print()
+
+        unresolved_count = len([b for b in blockers if not b.is_resolved])
+        if unresolved_count > 0:
+            console.print(f"⚠️  [yellow]{unresolved_count} unresolved blocker(s) prevent task completion[/yellow]")
+            console.print(f"💡 Resolve with: [cyan]apm task resolve-blocker <id> --notes \"Resolution\"[/cyan]\n")
+
+
+@click.command(name='resolve-blocker')
+@click.argument('blocker_id', type=int)
+@click.option(
+    '--notes',
+    required=True,
+    help='Resolution notes (required - explain how blocker was resolved)'
+)
+@click.pass_context
+def resolve_blocker(ctx: click.Context, blocker_id: int, notes: str):
+    """
+    Mark blocker as resolved.
+
+    Records resolution timestamp and notes for audit trail.
+    If blocker was a task, this is often done automatically when
+    the blocker task completes (auto-resolution trigger).
+
+    \b
+    Examples:
+      apm task resolve-blocker 123 --notes "API was approved"
+      apm task resolve-blocker 456 --notes "Legal review complete, contract signed"
+
+    \b
+    Workflow Impact:
+      Task can now proceed to completion (blocker removed from validation)
+    """
+    console = ctx.obj['console']
+    project_root = ensure_project_root(ctx)
+    db = get_database_service(project_root)
+
+    # Get blocker details
+    blocker = dep_methods.get_task_blocker(db, blocker_id)
+
+    if not blocker:
+        console.print(f"\n❌ [red]Blocker not found:[/red] ID {blocker_id}\n")
+        console.print("💡 List blockers with:")
+        console.print("   apm task list-blockers <task-id>\n")
+        raise click.Abort()
+
+    if blocker.is_resolved:
+        console.print(f"\n⚠️  [yellow]Blocker already resolved[/yellow]")
+        console.print(f"   Resolved at: {blocker.resolved_at}")
+        console.print(f"   Notes: {blocker.resolution_notes}\n")
+        return
+
+    # Resolve blocker
+    try:
+        resolved = dep_methods.resolve_task_blocker(db, blocker_id, notes)
+
+        task = task_methods.get_task(db, blocker.task_id)
+
+        console.print(f"\n✅ [green]Blocker resolved![/green]")
+        console.print(f"   Blocker ID: {blocker_id}")
+        console.print(f"   Blocked task: #{task.id} '{task.name}'")
+
+        if blocker.blocker_type == 'task':
+            console.print(f"   Blocker was: Task #{blocker.blocker_task_id}")
+        else:
+            console.print(f"   Blocker was: {blocker.blocker_description}")
+
+        console.print(f"\n📝 [dim]Resolution: {notes}[/dim]")
+
+        # Check if task has other unresolved blockers
+        remaining = dep_methods.get_task_blockers(db, task.id, unresolved_only=True)
+        if remaining:
+            console.print(f"\n⚠️  [yellow]Task still has {len(remaining)} unresolved blocker(s)[/yellow]")
+        else:
+            console.print(f"\n✅ [green]No remaining blockers - task can now complete![/green]")
+
+        console.print()
+
+    except Exception as e:
+        console.print(f"\n❌ [red]Error resolving blocker:[/red] {e}\n")
+        raise click.Abort()

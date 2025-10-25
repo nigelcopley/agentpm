@@ -1,0 +1,31 @@
+<!-- Task Results Summary Component -->
+<!-- Usage: Include this component in templates -->
+<!-- Variables: tasks, current_filters, metrics (required) -->
+
+{% if tasks %}
+<div class="bg-white rounded-xl shadow-lg p-6">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-6">
+            <div class="text-sm text-gray-600">
+                <span class="font-medium text-gray-900">{{ tasks|length }}</span> 
+                task{{ 's' if tasks|length != 1 else '' }} shown
+            </div>
+            {% if current_filters.search or current_filters.status or current_filters.type or current_filters.work_item %}
+            <div class="text-sm text-gray-500">
+                Filtered from <span class="font-medium">{{ metrics.total_tasks }}</span> total tasks
+            </div>
+            {% endif %}
+        </div>
+        <div class="flex items-center space-x-4 text-sm text-gray-500">
+            <div class="flex items-center">
+                <i class="bi bi-clock mr-1"></i>
+                <span>{{ "%.1f"|format(metrics.total_estimated_hours) }}h total effort</span>
+            </div>
+            <div class="flex items-center">
+                <i class="bi bi-check-circle mr-1"></i>
+                <span>{{ metrics.done_tasks }} completed</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}

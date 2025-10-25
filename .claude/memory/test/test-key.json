@@ -1,0 +1,11 @@
+{
+  "key": "test-key",
+  "data": {
+    "test": "data",
+    "number": 42
+  },
+  "type": "persistent",
+  "category": "test",
+  "timestamp": "2025-10-24T15:55:52.896059",
+  "hash": "92878c6bc8d252999d5086385bcc432c"
+}

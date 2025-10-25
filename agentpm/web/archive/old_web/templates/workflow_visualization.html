@@ -1,0 +1,275 @@
+{% extends "layouts/modern_base.html" %}
+{% from 'macros/breadcrumb.html' import breadcrumb %}
+
+{% block title %}Workflow Rules - APM (Agent Project Manager) Dashboard{% endblock %}
+
+{% block content %}
+{{ breadcrumb([
+    {'label': 'System', 'url': '/system'},
+    {'label': 'Workflow Rules', 'url': None}
+]) }}
+<!-- Page Header -->
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-5">
+            <i class="bi bi-diagram-3 text-primary"></i> Workflow State Machine
+        </h1>
+        <p class="lead text-muted">APM (Agent Project Manager) 9-State Workflow and Quality Gates</p>
+    </div>
+</div>
+
+<!-- Workflow Flow Diagram -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="card shadow-soft">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-arrow-right-circle text-info"></i> Workflow Flow
+                </h5>
+                <div class="text-center p-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; color: white;">
+                    <div style="font-family: monospace; font-size: 0.95rem; line-height: 2;">
+                        <strong>proposed</strong>
+                        <span class="transition-arrow" style="color: white;">→</span>
+                        <strong>validated</strong>
+                        <span class="transition-arrow" style="color: white;">→</span>
+                        <strong>accepted</strong>
+                        <span class="transition-arrow" style="color: white;">→</span>
+                        <strong>in_progress</strong>
+                        <span class="transition-arrow" style="color: white;">→</span>
+                        <strong>review</strong>
+                        <span class="transition-arrow" style="color: white;">→</span>
+                        <strong>completed</strong>
+                        <span class="transition-arrow" style="color: white;">→</span>
+                        <strong>archived</strong>
+                        <br>
+                        <small style="opacity: 0.8;">
+                            <em>Side states: blocked (temporary), cancelled (terminal)</em>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Workflow States Detail -->
+<div class="row mb-4">
+    <div class="col">
+        <h3 class="mb-3">
+            <i class="bi bi-collection text-primary"></i> State Definitions
+        </h3>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    {% for state in workflow.states %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card state-card shadow-soft h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <span class="badge badge-primary state-badge">{{ state.name }}</span>
+                </h5>
+                <p class="text-muted mb-3">{{ state.description }}</p>
+
+                {% if state.allowed_transitions %}
+                <h6 class="mb-2">
+                    <i class="bi bi-arrow-right-short"></i> Allowed Transitions:
+                </h6>
+                <div class="mb-3">
+                    {% for transition in state.allowed_transitions %}
+                    <span class="badge badge-gray me-1 mb-1">{{ transition }}</span>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted"><em>Terminal state (no transitions)</em></p>
+                {% endif %}
+
+                {% if state.requirements %}
+                <h6 class="mb-2">
+                    <i class="bi bi-check-circle"></i> Requirements:
+                </h6>
+                <ul class="list-unstyled mb-0">
+                    {% for req in state.requirements %}
+                    <li class="requirement-item">
+                        <i class="bi bi-chevron-right text-primary"></i> {{ req }}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Time-Boxing Rules -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="card shadow-soft">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-clock-history text-danger"></i> Time-Boxing Rules (DP-001 Enforcement)
+                </h5>
+                <p class="text-muted">Maximum allowed hours per task type (STRICT enforcement)</p>
+
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead class="table-header">
+                            <tr>
+                                <th>Task Type</th>
+                                <th>Max Hours</th>
+                                <th>Purpose</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task_type, max_hours in workflow.time_boxing_rules.items() %}
+                            <tr>
+                                <td><span class="badge badge-info">{{ task_type }}</span></td>
+                                <td>
+                                    <strong>{{ max_hours }}h</strong>
+                                    {% if task_type == 'implementation' %}
+                                    <span class="badge badge-error ms-2">STRICT</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-muted">
+                                    {% if task_type == 'implementation' %}
+                                    Forces proper task decomposition
+                                    {% elif task_type == 'simple' %}
+                                    Quick tasks only
+                                    {% elif task_type == 'review' or task_type == 'bugfix' %}
+                                    Focused review/fix
+                                    {% elif task_type == 'testing' %}
+                                    Test writing and execution
+                                    {% elif task_type == 'design' or task_type == 'analysis' %}
+                                    Research and planning
+                                    {% else %}
+                                    Standard development work
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="alert alert-warning mt-3" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <strong>DP-001 Rule:</strong> IMPLEMENTATION tasks exceeding 4.0 hours are BLOCKED by governance.
+                    Break tasks into smaller units to comply with time-boxing requirements.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Required Tasks by Work Item Type -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="card shadow-soft">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-list-check text-success"></i> Required Tasks by Work Item Type
+                </h5>
+                <p class="text-muted">Quality gates enforced per work item type</p>
+
+                {% if workflow.required_tasks_by_work_item %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead class="table-header">
+                            <tr>
+                                <th>Work Item Type</th>
+                                <th>Required Task Types</th>
+                                <th>Rationale</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for wi_type, required_tasks in workflow.required_tasks_by_work_item.items() %}
+                            {% if required_tasks %}
+                            <tr>
+                                <td><span class="badge badge-primary">{{ wi_type }}</span></td>
+                                <td>
+                                    {% for task_type in required_tasks %}
+                                    <span class="badge badge-info me-1">{{ task_type }}</span>
+                                    {% endfor %}
+                                </td>
+                                <td class="text-muted">
+                                    {% if wi_type == 'feature' %}
+                                    Complete development lifecycle
+                                    {% elif wi_type == 'bugfix' %}
+                                    Analysis → Fix → Verification
+                                    {% elif wi_type == 'refactoring' %}
+                                    Design → Implementation → Testing
+                                    {% else %}
+                                    Standard work item requirements
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No required task type rules configured</p>
+                {% endif %}
+
+                <div class="alert alert-info mt-3" role="alert">
+                    <i class="bi bi-info-circle-fill"></i>
+                    <strong>Quality Gate:</strong> Work items cannot transition to READY without all required task types present.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Reference -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="card shadow-soft">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-book text-secondary"></i> Quick Reference
+                </h5>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary">Forward Transitions</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-arrow-right text-success"></i> Normal workflow progression</li>
+                            <li><i class="bi bi-arrow-right text-success"></i> Quality gates enforced at each state</li>
+                            <li><i class="bi bi-arrow-right text-success"></i> Dependency validation required</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-warning">Backward Transitions</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-arrow-left text-warning"></i> Rework scenarios (validated → proposed)</li>
+                            <li><i class="bi bi-arrow-left text-warning"></i> Review feedback (review → in_progress)</li>
+                            <li><i class="bi bi-arrow-left text-warning"></i> Reason required for backward moves</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <h6 class="text-info">Administrative States</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-pause-circle text-info"></i> <strong>blocked</strong>: Temporary pause (resolvable)</li>
+                            <li><i class="bi bi-x-circle text-danger"></i> <strong>cancelled</strong>: Terminal (won't complete)</li>
+                            <li><i class="bi bi-archive text-secondary"></i> <strong>archived</strong>: Historical reference only</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-danger">Forbidden Transitions</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-shield-x text-danger"></i> Cannot skip workflow stages</li>
+                            <li><i class="bi bi-shield-x text-danger"></i> Cannot reopen completed work</li>
+                            <li><i class="bi bi-shield-x text-danger"></i> Cannot skip review stage</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "layouts/modern_base.html" %}
+
+{% block title %}Session History Unavailable{% endblock %}
+
+{% block content %}
+<div id="work-item-detail" class="max-w-3xl mx-auto">
+  <div class="card">
+    <div class="card-header">
+      <h1 class="card-title text-xl font-semibold text-gray-900">Session Timeline Not Available</h1>
+    </div>
+    <div class="card-body space-y-4">
+      <p class="text-sm text-gray-600">
+        We couldn’t find session history for work item <span class="font-semibold">#{{ requested_work_item_id }}</span>.
+      </p>
+      <p class="text-sm text-gray-600">
+        This typically means the record was removed or it hasn’t been generated yet. Select an existing work item to review its activity.
+      </p>
+      <a href="/work-items" class="btn btn-secondary inline-flex items-center gap-2">
+        <i class="bi bi-kanban"></i>
+        Browse Work Items
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

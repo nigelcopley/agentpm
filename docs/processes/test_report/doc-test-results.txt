@@ -1,0 +1,1053 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.3, pytest-8.3.5, pluggy-1.5.0 -- /Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12
+cachedir: .pytest_cache
+rootdir: /Users/nigelcopley/.project_manager/aipm-v2
+configfile: pyproject.toml
+plugins: asyncio-1.2.0, anyio-4.10.0, django-4.11.1, base-url-2.1.0, playwright-0.7.1, cov-7.0.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collecting ... collected 8 items
+
+tests/docs/test_markdown_examples.py::TestMarkdownPythonExamples::test_python_blocks_are_syntactically_valid FAILED [ 12%]
+tests/docs/test_markdown_examples.py::TestMarkdownPythonExamples::test_python_imports_are_valid FAILED [ 25%]
+tests/docs/test_markdown_examples.py::TestMarkdownPythonExamples::test_example_snippets_execute_without_error PASSED [ 37%]
+tests/docs/test_markdown_examples.py::TestMarkdownBashExamples::test_apm_commands_are_valid FAILED [ 50%]
+tests/docs/test_markdown_examples.py::TestMarkdownBashExamples::test_command_examples_have_descriptions PASSED [ 62%]
+tests/docs/test_markdown_examples.py::TestMarkdownStructure::test_markdown_files_exist PASSED [ 75%]
+tests/docs/test_markdown_examples.py::TestMarkdownStructure::test_markdown_files_have_headings PASSED [ 87%]
+tests/docs/test_markdown_examples.py::TestMarkdownStructure::test_code_blocks_are_closed FAILED [100%]/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/coverage/control.py:945: CoverageWarning: No data was collected. (no-data-collected)
+  self._warn("No data was collected.", slug="no-data-collected")
+
+
+=================================== FAILURES ===================================
+____ TestMarkdownPythonExamples.test_python_blocks_are_syntactically_valid _____
+
+self = <test_markdown_examples.TestMarkdownPythonExamples object at 0x1057f3b00>
+markdown_files = [PosixPath('/Users/nigelcopley/.project_manager/aipm-v2/docs/DOCUMENTATION-CONFLICTS-AUDIT-2025-10-18.md'), PosixPath(...IST.md'), PosixPath('/Users/nigelcopley/.project_manager/aipm-v2/docs/DOCUMENTATION-FIXES-APPLIED-2025-10-18.md'), ...]
+
+    def test_python_blocks_are_syntactically_valid(self, markdown_files: List[Path]):
+        """
+        Test that all Python code blocks have valid syntax.
+    
+        This test compiles Python code blocks to check for syntax errors.
+        It does not execute the code to avoid side effects.
+    
+        Args:
+            markdown_files: List of markdown files to test
+        """
+        errors = []
+    
+        for md_file in markdown_files:
+            content = md_file.read_text()
+            blocks = extract_python_blocks(content)
+    
+            for line_num, code in blocks:
+                try:
+                    compile(code, f"<{md_file.name}:L{line_num}>", 'exec')
+                except SyntaxError as e:
+                    errors.append(
+                        f"{md_file.relative_to(md_file.parent.parent.parent)}:"
+                        f"{line_num}: SyntaxError: {e.msg}"
+                    )
+    
+        if errors:
+>           pytest.fail(
+                "Found Python syntax errors in documentation:\n" +
+                "\n".join(errors)
+            )
+E           Failed: Found Python syntax errors in documentation:
+E           docs/design/document-workflow-integration-design.md:264: SyntaxError: expected ':'
+E           docs/design/principle-agents-implementation.md:133: SyntaxError: expected an indented block after function definition on line 12
+E           docs/design/principle-based-agents.md:530: SyntaxError: invalid syntax
+E           docs/design/principle-agents-integration-analysis.md:215: SyntaxError: invalid character '├' (U+251C)
+E           docs/design/principle-agents-integration-analysis.md:298: SyntaxError: invalid character '≥' (U+2265)
+E           docs/design/unified-context-delivery-system.md:1056: SyntaxError: invalid character '→' (U+2192)
+E           docs/specifications/6W-QUESTIONS-ANSWERED.md:78: SyntaxError: invalid syntax
+E           docs/specifications/6W-QUESTIONS-ANSWERED.md:284: SyntaxError: invalid syntax
+E           docs/specifications/6W-QUESTIONS-ANSWERED.md:559: SyntaxError: invalid syntax
+E           docs/specifications/6W-QUESTIONS-ANSWERED.md:1292: SyntaxError: invalid syntax
+E           docs/specifications/6W-QUESTIONS-ANSWERED.md:1369: SyntaxError: expected an indented block after function definition on line 3
+E           docs/specifications/6W-QUESTIONS-ANSWERED.md:1846: SyntaxError: invalid syntax
+E           docs/specifications/GAP-ANALYSIS-AND-ROADMAP.md:40: SyntaxError: invalid character '✅' (U+2705)
+E           docs/specifications/GAP-ANALYSIS-AND-ROADMAP.md:60: SyntaxError: invalid character '✅' (U+2705)
+E           docs/specifications/GAP-ANALYSIS-AND-ROADMAP.md:130: SyntaxError: invalid character '✅' (U+2705)
+E           docs/specifications/AIPM-V2-COMPLETE-SPECIFICATION.md:483: SyntaxError: invalid syntax
+E           docs/specifications/DOCUMENT-STORE-INTEGRATION.md:499: SyntaxError: 'return' outside function
+E           docs/analysis/ideas-web-interface-added.md:16: SyntaxError: invalid syntax
+E           docs/analysis/ideas-web-interface-added.md:94: SyntaxError: invalid character '→' (U+2192)
+E           docs/analysis/testing-rules-blocking-issue.md:38: SyntaxError: 'return' outside function
+E           docs/analysis/testing-rules-blocking-issue.md:54: SyntaxError: 'return' outside function
+E           docs/analysis/work-item-lifecycle-tracking-analysis.md:28: SyntaxError: invalid syntax. Perhaps you forgot a comma?
+E           docs/analysis/work-item-lifecycle-tracking-analysis.md:230: SyntaxError: invalid syntax
+E           docs/analysis/work-item-lifecycle-tracking-analysis.md:662: SyntaxError: unexpected indent
+E           docs/analysis/event-driven-architecture-analysis.md:413: SyntaxError: invalid syntax
+E           docs/analysis/event-driven-architecture-analysis.md:635: SyntaxError: invalid syntax
+E           docs/analysis/event-driven-architecture-analysis.md:791: SyntaxError: invalid syntax
+E           docs/analysis/event-driven-architecture-analysis.md:804: SyntaxError: invalid syntax
+E           docs/analysis/ZEN_CONVERSATION_MEMORY_TO_AIPM_SESSIONS.md:582: SyntaxError: invalid syntax
+E           docs/analysis/ZEN_CONVERSATION_MEMORY_TO_AIPM_SESSIONS.md:603: SyntaxError: unexpected indent
+E           docs/analysis/ZEN_CONVERSATION_MEMORY_TO_AIPM_SESSIONS.md:718: SyntaxError: unexpected indent
+E           docs/analysis/phase-gate-validator-analysis.md:30: SyntaxError: invalid character '≥' (U+2265)
+E           docs/analysis/phase-gate-validator-analysis.md:75: SyntaxError: invalid character '✅' (U+2705)
+E           docs/analysis/phase-gate-validator-analysis.md:87: SyntaxError: positional argument follows keyword argument
+E           docs/analysis/phase-gate-validator-analysis.md:160: SyntaxError: invalid character '✅' (U+2705)
+E           docs/analysis/phase-gate-validator-analysis.md:172: SyntaxError: positional argument follows keyword argument
+E           docs/analysis/phase-gate-validator-analysis.md:220: SyntaxError: invalid character '✅' (U+2705)
+E           docs/analysis/phase-gate-validator-analysis.md:238: SyntaxError: invalid character '✅' (U+2705)
+E           docs/analysis/phase-gate-validator-analysis.md:257: SyntaxError: invalid character '✅' (U+2705)
+E           docs/analysis/phase-gate-validator-analysis.md:345: SyntaxError: positional argument follows keyword argument
+E           docs/analysis/phase-gate-validator-analysis.md:386: SyntaxError: positional argument follows keyword argument
+E           docs/analysis/hooks-architecture-deep-dive.md:1209: SyntaxError: invalid syntax
+E           docs/analysis/hooks-architecture-deep-dive.md:1400: SyntaxError: unexpected indent
+E           docs/analysis/hooks-architecture-deep-dive.md:1410: SyntaxError: unexpected indent
+E           docs/analysis/hooks-architecture-deep-dive.md:1417: SyntaxError: unexpected indent
+E           docs/analysis/context-capture-ux-analysis.md:376: SyntaxError: invalid syntax
+E           docs/analysis/context-capture-ux-analysis.md:579: SyntaxError: positional argument follows keyword argument
+E           docs/analysis/templates-subsystem-architecture.md:1184: SyntaxError: unexpected indent
+E           docs/analysis/templates-subsystem-architecture.md:1191: SyntaxError: unexpected indent
+E           docs/analysis/templates-subsystem-architecture.md:1202: SyntaxError: unexpected indent
+E           docs/analysis/enum-updates-summary.md:53: SyntaxError: unexpected indent
+E           docs/analysis/enum-updates-summary.md:60: SyntaxError: unexpected indent
+E           docs/analysis/enum-updates-summary.md:67: SyntaxError: unexpected indent
+E           docs/analysis/enum-updates-summary.md:73: SyntaxError: unexpected indent
+E           docs/analysis/enum-updates-summary.md:79: SyntaxError: unexpected indent
+E           docs/analysis/enum-updates-summary.md:85: SyntaxError: unexpected indent
+E           docs/analysis/enum-updates-summary.md:91: SyntaxError: unexpected indent
+E           docs/analysis/enum-updates-summary.md:97: SyntaxError: unexpected indent
+E           docs/analysis/enum-updates-summary.md:316: SyntaxError: invalid syntax
+E           docs/analysis/realistic-integration-roadmap.md:58: SyntaxError: invalid syntax
+E           docs/analysis/component-documentation-accuracy-report.md:54: SyntaxError: invalid syntax
+E           docs/analysis/component-documentation-accuracy-report.md:65: SyntaxError: invalid character '✅' (U+2705)
+E           docs/analysis/component-documentation-accuracy-report.md:124: SyntaxError: invalid character '✅' (U+2705)
+E           docs/analysis/component-documentation-accuracy-report.md:166: SyntaxError: invalid character '✅' (U+2705)
+E           docs/analysis/component-documentation-accuracy-report.md:177: SyntaxError: invalid character '✅' (U+2705)
+E           docs/analysis/component-documentation-accuracy-report.md:397: SyntaxError: invalid character '✅' (U+2705)
+E           docs/analysis/component-documentation-accuracy-report.md:416: SyntaxError: invalid character '✅' (U+2705)
+E           docs/analysis/web-admin-subsystem-architecture.md:1083: SyntaxError: 'return' outside function
+E           docs/analysis/web-admin-subsystem-architecture.md:1288: SyntaxError: invalid syntax
+E           docs/analysis/ZEN_MCP_GOLDEN_NUGGETS.md:33: SyntaxError: invalid syntax
+E           docs/analysis/ZEN_MCP_GOLDEN_NUGGETS.md:361: SyntaxError: invalid syntax
+E           docs/analysis/ZEN_MCP_GOLDEN_NUGGETS.md:714: SyntaxError: invalid syntax
+E           docs/analysis/web-interface-coverage-analysis.md:207: SyntaxError: invalid syntax
+E           docs/analysis/web-interface-coverage-analysis.md:213: SyntaxError: invalid syntax
+E           docs/analysis/web-interface-coverage-analysis.md:219: SyntaxError: invalid syntax
+E           docs/analysis/web-interface-coverage-analysis.md:225: SyntaxError: invalid syntax
+E           docs/analysis/web-interface-coverage-analysis.md:430: SyntaxError: illegal target for annotation
+E           docs/analysis/web-interface-coverage-analysis.md:447: SyntaxError: illegal target for annotation
+E           docs/analysis/web-interface-coverage-analysis.md:464: SyntaxError: illegal target for annotation
+E           docs/analysis/unimplemented-features-analysis.md:240: SyntaxError: expected ':'
+E           docs/analysis/unimplemented-features-analysis.md:305: SyntaxError: invalid syntax
+E           docs/analysis/file-vs-database-system-inventory.md:321: SyntaxError: invalid syntax
+E           docs/analysis/file-vs-database-system-inventory.md:358: SyntaxError: invalid syntax
+E           docs/analysis/rule-delivery-recommendations.md:51: SyntaxError: unexpected indent
+E           docs/analysis/rule-delivery-recommendations.md:85: SyntaxError: unexpected indent
+E           docs/analysis/rule-delivery-recommendations.md:124: SyntaxError: unexpected indent
+E           docs/analysis/rule-delivery-recommendations.md:195: SyntaxError: unexpected indent
+E           docs/analysis/rule-delivery-recommendations.md:288: SyntaxError: invalid syntax
+E           docs/analysis/rule-delivery-recommendations.md:296: SyntaxError: invalid syntax
+E           docs/analysis/rule-delivery-recommendations.md:305: SyntaxError: invalid syntax
+E           docs/analysis/rule-delivery-recommendations.md:314: SyntaxError: invalid syntax
+E           docs/analysis/rule-delivery-recommendations.md:323: SyntaxError: invalid syntax
+E           docs/analysis/rule-delivery-recommendations.md:333: SyntaxError: invalid syntax
+E           docs/analysis/security-subsystem-architecture.md:262: SyntaxError: unexpected indent
+E           docs/analysis/security-subsystem-architecture.md:314: SyntaxError: unexpected indent
+E           docs/analysis/security-subsystem-architecture.md:596: SyntaxError: invalid character '✅' (U+2705)
+E           docs/analysis/security-subsystem-architecture.md:660: SyntaxError: 'return' outside function
+E           docs/analysis/security-subsystem-architecture.md:686: SyntaxError: 'return' outside function
+E           docs/features/context-wizard-implementation.md:38: SyntaxError: invalid character '→' (U+2192)
+E           docs/external-research/AIPM-V2-COMPLETE-SYSTEM-BREAKDOWN.md:978: SyntaxError: unexpected indent
+E           docs/external-research/AIPM-V2-COMPLETE-SYSTEM-BREAKDOWN.md:1004: SyntaxError: unexpected indent
+E           docs/external-research/AIPM-V2-COMPLETE-SYSTEM-BREAKDOWN.md:1015: SyntaxError: unexpected indent
+E           docs/external-research/AIPM-V2-COMPLETE-SYSTEM-BREAKDOWN.md:1139: SyntaxError: unexpected indent
+E           docs/external-research/AIPM-V2-COMPLETE-SYSTEM-BREAKDOWN.md:2116: SyntaxError: invalid syntax
+E           docs/external-research/roadmap-validation-report.md:515: SyntaxError: expected ':'
+E           docs/external-research/roadmap-validation-report.md:582: SyntaxError: 'await' outside function
+E           docs/external-research/roadmap-validation-report.md:757: SyntaxError: invalid character '├' (U+251C)
+E           docs/external-research/roadmap-validation-report.md:821: SyntaxError: expected an indented block after function definition on line 2
+E           docs/external-research/v2-rules-vs-constitution-analysis.md:134: SyntaxError: invalid syntax
+E           docs/external-research/v2-rules-vs-constitution-analysis.md:228: SyntaxError: expected an indented block after 'else' statement on line 8
+E           docs/external-research/v2-rules-vs-constitution-analysis.md:267: SyntaxError: expected an indented block after 'if' statement on line 14
+E           docs/external-research/v2-rules-vs-constitution-analysis.md:400: SyntaxError: positional argument follows keyword argument
+E           docs/user-guides/documentation-audit-report.md:207: SyntaxError: invalid syntax. Perhaps you forgot a comma?
+E           docs/user-guides/documentation-audit-report.md:302: SyntaxError: invalid character '→' (U+2192)
+E           docs/architecture/CONTEXT-DELIVERY-HIERARCHY-SPECIFICATION.md:438: SyntaxError: invalid character '→' (U+2192)
+E           docs/architecture/CONTEXT-DELIVERY-SUMMARY.md:35: SyntaxError: invalid syntax. Perhaps you forgot a comma?
+E           docs/architecture/CONTEXT-DELIVERY-SUMMARY.md:65: SyntaxError: invalid syntax
+E           docs/architecture/UNIFIED-CONTEXT-DELIVERY-SYSTEM.md:731: SyntaxError: invalid syntax
+E           docs/architecture/UNIFIED-CONTEXT-DELIVERY-SYSTEM.md:999: SyntaxError: invalid syntax
+E           docs/development-roadmap/quick-start-implementation.md:78: SyntaxError: unexpected indent
+E           docs/development-roadmap/quick-start-implementation.md:86: SyntaxError: unexpected indent
+E           docs/development-roadmap/quick-start-implementation.md:127: SyntaxError: unexpected indent
+E           docs/adrs/ADR-007-human-in-the-loop-workflows.md:850: SyntaxError: invalid syntax
+E           docs/adrs/ADR-003-sub-agent-communication-protocol.md:251: SyntaxError: unexpected indent
+E           docs/developer-guide/01-architecture-overview.md:658: SyntaxError: invalid character '→' (U+2192)
+E           docs/developer-guide/provider-generator-system.md:133: SyntaxError: invalid syntax
+E           docs/developer-guide/provider-generator-system.md:264: SyntaxError: ':' expected after dictionary key
+E           docs/work-items/wi-101-route-organization-plan.md:62: SyntaxError: invalid syntax
+E           docs/work-items/wi-101-route-organization-plan.md:85: SyntaxError: invalid syntax
+E           docs/work-items/wi-101-route-organization-plan.md:106: SyntaxError: invalid syntax
+E           docs/work-items/wi-101-route-organization-plan.md:129: SyntaxError: invalid syntax
+E           docs/work-items/wi-101-route-organization-plan.md:146: SyntaxError: invalid syntax
+E           docs/reports/MIGRATION-0018-REFACTOR-SUMMARY.md:205: SyntaxError: invalid syntax
+E           docs/reports/schema-gap-analysis-2025-10-16.md:514: SyntaxError: unexpected indent
+E           docs/reports/APM_AUDIT_EXECUTIVE_SUMMARY.md:39: SyntaxError: invalid syntax
+E           docs/reports/APM_AUDIT_EXECUTIVE_SUMMARY.md:48: SyntaxError: invalid character '→' (U+2192)
+E           docs/reports/APM_AUDIT_EXECUTIVE_SUMMARY.md:66: SyntaxError: invalid syntax
+E           docs/reports/WORKFLOW-ANALYSIS.md:245: SyntaxError: invalid syntax
+E           docs/reports/WORKFLOW-ANALYSIS.md:332: SyntaxError: unexpected indent
+E           docs/reports/WORKFLOW-ANALYSIS.md:349: SyntaxError: unexpected indent
+E           docs/reports/WORKFLOW-ANALYSIS.md:361: SyntaxError: unexpected indent
+E           docs/reports/WORKFLOW-ANALYSIS.md:507: SyntaxError: invalid character '→' (U+2192)
+E           docs/reports/cli-improvement-plan.md:46: SyntaxError: invalid syntax
+E           docs/reports/cli-improvement-plan.md:71: SyntaxError: invalid syntax
+E           docs/reports/cli-improvement-plan.md:163: SyntaxError: invalid syntax
+E           docs/reports/cli-improvement-plan.md:537: SyntaxError: expected an indented block after 'elif' statement on line 15
+E           docs/reports/APM_COMMAND_AUDIT_REPORT.md:249: SyntaxError: invalid syntax
+E           docs/reports/APM_COMMAND_AUDIT_REPORT.md:268: SyntaxError: invalid character '→' (U+2192)
+E           docs/reports/APM_COMMAND_AUDIT_REPORT.md:418: SyntaxError: invalid syntax
+E           docs/reports/phase-status-coupling-analysis.md:28: SyntaxError: 'return' outside function
+E           docs/reports/phase-status-coupling-analysis.md:39: SyntaxError: 'return' outside function
+E           docs/reports/phase-status-coupling-analysis.md:77: SyntaxError: illegal target for annotation
+E           docs/reports/phase-status-coupling-analysis.md:145: SyntaxError: 'return' outside function
+E           docs/reports/phase-status-coupling-analysis.md:209: SyntaxError: 'return' outside function
+E           docs/reports/phase-status-coupling-analysis.md:259: SyntaxError: expected an indented block after function definition on line 2
+E           docs/reports/phase-status-coupling-analysis.md:453: SyntaxError: 'return' outside function
+E           docs/reports/MIGRATION-0014-SUMMARY.md:320: SyntaxError: unexpected indent
+E           analysis/system-review/05-service-dependency-graph.md:444: SyntaxError: expected ':'
+E           analysis/system-review/05-service-dependency-graph.md:469: SyntaxError: expected ':'
+E           analysis/system-review/05-service-dependency-graph.md:493: SyntaxError: expected ':'
+E           analysis/system-review/05-service-dependency-graph.md:513: SyntaxError: expected ':'
+E           analysis/system-review/05-service-dependency-graph.md:623: SyntaxError: invalid syntax. Perhaps you forgot a comma?
+E           analysis/system-review/02-database-driven-architecture.md:40: SyntaxError: unexpected indent
+E           analysis/system-review/02-database-driven-architecture.md:94: SyntaxError: unexpected indent
+E           analysis/system-review/02-database-driven-architecture.md:365: SyntaxError: 'return' outside function
+E           analysis/system-review/05-phase-workflow-integration-implementation.md:297: SyntaxError: invalid syntax
+E           analysis/system-review/06-documentation-vs-code-reality.md:335: SyntaxError: invalid syntax
+E           analysis/system-review/04-phase-workflow-integration-design.md:865: SyntaxError: invalid character '→' (U+2192)
+E           analysis/system-review/01-architecture-map.md:551: SyntaxError: invalid syntax
+E           analysis/system-review/01-architecture-map.md:569: SyntaxError: invalid character '→' (U+2192)
+E           analysis/system-review/03-critical-issues-and-fixes.md:90: SyntaxError: invalid syntax
+E           analysis/system-review/03-critical-issues-and-fixes.md:173: SyntaxError: invalid syntax
+E           analysis/system-review/03-critical-issues-and-fixes.md:326: SyntaxError: invalid syntax
+E           agents/claude-code/session-start-context-routing-analysis.md:29: SyntaxError: invalid character '→' (U+2192)
+E           agents/claude-code/session-start-context-routing-analysis.md:240: SyntaxError: invalid syntax
+E           agents/claude-code/session-start-context-routing-analysis.md:432: SyntaxError: expected an indented block after 'if' statement on line 5
+E           agents/claude-code/claude-code-task-tool-integration-analysis.md:296: SyntaxError: unexpected indent
+E           agents/claude-code/claude-code-task-tool-integration-analysis.md:332: SyntaxError: unexpected indent
+E           agents/claude-code/claude-code-task-tool-integration-analysis.md:349: SyntaxError: unexpected indent
+E           agents/claude-code/claude-code-task-tool-integration-analysis.md:459: SyntaxError: unexpected indent
+E           agents/claude-code/claude-code-task-tool-integration-analysis.md:467: SyntaxError: unexpected indent
+E           agents/claude-code/claude-code-task-tool-integration-analysis.md:494: SyntaxError: unexpected indent
+E           agents/claude-code/claude-code-skills-integration-analysis.md:440: SyntaxError: invalid syntax
+E           agents/generic/sub-agents-complete-analysis.md:490: SyntaxError: 'await' outside async function
+E           planning/analysis/wi-109-task-554-test-report.md:48: SyntaxError: invalid syntax
+E           planning/analysis/wi-109-task-554-test-report.md:55: SyntaxError: invalid syntax
+E           planning/analysis/wi-109-task-554-test-report.md:62: SyntaxError: invalid syntax
+E           planning/analysis/wi-109-task-554-test-report.md:70: SyntaxError: invalid syntax
+E           planning/analysis/wi-109-task-554-test-report.md:87: SyntaxError: invalid syntax
+E           operations/other/WI-113-I1-PROGRESS-REPORT.md:29: SyntaxError: invalid character '✅' (U+2705)
+E           architecture/specification/WI-102-COMPLETION-AUDIT.md:27: SyntaxError: invalid character '→' (U+2192)
+E           architecture/architecture/WI-78-AUDIT-COMPLETE.md:65: SyntaxError: unexpected indent
+E           architecture/architecture/WI-78-AUDIT-COMPLETE.md:76: SyntaxError: unexpected indent
+E           architecture/implementation_plan/task-591-document-migration-cli.md:127: SyntaxError: invalid syntax
+E           agents/architecture/three-tier-orchestration.md:555: SyntaxError: invalid syntax
+E           agents/guides/implementation-guide.md:189: SyntaxError: unterminated triple-quoted string literal (detected at line 42)
+E           governance/quality_gates_specification/WI-113-R1-GATE-VALIDATION-REPORT.md:375: SyntaxError: expected an indented block after function definition on line 2
+E           governance/quality_gates_specification/WI-113-R1-GATE-VALIDATION-REPORT.md:404: SyntaxError: expected an indented block after 'if' statement on line 5
+E           governance/quality_gates_specification/WI-113-R1-GATE-VALIDATION-REPORT.md:488: SyntaxError: expected an indented block after 'if' statement on line 6
+E           governance/quality_gates_specification/WI-113-R1-GATE-VALIDATION-REPORT.md:654: SyntaxError: positional argument follows keyword argument
+E           governance/quality_gates_specification/WI-113-R1-GATE-VALIDATION-REPORT.md:664: SyntaxError: positional argument follows keyword argument
+E           communication/status_report/WI-109-R1-GATE-VALIDATION.md:145: SyntaxError: invalid syntax
+E           communication/status_report/wi-35-r1-review-report.md:211: SyntaxError: unterminated string literal (detected at line 1)
+
+tests/docs/test_markdown_examples.py:104: Failed
+___________ TestMarkdownPythonExamples.test_python_imports_are_valid ___________
+
+self = <test_markdown_examples.TestMarkdownPythonExamples object at 0x1056fcec0>
+markdown_files = [PosixPath('/Users/nigelcopley/.project_manager/aipm-v2/docs/DOCUMENTATION-CONFLICTS-AUDIT-2025-10-18.md'), PosixPath(...IST.md'), PosixPath('/Users/nigelcopley/.project_manager/aipm-v2/docs/DOCUMENTATION-FIXES-APPLIED-2025-10-18.md'), ...]
+
+    def test_python_imports_are_valid(self, markdown_files: List[Path]):
+        """
+        Test that import statements in Python blocks reference real modules.
+    
+        This test only checks imports from the agentpm package, not external
+        dependencies or standard library.
+    
+        Args:
+            markdown_files: List of markdown files to test
+        """
+        project_root = Path(__file__).parent.parent.parent
+        errors = []
+    
+        for md_file in markdown_files:
+            content = md_file.read_text()
+            blocks = extract_python_blocks(content)
+    
+            for line_num, code in blocks:
+                # Extract import statements
+                import_pattern = r'^(?:from|import)\s+(agentpm\.[\w.]+)'
+                for line in code.split('\n'):
+                    match = re.match(import_pattern, line.strip())
+                    if match:
+                        module_path = match.group(1)
+                        # Convert module path to file path
+                        file_path = module_path.replace('.', '/')
+                        possible_paths = [
+                            project_root / f"{file_path}.py",
+                            project_root / file_path / "__init__.py",
+                        ]
+    
+                        if not any(p.exists() for p in possible_paths):
+                            errors.append(
+                                f"{md_file.relative_to(project_root)}:"
+                                f"{line_num}: ImportError: {module_path} not found"
+                            )
+    
+        if errors:
+>           pytest.fail(
+                "Found invalid imports in documentation:\n" +
+                "\n".join(errors)
+            )
+E           Failed: Found invalid imports in documentation:
+E           docs/design/principle-agents-technical-spec.md:15: ImportError: agentpm.agents.adapters not found
+E           docs/design/principle-agents-technical-spec.md:394: ImportError: agentpm.agents.base not found
+E           docs/design/principle-agents-technical-spec.md:543: ImportError: agentpm.agents.base not found
+E           docs/design/principle-agents-technical-spec.md:543: ImportError: agentpm.agents.adapters.solid_adapter not found
+E           docs/design/principle-agents-technical-spec.md:642: ImportError: agentpm.agents.adapters.base not found
+E           docs/design/principle-agents-technical-spec.md:642: ImportError: agentpm.agents.base not found
+E           docs/design/principle-agents-technical-spec.md:852: ImportError: agentpm.agents.base not found
+E           docs/design/principle-agents-technical-spec.md:852: ImportError: agentpm.agents.principle.solid_agent not found
+E           docs/design/principle-agents-technical-spec.md:852: ImportError: agentpm.agents.principle.dry_agent not found
+E           docs/design/principle-agents-technical-spec.md:852: ImportError: agentpm.agents.principle.kiss_agent not found
+E           docs/design/principle-agents-technical-spec.md:1289: ImportError: agentpm.agents not found
+E           docs/design/principle-agents-technical-spec.md:1289: ImportError: agentpm.agents.base not found
+E           docs/design/principle-agents-technical-spec.md:1289: ImportError: agentpm.agents.registry not found
+E           docs/design/agent-storage-architecture.md:567: ImportError: agentpm.core.agents.sync not found
+E           docs/design/agent-storage-architecture.md:577: ImportError: agentpm.core.plugins.domains.llms.anthropic.claude_code.generator not found
+E           docs/adrs/ADR-004-evidence-storage-and-retrieval.md:791: ImportError: agentpm.core.evidence not found
+E           docs/adrs/ADR-004-evidence-storage-and-retrieval.md:874: ImportError: agentpm.core.evidence not found
+E           docs/adrs/ADR-004-evidence-storage-and-retrieval.md:906: ImportError: agentpm.core.evidence not found
+E           docs/developer-guide/provider-generator-system.md:67: ImportError: agentpm.core.plugins.domains.llms.generators.base not found
+E           docs/developer-guide/provider-generator-system.md:113: ImportError: agentpm.core.plugins.domains.llms.generators.my_provider.generator not found
+E           docs/reports/MIGRATION-0018-REFACTOR-SUMMARY.md:17: ImportError: agentpm.core.database.utils.schema not found
+E           docs/analysis/agents/claude-code/claude-code-task-tool-integration-analysis.md:332: ImportError: agentpm.core.agents.task_tool not found
+E           docs/architecture/specification/wi-perpetual-reviewer.md:258: ImportError: agentpm.core.agents.validators not found
+E           docs/architecture/agents/guides/implementation-guide.md:782: ImportError: agentpm.agents.base not found
+E           docs/architecture/agents/guides/implementation-guide.md:1092: ImportError: agentpm.core.agents.validation not found
+
+tests/docs/test_markdown_examples.py:147: Failed
+_____________ TestMarkdownBashExamples.test_apm_commands_are_valid _____________
+
+self = <test_markdown_examples.TestMarkdownBashExamples object at 0x105b5fad0>
+markdown_files = [PosixPath('/Users/nigelcopley/.project_manager/aipm-v2/docs/DOCUMENTATION-CONFLICTS-AUDIT-2025-10-18.md'), PosixPath(...IST.md'), PosixPath('/Users/nigelcopley/.project_manager/aipm-v2/docs/DOCUMENTATION-FIXES-APPLIED-2025-10-18.md'), ...]
+valid_apm_commands = ['status', 'init', 'work-item', 'task', 'rules', 'agents', ...]
+valid_work_item_commands = ['create', 'show', 'list', 'update', 'next', 'validate', ...]
+valid_task_commands = ['create', 'show', 'list', 'update', 'next', 'validate', ...]
+
+    def test_apm_commands_are_valid(
+        self,
+        markdown_files: List[Path],
+        valid_apm_commands: List[str],
+        valid_work_item_commands: List[str],
+        valid_task_commands: List[str]
+    ):
+        """
+        Test that apm commands in documentation reference valid CLI commands.
+    
+        Args:
+            markdown_files: List of markdown files to test
+            valid_apm_commands: List of valid top-level commands
+            valid_work_item_commands: List of valid work-item subcommands
+            valid_task_commands: List of valid task subcommands
+        """
+        errors = []
+    
+        for md_file in markdown_files:
+            content = md_file.read_text()
+            commands = extract_apm_commands(content)
+    
+            for line_num, cmd in commands:
+                parts = cmd.split()
+                if len(parts) < 2:
+                    continue
+    
+                # Check top-level command
+                command = parts[1]
+                if command not in valid_apm_commands:
+                    errors.append(
+                        f"{md_file.relative_to(md_file.parent.parent.parent)}:"
+                        f"{line_num}: Invalid command 'apm {command}'"
+                    )
+                    continue
+    
+                # Check subcommands
+                if len(parts) >= 3:
+                    subcommand = parts[2]
+                    # Skip if subcommand looks like an argument (starts with -)
+                    if subcommand.startswith('-'):
+                        continue
+    
+                    # Validate work-item subcommands
+                    if command == 'work-item':
+                        if subcommand not in valid_work_item_commands:
+                            errors.append(
+                                f"{md_file.relative_to(md_file.parent.parent.parent)}:"
+                                f"{line_num}: Invalid subcommand "
+                                f"'apm work-item {subcommand}'"
+                            )
+    
+                    # Validate task subcommands
+                    elif command == 'task':
+                        if subcommand not in valid_task_commands:
+                            errors.append(
+                                f"{md_file.relative_to(md_file.parent.parent.parent)}:"
+                                f"{line_num}: Invalid subcommand "
+                                f"'apm task {subcommand}'"
+                            )
+    
+        if errors:
+>           pytest.fail(
+                "Found invalid apm commands in documentation:\n" +
+                "\n".join(errors)
+            )
+E           Failed: Found invalid apm commands in documentation:
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:102: Invalid command 'apm migrate'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:116: Invalid command 'apm migrate-v1-to-v2'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:337: Invalid subcommand 'apm work-item request-changes'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:407: Invalid subcommand 'apm work-item phase-advance'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:422: Invalid subcommand 'apm work-item add-summary'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:439: Invalid subcommand 'apm work-item show-history'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:454: Invalid subcommand 'apm work-item add-dependency'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:467: Invalid subcommand 'apm work-item list-dependencies'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:480: Invalid subcommand 'apm work-item remove-dependency'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:684: Invalid subcommand 'apm task request-changes'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:700: Invalid subcommand 'apm task complete'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:744: Invalid subcommand 'apm task add-dependency'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:757: Invalid subcommand 'apm task add-blocker'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:770: Invalid subcommand 'apm task list-dependencies'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:783: Invalid subcommand 'apm task list-blockers'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:796: Invalid subcommand 'apm task resolve-blocker'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:817: Invalid command 'apm idea'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:832: Invalid command 'apm idea'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:835: Invalid command 'apm idea'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:840: Invalid command 'apm idea'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:853: Invalid command 'apm idea'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:868: Invalid command 'apm idea'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:881: Invalid command 'apm idea'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:898: Invalid command 'apm idea'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:914: Invalid command 'apm idea'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:928: Invalid command 'apm idea'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:944: Invalid command 'apm idea'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:960: Invalid command 'apm idea'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:973: Invalid command 'apm idea'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:1570: Invalid command 'apm testing'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:1583: Invalid command 'apm testing'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:1597: Invalid command 'apm testing'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:1611: Invalid command 'apm testing'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:1625: Invalid command 'apm testing'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:1638: Invalid command 'apm testing'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:1652: Invalid command 'apm testing'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:1667: Invalid command 'apm template'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:1682: Invalid command 'apm principles'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:1692: Invalid command 'apm principle-check'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:1717: Invalid command 'apm commands'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:1795: Invalid command 'apm COMMAND'
+E           aipm-v2/docs/CLI-COMMAND-INVENTORY.md:1796: Invalid command 'apm COMMAND'
+E           aipm-v2/docs/provider-generator-implementation-summary.md:273: Invalid command 'apm db'
+E           aipm-v2/docs/DOCUMENTATION-FIXES-APPLIED-2025-10-18.md:270: Invalid subcommand 'apm task request-changes'
+E           docs/design/principle-agents-implementation.md:159: Invalid command 'apm principle-check'
+E           docs/design/principle-agents-implementation.md:162: Invalid command 'apm principle-check'
+E           docs/design/principle-agents-implementation.md:165: Invalid command 'apm principle-check'
+E           docs/design/principle-agents-implementation.md:168: Invalid command 'apm principle-check'
+E           docs/design/principle-agents-implementation.md:171: Invalid command 'apm principle-check'
+E           docs/design/memory-file-templates.md:1107: Invalid command 'apm idea'
+E           docs/design/memory-file-templates.md:1110: Invalid command 'apm idea'
+E           docs/design/memory-file-templates.md:1113: Invalid command 'apm idea'
+E           docs/design/memory-file-templates.md:1116: Invalid command 'apm idea'
+E           docs/design/unified-context-delivery-system.md:763: Invalid command 'apm project'
+E           docs/design/unified-context-delivery-system.md:766: Invalid command 'apm idea'
+E           docs/design/claude-memory-system-architecture.md:294: Invalid command 'apm memory'
+E           docs/design/claude-memory-system-architecture.md:297: Invalid command 'apm memory'
+E           docs/design/claude-memory-system-architecture.md:300: Invalid command 'apm memory'
+E           docs/design/claude-memory-system-architecture.md:303: Invalid command 'apm memory'
+E           docs/specifications/6W-QUESTIONS-ANSWERED.md:580: Invalid command 'apm budget'
+E           docs/specifications/6W-QUESTIONS-ANSWERED.md:630: Invalid command 'apm patterns'
+E           docs/specifications/6W-QUESTIONS-ANSWERED.md:875: Invalid command 'apm patterns'
+E           docs/specifications/6W-QUESTIONS-ANSWERED.md:878: Invalid command 'apm patterns'
+E           docs/specifications/6W-QUESTIONS-ANSWERED.md:881: Invalid command 'apm patterns'
+E           docs/specifications/6W-QUESTIONS-ANSWERED.md:1230: Invalid command 'apm migrate'
+E           docs/specifications/6W-QUESTIONS-ANSWERED.md:1239: Invalid command 'apm doc'
+E           docs/specifications/6W-QUESTIONS-ANSWERED.md:1247: Invalid command 'apm migrate'
+E           docs/specifications/6W-QUESTIONS-ANSWERED.md:1401: Invalid command 'apm quality'
+E           docs/specifications/6W-QUESTIONS-ANSWERED.md:1524: Invalid command 'apm quickstart'
+E           docs/specifications/6W-QUESTIONS-ANSWERED.md:1674: Invalid command 'apm migrate'
+E           docs/specifications/6W-QUESTIONS-ANSWERED.md:1689: Invalid command 'apm db'
+E           docs/specifications/6W-QUESTIONS-ANSWERED.md:1692: Invalid command 'apm migrate'
+E           docs/specifications/6W-QUESTIONS-ANSWERED.md:1700: Invalid command 'apm migrate'
+E           docs/specifications/6W-QUESTIONS-ANSWERED.md:1864: Invalid command 'apm metrics'
+E           docs/specifications/AIPM-V2-COMPLETE-SPECIFICATION.md:1052: Invalid command 'apm doc'
+E           docs/specifications/AIPM-V2-COMPLETE-SPECIFICATION.md:1057: Invalid command 'apm doc'
+E           docs/specifications/AIPM-V2-COMPLETE-SPECIFICATION.md:1060: Invalid command 'apm doc'
+E           docs/specifications/AIPM-V2-COMPLETE-SPECIFICATION.md:1063: Invalid command 'apm doc'
+E           docs/specifications/AIPM-V2-COMPLETE-SPECIFICATION.md:1066: Invalid command 'apm doc'
+E           docs/specifications/DOCUMENT-STORE-INTEGRATION.md:721: Invalid command 'apm doc'
+E           docs/specifications/DOCUMENT-STORE-INTEGRATION.md:739: Invalid command 'apm doc'
+E           docs/specifications/DOCUMENT-STORE-INTEGRATION.md:752: Invalid command 'apm doc'
+E           docs/analysis/context-capture-ux-analysis.md:87: Invalid command 'apm idea'
+E           docs/analysis/context-capture-ux-analysis.md:88: Invalid command 'apm idea'
+E           docs/analysis/templates-subsystem-architecture.md:214: Invalid command 'apm template'
+E           docs/analysis/templates-subsystem-architecture.md:217: Invalid command 'apm template'
+E           docs/analysis/templates-subsystem-architecture.md:220: Invalid command 'apm template'
+E           docs/analysis/templates-subsystem-architecture.md:226: Invalid command 'apm template'
+E           docs/analysis/templates-subsystem-architecture.md:229: Invalid command 'apm template'
+E           docs/analysis/templates-subsystem-architecture.md:920: Invalid command 'apm template'
+E           docs/analysis/templates-subsystem-architecture.md:921: Invalid command 'apm template'
+E           docs/analysis/templates-subsystem-architecture.md:922: Invalid command 'apm template'
+E           docs/analysis/component-documentation-accuracy-report.md:445: Invalid command 'apm migrate'
+E           docs/analysis/component-documentation-accuracy-report.md:446: Invalid command 'apm migrate'
+E           docs/analysis/component-documentation-accuracy-report.md:447: Invalid command 'apm migrate'
+E           docs/analysis/component-documentation-accuracy-report.md:452: Invalid command 'apm migrate'
+E           docs/analysis/component-documentation-accuracy-report.md:465: Invalid subcommand 'apm work-item discovery-status'
+E           docs/analysis/component-documentation-accuracy-report.md:466: Invalid subcommand 'apm work-item evidence'
+E           docs/analysis/unimplemented-features-analysis.md:119: Invalid command 'apm doc'
+E           docs/analysis/unimplemented-features-analysis.md:120: Invalid command 'apm doc'
+E           docs/analysis/unimplemented-features-analysis.md:121: Invalid command 'apm doc'
+E           docs/analysis/unimplemented-features-analysis.md:122: Invalid command 'apm doc'
+E           docs/analysis/unimplemented-features-analysis.md:123: Invalid command 'apm doc'
+E           docs/analysis/unimplemented-features-analysis.md:193: Invalid command 'apm review'
+E           docs/analysis/unimplemented-features-analysis.md:194: Invalid command 'apm review'
+E           docs/analysis/unimplemented-features-analysis.md:195: Invalid command 'apm review'
+E           docs/analysis/unimplemented-features-analysis.md:196: Invalid command 'apm review'
+E           docs/analysis/unimplemented-features-analysis.md:197: Invalid command 'apm review'
+E           docs/analysis/commit-analysis-7-days.md:437: Invalid command 'apm migrate'
+E           docs/analysis/external-framework-integration-analysis.md:220: Invalid command 'apm constitution'
+E           docs/analysis/external-framework-integration-analysis.md:221: Invalid command 'apm constitution'
+E           docs/analysis/external-framework-integration-analysis.md:222: Invalid command 'apm constitution'
+E           docs/analysis/external-framework-integration-analysis.md:223: Invalid command 'apm constitution'
+E           docs/analysis/external-framework-integration-analysis.md:224: Invalid command 'apm constitution'
+E           docs/features/pydantic-types-exposure.md:20: Invalid subcommand 'apm work-item types'
+E           docs/features/pydantic-types-exposure.md:21: Invalid subcommand 'apm work-item types'
+E           docs/features/pydantic-types-exposure.md:22: Invalid subcommand 'apm work-item types'
+E           docs/features/pydantic-types-exposure.md:25: Invalid subcommand 'apm task types'
+E           docs/features/pydantic-types-exposure.md:26: Invalid subcommand 'apm task types'
+E           docs/features/pydantic-types-exposure.md:27: Invalid subcommand 'apm task types'
+E           docs/features/pydantic-types-exposure.md:220: Invalid subcommand 'apm task types'
+E           docs/features/pydantic-types-exposure.md:233: Invalid subcommand 'apm work-item types'
+E           docs/features/pydantic-types-exposure.md:236: Invalid subcommand 'apm task types'
+E           docs/external-research/AIPM-V2-COMPLETE-SYSTEM-BREAKDOWN.md:1384: Invalid subcommand 'apm task transition'
+E           docs/external-research/AIPM-V2-COMPLETE-SYSTEM-BREAKDOWN.md:1392: Invalid subcommand 'apm task add-dependency'
+E           docs/external-research/AIPM-V2-COMPLETE-SYSTEM-BREAKDOWN.md:1400: Invalid subcommand 'apm task add-blocker'
+E           docs/external-research/AIPM-V2-COMPLETE-SYSTEM-BREAKDOWN.md:1407: Invalid subcommand 'apm task list-dependencies'
+E           docs/external-research/AIPM-V2-COMPLETE-SYSTEM-BREAKDOWN.md:1414: Invalid subcommand 'apm task list-blockers'
+E           docs/external-research/AIPM-V2-COMPLETE-SYSTEM-BREAKDOWN.md:1421: Invalid subcommand 'apm task resolve-blocker'
+E           docs/external-research/AIPM-V2-COMPLETE-SYSTEM-BREAKDOWN.md:2464: Invalid command 'apm --version'
+E           docs/external-research/AIPM-V2-COMPLETE-SYSTEM-BREAKDOWN.md:2529: Invalid subcommand 'apm task transition'
+E           docs/external-research/AIPM-V2-COMPLETE-SYSTEM-BREAKDOWN.md:2535: Invalid subcommand 'apm task add-dependency'
+E           docs/external-research/AIPM-V2-COMPLETE-SYSTEM-BREAKDOWN.md:2538: Invalid subcommand 'apm task add-blocker'
+E           docs/external-research/AIPM-V2-COMPLETE-SYSTEM-BREAKDOWN.md:2541: Invalid subcommand 'apm task list-dependencies'
+E           docs/external-research/AIPM-V2-COMPLETE-SYSTEM-BREAKDOWN.md:2544: Invalid subcommand 'apm task resolve-blocker'
+E           docs/external-research/AIPM-V2-COMPLETE-SYSTEM-BREAKDOWN.md:2790: Invalid subcommand 'apm work-item transition'
+E           docs/external-research/v2-rules-vs-constitution-analysis.md:432: Invalid command 'apm constitution'
+E           docs/external-research/v2-rules-vs-constitution-analysis.md:440: Invalid command 'apm constitution'
+E           docs/user-guides/WALKTHROUGH-SUMMARY.md:175: Invalid subcommand 'apm work-item phase-advance'
+E           docs/user-guides/05-troubleshooting.md:47: Invalid command 'apm --version'
+E           docs/user-guides/05-troubleshooting.md:167: Invalid subcommand 'apm work-item phase-advance'
+E           docs/user-guides/05-troubleshooting.md:197: Invalid subcommand 'apm work-item phase-advance'
+E           docs/user-guides/05-troubleshooting.md:272: Invalid subcommand 'apm work-item phase-advance'
+E           docs/user-guides/05-troubleshooting.md:313: Invalid subcommand 'apm work-item phase-advance'
+E           docs/user-guides/05-troubleshooting.md:314: Invalid subcommand 'apm work-item phase-advance'
+E           docs/user-guides/05-troubleshooting.md:315: Invalid subcommand 'apm work-item phase-advance'
+E           docs/user-guides/05-troubleshooting.md:512: Invalid command 'apm migrate'
+E           docs/user-guides/05-troubleshooting.md:544: Invalid command 'apm -v'
+E           docs/user-guides/05-troubleshooting.md:545: Invalid command 'apm -v'
+E           docs/user-guides/05-troubleshooting.md:590: Invalid subcommand 'apm work-item phase-advance'
+E           docs/user-guides/05-troubleshooting.md:659: Invalid subcommand 'apm work-item phase-advance'
+E           docs/user-guides/05-troubleshooting.md:672: Invalid command 'apm --help'
+E           docs/user-guides/05-troubleshooting.md:687: Invalid command 'apm -v'
+E           docs/user-guides/05-troubleshooting.md:688: Invalid command 'apm -v'
+E           docs/user-guides/03-cli-commands.md:32: Invalid command 'apm --help'
+E           docs/user-guides/03-cli-commands.md:57: Invalid command 'apm --version'
+E           docs/user-guides/03-cli-commands.md:470: Invalid subcommand 'apm work-item request-changes'
+E           docs/user-guides/03-cli-commands.md:475: Invalid subcommand 'apm work-item request-changes'
+E           docs/user-guides/03-cli-commands.md:858: Invalid subcommand 'apm task request-changes'
+E           docs/user-guides/03-cli-commands.md:863: Invalid subcommand 'apm task request-changes'
+E           docs/user-guides/03-cli-commands.md:961: Invalid command 'apm db'
+E           docs/user-guides/03-cli-commands.md:1013: Invalid command 'apm testing'
+E           docs/user-guides/03-cli-commands.md:1014: Invalid command 'apm testing'
+E           docs/user-guides/03-cli-commands.md:1020: Invalid command 'apm template'
+E           docs/user-guides/03-cli-commands.md:1021: Invalid command 'apm template'
+E           docs/user-guides/rich-context-user-guide.md:211: Invalid command 'apm idea'
+E           docs/user-guides/rich-context-user-guide.md:230: Invalid command 'apm idea'
+E           docs/user-guides/rich-context-user-guide.md:629: Invalid subcommand 'apm work-item add'
+E           docs/user-guides/rich-context-user-guide.md:670: Invalid subcommand 'apm work-item add'
+E           docs/user-guides/rich-context-user-guide.md:692: Invalid command 'apm idea'
+E           docs/user-guides/rich-context-user-guide.md:697: Invalid command 'apm idea'
+E           docs/user-guides/rich-context-user-guide.md:734: Invalid subcommand 'apm work-item add'
+E           docs/user-guides/02-quick-reference.md:266: Invalid subcommand 'apm task request-changes'
+E           docs/user-guides/02-quick-reference.md:384: Invalid command 'apm --help'
+E           docs/user-guides/04-phase-workflow.md:131: Invalid subcommand 'apm work-item phase-advance'
+E           docs/user-guides/04-phase-workflow.md:208: Invalid subcommand 'apm work-item phase-advance'
+E           docs/user-guides/04-phase-workflow.md:695: Invalid subcommand 'apm work-item phase-advance'
+E           docs/user-guides/04-phase-workflow.md:702: Invalid subcommand 'apm work-item phase-advance'
+E           docs/user-guides/04-phase-workflow.md:726: Invalid command 'apm idea'
+E           docs/user-guides/04-phase-workflow.md:729: Invalid command 'apm idea'
+E           docs/user-guides/04-phase-workflow.md:730: Invalid command 'apm idea'
+E           docs/user-guides/04-phase-workflow.md:733: Invalid command 'apm idea'
+E           docs/user-guides/04-phase-workflow.md:734: Invalid command 'apm idea'
+E           docs/user-guides/04-phase-workflow.md:737: Invalid command 'apm idea'
+E           docs/user-guides/04-phase-workflow.md:743: Invalid command 'apm idea'
+E           docs/user-guides/04-phase-workflow.md:746: Invalid command 'apm idea'
+E           docs/user-guides/04-phase-workflow.md:755: Invalid subcommand 'apm work-item phase-advance'
+E           docs/user-guides/04-phase-workflow.md:757: Invalid subcommand 'apm work-item phase-advance'
+E           docs/user-guides/04-phase-workflow.md:770: Invalid subcommand 'apm work-item phase-advance'
+E           docs/user-guides/04-phase-workflow.md:784: Invalid subcommand 'apm work-item phase-advance'
+E           docs/user-guides/04-phase-workflow.md:797: Invalid subcommand 'apm work-item phase-advance'
+E           docs/user-guides/04-phase-workflow.md:811: Invalid subcommand 'apm work-item phase-advance'
+E           docs/user-guides/04-phase-workflow.md:824: Invalid subcommand 'apm work-item phase-advance'
+E           docs/user-guides/04-phase-workflow.md:837: Invalid subcommand 'apm work-item phase-advance'
+E           docs/user-guides/04-phase-workflow.md:859: Invalid subcommand 'apm work-item phase-advance'
+E           docs/user-guides/04-phase-workflow.md:860: Invalid subcommand 'apm work-item phase-advance'
+E           docs/user-guides/04-phase-workflow.md:861: Invalid subcommand 'apm work-item phase-advance'
+E           docs/user-guides/04-phase-workflow.md:930: Invalid subcommand 'apm work-item show-history'
+E           docs/user-guides/documentation-audit-report.md:374: Invalid subcommand 'apm work-item phase-advance'
+E           docs/user-guides/documentation-audit-report.md:380: Invalid subcommand 'apm work-item phase-advance'
+E           docs/user-guides/documentation-audit-report.md:390: Invalid subcommand 'apm work-item phase-advance'
+E           docs/user-guides/ideas-workflow.md:59: Invalid command 'apm idea'
+E           docs/user-guides/ideas-workflow.md:62: Invalid command 'apm idea'
+E           docs/user-guides/ideas-workflow.md:63: Invalid command 'apm idea'
+E           docs/user-guides/ideas-workflow.md:69: Invalid command 'apm idea'
+E           docs/user-guides/ideas-workflow.md:72: Invalid command 'apm idea'
+E           docs/user-guides/ideas-workflow.md:73: Invalid command 'apm idea'
+E           docs/user-guides/ideas-workflow.md:76: Invalid command 'apm idea'
+E           docs/user-guides/ideas-workflow.md:82: Invalid command 'apm idea'
+E           docs/user-guides/ideas-workflow.md:85: Invalid command 'apm idea'
+E           docs/user-guides/ideas-workflow.md:88: Invalid command 'apm idea'
+E           docs/user-guides/ideas-workflow.md:91: Invalid command 'apm idea'
+E           docs/user-guides/ideas-workflow.md:94: Invalid command 'apm idea'
+E           docs/user-guides/ideas-workflow.md:100: Invalid command 'apm idea'
+E           docs/user-guides/ideas-workflow.md:103: Invalid command 'apm idea'
+E           docs/user-guides/ideas-workflow.md:106: Invalid command 'apm idea'
+E           docs/user-guides/ideas-workflow.md:109: Invalid command 'apm idea'
+E           docs/architecture/UNIFIED-CONTEXT-DELIVERY-SYSTEM.md:513: Invalid command 'apm idea'
+E           docs/architecture/UNIFIED-CONTEXT-DELIVERY-SYSTEM.md:1296: Invalid command 'apm project'
+E           docs/architecture/UNIFIED-CONTEXT-DELIVERY-SYSTEM.md:1323: Invalid command 'apm project'
+E           docs/architecture/UNIFIED-CONTEXT-DELIVERY-SYSTEM.md:1328: Invalid command 'apm project'
+E           docs/architecture/UNIFIED-CONTEXT-DELIVERY-SYSTEM.md:1385: Invalid command 'apm project'
+E           docs/guides/pm-philosophy-guide.md:341: Invalid command 'apm project'
+E           docs/guides/pm-philosophy-guide.md:344: Invalid command 'apm project'
+E           docs/guides/pm-philosophy-guide.md:356: Invalid command 'apm project'
+E           docs/guides/pm-philosophy-guide.md:359: Invalid command 'apm project'
+E           docs/guides/pm-philosophy-guide.md:425: Invalid command 'apm project'
+E           docs/guides/pm-philosophy-guide.md:453: Invalid command 'apm project'
+E           docs/guides/pm-philosophy-guide.md:526: Invalid command 'apm project'
+E           docs/examples/document-management-cli.md:26: Invalid subcommand 'apm work-item add'
+E           docs/examples/document-management-cli.md:191: Invalid subcommand 'apm work-item add'
+E           docs/examples/document-management-cli.md:226: Invalid subcommand 'apm work-item add'
+E           docs/examples/document-management-cli.md:254: Invalid subcommand 'apm task add'
+E           docs/examples/document-management-cli.md:288: Invalid subcommand 'apm work-item add'
+E           docs/examples/document-management-cli.md:382: Invalid command 'apm idea'
+E           docs/examples/document-management-cli.md:446: Invalid command 'apm idea'
+E           docs/examples/document-management-cli.md:488: Invalid subcommand 'apm work-item add'
+E           docs/examples/document-management-cli.md:524: Invalid subcommand 'apm task add'
+E           docs/examples/document-management-cli.md:552: Invalid subcommand 'apm task add'
+E           docs/examples/document-management-cli.md:580: Invalid subcommand 'apm task add'
+E           docs/examples/document-management-cli.md:634: Invalid subcommand 'apm work-item add'
+E           docs/examples/document-management-cli.md:724: Invalid subcommand 'apm work-item add'
+E           docs/examples/document-management-cli.md:991: Invalid subcommand 'apm work-item add'
+E           docs/examples/document-management-cli.md:1006: Invalid subcommand 'apm task add'
+E           docs/adrs/ADR-006-document-store-and-knowledge-management.md:604: Invalid command 'apm doc'
+E           docs/adrs/ADR-006-document-store-and-knowledge-management.md:617: Invalid command 'apm doc'
+E           docs/adrs/ADR-006-document-store-and-knowledge-management.md:637: Invalid command 'apm doc'
+E           docs/adrs/ADR-006-document-store-and-knowledge-management.md:640: Invalid command 'apm doc'
+E           docs/adrs/ADR-006-document-store-and-knowledge-management.md:658: Invalid command 'apm doc'
+E           docs/adrs/ADR-006-document-store-and-knowledge-management.md:663: Invalid command 'apm doc'
+E           docs/adrs/ADR-006-document-store-and-knowledge-management.md:939: Invalid command 'apm doc'
+E           docs/adrs/ADR-006-document-store-and-knowledge-management.md:974: Invalid command 'apm doc'
+E           docs/adrs/ADR-006-document-store-and-knowledge-management.md:1007: Invalid command 'apm doc'
+E           docs/adrs/ADR-011-cost-tracking-and-resource-management.md:660: Invalid command 'apm budget'
+E           docs/adrs/ADR-011-cost-tracking-and-resource-management.md:672: Invalid command 'apm budget'
+E           docs/adrs/ADR-011-cost-tracking-and-resource-management.md:685: Invalid command 'apm costs'
+E           docs/adrs/ADR-011-cost-tracking-and-resource-management.md:720: Invalid command 'apm costs'
+E           docs/adrs/ADR-011-cost-tracking-and-resource-management.md:754: Invalid command 'apm costs'
+E           docs/adrs/ADR-014-phase-status-relationship.md:451: Invalid subcommand 'apm work-item advance'
+E           docs/adrs/ADR-014-phase-status-relationship.md:455: Invalid subcommand 'apm work-item advance'
+E           docs/adrs/ADR-014-phase-status-relationship.md:459: Invalid subcommand 'apm work-item block'
+E           docs/adrs/ADR-014-phase-status-relationship.md:462: Invalid subcommand 'apm work-item cancel'
+E           docs/adrs/ADR-014-phase-status-relationship.md:466: Invalid subcommand 'apm work-item resume'
+E           docs/adrs/ADR-008-data-privacy-and-security.md:895: Invalid command 'apm gdpr'
+E           docs/adrs/ADR-008-data-privacy-and-security.md:917: Invalid command 'apm gdpr'
+E           docs/adrs/ADR-010-dependency-management-and-scheduling.md:803: Invalid subcommand 'apm task depends'
+E           docs/adrs/ADR-010-dependency-management-and-scheduling.md:804: Invalid subcommand 'apm task depends'
+E           docs/adrs/ADR-010-dependency-management-and-scheduling.md:812: Invalid subcommand 'apm task ready'
+E           docs/adrs/ADR-010-dependency-management-and-scheduling.md:826: Invalid subcommand 'apm work-item critical-path'
+E           docs/adrs/ADR-010-dependency-management-and-scheduling.md:859: Invalid subcommand 'apm task block'
+E           docs/adrs/ADR-010-dependency-management-and-scheduling.md:886: Invalid command 'apm review'
+E           docs/adrs/ADR-010-dependency-management-and-scheduling.md:887: Invalid subcommand 'apm task unblock'
+E           docs/adrs/ADR-009-event-system-and-integrations.md:804: Invalid command 'apm integrations'
+E           docs/adrs/ADR-009-event-system-and-integrations.md:809: Invalid command 'apm integrations'
+E           docs/adrs/ADR-009-event-system-and-integrations.md:815: Invalid command 'apm integrations'
+E           docs/adrs/ADR-009-event-system-and-integrations.md:831: Invalid command 'apm integrations'
+E           docs/adrs/ADR-009-event-system-and-integrations.md:837: Invalid command 'apm integrations'
+E           docs/adrs/ADR-009-event-system-and-integrations.md:851: Invalid subcommand 'apm task complete'
+E           docs/adrs/ADR-009-event-system-and-integrations.md:860: Invalid command 'apm integrations'
+E           docs/adrs/ADR-009-event-system-and-integrations.md:865: Invalid command 'apm integrations'
+E           docs/adrs/ADR-007-human-in-the-loop-workflows.md:583: Invalid command 'apm review'
+E           docs/adrs/ADR-007-human-in-the-loop-workflows.md:603: Invalid command 'apm review'
+E           docs/adrs/ADR-007-human-in-the-loop-workflows.md:608: Invalid command 'apm review'
+E           docs/adrs/ADR-007-human-in-the-loop-workflows.md:612: Invalid command 'apm review'
+E           docs/adrs/ADR-007-human-in-the-loop-workflows.md:617: Invalid command 'apm review'
+E           docs/user-journeys/enterprise-team-migration.md:75: Invalid command 'apm learnings'
+E           docs/user-journeys/enterprise-team-migration.md:81: Invalid command 'apm learnings'
+E           docs/user-journeys/enterprise-team-migration.md:87: Invalid command 'apm learnings'
+E           docs/user-journeys/enterprise-team-migration.md:137: Invalid command 'apm learnings'
+E           docs/user-journeys/enterprise-team-migration.md:181: Invalid command 'apm learnings'
+E           docs/user-journeys/enterprise-team-migration.md:200: Invalid command 'apm compliance'
+E           docs/user-journeys/enterprise-team-migration.md:226: Invalid command 'apm evidence'
+E           docs/user-journeys/enterprise-team-migration.md:257: Invalid command 'apm team'
+E           docs/user-journeys/enterprise-team-migration.md:350: Invalid command 'apm learnings'
+E           docs/user-journeys/enterprise-team-migration.md:363: Invalid command 'apm decision'
+E           docs/user-journeys/enterprise-team-migration.md:364: Invalid command 'apm decision'
+E           docs/user-journeys/enterprise-team-migration.md:365: Invalid command 'apm decision'
+E           docs/user-journeys/enterprise-team-migration.md:414: Invalid command 'apm team'
+E           docs/user-journeys/enterprise-team-migration.md:443: Invalid command 'apm project'
+E           docs/user-journeys/consultant-client-project.md:49: Invalid command 'apm project'
+E           docs/user-journeys/consultant-client-project.md:55: Invalid command 'apm project'
+E           docs/user-journeys/consultant-client-project.md:61: Invalid command 'apm project'
+E           docs/user-journeys/consultant-client-project.md:67: Invalid command 'apm project'
+E           docs/user-journeys/consultant-client-project.md:73: Invalid command 'apm project'
+E           docs/user-journeys/consultant-client-project.md:146: Invalid command 'apm project'
+E           docs/user-journeys/consultant-client-project.md:195: Invalid command 'apm learnings'
+E           docs/user-journeys/consultant-client-project.md:216: Invalid command 'apm project'
+E           docs/user-journeys/consultant-client-project.md:246: Invalid command 'apm client'
+E           docs/user-journeys/consultant-client-project.md:330: Invalid command 'apm projects'
+E           docs/user-journeys/consultant-client-project.md:379: Invalid command 'apm handoff'
+E           docs/user-journeys/consultant-client-project.md:444: Invalid command 'apm consulting'
+E           docs/user-journeys/solo-developer-startup.md:54: Invalid command 'apm learnings'
+E           docs/user-journeys/solo-developer-startup.md:58: Invalid command 'apm learnings'
+E           docs/user-journeys/open-source-maintainer.md:49: Invalid command 'apm learnings'
+E           docs/user-journeys/open-source-maintainer.md:55: Invalid command 'apm learnings'
+E           docs/user-journeys/open-source-maintainer.md:61: Invalid command 'apm learnings'
+E           docs/user-journeys/open-source-maintainer.md:226: Invalid command 'apm learnings'
+E           docs/user-journeys/open-source-maintainer.md:325: Invalid command 'apm release'
+E           docs/user-journeys/open-source-maintainer.md:394: Invalid command 'apm maintenance'
+E           docs/reports/WORKFLOW-ANALYSIS-REPORT.md:231: Invalid command 'apm idea'
+E           docs/reports/WORKFLOW-ANALYSIS-REPORT.md:237: Invalid command 'apm idea'
+E           docs/reports/cli-command-audit-report.md:108: Invalid command 'apm audit'
+E           docs/reports/cli-command-audit-report.md:150: Invalid subcommand 'apm task request-changes'
+E           docs/reports/cli-command-audit-report.md:158: Invalid subcommand 'apm work-item request-changes'
+E           docs/reports/cli-command-audit-report.md:165: Invalid command 'apm idea'
+E           docs/reports/cli-command-audit-report.md:172: Invalid subcommand 'apm work-item phase-advance'
+E           docs/reports/cli-command-audit-report.md:177: Invalid command 'apm audit'
+E           docs/reports/cli-command-audit-report.md:178: Invalid command 'apm audit'
+E           docs/reports/cli-command-audit-report.md:179: Invalid command 'apm audit'
+E           docs/reports/cli-command-audit-report.md:180: Invalid command 'apm audit'
+E           docs/reports/DELIVERABLE-cli-command-audit.md:50: Invalid subcommand 'apm task request-changes'
+E           docs/reports/DELIVERABLE-cli-command-audit.md:155: Invalid command 'apm audit'
+E           docs/reports/DELIVERABLE-cli-command-audit.md:307: Invalid subcommand 'apm task request-changes'
+E           docs/reports/DELIVERABLE-cli-command-audit.md:308: Invalid subcommand 'apm task complete'
+E           docs/reports/DELIVERABLE-cli-command-audit.md:316: Invalid subcommand 'apm work-item request-changes'
+E           docs/reports/DELIVERABLE-cli-command-audit.md:321: Invalid subcommand 'apm work-item phase-advance'
+E           docs/reports/DELIVERABLE-cli-command-audit.md:329: Invalid command 'apm idea'
+E           docs/reports/DELIVERABLE-cli-command-audit.md:335: Invalid command 'apm audit'
+E           docs/reports/DELIVERABLE-cli-command-audit.md:336: Invalid command 'apm audit'
+E           docs/reports/DELIVERABLE-cli-command-audit.md:337: Invalid command 'apm audit'
+E           docs/reports/DELIVERABLE-cli-command-audit.md:338: Invalid command 'apm audit'
+E           docs/reports/APM_COMMAND_AUDIT_REPORT.md:82: Invalid command 'apm migrate'
+E           docs/reports/APM_COMMAND_AUDIT_REPORT.md:83: Invalid command 'apm migrate'
+E           docs/reports/APM_COMMAND_AUDIT_REPORT.md:84: Invalid command 'apm migrate'
+E           docs/reports/APM_COMMAND_AUDIT_REPORT.md:471: Invalid command 'apm objectives'
+E           docs/reports/APM_COMMAND_AUDIT_REPORT.md:472: Invalid command 'apm objectives'
+E           docs/reports/workflow-health-executive-summary.md:45: Invalid subcommand 'apm task activate'
+E           docs/reports/cli-command-audit-summary.md:64: Invalid subcommand 'apm task request-changes'
+E           docs/reports/cli-command-audit-summary.md:130: Invalid subcommand 'apm task request-changes'
+E           docs/reports/cli-command-audit-summary.md:131: Invalid subcommand 'apm task complete'
+E           docs/reports/cli-command-audit-summary.md:139: Invalid subcommand 'apm work-item request-changes'
+E           docs/reports/cli-command-audit-summary.md:146: Invalid subcommand 'apm work-item phase-advance'
+E           docs/reports/cli-command-audit-summary.md:153: Invalid command 'apm idea'
+E           docs/reports/cli-command-audit-summary.md:174: Invalid command 'apm audit'
+E           docs/reports/cli-command-audit-summary.md:175: Invalid command 'apm audit'
+E           docs/reports/cli-command-audit-summary.md:176: Invalid command 'apm audit'
+E           docs/reports/cli-command-audit-summary.md:177: Invalid command 'apm audit'
+E           docs/reports/cli-command-audit-summary.md:190: Invalid command 'apm audit'
+E           docs/reports/cli-command-audit-summary.md:269: Invalid command 'apm audit'
+E           docs/reports/cli-command-audit-summary.md:270: Invalid command 'apm audit'
+E           docs/reports/MIGRATION-0014-SUMMARY.md:292: Invalid command 'apm migrate'
+E           analysis/system-review/02-database-driven-architecture.md:414: Invalid command 'apm db'
+E           analysis/system-review/02-database-driven-architecture.md:415: Invalid command 'apm db'
+E           analysis/system-review/02-database-driven-architecture.md:416: Invalid command 'apm db'
+E           analysis/system-review/WEEK-1-IMPLEMENTATION-PLAN.md:129: Invalid command 'apm migrate'
+E           analysis/system-review/WEEK-1-IMPLEMENTATION-PLAN.md:733: Invalid subcommand 'apm work-item phase-advance'
+E           analysis/system-review/WEEK-1-IMPLEMENTATION-PLAN.md:742: Invalid subcommand 'apm work-item phase-advance'
+E           analysis/system-review/05-phase-workflow-integration-implementation.md:254: Invalid subcommand 'apm work-item phase-advance'
+E           analysis/system-review/06-documentation-vs-code-reality.md:496: Invalid command 'apm report'
+E           analysis/system-review/06-documentation-vs-code-reality.md:497: Invalid command 'apm report'
+E           analysis/system-review/06-documentation-vs-code-reality.md:498: Invalid command 'apm report'
+E           analysis/system-review/04-phase-workflow-integration-design.md:561: Invalid subcommand 'apm work-item phase-advance'
+E           analysis/system-review/04-phase-workflow-integration-design.md:577: Invalid subcommand 'apm work-item set-phase'
+E           agents/claude-code/CLAUDE-CODE-IMPLEMENTATION-ROADMAP.md:600: Invalid subcommand 'apm task complete'
+E           planning/requirements/E2E_TEST_REPORT.md:245: Invalid subcommand 'apm task add-blocker'
+E           planning/requirements/E2E_TEST_REPORT.md:250: Invalid subcommand 'apm task add-blocker'
+E           planning/requirements/E2E_TEST_REPORT.md:251: Invalid subcommand 'apm task add-blocker'
+E           components/documents/integrated-approach.md:252: Invalid command 'apm docs'
+E           components/documents/integrated-approach.md:253: Invalid command 'apm docs'
+E           components/documents/integrated-approach.md:254: Invalid command 'apm docs'
+E           architecture/specification/wi-perpetual-reviewer.md:246: Invalid subcommand 'apm work-item complete'
+E           architecture/specification/wi-perpetual-reviewer.md:319: Invalid command 'apm quality'
+E           architecture/specification/wi-perpetual-reviewer.md:364: Invalid subcommand 'apm work-item complete'
+E           architecture/specification/wi-perpetual-reviewer.md:400: Invalid subcommand 'apm work-item complete'
+E           architecture/architecture/FINAL-DOCUMENTATION-STRUCTURE-ANALYSIS.md:536: Invalid command 'apm docs'
+E           architecture/architecture/FINAL-DOCUMENTATION-STRUCTURE-ANALYSIS.md:545: Invalid command 'apm docs'
+E           architecture/architecture/FINAL-DOCUMENTATION-STRUCTURE-ANALYSIS.md:546: Invalid command 'apm docs'
+E           architecture/architecture/FINAL-DOCUMENTATION-STRUCTURE-ANALYSIS.md:547: Invalid command 'apm docs'
+E           architecture/architecture/FINAL-DOCUMENTATION-STRUCTURE-ANALYSIS.md:548: Invalid command 'apm docs'
+E           architecture/architecture/FINAL-DOCUMENTATION-STRUCTURE-ANALYSIS.md:551: Invalid command 'apm docs'
+E           architecture/architecture/FINAL-DOCUMENTATION-STRUCTURE-ANALYSIS.md:552: Invalid command 'apm docs'
+E           architecture/architecture/FINAL-DOCUMENTATION-STRUCTURE-ANALYSIS.md:620: Invalid command 'apm docs'
+E           architecture/architecture/FINAL-DOCUMENTATION-STRUCTURE-ANALYSIS.md:627: Invalid command 'apm docs'
+E           guides/user_guide/command-migration-guide.md:72: Invalid subcommand 'apm task request-changes'
+E           guides/user_guide/command-migration-guide.md:104: Invalid subcommand 'apm work-item phase-advance'
+E           guides/user_guide/command-migration-guide.md:118: Invalid subcommand 'apm work-item phase-advance'
+E           guides/user_guide/command-migration-guide.md:153: Invalid subcommand 'apm work-item phase-advance'
+E           guides/user_guide/command-migration-guide.md:185: Invalid subcommand 'apm task request-changes'
+E           guides/user_guide/command-migration-guide.md:216: Invalid subcommand 'apm task request-changes'
+E           guides/user_guide/README.md:105: Invalid command 'apm migrate'
+E           guides/user_guide/README.md:108: Invalid command 'apm migrate'
+E           guides/user_guide/README.md:111: Invalid command 'apm migrate'
+E           guides/user_guide/README.md:127: Invalid command 'apm migrate'
+E           guides/user_guide/README.md:128: Invalid command 'apm migrate'
+E           guides/user_guide/README.md:131: Invalid command 'apm migrate'
+E           guides/user_guide/README.md:349: Invalid command 'apm migrate'
+E           guides/user_guide/README.md:447: Invalid command 'apm migrate'
+E           guides/user_guide/README.md:450: Invalid command 'apm migrate'
+E           guides/user_guide/migrations-guide.md:120: Invalid command 'apm migrate'
+E           guides/user_guide/migrations-guide.md:123: Invalid command 'apm migrate'
+E           guides/user_guide/migrations-guide.md:126: Invalid command 'apm migrate'
+E           guides/user_guide/migrations-guide.md:129: Invalid command 'apm migrate'
+E           guides/user_guide/migrations-guide.md:256: Invalid command 'apm migrate'
+E           guides/user_guide/migrations-guide.md:280: Invalid command 'apm migrate'
+E           guides/user_guide/migrations-guide.md:323: Invalid command 'apm migrate'
+E           guides/user_guide/migrations-guide.md:516: Invalid command 'apm migrate'
+E           guides/user_guide/agent-generation-workflow.md:358: Invalid command 'apm db'
+E           guides/runbook/O1-DEPLOYMENT-ARTIFACT-v0.1.1.md:197: Invalid command 'apm migrate'
+E           communication/migrations/migration-0032-enforce-docs-path.md:180: Invalid command 'apm migrate'
+E           communication/other/TASK-555-DOCUMENTATION-UPDATES.md:165: Invalid command 'apm db'
+
+tests/docs/test_markdown_examples.py:255: Failed
+______________ TestMarkdownStructure.test_code_blocks_are_closed _______________
+
+self = <test_markdown_examples.TestMarkdownStructure object at 0x105bb5130>
+markdown_files = [PosixPath('/Users/nigelcopley/.project_manager/aipm-v2/docs/DOCUMENTATION-CONFLICTS-AUDIT-2025-10-18.md'), PosixPath(...IST.md'), PosixPath('/Users/nigelcopley/.project_manager/aipm-v2/docs/DOCUMENTATION-FIXES-APPLIED-2025-10-18.md'), ...]
+
+    def test_code_blocks_are_closed(self, markdown_files: List[Path]):
+        """
+        Test that all code blocks are properly closed.
+    
+        Args:
+            markdown_files: List of markdown files to test
+        """
+        errors = []
+    
+        for md_file in markdown_files:
+            content = md_file.read_text()
+            backtick_count = content.count('```')
+    
+            if backtick_count % 2 != 0:
+                errors.append(
+                    f"{md_file.relative_to(md_file.parent.parent.parent)}: "
+                    f"Unclosed code block (found {backtick_count} backtick markers)"
+                )
+    
+        if errors:
+>           pytest.fail(
+                "Found markdown files with unclosed code blocks:\n" +
+                "\n".join(errors)
+            )
+E           Failed: Found markdown files with unclosed code blocks:
+E           aipm-v2/docs/NEXT-SESSION.md: Unclosed code block (found 5 backtick markers)
+
+tests/docs/test_markdown_examples.py:354: Failed
+================================ tests coverage ================================
+_______________ coverage: platform darwin, python 3.12.3-final-0 _______________
+
+Name                                                               Stmts   Miss  Cover   Missing
+------------------------------------------------------------------------------------------------
+agentpm/cli/__init__.py                                                4      4     0%   20-25
+agentpm/cli/commands/__init__.py                                       0      0   100%
+agentpm/cli/commands/agents/__init__.py                               18     18     0%   16-81
+agentpm/cli/commands/agents/generate.py                              124    124     0%   8-261
+agentpm/cli/commands/agents/list.py                                   72     72     0%   5-137
+agentpm/cli/commands/agents/load.py                                   87     87     0%   13-237
+agentpm/cli/commands/agents/roles.py                                  18     18     0%   5-53
+agentpm/cli/commands/agents/show.py                                   94     94     0%   5-150
+agentpm/cli/commands/agents/types.py                                  61     61     0%   7-167
+agentpm/cli/commands/agents/validate.py                              100    100     0%   5-174
+agentpm/cli/commands/claude_code.py                                  247    247     0%   9-493
+agentpm/cli/commands/commands.py                                      73     73     0%   5-138
+agentpm/cli/commands/context/__init__.py                              14     14     0%   13-52
+agentpm/cli/commands/context/refresh.py                               78     78     0%   5-200
+agentpm/cli/commands/context/rich.py                                 207    207     0%   5-503
+agentpm/cli/commands/context/show.py                                 269    269     0%   5-517
+agentpm/cli/commands/context/status.py                                 8      8     0%   5-32
+agentpm/cli/commands/context/wizard.py                               189    189     0%   10-603
+agentpm/cli/commands/dependencies/__init__.py                          6      6     0%   19-26
+agentpm/cli/commands/dependencies/add_blocker.py                      52     52     0%   5-113
+agentpm/cli/commands/dependencies/add_dependency.py                   44     44     0%   5-101
+agentpm/cli/commands/dependencies/list_blockers.py                    50     50     0%   5-112
+agentpm/cli/commands/dependencies/list_dependencies.py                50     50     0%   5-120
+agentpm/cli/commands/dependencies/resolve_blocker.py                  42     42     0%   5-84
+agentpm/cli/commands/document/__init__.py                             26     26     0%   8-101
+agentpm/cli/commands/document/add.py                                 172    172     0%   5-417
+agentpm/cli/commands/document/delete.py                               81     81     0%   5-154
+agentpm/cli/commands/document/list.py                                 88     88     0%   5-226
+agentpm/cli/commands/document/migrate.py                             172    172     0%   8-475
+agentpm/cli/commands/document/show.py                                 93     93     0%   5-186
+agentpm/cli/commands/document/types.py                               117    117     0%   7-442
+agentpm/cli/commands/document/update.py                              105    105     0%   5-206
+agentpm/cli/commands/hooks.py                                        160    160     0%   7-282
+agentpm/cli/commands/idea/__init__.py                                 24     24     0%   18-73
+agentpm/cli/commands/idea/context.py                                  76     76     0%   5-126
+agentpm/cli/commands/idea/convert.py                                  76     76     0%   5-181
+agentpm/cli/commands/idea/create.py                                   36     36     0%   5-114
+agentpm/cli/commands/idea/list.py                                     56     56     0%   5-156
+agentpm/cli/commands/idea/next.py                                     55     55     0%   8-110
+agentpm/cli/commands/idea/reject.py                                   27     27     0%   5-54
+agentpm/cli/commands/idea/show.py                                     86     86     0%   5-146
+agentpm/cli/commands/idea/transition.py                               47     47     0%   5-100
+agentpm/cli/commands/idea/update.py                                   66     66     0%   5-142
+agentpm/cli/commands/idea/vote.py                                     32     32     0%   5-75
+agentpm/cli/commands/init.py                                         209    209     0%   10-490
+agentpm/cli/commands/migrate.py                                       49     49     0%   5-86
+agentpm/cli/commands/migrate_v1.py                                   402    402     0%   20-1007
+agentpm/cli/commands/principle_check.py                              113    113     0%   7-243
+agentpm/cli/commands/principles.py                                   131    131     0%   7-248
+agentpm/cli/commands/rules/__init__.py                                 9      9     0%   10-25
+agentpm/cli/commands/rules/configure.py                              112    112     0%   5-232
+agentpm/cli/commands/rules/create.py                                 195    195     0%   5-454
+agentpm/cli/commands/rules/list.py                                    80     80     0%   5-153
+agentpm/cli/commands/rules/show.py                                    67     67     0%   5-127
+agentpm/cli/commands/search.py                                       171    171     0%   7-409
+agentpm/cli/commands/session/__init__.py                              20     20     0%   8-46
+agentpm/cli/commands/session/add_decision.py                          35     35     0%   5-71
+agentpm/cli/commands/session/add_next_step.py                         31     31     0%   5-59
+agentpm/cli/commands/session/end.py                                   56     56     0%   5-94
+agentpm/cli/commands/session/history.py                              107    107     0%   5-199
+agentpm/cli/commands/session/show.py                                  85     85     0%   5-137
+agentpm/cli/commands/session/start.py                                 68     68     0%   5-140
+agentpm/cli/commands/session/status.py                                54     54     0%   5-91
+agentpm/cli/commands/session/update.py                                50     50     0%   5-87
+agentpm/cli/commands/skills.py                                       190    190     0%   10-364
+agentpm/cli/commands/status.py                                       116    116     0%   13-221
+agentpm/cli/commands/summary.py                                       18     18     0%   7-59
+agentpm/cli/commands/summary/__init__.py                              19     19     0%   11-36
+agentpm/cli/commands/summary/create.py                                87     87     0%   7-245
+agentpm/cli/commands/summary/delete.py                                98     98     0%   7-211
+agentpm/cli/commands/summary/list.py                                  99     99     0%   7-244
+agentpm/cli/commands/summary/search.py                               114    114     0%   7-271
+agentpm/cli/commands/summary/show.py                                  86     86     0%   7-196
+agentpm/cli/commands/summary/stats.py                                149    149     0%   7-286
+agentpm/cli/commands/summary/types.py                                 69     69     0%   7-152
+agentpm/cli/commands/task/__init__.py                                 36     36     0%   17-89
+agentpm/cli/commands/task/accept.py                                   50     50     0%   5-90
+agentpm/cli/commands/task/approve.py                                  81     81     0%   5-130
+agentpm/cli/commands/task/complete.py                                 55     55     0%   5-90
+agentpm/cli/commands/task/create.py                                  107    107     0%   5-258
+agentpm/cli/commands/task/list.py                                     55     55     0%   5-130
+agentpm/cli/commands/task/next.py                                     48     48     0%   8-81
+agentpm/cli/commands/task/request_changes.py                          45     45     0%   5-80
+agentpm/cli/commands/task/show.py                                    277    277     0%   19-468
+agentpm/cli/commands/task/start.py                                    30     30     0%   5-53
+agentpm/cli/commands/task/submit_review.py                            91     91     0%   5-145
+agentpm/cli/commands/task/types.py                                   102    102     0%   7-288
+agentpm/cli/commands/task/update.py                                   93     93     0%   5-137
+agentpm/cli/commands/task/validate.py                                 78     78     0%   5-134
+agentpm/cli/commands/template.py                                      59     59     0%   5-128
+agentpm/cli/commands/testing.py                                      208    208     0%   7-368
+agentpm/cli/commands/work_item/__init__.py                            39     39     0%   13-92
+agentpm/cli/commands/work_item/accept.py                              57     57     0%   5-97
+agentpm/cli/commands/work_item/approve.py                             51     51     0%   5-86
+agentpm/cli/commands/work_item/create.py                             175    175     0%   5-363
+agentpm/cli/commands/work_item/list.py                                45     45     0%   5-107
+agentpm/cli/commands/work_item/next.py                               153    153     0%   19-347
+agentpm/cli/commands/work_item/phase_status.py                        71     71     0%   5-124
+agentpm/cli/commands/work_item/phase_validate.py                      49     49     0%   5-92
+agentpm/cli/commands/work_item/request_changes.py                     41     41     0%   5-71
+agentpm/cli/commands/work_item/show.py                                59     59     0%   5-94
+agentpm/cli/commands/work_item/start.py                               38     38     0%   5-65
+agentpm/cli/commands/work_item/submit_review.py                       50     50     0%   5-85
+agentpm/cli/commands/work_item/summaries/__init__.py                   3      3     0%   7-10
+agentpm/cli/commands/work_item/summaries/add_summary.py               57     57     0%   5-129
+agentpm/cli/commands/work_item/summaries/show_history.py              66     66     0%   5-140
+agentpm/cli/commands/work_item/types.py                              144    144     0%   7-379
+agentpm/cli/commands/work_item/update.py                             148    148     0%   5-214
+agentpm/cli/commands/work_item/validate.py                            76     76     0%   5-131
+agentpm/cli/commands/work_item_dependencies/__init__.py                4      4     0%   17-22
+agentpm/cli/commands/work_item_dependencies/add_dependency.py         44     44     0%   5-101
+agentpm/cli/commands/work_item_dependencies/list_dependencies.py      48     48     0%   5-111
+agentpm/cli/commands/work_item_dependencies/remove_dependency.py      40     40     0%   5-69
+agentpm/cli/formatters/__init__.py                                     4      4     0%   7-39
+agentpm/cli/formatters/errors.py                                      72     72     0%   7-284
+agentpm/cli/formatters/progress.py                                    63     63     0%   8-258
+agentpm/cli/formatters/tables.py                                      76     76     0%   8-243
+agentpm/cli/main.py                                                   41     41     0%   17-188
+agentpm/cli/utils/__init__.py                                          0      0   100%
+agentpm/cli/utils/project.py                                          41     41     0%   8-140
+agentpm/cli/utils/security.py                                         39     39     0%   7-148
+agentpm/cli/utils/services.py                                         20     20     0%   14-123
+agentpm/cli/utils/templates.py                                        72     72     0%   8-154
+agentpm/cli/utils/validation.py                                       74     74     0%   16-266
+agentpm/providers/__init__.py                                         15     15     0%   15-59
+agentpm/providers/anthropic/__init__.py                                7      7     0%   19-36
+agentpm/providers/anthropic/adapter.py                                15     15     0%   3-26
+agentpm/providers/anthropic/claude_code/__init__.py                    9      9     0%   24-33
+agentpm/providers/anthropic/claude_code/checkpointing.py             216    216     0%   10-904
+agentpm/providers/anthropic/claude_code/hooks.py                     140    140     0%   10-655
+agentpm/providers/anthropic/claude_code/memory_tool.py               282    282     0%   10-846
+agentpm/providers/anthropic/claude_code/models.py                    194    194     0%   10-380
+agentpm/providers/anthropic/claude_code/orchestrator.py              196    196     0%   11-519
+agentpm/providers/anthropic/claude_code/plugins.py                   160    160     0%   10-693
+agentpm/providers/anthropic/claude_code/settings.py                  101    101     0%   10-694
+agentpm/providers/anthropic/claude_code/slash_commands.py            188    188     0%   10-1517
+agentpm/providers/anthropic/claude_code/subagents.py                 154    154     0%   10-1074
+agentpm/providers/anthropic/formatter.py                             169    169     0%   3-248
+agentpm/providers/anthropic/skills/__init__.py                         5      5     0%   11-16
+agentpm/providers/anthropic/skills/generator.py                      120    120     0%   11-455
+agentpm/providers/anthropic/skills/models.py                          87     87     0%   10-294
+agentpm/providers/anthropic/skills/registry.py                        43     43     0%   10-145
+agentpm/providers/anthropic/skills/templates.py                        7      7     0%   10-41
+agentpm/providers/base.py                                             56     56     0%   7-157
+agentpm/providers/generators/__init__.py                               3      3     0%   8-16
+agentpm/providers/generators/anthropic/__init__.py                     2      2     0%   7-9
+agentpm/providers/generators/anthropic/claude_code_generator.py       49     49     0%   8-139
+agentpm/providers/generators/base.py                                  78     78     0%   8-254
+agentpm/providers/generators/registry.py                              27     27     0%   8-105
+agentpm/providers/google/__init__.py                                   5      5     0%   3-9
+agentpm/providers/google/adapter.py                                   15     15     0%   3-23
+agentpm/providers/google/formatter.py                                 10     10     0%   3-35
+agentpm/providers/openai/__init__.py                                   5      5     0%   3-9
+agentpm/providers/openai/adapter.py                                   15     15     0%   3-23
+agentpm/providers/openai/formatter.py                                 10     10     0%   3-35
+agentpm/templates/__init__.py                                          0      0   100%
+agentpm/templates/json/__init__.py                                     0      0   100%
+agentpm/utils/__init__.py                                              3      3     0%   7-10
+agentpm/utils/dependency_graph.py                                    145    145     0%   13-435
+agentpm/utils/ignore_patterns.py                                      76     76     0%   9-284
+agentpm/web/__init__.py                                                1      1     0%   8
+agentpm/web/app.py                                                   324    324     0%   33-667
+agentpm/web/routes/__init__.py                                        10     10     0%   15-25
+agentpm/web/routes/configuration.py                                  267    267     0%   10-786
+agentpm/web/routes/contexts.py                                       198    198     0%   11-500
+agentpm/web/routes/entities.py                                       337    337     0%   11-869
+agentpm/web/routes/ideas.py                                          119    119     0%   11-318
+agentpm/web/routes/main.py                                            98     98     0%   11-272
+agentpm/web/routes/projects.py                                       161    161     0%   11-467
+agentpm/web/routes/research.py                                       172    172     0%   10-410
+agentpm/web/routes/sessions.py                                       214    214     0%   10-467
+agentpm/web/routes/system.py                                         132    132     0%   11-371
+------------------------------------------------------------------------------------------------
+TOTAL                                                              14606  14606     0%
+Coverage HTML written to dir htmlcov
+=========================== short test summary info ============================
+FAILED tests/docs/test_markdown_examples.py::TestMarkdownPythonExamples::test_python_blocks_are_syntactically_valid
+FAILED tests/docs/test_markdown_examples.py::TestMarkdownPythonExamples::test_python_imports_are_valid
+FAILED tests/docs/test_markdown_examples.py::TestMarkdownBashExamples::test_apm_commands_are_valid
+FAILED tests/docs/test_markdown_examples.py::TestMarkdownStructure::test_code_blocks_are_closed
+========================= 4 failed, 4 passed in 1.71s ==========================

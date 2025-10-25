@@ -1,0 +1,167 @@
+# Step 6: P1 Gate Validation
+
+gate: P1
+work_item_id: 113
+validation_timestamp: 2025-10-19T00:00:00Z
+
+# P1 GATE CRITERIA (from planning-orch agent definition)
+
+criterion_1_ac_mapping:
+  description: "All acceptance criteria mapped to tasks"
+  acceptance_criteria:
+    AC1: "All 50 non-compliant documents migrated to docs/ structure"
+    AC2: "DocumentReference model consolidated with strict path validation"
+    AC3: "Database CHECK constraint enforces docs/ prefix"
+    AC4: "Agent SOPs updated with path structure examples (46 files)"
+    AC5: "CLI provides guidance/warnings for non-compliant paths"
+    AC6: "Regression tests prevent future violations (>90% coverage)"
+  
+  task_coverage:
+    AC1: [591, 592, 593]  # T4 migration command, T5 execute, T6 verify
+    AC2: [588]            # T1 model consolidation
+    AC3: [589]            # T2 database constraint
+    AC4: [594, 597]       # T7 SOPs, T10 docs
+    AC5: [595]            # T8 CLI guidance
+    AC6: [590, 593, 596]  # T3 validation tests, T6 migration tests, T9 regression
+  
+  unmapped_acs: []
+  status: PASS
+  confidence: 1.0
+
+criterion_2_time_boxing:
+  description: "All tasks ≤ 4.0 hours (DP-001 for IMPLEMENTATION)"
+  task_estimates:
+    588: {type: implementation, estimate: 3.3, limit: 4.0, status: PASS}
+    589: {type: implementation, estimate: 1.5, limit: 4.0, status: PASS}
+    590: {type: testing, estimate: 3.0, limit: 6.0, status: PASS}
+    591: {type: implementation, estimate: 4.0, limit: 4.0, status: PASS}
+    592: {type: deployment, estimate: 1.2, limit: 2.0, status: PASS}
+    593: {type: testing, estimate: 1.1, limit: 6.0, status: PASS}
+    594: {type: documentation, estimate: 2.2, limit: 4.0, status: PASS}
+    595: {type: implementation, estimate: 1.5, limit: 4.0, status: PASS}
+    596: {type: testing, estimate: 3.0, limit: 6.0, status: PASS}
+    597: {type: documentation, estimate: 1.5, limit: 4.0, status: PASS}
+  
+  violations: []
+  all_compliant: true
+  status: PASS
+  confidence: 1.0
+
+criterion_3_dependencies_mapped:
+  description: "Dependencies mapped with valid sequencing"
+  dependencies:
+    588: []
+    589: [588]
+    590: [588]
+    591: [588, 589, 590]
+    592: [591]
+    593: [592]
+    594: [588]
+    595: [588]
+    596: [590, 593, 594, 595]
+    597: [593, 594]
+  
+  critical_path: [588, 589, 591, 592, 593, 596]
+  critical_path_duration: 15.1h  # 3.3 + 1.5 + 4.0 + 1.2 + 1.1 + 3.0 = 14.1h
+  circular_dependencies: false
+  dependencies_valid: true
+  status: PASS
+  confidence: 0.95
+
+criterion_4_mitigations_planned:
+  description: "All risks have mitigation plans"
+  risks_with_mitigations:
+    R1_data_loss:
+      assigned_tasks: [591, 592, 593]
+      preventive: ["Backup", "Dry-run", "Atomic operations", "Checksums"]
+      detection: ["File count", "Hash comparison", "Orphan detection"]
+      response: ["Stop on failure", "Restore backup", "Rollback"]
+      status: MITIGATED
+    
+    R2_breaking_imports:
+      assigned_tasks: [588, 590]
+      preventive: ["Grep imports", "Update systematically", "Test in isolation"]
+      detection: ["Import errors", "CI failures"]
+      response: ["Fix remaining imports", "Compatibility shim"]
+      status: MITIGATED
+    
+    R3_agent_disruption:
+      assigned_tasks: [594, 595]
+      preventive: ["Update SOPs", "CLI validation", "Examples"]
+      detection: ["CLI errors", "Constraint violations"]
+      response: ["Enhance errors", "Quick reference"]
+      status: MITIGATED
+    
+    R4_constraint_blocks_migration:
+      assigned_tasks: [589, 593]
+      preventive: ["Add constraint AFTER migration", "Test timing"]
+      detection: ["Constraint violations"]
+      response: ["Disable temporarily", "Complete migration first"]
+      status: MITIGATED
+    
+    R5_scope_creep:
+      assigned_tasks: [591]
+      preventive: ["Scope reduced - manual input only"]
+      detection: ["Duration exceeding 4.0h"]
+      response: ["Already handled in estimation"]
+      status: MITIGATED
+    
+    R6_insufficient_coverage:
+      assigned_tasks: [590, 593, 596]
+      preventive: ["Define edge cases", "Error condition tests", "Coverage tools"]
+      detection: ["Coverage < 90%"]
+      response: ["Add incremental tests"]
+      status: MITIGATED
+  
+  unmitiated_risks: []
+  all_risks_covered: true
+  status: PASS
+  confidence: 0.88
+
+# OVERALL GATE STATUS
+
+overall_gate_status: PASS
+overall_confidence: 0.92
+
+criteria_summary:
+  - criterion: "AC mapping"
+    status: PASS
+    confidence: 1.0
+  - criterion: "Time-boxing"
+    status: PASS
+    confidence: 1.0
+  - criterion: "Dependencies"
+    status: PASS
+    confidence: 0.95
+  - criterion: "Mitigations"
+    status: PASS
+    confidence: 0.88
+
+missing_criteria: []
+
+next_phase: "I1_IMPLEMENTATION"
+artifact_type: "plan.snapshot"
+artifact_location: "/tmp/wi113_plan_snapshot.yaml"
+
+verification_queries:
+  - "apm work-item show 113"
+  - "apm task list --work-item-id=113"
+  - "apm task list-dependencies 591"  # Verify complex dependencies
+  - "apm task list-dependencies 596"  # Verify final validation dependencies
+
+notes:
+  - "All 10 tasks created in database (IDs: 588-597)"
+  - "All dependencies mapped and stored"
+  - "All acceptance criteria have task coverage"
+  - "All time-box limits respected"
+  - "All 6 identified risks have mitigation plans integrated into tasks"
+  - "Critical path: 14.1 hours (can be parallelized to ~18.8h total)"
+  - "P1 gate PASSED - ready for I1_IMPLEMENTATION phase"
+
+database_verification:
+  work_item_created: true
+  work_item_id: 113
+  tasks_created: 10
+  task_ids: [588, 589, 590, 591, 592, 593, 594, 595, 596, 597]
+  dependencies_created: 14  # Total dependency edges
+  all_data_in_database: true

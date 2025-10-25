@@ -1,0 +1,409 @@
+"""
+E2E Test Infrastructure for Memory System
+
+Fixtures for end-to-end testing of the Claude Memory System.
+These fixtures create real databases, file systems, and CLI runners
+to test complete workflows from CLI to filesystem.
+
+Part of WI-114 Task #606: End-to-End Memory System Testing
+"""
+
+import pytest
+import shutil
+from pathlib import Path
+from datetime import datetime
+from click.testing import CliRunner
+
+from agentpm.core.database.service import DatabaseService
+from agentpm.core.database.methods import (
+    projects,
+    work_items,
+    tasks,
+    rules as rules_methods,
+    agents as agent_methods,
+    ideas as idea_methods
+)
+from agentpm.core.database.models import (
+    Project,
+    WorkItem,
+    Task,
+    Rule,
+    Agent,
+    Idea
+)
+from agentpm.core.database.enums import (
+    WorkItemStatus,
+    WorkItemType,
+    TaskStatus,
+    EnforcementLevel,
+    IdeaStatus,
+    IdeaSource
+)
+from agentpm.services.memory.generator import MemoryGenerator
+from agentpm.services.memory.hooks import MemoryHooks
+
+
+@pytest.fixture
+def cli_runner():
+    """Create Click CliRunner for E2E CLI testing.
+
+    Returns:
+        CliRunner instance configured for testing
+    """
+    return CliRunner(mix_stderr=False)
+
+
+@pytest.fixture
+def isolated_db(tmp_path):
+    """Create isolated test database with realistic sample data.
+
+    Creates a fresh SQLite database with:
+    - 1 test project
+    - 10 rules (various categories and enforcement levels)
+    - 5 work items (mix of features, fixes, improvements)
+    - 10 tasks (various types and statuses)
+    - 3 agents
+    - 5 ideas
+    - 2 contexts
+
+    Args:
+        tmp_path: Pytest temp directory fixture
+
+    Returns:
+        DatabaseService instance with populated test data
+    """
+    db_path = tmp_path / "test.db"
+    db = DatabaseService(str(db_path))
+
+    # Create test project
+    project = Project(
+        name="Test Project",
+        description="E2E Test Project for Memory System",
+        path=str(tmp_path / "project"),
+        tech_stack=["Python", "SQLite", "Click"],
+        status="active",
+        business_domain="Software Development"
+    )
+    project = projects.create_project(db, project)
+
+    # Create test rules (10 rules across categories)
+    test_rules = [
+        Rule(project_id=project.id, rule_id='DP-001', name='time-boxing',
+             description='All work must be time-boxed to prevent scope creep',
+             category='Development Principles', enforcement_level=EnforcementLevel.BLOCK,
+             error_message='Work must be time-boxed', config={"max_hours": 4}, enabled=True),
+        Rule(project_id=project.id, rule_id='DP-002', name='quality-gates',
+             description='Use quality gates at phase boundaries',
+             category='Development Principles', enforcement_level=EnforcementLevel.BLOCK,
+             error_message='Quality gates required', config={}, enabled=True),
+        Rule(project_id=project.id, rule_id='TES-001', name='test-coverage',
+             description='Minimum 90% test coverage for new code',
+             category='Testing Standards', enforcement_level=EnforcementLevel.LIMIT,
+             error_message='Coverage below 90%', config={"threshold": 0.90}, enabled=True),
+        Rule(project_id=project.id, rule_id='TES-002', name='aaa-pattern',
+             description='Tests must follow Arrange-Act-Assert pattern',
+             category='Testing Standards', enforcement_level=EnforcementLevel.GUIDE,
+             error_message='Use AAA pattern', config={}, enabled=True),
+        Rule(project_id=project.id, rule_id='SEC-001', name='input-validation',
+             description='All external inputs must be validated',
+             category='Security', enforcement_level=EnforcementLevel.BLOCK,
+             error_message='Input validation required', config={}, enabled=True),
+        Rule(project_id=project.id, rule_id='CQ-001', name='code-quality',
+             description='Maintain high code quality standards',
+             category='Code Quality', enforcement_level=EnforcementLevel.GUIDE,
+             error_message='Quality standards not met', config={}, enabled=True),
+        Rule(project_id=project.id, rule_id='WF-001', name='phase-gates',
+             description='Must pass phase gates before advancing',
+             category='Workflow', enforcement_level=EnforcementLevel.BLOCK,
+             error_message='Phase gate not passed', config={}, enabled=True),
+        Rule(project_id=project.id, rule_id='DOC-001', name='documentation',
+             description='All features must be documented',
+             category='Documentation', enforcement_level=EnforcementLevel.LIMIT,
+             error_message='Documentation missing', config={}, enabled=True),
+        Rule(project_id=project.id, rule_id='CI-001', name='continuous-integration',
+             description='All code must pass CI checks',
+             category='CI/CD', enforcement_level=EnforcementLevel.BLOCK,
+             error_message='CI checks failed', config={}, enabled=True),
+        Rule(project_id=project.id, rule_id='REV-001', name='code-review',
+             description='All code must be reviewed before merge',
+             category='Code Review', enforcement_level=EnforcementLevel.BLOCK,
+             error_message='Code review required', config={}, enabled=True),
+    ]
+    for rule in test_rules:
+        rules_methods.create_rule(db, rule)
+
+    # Create test work items (5 work items)
+    wi1 = WorkItem(
+        project_id=project.id,
+        name='Memory System Feature',
+        description='Implement Claude persistent memory system',
+        type=WorkItemType.FEATURE,
+        status=WorkItemStatus.ACTIVE,
+        phase='I1_implementation',
+        effort_estimate_hours=8.0,
+        priority=1,
+        business_context='Claude needs persistent memory for context retention'
+    )
+    wi1 = work_items.create_work_item(db, wi1)
+
+    wi2 = WorkItem(
+        project_id=project.id,
+        name='Fix Database Bug',
+        description='Fix database connection pooling issue',
+        type=WorkItemType.FIX,
+        status=WorkItemStatus.DONE,
+        phase='R1_review',
+        effort_estimate_hours=2.0,
+        priority=2
+    )
+    wi2 = work_items.create_work_item(db, wi2)
+
+    wi3 = WorkItem(
+        project_id=project.id,
+        name='Improve CLI Performance',
+        description='Optimize CLI command execution speed',
+        type=WorkItemType.IMPROVEMENT,
+        status=WorkItemStatus.ACTIVE,
+        phase='P1_plan',
+        effort_estimate_hours=4.0,
+        priority=3
+    )
+    wi3 = work_items.create_work_item(db, wi3)
+
+    wi4 = WorkItem(
+        project_id=project.id,
+        name='Add API Documentation',
+        description='Create comprehensive API documentation',
+        type=WorkItemType.DOCUMENTATION,
+        status=WorkItemStatus.TODO,
+        phase='D1_discovery',
+        effort_estimate_hours=6.0,
+        priority=4
+    )
+    wi4 = work_items.create_work_item(db, wi4)
+
+    wi5 = WorkItem(
+        project_id=project.id,
+        name='Refactor Context System',
+        description='Refactor context loading for better performance',
+        type=WorkItemType.IMPROVEMENT,
+        status=WorkItemStatus.ACTIVE,
+        phase='I1_implementation',
+        effort_estimate_hours=10.0,
+        priority=2
+    )
+    wi5 = work_items.create_work_item(db, wi5)
+
+    # Create test tasks (10 tasks)
+    task_data = [
+        (wi1.id, 'Design Memory Schema', 'design', TaskStatus.DONE, 2.0, 1),
+        (wi1.id, 'Implement Generator', 'implementation', TaskStatus.IN_PROGRESS, 4.0, 2),
+        (wi1.id, 'Write Tests', 'testing', TaskStatus.TODO, 2.0, 3),
+        (wi2.id, 'Investigate Bug', 'investigation', TaskStatus.DONE, 1.0, 1),
+        (wi2.id, 'Fix and Test', 'implementation', TaskStatus.DONE, 1.0, 2),
+        (wi3.id, 'Profile Performance', 'investigation', TaskStatus.IN_PROGRESS, 2.0, 1),
+        (wi3.id, 'Optimize Code', 'implementation', TaskStatus.TODO, 2.0, 2),
+        (wi5.id, 'Design Refactoring', 'design', TaskStatus.DONE, 2.0, 1),
+        (wi5.id, 'Implement Changes', 'implementation', TaskStatus.IN_PROGRESS, 6.0, 2),
+        (wi5.id, 'Update Tests', 'testing', TaskStatus.TODO, 2.0, 3),
+    ]
+    for wi_id, name, task_type, status, effort, priority in task_data:
+        task = Task(
+            work_item_id=wi_id,
+            name=name,
+            description=f'{name} for testing',
+            type=task_type,
+            status=status,
+            assigned_to='test-agent',
+            effort_hours=effort,
+            priority=priority
+        )
+        tasks.create_task(db, task)
+
+    # Create test agents (3 agents)
+    agent_data = [
+        ('memory-generator', 'Memory Generator', 'Generates Claude memory files', 'specialist'),
+        ('test-runner', 'Test Runner', 'Runs automated tests', 'sub-agent'),
+        ('quality-checker', 'Quality Checker', 'Validates code quality', 'sub-agent'),
+    ]
+    for role, display_name, description, agent_type in agent_data:
+        agent = Agent(
+            project_id=project.id,
+            role=role,
+            display_name=display_name,
+            description=description,
+            sop_content=f'SOP for {display_name}',
+            capabilities='["test", "generate", "validate"]',
+            is_active=True,
+            agent_type=agent_type,
+            tier='sub-agent'
+        )
+        agent_methods.create_agent(db, agent)
+
+    # Create test contexts (2 contexts)
+    with db.connect() as conn:
+        conn.execute("""
+            INSERT INTO contexts (
+                project_id, context_type, entity_type, entity_id,
+                six_w_data, confidence_score, confidence_band,
+                confidence_factors, context_data, created_at, updated_at
+            )
+            VALUES
+                (?, 'work_item', 'work_item', ?, '{"who": "developer", "what": "memory system"}',
+                 0.85, 'high', '{"completeness": 0.9}', '{}', ?, ?),
+                (?, 'project', 'project', ?, '{"who": "team", "what": "AIPM project"}',
+                 0.90, 'high', '{"completeness": 0.95}', '{}', ?, ?)
+        """, (
+            project.id, wi1.id, datetime.now().isoformat(), datetime.now().isoformat(),
+            project.id, project.id, datetime.now().isoformat(), datetime.now().isoformat()
+        ))
+        conn.commit()
+
+    # Create test ideas (5 ideas)
+    idea_data = [
+        ('Memory Caching', 'Cache frequently accessed memory files', IdeaStatus.IDEA, IdeaSource.INTERNAL, 5),
+        ('Auto-Refresh', 'Auto-refresh memory on database changes', IdeaStatus.ACCEPTED, IdeaSource.CUSTOMER_FEEDBACK, 10),
+        ('Compression', 'Compress large memory files', IdeaStatus.IDEA, IdeaSource.INTERNAL, 3),
+        ('Versioning', 'Version memory files for rollback', IdeaStatus.REFINEMENT, IdeaSource.BRAINSTORMING, 7),
+        ('Export', 'Export memory files to different formats', IdeaStatus.IDEA, IdeaSource.COMPETITIVE_ANALYSIS, 4),
+    ]
+    for title, description, status, source, votes in idea_data:
+        idea = Idea(
+            project_id=project.id,
+            title=title,
+            description=description,
+            status=status,
+            source=source,
+            votes=votes
+        )
+        idea_methods.create_idea(db, idea)
+
+    return db
+
+
+@pytest.fixture
+def tmp_project(tmp_path, isolated_db):
+    """Create temporary project directory with .claude/ folder.
+
+    Creates a realistic project structure:
+    - project_root/
+      - .claude/  (memory files destination)
+      - .aipm/
+        - data/
+          - aipm.db (database)
+
+    Args:
+        tmp_path: Pytest temp directory fixture
+        isolated_db: Isolated database fixture
+
+    Returns:
+        Path to project root directory
+    """
+    project_root = tmp_path / "project"
+    project_root.mkdir(exist_ok=True)
+
+    # Create .claude directory for memory files
+    claude_dir = project_root / ".claude"
+    claude_dir.mkdir(exist_ok=True)
+
+    # Create .aipm directory structure
+    aipm_dir = project_root / ".aipm" / "data"
+    aipm_dir.mkdir(parents=True, exist_ok=True)
+
+    # Copy database to project location
+    db_source = Path(isolated_db.db_path)
+    db_dest = aipm_dir / "aipm.db"
+    shutil.copy(db_source, db_dest)
+
+    return project_root
+
+
+@pytest.fixture
+def memory_generator(isolated_db, tmp_project):
+    """Create MemoryGenerator instance for testing.
+
+    Args:
+        isolated_db: Isolated database fixture
+        tmp_project: Temporary project fixture
+
+    Returns:
+        MemoryGenerator instance configured for testing
+    """
+    return MemoryGenerator(isolated_db, tmp_project)
+
+
+@pytest.fixture
+def memory_hooks(isolated_db, tmp_project):
+    """Create MemoryHooks instance for testing.
+
+    Args:
+        isolated_db: Isolated database fixture
+        tmp_project: Temporary project fixture
+
+    Returns:
+        MemoryHooks instance configured for testing
+    """
+    return MemoryHooks(isolated_db, tmp_project)
+
+
+@pytest.fixture
+def sample_data_factory(isolated_db):
+    """Factory for creating additional test data.
+
+    Provides functions to create rules, work items, tasks, etc.
+    on demand during tests.
+
+    Args:
+        isolated_db: Isolated database fixture
+
+    Returns:
+        Dict of factory functions
+    """
+    def create_rule(rule_id, name, category, enabled=True):
+        """Create a test rule."""
+        rule = Rule(
+            project_id=1,
+            rule_id=rule_id,
+            name=name,
+            description=f'Test rule {rule_id}',
+            category=category,
+            enforcement_level=EnforcementLevel.GUIDE,
+            error_message='Test error',
+            config={},
+            enabled=enabled
+        )
+        return rules_methods.create_rule(isolated_db, rule)
+
+    def create_work_item(name, wi_type=WorkItemType.FEATURE):
+        """Create a test work item."""
+        wi = WorkItem(
+            project_id=1,
+            name=name,
+            description=f'Test work item: {name}',
+            type=wi_type,
+            status=WorkItemStatus.ACTIVE,
+            phase='I1_implementation',
+            effort_estimate_hours=4.0,
+            priority=1
+        )
+        return work_items.create_work_item(isolated_db, wi)
+
+    def create_task(work_item_id, name, task_type='implementation'):
+        """Create a test task."""
+        task = Task(
+            work_item_id=work_item_id,
+            name=name,
+            description=f'Test task: {name}',
+            type=task_type,
+            status=TaskStatus.TODO,
+            assigned_to='test-agent',
+            effort_hours=2.0,
+            priority=1
+        )
+        return tasks.create_task(isolated_db, task)
+
+    return {
+        'create_rule': create_rule,
+        'create_work_item': create_work_item,
+        'create_task': create_task,
+    }

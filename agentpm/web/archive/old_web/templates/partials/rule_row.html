@@ -1,0 +1,74 @@
+{# Rule Row Partial Template - Reusable for HTMX swaps #}
+<tr id="rule-row-{{ rule_info.rule.id }}"
+    class="rule-row cursor-pointer hover:bg-gray-50 transition-colors"
+    data-enforcement="{{ rule_info.rule.enforcement_level }}"
+    data-category="{{ rule_info.rule.category }}"
+    onclick="toggleRuleDetails('rule-{{ rule_info.rule.id }}')"
+    role="button"
+    tabindex="0"
+    aria-expanded="false"
+    aria-controls="rule-{{ rule_info.rule.id }}"
+    aria-label="Rule {{ rule_info.rule.rule_id }}: {{ rule_info.rule.name }}. Click to view details"
+    onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleRuleDetails('rule-{{ rule_info.rule.id }}'); }">
+
+    <td><strong class="text-gray-900">{{ rule_info.rule.rule_id }}</strong></td>
+    <td><span class="badge badge-gray">{{ rule_info.rule.category }}</span></td>
+    <td class="text-gray-700">{{ rule_info.rule.name }}</td>
+    <td>
+        {% if rule_info.rule.enforcement_level == 'BLOCK' %}
+            <span class="badge badge-error">BLOCK</span>
+        {% elif rule_info.rule.enforcement_level == 'LIMIT' %}
+            <span class="badge bg-warning text-white">LIMIT</span>
+        {% elif rule_info.rule.enforcement_level == 'GUIDE' %}
+            <span class="badge bg-info text-white">GUIDE</span>
+        {% elif rule_info.rule.enforcement_level == 'ENHANCE' %}
+            <span class="badge badge-success">ENHANCE</span>
+        {% endif %}
+    </td>
+    <td>
+        <div class="form-check form-switch flex items-center gap-2" onclick="event.stopPropagation()">
+            <input class="form-check-input w-11 h-6 rounded-full"
+                   type="checkbox"
+                   role="switch"
+                   id="rule-toggle-{{ rule_info.rule.id }}"
+                   {% if rule_info.rule.enforcement_level == 'BLOCK' %}checked{% endif %}
+                   hx-post="/rules/{{ rule_info.rule.id }}/toggle"
+                   hx-target="#rule-row-{{ rule_info.rule.id }}"
+                   hx-swap="outerHTML"
+                   hx-trigger="change"
+                   aria-label="Toggle rule {{ rule_info.rule.rule_id }} status"
+                   aria-checked="{% if rule_info.rule.enforcement_level == 'BLOCK' %}true{% else %}false{% endif %}">
+            <label class="form-check-label text-sm" for="rule-toggle-{{ rule_info.rule.id }}">
+                {% if rule_info.rule.enforcement_level == 'BLOCK' %}
+                    <span class="font-semibold text-success">ON</span>
+                {% else %}
+                    <span class="text-gray-500">OFF</span>
+                {% endif %}
+            </label>
+        </div>
+    </td>
+</tr>
+<tr id="rule-{{ rule_info.rule.id }}" class="rule-details" style="display: none;" aria-hidden="true">
+    <td colspan="5" class="bg-gray-50 border-t border-gray-100">
+        <div class="p-6 space-y-4">
+            <div>
+                <strong class="block text-sm font-semibold text-gray-900 mb-1">Description:</strong>
+                <p class="text-gray-700 text-sm">{{ rule_info.rule.description }}</p>
+            </div>
+
+            {% if rule_info.rule.validation_logic %}
+            <div>
+                <strong class="block text-sm font-semibold text-gray-900 mb-1">Validation Logic:</strong>
+                <pre class="bg-white border border-gray-200 rounded-lg p-3 text-xs font-mono overflow-x-auto"><code>{{ rule_info.rule.validation_logic }}</code></pre>
+            </div>
+            {% endif %}
+
+            {% if rule_info.rule.config %}
+            <div>
+                <strong class="block text-sm font-semibold text-gray-900 mb-1">Configuration:</strong>
+                <pre class="bg-white border border-gray-200 rounded-lg p-3 text-xs font-mono overflow-x-auto">{{ rule_info.rule.config | tojson(indent=2) }}</pre>
+            </div>
+            {% endif %}
+        </div>
+    </td>
+</tr>

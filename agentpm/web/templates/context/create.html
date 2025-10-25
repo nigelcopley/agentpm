@@ -1,0 +1,189 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Create Context - APM (Agent Project Manager){% endblock %}
+
+{% block content %}
+<!-- Main Header -->
+<div class="bg-gradient-to-br from-purple-500 via-indigo-500 to-blue-500 text-white">
+    <div class="px-6 py-8">
+        <div class="flex justify-between items-start">
+            <div>
+                <h1 class="text-4xl font-bold mb-3">Create Context</h1>
+                <p class="text-white/90 text-lg">Create a new context for your project</p>
+            </div>
+            <div class="bg-white/20 backdrop-blur-sm p-4 rounded-2xl">
+                <i class="bi bi-plus-circle text-4xl"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="flex gap-6 p-6">
+    <!-- Sidebar -->
+    <aside class="w-64 flex-shrink-0">
+        {% include 'components/layout/sidebar.html' %}
+    </aside>
+    
+    <!-- Main Content Area -->
+    <div class="flex-1 max-w-4xl">
+        <!-- Actions Bar -->
+        <div class="bg-white rounded-lg shadow-lg p-4 mb-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <a href="{{ url_for('context.contexts_list') }}" class="text-gray-600 hover:text-gray-800">
+                        <i class="bi bi-arrow-left mr-2"></i>Back to Contexts
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Form -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <form method="POST" class="space-y-6">
+                <!-- Basic Information -->
+                <div class="space-y-4">
+                    <h2 class="text-xl font-semibold text-gray-900">Basic Information</h2>
+                    
+                    <div>
+                        <label for="title" class="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+                        <input type="text" id="title" name="title" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                               placeholder="Enter context title">
+                    </div>
+                    
+                    <div>
+                        <label for="context_type" class="block text-sm font-medium text-gray-700 mb-1">Context Type *</label>
+                        <select id="context_type" name="context_type" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                            {% for type in context_types %}
+                            <option value="{{ type.value }}">{{ type.value.replace('_', ' ').title() }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="project_id" class="block text-sm font-medium text-gray-700 mb-1">Project *</label>
+                        <select id="project_id" name="project_id" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                            {% for project in projects %}
+                            <option value="{{ project.id }}">{{ project.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Entity Information -->
+                <div class="space-y-4">
+                    <h2 class="text-xl font-semibold text-gray-900">Entity Information</h2>
+                    
+                    <div>
+                        <label for="entity_type" class="block text-sm font-medium text-gray-700 mb-1">Entity Type</label>
+                        <select id="entity_type" name="entity_type"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                            <option value="">No Entity</option>
+                            {% for type in entity_types %}
+                            <option value="{{ type.value }}">{{ type.value.replace('_', ' ').title() }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div id="entity_id_container" style="display: none;">
+                        <label for="entity_id" class="block text-sm font-medium text-gray-700 mb-1">Entity</label>
+                        <select id="entity_id" name="entity_id"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Context Data -->
+                <div class="space-y-4">
+                    <h2 class="text-xl font-semibold text-gray-900">Context Data</h2>
+                    
+                    <div>
+                        <label for="context_data" class="block text-sm font-medium text-gray-700 mb-1">Context Data</label>
+                        <textarea id="context_data" name="context_data" rows="8"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                  placeholder="Enter context data (supports Markdown)"></textarea>
+                        <p class="text-sm text-gray-500 mt-1">Supports Markdown formatting</p>
+                    </div>
+                </div>
+
+                <!-- Additional Information -->
+                <div class="space-y-4">
+                    <h2 class="text-xl font-semibold text-gray-900">Additional Information</h2>
+                    
+                    <div>
+                        <label for="source" class="block text-sm font-medium text-gray-700 mb-1">Source</label>
+                        <input type="text" id="source" name="source"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                               placeholder="Source of this context">
+                    </div>
+                    
+                    <div>
+                        <label for="tags" class="block text-sm font-medium text-gray-700 mb-1">Tags</label>
+                        <input type="text" id="tags" name="tags"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                               placeholder="Enter tags separated by commas">
+                        <p class="text-sm text-gray-500 mt-1">Separate multiple tags with commas</p>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200">
+                    <a href="{{ url_for('context.contexts_list') }}" 
+                       class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                        Cancel
+                    </a>
+                    <button type="submit" 
+                            class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                        <i class="bi bi-plus mr-2"></i>Create Context
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Handle entity type change
+document.getElementById('entity_type').addEventListener('change', function() {
+    const entityType = this.value;
+    const entityIdContainer = document.getElementById('entity_id_container');
+    const entityIdSelect = document.getElementById('entity_id');
+    
+    if (entityType) {
+        entityIdContainer.style.display = 'block';
+        
+        // Clear existing options
+        entityIdSelect.innerHTML = '';
+        
+        // Add options based on entity type
+        if (entityType === 'work_item') {
+            {% for work_item in work_items %}
+            const option = document.createElement('option');
+            option.value = '{{ work_item.id }}';
+            option.textContent = '{{ work_item.name }}';
+            entityIdSelect.appendChild(option);
+            {% endfor %}
+        } else if (entityType === 'task') {
+            {% for task in tasks %}
+            const option = document.createElement('option');
+            option.value = '{{ task.id }}';
+            option.textContent = '{{ task.name }}';
+            entityIdSelect.appendChild(option);
+            {% endfor %}
+        } else if (entityType === 'idea') {
+            {% for idea in ideas %}
+            const option = document.createElement('option');
+            option.value = '{{ idea.id }}';
+            option.textContent = '{{ idea.title }}';
+            entityIdSelect.appendChild(option);
+            {% endfor %}
+        }
+    } else {
+        entityIdContainer.style.display = 'none';
+    }
+});
+</script>
+{% endblock %}

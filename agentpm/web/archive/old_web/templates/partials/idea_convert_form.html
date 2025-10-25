@@ -1,0 +1,65 @@
+<div class="modal-header">
+    <h5 class="modal-title">
+        <i class="bi bi-box-arrow-up-right"></i> Convert Idea to Work Item
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+
+<form hx-post="/idea/{{ idea.id }}/convert" hx-target="body" hx-swap="innerHTML">
+    <div class="modal-body">
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> Converting: <strong>{{ idea.title }}</strong>
+        </div>
+
+        <div class="mb-3">
+            <label for="work_item_type" class="form-label">Work Item Type</label>
+            <select class="form-select" id="work_item_type" name="work_item_type" required>
+                {% for wt in work_item_types %}
+                <option value="{{ wt.value }}" {% if wt.value == 'feature' %}selected{% endif %}>
+                    {{ wt.label }}
+                </option>
+                {% endfor %}
+            </select>
+            <div class="form-text">Choose the type of work item to create</div>
+        </div>
+
+        <div class="mb-3">
+            <label for="name" class="form-label">Work Item Name</label>
+            <input type="text" class="form-control" id="name" name="name" value="{{ idea.title }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="description" class="form-label">Description</label>
+            <textarea class="form-control" id="description" name="description" rows="4">{{ idea.description or '' }}</textarea>
+        </div>
+
+        <div class="mb-3">
+            <label for="priority" class="form-label">Priority</label>
+            <select class="form-select" id="priority" name="priority">
+                <option value="1">1 - Critical</option>
+                <option value="2">2 - High</option>
+                <option value="3" selected>3 - Medium</option>
+                <option value="4">4 - Low</option>
+                <option value="5">5 - Nice to Have</option>
+            </select>
+        </div>
+
+        {% if tags %}
+        <div class="mb-3">
+            <label class="form-label">Tags (will be added to work item notes)</label>
+            <div class="d-flex flex-wrap gap-2">
+                {% for tag in tags %}
+                <span class="badge badge-info">{{ tag }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-success">
+            <i class="bi bi-check-circle"></i> Create Work Item
+        </button>
+    </div>
+</form>

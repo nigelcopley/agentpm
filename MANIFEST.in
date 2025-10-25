@@ -1,0 +1,37 @@
+# Package manifest for PyPI distribution
+
+# Include essential documentation
+include README.md
+include CHANGELOG.md
+include LICENSE
+include DEVELOPMENT.md
+
+# Include configuration files
+include pyproject.toml
+include .coveragerc
+
+# Include agent system files
+recursive-include agentpm/templates *
+recursive-include .claude/agents *.md
+
+# Include rules system
+recursive-include _RULES *.md
+
+# Include database migrations
+recursive-include agentpm/core/database/migrations *.py
+
+# Exclude development and testing files
+exclude .gitignore
+exclude .aipmignore
+exclude .cursorignore
+recursive-exclude tests *
+recursive-exclude testing *
+recursive-exclude htmlcov *
+recursive-exclude .pytest_cache *
+recursive-exclude .mypy_cache *
+recursive-exclude .ruff_cache *
+recursive-exclude __pycache__ *
+recursive-exclude *.pyc *
+recursive-exclude *.pyo *
+recursive-exclude .venv *
+recursive-exclude .aipm *

@@ -1,0 +1,143 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Create Document - APM (Agent Project Manager){% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+    <!-- Page Header -->
+    <div class="bg-gradient-to-r from-slate-500 to-gray-600 rounded-lg p-6 text-white">
+        <div class="flex items-center gap-3">
+            <div class="bg-white/20 p-3 rounded-full">
+                <i class="bi bi-file-earmark-plus text-2xl"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold">Create Document</h1>
+                <p class="text-slate-100">Add a new document reference to the system</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <div class="bg-white rounded-lg shadow-sm border p-6">
+        <form method="POST" class="space-y-6">
+            <!-- Title -->
+            <div>
+                <label for="title" class="block text-sm font-medium text-gray-700 mb-2">
+                    Title <span class="text-red-500">*</span>
+                </label>
+                <input type="text" 
+                       id="title" 
+                       name="title" 
+                       required
+                       placeholder="Enter document title..."
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+
+            <!-- Description -->
+            <div>
+                <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
+                    Description
+                </label>
+                <textarea id="description" 
+                          name="description" 
+                          rows="3"
+                          placeholder="Enter document description..."
+                          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+            </div>
+
+            <!-- File Path -->
+            <div>
+                <label for="file_path" class="block text-sm font-medium text-gray-700 mb-2">
+                    File Path <span class="text-red-500">*</span>
+                </label>
+                <input type="text" 
+                       id="file_path" 
+                       name="file_path" 
+                       required
+                       placeholder="/path/to/document.pdf"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <p class="mt-1 text-sm text-gray-500">Enter the full path to the document file</p>
+            </div>
+
+            <!-- Document Type -->
+            <div>
+                <label for="document_type" class="block text-sm font-medium text-gray-700 mb-2">
+                    Document Type
+                </label>
+                <select id="document_type" 
+                        name="document_type" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="general">General</option>
+                    <option value="specification">Specification</option>
+                    <option value="design">Design</option>
+                    <option value="requirements">Requirements</option>
+                    <option value="documentation">Documentation</option>
+                    <option value="research">Research</option>
+                    <option value="analysis">Analysis</option>
+                    <option value="report">Report</option>
+                    <option value="proposal">Proposal</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+
+            <!-- Entity Association -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="entity_type" class="block text-sm font-medium text-gray-700 mb-2">
+                        Associate With
+                    </label>
+                    <select id="entity_type" 
+                            name="entity_type" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">No Association</option>
+                        <option value="PROJECT">Project</option>
+                        <option value="WORK_ITEM">Work Item</option>
+                        <option value="TASK">Task</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="entity_id" class="block text-sm font-medium text-gray-700 mb-2">
+                        Entity ID
+                    </label>
+                    <input type="number" 
+                           id="entity_id" 
+                           name="entity_id" 
+                           placeholder="Enter entity ID..."
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <p class="mt-1 text-sm text-gray-500">Leave empty if no association</p>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex items-center gap-4 pt-4 border-t border-gray-200">
+                <button type="submit" 
+                        class="px-6 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 transition-colors">
+                    <i class="bi bi-check-lg mr-2"></i>Create Document
+                </button>
+                <a href="{{ url_for('documents.documents_list') }}" 
+                   class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors">
+                    <i class="bi bi-x-lg mr-2"></i>Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Help -->
+    <div class="bg-blue-50 rounded-lg p-4">
+        <div class="flex items-start gap-3">
+            <i class="bi bi-info-circle text-blue-600 text-lg mt-0.5"></i>
+            <div>
+                <h3 class="text-sm font-medium text-blue-900 mb-1">Document Creation Tips</h3>
+                <ul class="text-sm text-blue-800 space-y-1">
+                    <li>• Use descriptive titles that clearly identify the document</li>
+                    <li>• Provide a brief description to help others understand the document's purpose</li>
+                    <li>• Ensure the file path is accessible and the file exists</li>
+                    <li>• Choose the appropriate document type for better organisation</li>
+                    <li>• Associate with projects, work items, or tasks when relevant</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

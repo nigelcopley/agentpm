@@ -1,0 +1,271 @@
+{% extends "layouts/modern_base.html" %}
+{% from 'macros/breadcrumb.html' import breadcrumb %}
+
+{% block title %}Context #{{ view.context.id }} - APM (Agent Project Manager){% endblock %}
+
+{% block content %}
+{{ breadcrumb([
+    {'label': 'Contexts', 'url': '/contexts'},
+    {'label': 'Context #' + view.context.id|string, 'url': None}
+]) }}
+<section class="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+  <div>
+    <h1 class="text-3xl font-semibold text-gray-900">Context #{{ view.context.id }}</h1>
+    <p class="mt-2 text-sm text-gray-500">Detailed 6W breakdown, confidence scoring, and plugin intelligence for this context.</p>
+  </div>
+  <div class="flex flex-wrap gap-2">
+    <span class="inline-flex items-center gap-2 rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-sky-700">
+      {{ view.context.entity_type.value.replace('_', ' ').title() }}
+    </span>
+    <span class="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
+      {{ view.context.context_type.value if view.context.context_type else 'Unknown' }}
+    </span>
+    {% if view.entity %}
+    <span class="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-700">
+      {{ view.entity.name }}
+    </span>
+    {% endif %}
+  </div>
+</section>
+
+<section class="grid gap-6 lg:grid-cols-[2fr_1fr]">
+  <article class="rounded-2xl border border-gray-200 bg-white p-6 shadow-brand">
+    <header class="flex flex-wrap items-start justify-between gap-4">
+      <div class="space-y-2">
+        <div class="flex items-center gap-2 text-sm text-gray-500">
+          <i class="bi bi-diagram-3 text-primary"></i>
+          <span>Context Overview</span>
+        </div>
+        {% if view.entity %}
+        <p class="text-sm text-gray-500">
+          <i class="bi bi-link-45deg mr-1 text-gray-400"></i>
+          {% if view.context.entity_type.value == 'project' %}
+            <a href="/projects/{{ view.entity.id }}" class="text-primary hover:text-primary-dark">View Project</a>
+          {% elif view.context.entity_type.value == 'work_item' %}
+            <a href="/work-items/{{ view.entity.id }}" class="text-primary hover:text-primary-dark">View Work Item</a>
+          {% elif view.context.entity_type.value == 'task' %}
+            <a href="/tasks/{{ view.entity.id }}" class="text-primary hover:text-primary-dark">View Task</a>
+          {% endif %}
+        </p>
+        {% endif %}
+      </div>
+      <div class="text-right">
+        <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Confidence</p>
+        <p class="text-4xl font-semibold text-gray-900">
+          {% if view.context.confidence_score %}
+            {{ '%.1f'|format(view.context.confidence_score * 100) }}%
+          {% else %}
+            —
+          {% endif %}
+        </p>
+      </div>
+    </header>
+
+    <div class="mt-6 grid gap-4 md:grid-cols-3">
+      {% set band = view.quality_indicators.confidence_band %}
+      <div class="rounded-xl border border-emerald-100 bg-emerald-50/70 p-4 text-center">
+        <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Confidence Score</p>
+        <p class="mt-2 text-2xl font-semibold text-emerald-800">{{ '%.1f'|format(view.quality_indicators.confidence_score * 100) }}%</p>
+        <span class="mt-3 inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-medium text-emerald-700 shadow-sm">{{ band.title() }}</span>
+      </div>
+      <div class="rounded-xl border border-sky-100 bg-sky-50/70 p-4 text-center">
+        <p class="text-xs font-semibold uppercase tracking-wide text-sky-700">6W Completeness</p>
+        <p class="mt-2 text-2xl font-semibold text-sky-800">{{ view.quality_indicators.six_w_completeness }}%</p>
+        <div class="mt-3 h-2 w-full overflow-hidden rounded-full bg-white">
+          <span class="block h-full bg-sky-500" style="width: {{ view.quality_indicators.six_w_completeness }}%"></span>
+        </div>
+      </div>
+      <div class="rounded-xl border border-amber-100 bg-amber-50/70 p-4 text-center">
+        <p class="text-xs font-semibold uppercase tracking-wide text-amber-700">Overall Quality</p>
+        <p class="mt-2 text-2xl font-semibold {{ 'text-emerald-700' if view.quality_indicators.overall_quality == 'high' else 'text-amber-700' if view.quality_indicators.overall_quality == 'medium' else 'text-rose-700' }}">
+          {{ view.quality_indicators.overall_quality.title() }}
+        </p>
+        <span class="mt-3 inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-medium text-amber-700 shadow-sm">Balanced readiness</span>
+      </div>
+    </div>
+  </article>
+
+  <article class="space-y-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+    <div>
+      <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Freshness</p>
+      {% set freshness = view.freshness_info.status %}
+      <p class="mt-2 text-2xl font-semibold text-gray-900">{{ freshness.title() }}</p>
+      <p class="text-sm text-gray-500">Updated {{ view.freshness_info.days_old }} days ago</p>
+    </div>
+    <div class="text-sm text-gray-600">
+      <p><span class="font-medium text-gray-700">Last Updated:</span> {% if view.freshness_info.last_updated %}{{ view.freshness_info.last_updated.strftime('%Y-%m-%d %H:%M') }}{% else %}—{% endif %}</p>
+      <p class="mt-2"><span class="font-medium text-gray-700">Created:</span> {% if view.context.created_at %}{{ view.context.created_at.strftime('%Y-%m-%d %H:%M') }}{% else %}—{% endif %}</p>
+    </div>
+    {% if view.freshness_info.needs_refresh %}
+    <form method="POST" action="/context/{{ view.context.id }}/refresh" class="pt-2">
+      <button type="submit" class="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-700 transition hover:bg-amber-100">
+        <i class="bi bi-arrow-clockwise"></i>
+        Refresh Context
+      </button>
+    </form>
+    {% else %}
+    <div class="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+      <i class="bi bi-check-circle"></i>
+      Up to date
+    </div>
+    {% endif %}
+  </article>
+</section>
+
+{% if view.six_w_data %}
+<section class="mt-8 space-y-4">
+  <header class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-gray-500">
+    <i class="bi bi-diagram-3 text-primary"></i>
+    6W Framework
+  </header>
+  <div class="grid gap-4 md:grid-cols-2">
+    {% set sixw = view.six_w_data %}
+    {% for title, icon, key in [
+      ('Who', 'bi-person', 'who'),
+      ('What', 'bi-question-circle', 'what'),
+      ('Where', 'bi-geo-alt', 'where'),
+      ('When', 'bi-clock', 'when'),
+      ('Why', 'bi-lightbulb', 'why'),
+      ('How', 'bi-tools', 'how')
+    ] %}
+    <article class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+      <h3 class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+        <i class="{{ icon }} text-primary"></i>
+        {{ title }}
+      </h3>
+      <p class="mt-3 text-sm text-gray-600">
+        {% if sixw[key] %}
+          {{ sixw[key] }}
+        {% else %}
+          <span class="text-gray-400">Not specified</span>
+        {% endif %}
+      </p>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if view.confidence_factors %}
+<section class="mt-8 space-y-4">
+  <header class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-gray-500">
+    <i class="bi bi-graph-up text-primary"></i>
+    Confidence Factors
+  </header>
+  <div class="grid gap-3 md:grid-cols-2">
+    {% for factor, value in view.confidence_factors.items() %}
+    <div class="flex items-center justify-between rounded-xl border border-primary/10 bg-primary/5 px-4 py-3 text-sm text-gray-700">
+      <span class="font-medium text-gray-800">{{ factor.replace('_', ' ').title() }}</span>
+      <span class="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white">{{ value }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if view.plugin_facts %}
+<section class="mt-8 space-y-4">
+  <header class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-gray-500">
+    <i class="bi bi-puzzle text-primary"></i>
+    Plugin Facts ({{ view.plugin_facts|length }})
+  </header>
+  <div class="space-y-3">
+    {% for fact in view.plugin_facts %}
+    <article class="rounded-xl border border-sky-100 bg-sky-50/70 p-4 shadow-sm">
+      <h3 class="text-sm font-semibold text-sky-800">{{ fact.name or ('Fact #' ~ loop.index) }}</h3>
+      {% if fact.description %}
+      <p class="mt-2 text-sm text-sky-900">{{ fact.description }}</p>
+      {% endif %}
+      {% if fact.source %}
+      <p class="mt-1 text-xs text-sky-700">Source: {{ fact.source }}</p>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if view.amalgamations %}
+<section class="mt-8 space-y-4">
+  <header class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-gray-500">
+    <i class="bi bi-collection text-primary"></i>
+    Amalgamations ({{ view.amalgamations|length }})
+  </header>
+  <div class="space-y-3">
+    {% for amalgamation in view.amalgamations %}
+    <article class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+      <h3 class="text-sm font-semibold text-gray-800">{{ amalgamation.name or ('Amalgamation #' ~ loop.index) }}</h3>
+      {% if amalgamation.content %}
+      <p class="mt-2 text-sm text-gray-600">{{ amalgamation.content }}</p>
+      {% endif %}
+      {% if amalgamation.type %}
+      <p class="mt-1 text-xs text-gray-400">Type: {{ amalgamation.type }}</p>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section class="mt-8 grid gap-6 lg:grid-cols-[2fr_1fr]">
+  <article class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+    <header class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-gray-500">
+      <i class="bi bi-gear text-primary"></i>
+      Context Metadata
+    </header>
+    <dl class="mt-4 grid gap-3 text-sm text-gray-600 sm:grid-cols-2">
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-wide text-gray-500">Context ID</dt>
+        <dd class="mt-1 font-mono text-sm text-gray-800">{{ view.context.id }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-wide text-gray-500">Entity ID</dt>
+        <dd class="mt-1 text-gray-800">{{ view.context.entity_id }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-wide text-gray-500">Entity Type</dt>
+        <dd class="mt-1 text-gray-800">{{ view.context.entity_type.value.replace('_', ' ').title() }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-wide text-gray-500">Context Type</dt>
+        <dd class="mt-1 text-gray-800">{{ view.context.context_type.value if view.context.context_type else 'Unknown' }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-wide text-gray-500">Created At</dt>
+        <dd class="mt-1 text-gray-800">{% if view.context.created_at %}{{ view.context.created_at.strftime('%Y-%m-%d %H:%M:%S') }}{% else %}—{% endif %}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-semibold uppercase tracking-wide text-gray-500">Updated At</dt>
+        <dd class="mt-1 text-gray-800">{% if view.context.updated_at %}{{ view.context.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}{% else %}—{% endif %}</dd>
+      </div>
+    </dl>
+  </article>
+
+  <aside class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+    <header class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-gray-500">
+      <i class="bi bi-lightning text-primary"></i>
+      Quick Actions
+    </header>
+    <div class="mt-4 flex flex-col gap-3">
+      <a href="/contexts" class="inline-flex items-center justify-center gap-2 rounded-lg border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-medium text-primary transition hover:bg-primary/20">
+        <i class="bi bi-arrow-left"></i>
+        Back to Contexts
+      </a>
+      {% if view.freshness_info.needs_refresh %}
+      <form method="POST" action="/context/{{ view.context.id }}/refresh">
+        <button type="submit" class="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-700 transition hover:bg-amber-100">
+          <i class="bi bi-arrow-clockwise"></i>
+          Refresh Context
+        </button>
+      </form>
+      {% endif %}
+      {% if view.entity and view.context.entity_type.value == 'work_item' %}
+      <a href="/work-items/{{ view.entity.id }}/context" class="inline-flex items-center justify-center gap-2 rounded-lg border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-medium text-sky-700 transition hover:bg-sky-100">
+        <i class="bi bi-diagram-3"></i>
+        Hierarchical View
+      </a>
+      {% endif %}
+    </div>
+  </aside>
+</section>
+{% endblock %}

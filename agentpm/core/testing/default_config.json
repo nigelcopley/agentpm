@@ -1,0 +1,77 @@
+{
+  "version": "1.0.0",
+  "description": "Default testing configuration for APM (Agent Project Manager) projects",
+  "testing_categories": {
+    "critical_paths": {
+      "min_coverage": 95.0,
+      "path_patterns": [
+        "**/core/**",
+        "**/business/**",
+        "**/critical/**",
+        "**/engine/**",
+        "**/workflow/**",
+        "**/rules/**"
+      ],
+      "description": "Core business logic that drives the application"
+    },
+    "user_facing": {
+      "min_coverage": 85.0,
+      "path_patterns": [
+        "**/api/**",
+        "**/cli/**",
+        "**/web/**",
+        "**/ui/**",
+        "**/endpoints/**",
+        "**/routes/**"
+      ],
+      "description": "Code that directly interacts with users"
+    },
+    "data_layer": {
+      "min_coverage": 90.0,
+      "path_patterns": [
+        "**/database/**",
+        "**/models/**",
+        "**/storage/**",
+        "**/persistence/**",
+        "**/repositories/**",
+        "**/adapters/**"
+      ],
+      "description": "Data persistence and integrity"
+    },
+    "security": {
+      "min_coverage": 95.0,
+      "path_patterns": [
+        "**/security/**",
+        "**/auth/**",
+        "**/validation/**",
+        "**/crypto/**",
+        "**/permissions/**",
+        "**/middleware/**"
+      ],
+      "description": "Security-critical code"
+    },
+    "utilities": {
+      "min_coverage": 70.0,
+      "path_patterns": [
+        "**/utils/**",
+        "**/helpers/**",
+        "**/common/**",
+        "**/lib/**",
+        "**/shared/**"
+      ],
+      "description": "Helper functions and common utilities"
+    },
+    "framework_integration": {
+      "min_coverage": 50.0,
+      "path_patterns": [
+        "**/framework/**",
+        "**/integration/**",
+        "**/adapters/**",
+        "**/templates/**",
+        "**/static/**",
+        "**/assets/**"
+      ],
+      "description": "Integration with external frameworks"
+    }
+  }
+}

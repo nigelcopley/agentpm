@@ -1,0 +1,12 @@
+<!-- Task Priority Indicator Component -->
+<!-- Usage: Include this component in templates -->
+<!-- Variables: task.priority (required) -->
+
+<div class="flex items-center">
+    <span class="text-sm text-gray-900 mr-2">{{ task.priority }}</span>
+    <div class="flex space-x-1">
+        {% for i in range(1, 6) %}
+        <div class="w-2 h-2 rounded-full {% if i <= task.priority %}bg-red-500{% else %}bg-gray-200{% endif %}"></div>
+        {% endfor %}
+    </div>
+</div>

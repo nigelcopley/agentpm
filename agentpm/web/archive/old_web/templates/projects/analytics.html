@@ -1,0 +1,124 @@
+{% extends "layouts/modern_base.html" %}
+
+{% block title %}{{ view.project.name }} - Analytics{% endblock %}
+
+{% block content %}
+<section class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+  <div>
+    <p class="text-sm font-semibold uppercase tracking-wide text-primary">Project Analytics</p>
+    <h1 class="text-3xl font-bold text-gray-900">{{ view.project.name }}</h1>
+    <p class="mt-2 max-w-2xl text-sm text-gray-500">
+      Operational metrics across work items, tasks, and sessions gathered over the last 30 days.
+    </p>
+  </div>
+  <div class="flex flex-wrap gap-3">
+    <span class="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
+      {{ view.project.status.value.replace('_', ' ').title() if view.project.status else 'Unknown Status' }}
+    </span>
+    {% if view.project.updated_at %}
+    <span class="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-gray-600">
+      Updated {{ view.project.updated_at.strftime('%Y-%m-%d') }}
+    </span>
+    {% endif %}
+  </div>
+</section>
+
+<section class="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+  <article class="card">
+    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Time Boxing</p>
+    <p class="mt-2 text-3xl font-bold text-gray-900">{{ '%.1f'|format(view.time_boxing_compliance) }}%</p>
+    <p class="mt-1 text-xs text-gray-500">Tasks inside the expected effort bands.</p>
+  </article>
+  <article class="card">
+    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Task Success</p>
+    <p class="mt-2 text-3xl font-bold text-gray-900">{{ '%.1f'|format(view.task_success_rate) }}%</p>
+    <p class="mt-1 text-xs text-gray-500">Completed tasks vs. total assigned.</p>
+  </article>
+  <article class="card">
+    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Avg Task Duration</p>
+    <p class="mt-2 text-3xl font-bold text-gray-900">{{ '%.1f'|format(view.average_task_duration) }}h</p>
+    <p class="mt-1 text-xs text-gray-500">Based on completed task lifecycle.</p>
+  </article>
+  <article class="card">
+    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Agent Utilization</p>
+    <p class="mt-2 text-3xl font-bold text-gray-900">{{ '%.1f'|format(view.agent_utilization) }}%</p>
+    <p class="mt-1 text-xs text-gray-500">Pending richer analytics.</p>
+  </article>
+</section>
+
+<section class="mt-10 grid gap-6 lg:grid-cols-[2fr_1fr]">
+  <article class="card">
+    <header class="flex items-center justify-between">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Session Activity</p>
+        <h2 class="text-xl font-semibold text-gray-900">Last 30 Days</h2>
+      </div>
+      <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+        {{ view.sessions_over_time.get('sessions', [])|length }} records
+      </span>
+    </header>
+    {% if view.sessions_over_time.get('dates') %}
+    <div class="mt-6 space-y-3">
+      {% for idx, date in enumerate(view.sessions_over_time.get('dates', [])) %}
+      <div class="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
+        <div>
+          <p class="text-sm font-semibold text-gray-800">{{ date }}</p>
+          <p class="text-xs text-gray-500">Sessions recorded</p>
+        </div>
+        <div class="text-right">
+          <p class="text-lg font-semibold text-gray-900">
+            {{ view.sessions_over_time.get('sessions', [])[idx] if idx < view.sessions_over_time.get('sessions', [])|length else 0 }}
+          </p>
+          <p class="text-xs text-gray-500">
+            {{ view.sessions_over_time.get('duration', [])[idx] if idx < view.sessions_over_time.get('duration', [])|length else 0 }} min
+          </p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="mt-6 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-sm text-gray-500">
+      Session telemetry not available for this period.
+    </p>
+    {% endif %}
+  </article>
+
+  <article class="card">
+    <header>
+      <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Completion Snapshot</p>
+      <h2 class="text-xl font-semibold text-gray-900">Work Items</h2>
+    </header>
+    <div class="mt-6 space-y-3 text-sm text-gray-600">
+      <p>Total tracked: {{ view.work_items_over_time.get('created', [])|length }}</p>
+      <p>Completed: {{ view.work_items_over_time.get('completed', [])|length }}</p>
+      <p>Context freshness: {{ '%.1f'|format(view.context_freshness) }}%</p>
+    </div>
+  </article>
+</section>
+
+<section class="mt-10 card">
+  <header class="mb-4 flex items-center justify-between">
+    <div>
+      <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Task Flow</p>
+      <h2 class="text-xl font-semibold text-gray-900">Lifecycle Overview</h2>
+    </div>
+  </header>
+  {% if view.tasks_over_time.get('dates') %}
+  <div class="space-y-3 text-sm text-gray-600">
+    {% for idx, date in enumerate(view.tasks_over_time.get('dates', [])) %}
+    <div class="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2">
+      <span class="font-medium text-gray-700">{{ date }}</span>
+      <span>
+        Created: {{ view.tasks_over_time.get('created', [])[idx] if idx < view.tasks_over_time.get('created', [])|length else 0 }} /
+        Completed: {{ view.tasks_over_time.get('completed', [])[idx] if idx < view.tasks_over_time.get('completed', [])|length else 0 }}
+      </span>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-sm text-gray-500">
+    Task timeline metrics will appear once historical data is logged.
+  </p>
+  {% endif %}
+</section>
+{% endblock %}

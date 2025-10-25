@@ -1,0 +1,452 @@
+{% extends "layouts/modern_base.html" %}
+{% from 'macros/breadcrumb.html' import breadcrumb %}
+{% from 'macros/skeleton.html' import skeleton_list, skeleton_metric %}
+{% from 'macros/quick_actions.html' import quick_actions, quick_actions_icon %}
+{% from 'macros/empty_state.html' import render as empty_state %}
+
+{% block title %}Tasks - APM (Agent Project Manager) Dashboard{% endblock %}
+
+{% block content %}
+{# Breadcrumb Navigation (Phase 1 Component) #}
+{{ breadcrumb([
+    {'label': 'Dashboard', 'url': '/'},
+    {'label': 'Tasks', 'url': None}
+]) }}
+
+<!-- Page Header -->
+<div class="mb-8">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Tasks</h1>
+            <p class="mt-2 text-lg text-gray-600">Manage and track individual tasks across all work items</p>
+        </div>
+        <div class="flex items-center space-x-3">
+            {# Quick Actions Dropdown for Bulk Operations (Phase 1 Component) #}
+            {{ quick_actions('Actions', [
+                {'label': 'Export Selected', 'url': '#', 'icon': 'download'},
+                {'label': 'Bulk Edit', 'url': '#', 'icon': 'pencil-square'},
+                {'divider': True},
+                {'label': 'Archive Completed', 'url': '#', 'icon': 'archive'},
+                {'label': 'Export All', 'url': '#', 'icon': 'file-earmark-spreadsheet'}
+            ], button_class='btn-secondary') }}
+
+            <a href="/tasks/create" class="btn btn-primary">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                New Task
+            </a>
+        </div>
+    </div>
+</div>
+
+{# Loading State for Metrics (Phase 1 Component - Skeleton Loader) #}
+<div id="metrics-container" aria-busy="true" aria-label="Loading metrics">
+    <!-- Metrics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="card">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500">Total Tasks</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ metrics.total_tasks or 0 }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-warning rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500">In Progress</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ metrics.in_progress_tasks or 0 }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-success rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500">Completed</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ metrics.completed_tasks or 0 }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-error rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500">Blocked</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ metrics.blocked_tasks or 0 }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters and Search -->
+<div class="card mb-6" x-data="{ filterLoading: false }">
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <!-- Search -->
+        <div class="flex-1 max-w-md">
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </div>
+                <input
+                    type="text"
+                    class="form-input pl-10"
+                    placeholder="Search tasks..."
+                    id="tasks-search"
+                    aria-label="Search tasks"
+                >
+            </div>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="flex items-center gap-4">
+            <!-- Status Filter -->
+            <div class="flex items-center gap-2">
+                <label for="status-filter" class="text-sm font-medium text-gray-700">Status:</label>
+                <select class="form-select" id="status-filter"
+                        aria-label="Filter by status"
+                        @change="filterLoading = true; setTimeout(() => filterLoading = false, 500)">
+                    <option value="">All Status</option>
+                    <option value="proposed">Proposed</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                    <option value="blocked">Blocked</option>
+                </select>
+            </div>
+
+            <!-- Type Filter -->
+            <div class="flex items-center gap-2">
+                <label for="type-filter" class="text-sm font-medium text-gray-700">Type:</label>
+                <select class="form-select" id="type-filter"
+                        aria-label="Filter by type"
+                        @change="filterLoading = true; setTimeout(() => filterLoading = false, 500)">
+                    <option value="">All Types</option>
+                    <option value="design">Design</option>
+                    <option value="implementation">Implementation</option>
+                    <option value="testing">Testing</option>
+                    <option value="documentation">Documentation</option>
+                    <option value="analysis">Analysis</option>
+                </select>
+            </div>
+
+            <!-- Sort Control -->
+            <div class="flex items-center gap-2">
+                <label for="sort-select" class="text-sm font-medium text-gray-700">Sort by:</label>
+                <select class="form-select" id="sort-select"
+                        aria-label="Sort tasks"
+                        onchange="window.location.href='/tasks?sort=' + this.value">
+                    <option value="created_desc" {% if current_sort == 'created_desc' %}selected{% endif %}>Newest First</option>
+                    <option value="created_asc" {% if current_sort == 'created_asc' %}selected{% endif %}>Oldest First</option>
+                    <option value="name_asc" {% if current_sort == 'name_asc' %}selected{% endif %}>Name (A-Z)</option>
+                    <option value="name_desc" {% if current_sort == 'name_desc' %}selected{% endif %}>Name (Z-A)</option>
+                    <option value="priority_asc" {% if current_sort == 'priority_asc' %}selected{% endif %}>Priority (Low to High)</option>
+                    <option value="priority_desc" {% if current_sort == 'priority_desc' %}selected{% endif %}>Priority (High to Low)</option>
+                    <option value="effort_asc" {% if current_sort == 'effort_asc' %}selected{% endif %}>Effort (Low to High)</option>
+                    <option value="effort_desc" {% if current_sort == 'effort_desc' %}selected{% endif %}>Effort (High to Low)</option>
+                </select>
+            </div>
+
+            <!-- Clear Filters -->
+            <button class="btn btn-sm btn-secondary" onclick="clearFilters()" aria-label="Clear all filters">
+                Clear Filters
+            </button>
+        </div>
+    </div>
+
+    {# Loading State Indicator for Filters (Phase 1 Enhancement) #}
+    <div x-show="filterLoading"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         class="mt-3 flex items-center gap-2 text-sm text-gray-600"
+         role="status"
+         aria-live="polite">
+        <div class="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent"></div>
+        <span>Applying filters...</span>
+    </div>
+</div>
+
+{# Tasks List with Loading State (Phase 1 Component - Skeleton Loader) #}
+<div id="tasks-list-container"
+     x-data="{ loading: false }"
+     :aria-busy="loading"
+     aria-label="Tasks list">
+
+    {# Skeleton Loader Template (hidden by default, shown during loading) #}
+    <div x-show="loading" x-cloak>
+        {{ skeleton_list(items=5, show_icon=True, show_meta=True) }}
+    </div>
+
+    {# Actual Tasks List #}
+    <div x-show="!loading">
+        {% if tasks %}
+        <div class="space-y-4">
+            {% for task in tasks %}
+            <div class="task-row card"
+                 data-task-id="{{ task.id }}"
+                 data-type="{{ task.type.value }}"
+                 data-status="{{ task.status.value }}"
+                 data-work-item-id="{{ task.work_item_id }}">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <!-- Status Indicator -->
+                        <div class="flex-shrink-0">
+                            {% if task.status.value == 'completed' %}
+                            <div class="w-6 h-6 bg-success rounded-full flex items-center justify-center" aria-label="Status: Completed">
+                                <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                            {% elif task.status.value == 'in_progress' %}
+                            <div class="w-6 h-6 bg-warning rounded-full flex items-center justify-center" aria-label="Status: In Progress">
+                                <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                            {% elif task.status.value == 'blocked' %}
+                            <div class="w-6 h-6 bg-error rounded-full flex items-center justify-center" aria-label="Status: Blocked">
+                                <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                            {% else %}
+                            <div class="w-6 h-6 border-2 border-gray-300 rounded-full" aria-label="Status: Proposed"></div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Task Details -->
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-3">
+                                <h3 class="text-lg font-medium text-gray-900">
+                                    <a href="/tasks/{{ task.id }}" class="hover:text-primary">{{ task.name }}</a>
+                                </h3>
+                                <span class="badge badge-{{ task.type.value|lower }}">{{ task.type.value.replace('_', ' ').title() }}</span>
+                                <span class="badge badge-{{ task.status.value|lower|replace('_', '-') }}">{{ task.status.value.replace('_', ' ').title() }}</span>
+                            </div>
+                            <div class="mt-1 flex items-center space-x-4 text-sm text-gray-500">
+                                <span>Work Item #{{ task.work_item_id }}</span>
+                                <span>{{ task.effort_hours }}h effort</span>
+                                {% if task.created_at %}
+                                <span>Created {{ task.created_at.strftime('%Y-%m-%d') }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Actions (Phase 1 Component - Quick Actions) -->
+                    <div class="flex items-center space-x-2">
+                        {% if task.status.value == 'proposed' %}
+                        <button class="btn btn-sm btn-primary"
+                                onclick="startTask({{ task.id }})"
+                                aria-label="Start task {{ task.id }}">
+                            Start
+                        </button>
+                        {% elif task.status.value == 'in_progress' %}
+                        <button class="btn btn-sm btn-success"
+                                onclick="completeTask({{ task.id }})"
+                                aria-label="Complete task {{ task.id }}">
+                            Complete
+                        </button>
+                        {% endif %}
+
+                        {# Quick Actions Icon Dropdown (Phase 1 Component) #}
+                        {{ quick_actions_icon([
+                            {'label': 'View Details', 'url': '/tasks/' ~ task.id, 'icon': 'eye'},
+                            {'label': 'Edit', 'url': '/tasks/' ~ task.id ~ '/edit', 'icon': 'pencil'},
+                            {'divider': True},
+                            {'label': 'Duplicate', 'url': '#', 'icon': 'files'},
+                            {'label': 'Archive', 'url': '#', 'icon': 'archive'},
+                            {'divider': True},
+                            {'label': 'Delete', 'url': '#', 'icon': 'trash', 'danger': True}
+                        ], aria_label='Task ' ~ task.id ~ ' actions') }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        <div class="mt-8 flex items-center justify-between">
+            <div class="text-sm text-gray-700">
+                Showing <span class="visible-count">{{ tasks|length }}</span> of {{ metrics.total_tasks or 0 }} tasks
+            </div>
+
+            <div class="flex items-center space-x-2">
+                <button class="btn btn-sm btn-secondary" disabled aria-label="Previous page">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                    Previous
+                </button>
+
+                <span class="px-3 py-1 text-sm text-gray-700" aria-live="polite">Page 1 of 1</span>
+
+                <button class="btn btn-sm btn-secondary" disabled aria-label="Next page">
+                    Next
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        {% else %}
+        <!-- Empty State -->
+        {{ empty_state(
+            icon='check-square',
+            heading='No tasks found',
+            description='Tasks are atomic units of work within a work item. Create one to break down your project into manageable pieces.',
+            cta_text='Create Task',
+            cta_url='/tasks/create'
+        ) }}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Tasks List JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize filters
+    const searchInput = document.getElementById('tasks-search');
+    const statusFilter = document.getElementById('status-filter');
+    const typeFilter = document.getElementById('type-filter');
+
+    // Search functionality
+    if (searchInput) {
+        const debouncedSearch = AIPM.utils.debounce((query) => {
+            filterTasks();
+        }, 300);
+
+        searchInput.addEventListener('input', (e) => {
+            debouncedSearch(e.target.value);
+        });
+    }
+
+    // Filter functionality
+    [statusFilter, typeFilter].forEach(filter => {
+        if (filter) {
+            filter.addEventListener('change', filterTasks);
+        }
+    });
+
+    function filterTasks() {
+        const searchQuery = searchInput ? searchInput.value.toLowerCase() : '';
+        const statusValue = statusFilter ? statusFilter.value : '';
+        const typeValue = typeFilter ? typeFilter.value : '';
+
+        const rows = document.querySelectorAll('.task-row');
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            let visible = true;
+
+            // Search filter
+            if (searchQuery) {
+                const text = row.textContent.toLowerCase();
+                if (!text.includes(searchQuery)) {
+                    visible = false;
+                }
+            }
+
+            // Status filter
+            if (statusValue && row.getAttribute('data-status') !== statusValue) {
+                visible = false;
+            }
+
+            // Type filter
+            if (typeValue && row.getAttribute('data-type') !== typeValue) {
+                visible = false;
+            }
+
+            row.style.display = visible ? '' : 'none';
+            if (visible) visibleCount++;
+        });
+
+        // Update visible count
+        const countElements = document.querySelectorAll('.visible-count');
+        countElements.forEach(el => {
+            el.textContent = visibleCount;
+        });
+    }
+});
+
+function clearFilters() {
+    const searchInput = document.getElementById('tasks-search');
+    const statusFilter = document.getElementById('status-filter');
+    const typeFilter = document.getElementById('type-filter');
+
+    if (searchInput) searchInput.value = '';
+    if (statusFilter) statusFilter.value = '';
+    if (typeFilter) typeFilter.value = '';
+
+    // Show all rows
+    const rows = document.querySelectorAll('.task-row');
+    rows.forEach(row => {
+        row.style.display = '';
+    });
+
+    // Update count
+    const countElements = document.querySelectorAll('.visible-count');
+    countElements.forEach(el => {
+        el.textContent = rows.length;
+    });
+}
+
+function startTask(taskId) {
+    AIPM.utils.showToast('Starting task...', 'info');
+    // TODO: Implement API call
+    console.log('Starting task:', taskId);
+}
+
+function completeTask(taskId) {
+    AIPM.utils.showToast('Completing task...', 'success');
+    // TODO: Implement API call
+    console.log('Completing task:', taskId);
+}
+
+function editTask(taskId) {
+    window.location.href = `/task/${taskId}/edit`;
+}
+
+function exportTasks() {
+    AIPM.utils.showToast('Exporting tasks...', 'info');
+    // TODO: Implement export functionality
+    console.log('Exporting tasks');
+}
+</script>
+{% endblock %}

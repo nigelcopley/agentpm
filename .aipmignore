@@ -1,0 +1,19 @@
+# AIPM-specific ignore patterns
+# Used by IgnorePatternMatcher for framework detection
+
+# Test fixture projects (not part of AIPM itself)
+tests/projects/
+testing/
+
+# Documentation code examples
+docs/examples/
+
+# Coverage reports
+htmlcov/
+.coverage
+
+# Temporary test databases
+*.db
+*.sqlite
+*.sqlite3
+3

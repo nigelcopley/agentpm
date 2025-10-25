@@ -1,0 +1,276 @@
+# Memory System Usage Guide
+
+## Overview
+
+The Memory System provides Claude with persistent access to current APM (Agent Project Manager) system information through automatically-generated markdown files in the `.claude/` directory.
+
+## Memory File Types
+
+The system generates 7 types of memory files:
+
+| File | Purpose | Source Tables |
+|------|---------|---------------|
+| **RULES.md** | Governance rules system | `rules` |
+| **PRINCIPLES.md** | Development principles pyramid | Static content + `rules` |
+| **WORKFLOW.md** | Quality-gated workflow processes | `work_items`, `tasks` |
+| **AGENTS.md** | Agent system architecture | `agents` |
+| **CONTEXT.md** | Context assembly framework | `contexts` |
+| **PROJECT.md** | Project information and metadata | `projects` |
+| **IDEAS.md** | Ideas analysis pipeline | `ideas` |
+
+## CLI Commands
+
+### Generate Memory Files
+
+Generate all memory files:
+```bash
+apm memory generate --all
+```
+
+Generate specific memory file type:
+```bash
+apm memory generate --type=rules
+apm memory generate --type=workflow
+apm memory generate --type=agents
+```
+
+Force regeneration (even if current):
+```bash
+apm memory generate --all --force
+```
+
+### View Memory File Status
+
+Check status of all memory files:
+```bash
+apm memory status
+```
+
+Output shows:
+- File type
+- File path
+- Last generated timestamp
+- Validation status (validated, stale, expired)
+- File size
+
+Example output:
+```
+                     Memory Files Status
+┏━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━┓
+┃ Type       ┃ File Path          ┃ Last Generated  ┃ Status      ┃  Size ┃
+┡━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━╇━━━━━━━┩
+│ rules      │ .claude/RULES.md   │ 2025-10-21 11:00│ validated   │ 15.2KB│
+│ workflow   │ .claude/WORKFLOW.md│ 2025-10-21 11:00│ validated   │ 22.1KB│
+│ agents     │ .claude/AGENTS.md  │ 2025-10-21 10:45│ stale       │ 18.5KB│
+└────────────┴────────────────────┴─────────────────┴─────────────┴───────┘
+
+⚠️ 1 file(s) need regeneration
+💡 Regenerate: apm memory generate --all --force
+```
+
+### Validate Memory Files
+
+Validate all memory files:
+```bash
+apm memory validate
+```
+
+Validate specific file:
+```bash
+apm memory validate --type=rules
+```
+
+Validation checks:
+- File exists on disk
+- File hash matches database record
+- File is not stale or expired
+
+Example output:
+```
+                         Validation Results
+┏━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Type       ┃ File Exists┃ Hash Match ┃ Is Current ┃ Issues     ┃
+┡━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━┩
+│ rules      │     ✓      │     ✓      │     ✓      │ None       │
+│ workflow   │     ✓      │     ✓      │     ✓      │ None       │
+│ agents     │     ✓      │     ✗      │     ✗      │ Marked as  │
+│            │            │            │            │ stale      │
+└────────────┴────────────┴────────────┴────────────┴────────────┘
+
+✗ 1 file(s) have validation issues
+💡 Regenerate: apm memory generate --all --force
+```
+
+## Typical Workflows
+
+### Initial Setup
+
+After initializing a project:
+```bash
+# Initialize project
+apm init "My Project"
+
+# Generate all memory files
+apm memory generate --all
+```
+
+### Regular Updates
+
+After making significant changes:
+```bash
+# Check which files are stale
+apm memory status
+
+# Regenerate stale files
+apm memory generate --all --force
+```
+
+### Before Claude Sessions
+
+Ensure Claude has current information:
+```bash
+# Validate all memory files
+apm memory validate
+
+# Regenerate if needed
+apm memory generate --all --force
+```
+
+### After Database Changes
+
+After updating rules, agents, or workflow:
+```bash
+# Regenerate relevant memory files
+apm memory generate --type=rules
+apm memory generate --type=agents
+apm memory generate --type=workflow
+```
+
+## File Generation Process
+
+1. **Extract Data**: Query database tables for current state
+2. **Apply Template**: Use markdown template for file type
+3. **Calculate Quality**: Compute confidence and completeness scores
+4. **Persist to Database**: Save memory file record
+5. **Write to Disk**: Create/update `.claude/` file
+
+## Quality Scores
+
+Each generated file includes quality metrics:
+
+- **Confidence Score** (0.0-1.0): Reliability of generated content
+  - Based on source table count and content length
+  - Higher scores indicate more comprehensive data
+
+- **Completeness Score** (0.0-1.0): How complete the content is
+  - Based on presence of required sections
+  - 1.0 = all required sections present
+
+## Staleness Detection
+
+Memory files are marked as stale when:
+- Source database tables have been updated
+- File has expired (default: 24 hours)
+- Manual mark as stale
+
+Stale files should be regenerated before Claude sessions.
+
+## Error Handling
+
+Common errors and solutions:
+
+### File Missing on Disk
+```
+Error: File missing on disk
+Solution: apm memory generate --type=<type>
+```
+
+### Hash Mismatch
+```
+Error: Hash mismatch (file modified)
+Solution: apm memory generate --type=<type> --force
+```
+
+### Database Connection Error
+```
+Error: Cannot connect to database
+Solution: Ensure .aipm/data/aipm.db exists, run `apm init` if needed
+```
+
+## Integration with Claude
+
+Memory files are automatically loaded by Claude when:
+- Starting a new session
+- Using `/memory` slash command (planned)
+- Requesting project context
+
+Files are located in `.claude/` directory and follow Claude's memory file conventions.
+
+## Best Practices
+
+1. **Generate After Initialization**: Always run `apm memory generate --all` after `apm init`
+
+2. **Regular Updates**: Regenerate memory files after significant changes:
+   - Adding/modifying rules
+   - Updating agent definitions
+   - Changing workflow configurations
+
+3. **Pre-Session Validation**: Run `apm memory validate` before starting Claude sessions
+
+4. **Monitor Status**: Check `apm memory status` periodically to identify stale files
+
+5. **Force Regeneration When Needed**: Use `--force` flag if validation shows issues
+
+## Performance
+
+- **Generation Time**: 100-500ms per file (varies by content size)
+- **File Sizes**: Typically 10-50KB per file
+- **Database Impact**: Minimal (indexed queries)
+- **Disk Space**: <500KB for all 7 files
+
+## Troubleshooting
+
+### Files Not Generating
+
+1. Check database exists: `ls -la .aipm/data/aipm.db`
+2. Check project ID: `apm status`
+3. Check permissions: Ensure `.claude/` is writable
+4. Run with verbose: `apm --verbose memory generate --all`
+
+### Files Show as Stale
+
+This is normal behavior. Files expire after 24 hours.
+Simply regenerate: `apm memory generate --all --force`
+
+### Validation Failures
+
+1. Check file exists: `ls -la .claude/`
+2. Check hash mismatch: File may have been manually edited
+3. Regenerate with force: `apm memory generate --all --force`
+
+## Development
+
+### Adding New Memory File Types
+
+1. Add enum to `MemoryFileType` in `core/database/models/memory.py`
+2. Implement generator method in `services/memory/generator.py`
+3. Create template in `templates/memory/` (planned)
+4. Update CLI help text in `cli/commands/memory.py`
+
+### Extending Generators
+
+Generator methods follow pattern:
+```python
+def _generate_<type>_content(self, project_id: int) -> tuple[str, List[str]]:
+    """Generate <TYPE>.md content from database."""
+    # Query database
+    # Apply template
+    # Return (content, source_tables)
+    pass
+```
+
+## See Also
+
+- [Memory System Architecture](../../architecture/design/claude-memory-system-architecture.md)
+- [Memory File Templates](../../architecture/other/memory-file-templates.md)
+- [Claude Integration Guide](./cursor-integration-usage.md)

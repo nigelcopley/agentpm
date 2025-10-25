@@ -1,0 +1,26 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="flex min-h-screen">
+    {% if left_sidebar %}
+    <!-- Left Sidebar -->
+    <aside class="w-64 bg-white border-r border-gray-200 flex-shrink-0">
+        {% include left_sidebar %}
+    </aside>
+    {% endif %}
+    
+    <!-- Main Content -->
+    <div class="flex-1 min-w-0">
+        <div class="p-6">
+            {% block main_content %}{% endblock %}
+        </div>
+    </div>
+    
+    {% if right_sidebar %}
+    <!-- Right Sidebar -->
+    <aside class="w-64 bg-white border-l border-gray-200 flex-shrink-0">
+        {% include right_sidebar %}
+    </aside>
+    {% endif %}
+</div>
+{% endblock %}

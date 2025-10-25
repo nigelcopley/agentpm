@@ -1,0 +1,419 @@
+{% extends "layouts/modern_base.html" %}
+
+{% block title %}Enhanced Interactions Test - APM (Agent Project Manager){% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2">
+                    <i class="bi bi-magic text-primary"></i> Enhanced Interactions Test
+                </h1>
+                <a href="/" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page Transitions Demo -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-fade-in">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">
+                        <i class="bi bi-arrow-repeat text-primary"></i> Page Transitions
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Test smooth page transitions with HTMX navigation:</p>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-primary" 
+                                hx-get="/work-items" 
+                                hx-target="#transition-demo"
+                                hx-indicator="#loading-spinner">
+                            <i class="bi bi-kanban"></i> Load Work Items
+                        </button>
+                        <button class="btn btn-secondary" 
+                                hx-get="/tasks" 
+                                hx-target="#transition-demo"
+                                hx-indicator="#loading-spinner">
+                            <i class="bi bi-check2-square"></i> Load Tasks
+                        </button>
+                        <button class="btn btn-info" 
+                                hx-get="/agents" 
+                                hx-target="#transition-demo"
+                                hx-indicator="#loading-spinner">
+                            <i class="bi bi-people"></i> Load Agents
+                        </button>
+                    </div>
+                    <div id="loading-spinner" class="htmx-indicator">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                    <div id="transition-demo" class="mt-3">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> Click a button above to see smooth page transitions
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hover Effects Demo -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-fade-in">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">
+                        <i class="bi bi-cursor text-primary"></i> Hover Effects
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="card card-lift">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-heart text-danger" style="font-size: 2rem;"></i>
+                                    <h5 class="mt-2">Card Hover</h5>
+                                    <p class="text-muted">Hover to see lift effect</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-primary btn-lift w-100">
+                                <i class="bi bi-star"></i> Button Hover
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <span class="badge badge-success badge-bounce" style="font-size: 1rem;">
+                                <i class="bi bi-check"></i> Badge Hover
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading States Demo -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-fade-in">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">
+                        <i class="bi bi-hourglass-split text-primary"></i> Loading States
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <h5>Skeleton Loading</h5>
+                            <div class="skeleton-card">
+                                <div class="skeleton skeleton-avatar mb-3"></div>
+                                <div class="skeleton skeleton-text"></div>
+                                <div class="skeleton skeleton-text"></div>
+                                <div class="skeleton skeleton-text"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Progress Bars</h5>
+                            <div class="mb-3">
+                                <label class="form-label">Task Progress</label>
+                                <div class="progress progress-fill">
+                                    <div class="progress-bar progress-shimmer" role="progressbar" 
+                                         style="width: 75%" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100">
+                                        75%
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Work Item Progress</label>
+                                <div class="progress progress-fill">
+                                    <div class="progress-bar bg-success progress-shimmer" role="progressbar" 
+                                         style="width: 90%" aria-valuenow="90" aria-valuemin="0" aria-valuemax="100">
+                                        90%
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Enhancements Demo -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-fade-in">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">
+                        <i class="bi bi-input-cursor-text text-primary"></i> Form Enhancements
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="test-input" class="form-label">Enhanced Input</label>
+                                <input type="text" class="form-control" id="test-input" 
+                                       placeholder="Focus to see glow effect">
+                            </div>
+                            <div class="mb-3">
+                                <label for="test-select" class="form-label">Enhanced Select</label>
+                                <select class="form-select" id="test-select">
+                                    <option>Choose an option</option>
+                                    <option>Option 1</option>
+                                    <option>Option 2</option>
+                                    <option>Option 3</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="test-checkbox">
+                                    <label class="form-check-label" for="test-checkbox">
+                                        Enhanced Checkbox (click to see animation)
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="test-switch">
+                                    <label class="form-check-label" for="test-switch">
+                                        Enhanced Switch
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Micro-Interactions Demo -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-fade-in">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">
+                        <i class="bi bi-lightning text-primary"></i> Micro-Interactions
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <i class="bi bi-heart text-danger" style="font-size: 2rem;"></i>
+                                <p class="mt-2">Icon Hover</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <a href="#" class="text-decoration-none">
+                                    <i class="bi bi-link-45deg text-primary" style="font-size: 2rem;"></i>
+                                    <p class="mt-2">Link Hover</p>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <button class="btn btn-outline-primary">
+                                    <i class="bi bi-hand-index"></i> Click Me
+                                </button>
+                                <p class="mt-2">Button Click</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="badge badge-warning text-dark">
+                                    <i class="bi bi-star"></i> Badge
+                                </div>
+                                <p class="mt-2">Badge Hover</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Demo -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-fade-in">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">
+                        <i class="bi bi-bell text-primary"></i> Toast Notifications
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Test different types of toast notifications:</p>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-success" onclick="showSuccess('Operation completed successfully!')">
+                            <i class="bi bi-check-circle"></i> Success
+                        </button>
+                        <button class="btn btn-danger" onclick="showError('Something went wrong!')">
+                            <i class="bi bi-x-circle"></i> Error
+                        </button>
+                        <button class="btn btn-warning" onclick="showWarning('Please review this action')">
+                            <i class="bi bi-exclamation-triangle"></i> Warning
+                        </button>
+                        <button class="btn btn-info" onclick="showInfo('Here is some information')">
+                            <i class="bi bi-info-circle"></i> Info
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Interactions Demo -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-fade-in">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">
+                        <i class="bi bi-table text-primary"></i> Table Interactions
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Status</th>
+                                    <th>Progress</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Task #1</td>
+                                    <td><span class="badge badge-success">Completed</span></td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar bg-success" style="width: 100%">100%</div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Task #2</td>
+                                    <td><span class="badge badge-warning">In Progress</span></td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar bg-warning" style="width: 60%">60%</div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Task #3</td>
+                                    <td><span class="badge badge-error">Blocked</span></td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar bg-danger" style="width: 25%">25%</div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Breadcrumb Demo -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-fade-in">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">
+                        <i class="bi bi-diagram-2 text-primary"></i> Breadcrumb Animations
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item">
+                                <a href="/" class="text-decoration-none">
+                                    <i class="bi bi-house"></i> Home
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a href="/work-items" class="text-decoration-none">Work Items</a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a href="/tasks" class="text-decoration-none">Tasks</a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">
+                                Enhanced Interactions Test
+                            </li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1055;"></div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Demo script for enhanced interactions
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🎨 Enhanced interactions test page loaded');
+    
+    // Add some demo interactions
+    const demoButtons = document.querySelectorAll('.btn');
+    demoButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            // Add click feedback
+            this.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                this.style.transform = 'scale(1)';
+            }, 100);
+        });
+    });
+    
+    // Demo progress bar animation
+    const progressBars = document.querySelectorAll('.progress-bar');
+    progressBars.forEach(bar => {
+        const width = bar.style.width;
+        bar.style.width = '0%';
+        bar.style.transition = 'width 1s ease-out';
+        
+        setTimeout(() => {
+            bar.style.width = width;
+        }, 500);
+    });
+});
+</script>
+{% endblock %}
+

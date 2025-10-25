@@ -1,0 +1,142 @@
+<!-- Task Kanban View Component -->
+<!-- Usage: Include this component in templates -->
+<!-- Variables: tasks (required) -->
+
+<div id="kanbanViewContainer" class="view-container hidden">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+        <!-- Draft Column -->
+        <div class="bg-gray-50 rounded-xl p-4">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-semibold text-gray-700">Draft</h3>
+                <span class="bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded-full">{{ tasks|selectattr('status.value', 'equalto', 'draft')|list|length }}</span>
+            </div>
+            <div class="space-y-3">
+                {% for task in tasks %}
+                {% if task.status.value == 'draft' %}
+                <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                    <h4 class="font-medium text-gray-900 text-sm mb-2">
+                        <a href="{{ url_for('tasks.task_detail', task_id=task.id) }}" class="hover:text-emerald-600">
+                            {{ task.name }}
+                        </a>
+                    </h4>
+                    <div class="flex items-center justify-between text-xs text-gray-500">
+                        <span>{{ task.type.value|title }}</span>
+                        {% if task.effort_hours %}
+                        <span>{{ "%.1f"|format(task.effort_hours) }}h</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Ready Column -->
+        <div class="bg-yellow-50 rounded-xl p-4">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-semibold text-yellow-700">Ready</h3>
+                <span class="bg-yellow-200 text-yellow-700 text-xs px-2 py-1 rounded-full">{{ tasks|selectattr('status.value', 'equalto', 'ready')|list|length }}</span>
+            </div>
+            <div class="space-y-3">
+                {% for task in tasks %}
+                {% if task.status.value == 'ready' %}
+                <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                    <h4 class="font-medium text-gray-900 text-sm mb-2">
+                        <a href="{{ url_for('tasks.task_detail', task_id=task.id) }}" class="hover:text-emerald-600">
+                            {{ task.name }}
+                        </a>
+                    </h4>
+                    <div class="flex items-center justify-between text-xs text-gray-500">
+                        <span>{{ task.type.value|title }}</span>
+                        {% if task.effort_hours %}
+                        <span>{{ "%.1f"|format(task.effort_hours) }}h</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Active/In Progress Column -->
+        <div class="bg-blue-50 rounded-xl p-4">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-semibold text-blue-700">Active</h3>
+                <span class="bg-blue-200 text-blue-700 text-xs px-2 py-1 rounded-full">{{ (tasks|selectattr('status.value', 'equalto', 'active')|list|length) + (tasks|selectattr('status.value', 'equalto', 'in_progress')|list|length) }}</span>
+            </div>
+            <div class="space-y-3">
+                {% for task in tasks %}
+                {% if task.status.value in ['active', 'in_progress'] %}
+                <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                    <h4 class="font-medium text-gray-900 text-sm mb-2">
+                        <a href="{{ url_for('tasks.task_detail', task_id=task.id) }}" class="hover:text-emerald-600">
+                            {{ task.name }}
+                        </a>
+                    </h4>
+                    <div class="flex items-center justify-between text-xs text-gray-500">
+                        <span>{{ task.type.value|title }}</span>
+                        {% if task.effort_hours %}
+                        <span>{{ "%.1f"|format(task.effort_hours) }}h</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Review Column -->
+        <div class="bg-purple-50 rounded-xl p-4">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-semibold text-purple-700">Review</h3>
+                <span class="bg-purple-200 text-purple-700 text-xs px-2 py-1 rounded-full">{{ tasks|selectattr('status.value', 'equalto', 'review')|list|length }}</span>
+            </div>
+            <div class="space-y-3">
+                {% for task in tasks %}
+                {% if task.status.value == 'review' %}
+                <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                    <h4 class="font-medium text-gray-900 text-sm mb-2">
+                        <a href="{{ url_for('tasks.task_detail', task_id=task.id) }}" class="hover:text-emerald-600">
+                            {{ task.name }}
+                        </a>
+                    </h4>
+                    <div class="flex items-center justify-between text-xs text-gray-500">
+                        <span>{{ task.type.value|title }}</span>
+                        {% if task.effort_hours %}
+                        <span>{{ "%.1f"|format(task.effort_hours) }}h</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Done Column -->
+        <div class="bg-green-50 rounded-xl p-4">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-semibold text-green-700">Done</h3>
+                <span class="bg-green-200 text-green-700 text-xs px-2 py-1 rounded-full">{{ tasks|selectattr('status.value', 'equalto', 'done')|list|length }}</span>
+            </div>
+            <div class="space-y-3">
+                {% for task in tasks %}
+                {% if task.status.value == 'done' %}
+                <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                    <h4 class="font-medium text-gray-900 text-sm mb-2">
+                        <a href="{{ url_for('tasks.task_detail', task_id=task.id) }}" class="hover:text-emerald-600">
+                            {{ task.name }}
+                        </a>
+                    </h4>
+                    <div class="flex items-center justify-between text-xs text-gray-500">
+                        <span>{{ task.type.value|title }}</span>
+                        {% if task.effort_hours %}
+                        <span>{{ "%.1f"|format(task.effort_hours) }}h</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>

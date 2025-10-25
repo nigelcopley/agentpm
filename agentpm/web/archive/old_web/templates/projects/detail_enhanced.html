@@ -1,0 +1,459 @@
+{% extends "layouts/modern_base.html" %}
+
+{% block title %}{{ view.project.name }} - APM (Agent Project Manager){% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ view.project.name }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<!-- Project Overview -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="card metric-card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h2 class="card-title">
+                            <i class="bi bi-folder"></i> {{ view.project.name }}
+                        </h2>
+                        <p class="card-text">
+                            <span class="badge badge-info">{{ view.pm_philosophy.title() }}</span>
+                            <span class="badge badge-primary">{{ view.project_type.title() }}</span>
+                            {% if view.project.status %}
+                                <span class="badge badge-gray">{{ view.project.status.value.title() }}</span>
+                            {% endif %}
+                        </p>
+                        {% if view.project.description %}
+                        <p class="text-muted">{{ view.project.description }}</p>
+                        {% endif %}
+                        {% if view.team %}
+                        <p class="text-muted">
+                            <i class="bi bi-people"></i> Team: {{ view.team }}
+                        </p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="metric-value">{{ view.total_work_items }}</div>
+                        <div class="metric-label">Work Items</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Project Health and Quality -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="h4 
+                    {% if view.project_health.overall_health == 'healthy' %}text-success
+                    {% elif view.project_health.overall_health == 'warning' %}text-warning
+                    {% else %}text-danger{% endif %}">
+                    {{ view.project_health.overall_health.title() }}
+                </div>
+                <div class="text-muted">Project Health</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="h4 
+                    {% if view.context_quality.has_context %}text-success{% else %}text-danger{% endif %}">
+                    {% if view.context_quality.has_context %}
+                        {{ "%.1f"|format(view.context_quality.confidence_score * 100) }}%
+                    {% else %}
+                        No Context
+                    {% endif %}
+                </div>
+                <div class="text-muted">Context Quality</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="h4 text-primary">{{ view.time_boxing_metrics.compliance_rate }}%</div>
+                <div class="text-muted">Time-boxing Compliance</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="h4 text-info">{{ view.total_sessions }}</div>
+                <div class="text-muted">Recent Sessions</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Project Details -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle"></i> Project Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">Name:</dt>
+                    <dd class="col-sm-8">{{ view.project.name }}</dd>
+                    
+                    <dt class="col-sm-4">PM Philosophy:</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge badge-info">{{ view.pm_philosophy.title() }}</span>
+                    </dd>
+                    
+                    <dt class="col-sm-4">Project Type:</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge badge-primary">{{ view.project_type.title() }}</span>
+                    </dd>
+                    
+                    {% if view.business_domain %}
+                    <dt class="col-sm-4">Business Domain:</dt>
+                    <dd class="col-sm-8">{{ view.business_domain }}</dd>
+                    {% endif %}
+                    
+                    {% if view.team %}
+                    <dt class="col-sm-4">Team:</dt>
+                    <dd class="col-sm-8">{{ view.team }}</dd>
+                    {% endif %}
+                    
+                    <dt class="col-sm-4">Path:</dt>
+                    <dd class="col-sm-8"><code>{{ view.project.path }}</code></dd>
+                    
+                    <dt class="col-sm-4">Created:</dt>
+                    <dd class="col-sm-8">{{ view.created_at.strftime('%Y-%m-%d %H:%M') }}</dd>
+                    
+                    <dt class="col-sm-4">Updated:</dt>
+                    <dd class="col-sm-8">{{ view.updated_at.strftime('%Y-%m-%d %H:%M') }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-gear"></i> Technology Stack
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if view.tech_stack %}
+                <h6>Technologies:</h6>
+                <div class="mb-3">
+                    {% for tech in view.tech_stack %}
+                    <span class="badge badge-info me-1 mb-1">{{ tech }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                {% if view.detected_frameworks %}
+                <h6>Frameworks:</h6>
+                <div class="mb-3">
+                    {% for framework in view.detected_frameworks %}
+                    <span class="badge badge-primary me-1 mb-1">{{ framework }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                {% if view.business_description %}
+                <h6>Business Description:</h6>
+                <p class="text-muted">{{ view.business_description }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Project Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="h4 text-primary">{{ view.total_work_items }}</div>
+                <div class="text-muted">Work Items</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="h4 text-success">{{ view.total_tasks }}</div>
+                <div class="text-muted">Tasks</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="h4 text-warning">{{ view.total_agents }}</div>
+                <div class="text-muted">Agents</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="h4 text-info">{{ view.total_rules }}</div>
+                <div class="text-muted">Rules</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Work Item Status Distribution -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-pie-chart"></i> Work Item Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="workItemStatusChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-pie-chart"></i> Task Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="taskStatusChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Sessions -->
+{% if view.recent_sessions %}
+<div class="row mb-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history"></i> Recent Sessions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Session ID</th>
+                                <th>Provider</th>
+                                <th>Start Time</th>
+                                <th>Duration</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for session in view.recent_sessions %}
+                            <tr>
+                                <td><code>{{ session.session_id[:8] }}...</code></td>
+                                <td><span class="badge badge-info">{{ session.tool_name or 'Unknown' }}</span></td>
+                                <td>
+                                    {% if session.start_time %}
+                                        {{ session.start_time.strftime('%Y-%m-%d %H:%M') }}
+                                    {% else %}
+                                        <span class="text-muted">Unknown</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if session.start_time and session.end_time %}
+                                        {% set duration = (session.end_time - session.start_time).total_seconds() / 60 %}
+                                        {{ "%.0f"|format(duration) }}m
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if session.status %}
+                                        {% if session.status.value == 'completed' %}
+                                            <span class="badge badge-success">Completed</span>
+                                        {% elif session.status.value == 'active' %}
+                                            <span class="badge badge-primary">Active</span>
+                                        {% else %}
+                                            <span class="badge badge-gray">{{ session.status.value.title() }}</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge badge-gray">Unknown</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="/session/{{ session.session_id }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Project Context -->
+{% if view.project_context %}
+<div class="row mb-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-diagram-3"></i> Project Context
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Confidence Score:</strong> 
+                        <span class="badge 
+                            {% if view.context_quality.confidence_band == 'green' %}bg-success
+                            {% elif view.context_quality.confidence_band == 'yellow' %}bg-warning
+                            {% elif view.context_quality.confidence_band == 'red' %}bg-danger
+                            {% else %}bg-secondary{% endif %}">
+                            {{ "%.1f"|format(view.context_quality.confidence_score * 100) }}%
+                        </span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Freshness:</strong> 
+                        <span class="badge 
+                            {% if view.context_quality.freshness == 'fresh' %}bg-success
+                            {% elif view.context_quality.freshness == 'stale' %}bg-warning
+                            {% else %}bg-danger{% endif %}">
+                            {{ view.context_quality.freshness.title() }}
+                        </span>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <a href="/context/{{ view.project_context.id }}" class="btn btn-outline-primary">
+                        <i class="bi bi-eye"></i> View Full Context
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Quick Actions</h5>
+                <div class="btn-group" role="group">
+                    <a href="/projects/{{ view.project.id }}/settings" class="btn btn-outline-primary">
+                        <i class="bi bi-gear"></i> Settings
+                    </a>
+                    <a href="/projects/{{ view.project.id }}/analytics" class="btn btn-secondary">
+                        <i class="bi bi-graph-up"></i> Analytics
+                    </a>
+                    <a href="/work-items" class="btn btn-outline-info">
+                        <i class="bi bi-list-task"></i> Work Items
+                    </a>
+                    <a href="/tasks" class="btn btn-outline-success">
+                        <i class="bi bi-check2-square"></i> Tasks
+                    </a>
+                    <a href="/sessions" class="btn btn-outline-warning">
+                        <i class="bi bi-clock-history"></i> Sessions
+                    </a>
+                    <a href="/contexts" class="btn btn-outline-dark">
+                        <i class="bi bi-diagram-3"></i> Contexts
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Work Item Status Chart
+const workItemStatusCtx = document.getElementById('workItemStatusChart').getContext('2d');
+new Chart(workItemStatusCtx, {
+    type: 'doughnut',
+    data: {
+        labels: [
+            {% for dist in view.work_item_status_dist %}
+            '{{ dist.status.title() }}',
+            {% endfor %}
+        ],
+        datasets: [{
+            data: [
+                {% for dist in view.work_item_status_dist %}
+                {{ dist.count }},
+                {% endfor %}
+            ],
+            backgroundColor: [
+                '#28a745', '#007bff', '#ffc107', '#dc3545', '#6c757d', '#17a2b8', '#fd7e14', '#6f42c1', '#e83e8c'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Task Status Chart
+const taskStatusCtx = document.getElementById('taskStatusChart').getContext('2d');
+new Chart(taskStatusCtx, {
+    type: 'doughnut',
+    data: {
+        labels: [
+            {% for dist in view.task_status_dist %}
+            '{{ dist.status.title() }}',
+            {% endfor %}
+        ],
+        datasets: [{
+            data: [
+                {% for dist in view.task_status_dist %}
+                {{ dist.count }},
+                {% endfor %}
+            ],
+            backgroundColor: [
+                '#28a745', '#007bff', '#ffc107', '#dc3545', '#6c757d', '#17a2b8', '#fd7e14', '#6f42c1', '#e83e8c'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

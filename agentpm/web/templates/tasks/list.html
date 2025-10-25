@@ -1,0 +1,72 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Tasks - APM (Agent Project Manager){% endblock %}
+
+{% block content %}
+<!-- Main Header -->
+<div class="bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 text-white">
+    <div class="px-6 py-8">
+        <div class="flex justify-between items-start">
+            <div>
+                <h1 class="text-4xl font-bold mb-3">Task Management</h1>
+                <p class="text-white/90 text-lg">Organise, track, and complete your project tasks efficiently</p>
+                <div class="mt-4 flex items-center space-x-6 text-sm">
+                    <div class="flex items-center">
+                        <i class="bi bi-list-task mr-2"></i>
+                        <span>{{ metrics.total_tasks }} Total Tasks</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="bi bi-clock mr-2"></i>
+                        <span>{{ "%.1f"|format(metrics.total_estimated_hours) }}h Estimated</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="bi bi-check-circle mr-2"></i>
+                        <span>{{ metrics.done_tasks }} Completed</span>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white/20 backdrop-blur-sm p-4 rounded-2xl">
+                <i class="bi bi-kanban text-4xl"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters Bar -->
+{% include 'components/tasks/filter_bar.html' %}
+
+<!-- Main Content Layout -->
+<div class="flex flex-col lg:flex-row gap-8 mt-8">
+    <!-- Left Sidebar -->
+    {% include 'components/tasks/sidebar.html' %}
+    
+    <!-- Main Content -->
+    <div class="flex-1 min-w-0 order-1 lg:order-2">
+        <div class="space-y-6">
+
+    <!-- Tasks Container -->
+    <div id="tasks-content">
+    {% if tasks %}
+        <!-- List View -->
+        {% include 'components/tasks/list_view.html' %}
+
+        <!-- Grid View -->
+        {% include 'components/tasks/grid_view.html' %}
+
+        <!-- Kanban View -->
+        {% include 'components/tasks/kanban_view.html' %}
+    {% else %}
+        <!-- Empty State -->
+        {% include 'components/tasks/empty_state.html' %}
+    {% endif %}
+
+    <!-- Results Summary -->
+    {% include 'components/tasks/results_summary.html' %}
+    </div>
+    </div>
+</div>
+
+<script>
+{% include 'components/tasks/view_switcher.js' %}
+</script>
+{% endblock %}

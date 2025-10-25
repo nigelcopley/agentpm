@@ -1,0 +1,879 @@
+# APM (Agent Project Manager) Rules System vs Constitution Concept - Technical Analysis
+
+**Date**: 2025-10-02
+**Analyzer**: code-analyzer sub-agent
+**Context**: Determine if spec-kit's "constitution" concept adds value to V2's existing rules system
+
+---
+
+## Executive Summary
+
+**Key Finding**: V2's `rules` table is **infrastructure without implementation**. The rules database exists but **nothing uses it**. Current enforcement is **hardcoded in validators**, not data-driven.
+
+**Critical Gap**: V2 has **two separate systems** that should be unified:
+1. **Rules Table**: Database schema for configurable governance (UNUSED)
+2. **Hardcoded Validators**: Actual enforcement logic (ACTIVE)
+
+**Constitution Value**: Would provide the **missing link** - a versioned, human-readable document that generates both database rules AND validator logic.
+
+---
+
+## Part 1: V2's Current Rules Implementation
+
+### 1.1 Database Schema (COMPLETE)
+
+**Location**: `agentpm/core/database/utils/schema.py` (lines 236-264)
+
+```sql
+CREATE TABLE IF NOT EXISTS rules (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+
+    -- Rule identity
+    rule_id TEXT NOT NULL,              -- e.g., 'CI-004', 'TIME-BOX-IMPL'
+    name TEXT NOT NULL,
+    description TEXT,
+
+    -- Rule enforcement
+    enforcement_level TEXT NOT NULL     -- BLOCK/LIMIT/GUIDE/ENHANCE
+        CHECK(enforcement_level IN ('BLOCK', 'LIMIT', 'GUIDE', 'ENHANCE')),
+
+    -- Rule configuration (JSON)
+    config TEXT,                        -- e.g., {"max_hours": 4.0, "task_type": "IMPLEMENTATION"}
+
+    -- Status
+    enabled INTEGER DEFAULT 1,
+
+    -- Timestamps
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+    UNIQUE(project_id, rule_id)
+)
+```
+
+**Capabilities**:
+- ✅ Per-project configuration (`project_id` FK)
+- ✅ Four enforcement levels (BLOCK/LIMIT/GUIDE/ENHANCE)
+- ✅ Enable/disable per rule (`enabled` flag)
+- ✅ JSON config flexibility (`config` field)
+- ✅ Unique rule IDs per project
+
+**Missing**:
+- ❌ No version tracking
+- ❌ No amendment history
+- ❌ No audit trail (who changed, when, why)
+- ❌ No rollback capability
+- ❌ No change approval workflow
+
+### 1.2 Pydantic Model (COMPLETE)
+
+**Location**: `agentpm/core/database/models/rule.py` (lines 18-79)
+
+```python
+class Rule(BaseModel):
+    """
+    Rule domain model with Pydantic validation.
+
+    Example Rules:
+        - CI-004: Maintain ≥90% test coverage (BLOCK)
+        - DEV-PHILOSOPHY: Follow professional_standards (GUIDE)
+        - PERF-001: Response time <100ms (LIMIT)
+    """
+
+    # Primary key
+    id: Optional[int] = None
+
+    # Relationships
+    project_id: int = Field(..., gt=0)
+
+    # Core fields
+    rule_id: str = Field(..., min_length=1, max_length=50)
+    name: str = Field(..., min_length=1, max_length=200)
+    description: Optional[str] = None
+
+    # Enforcement
+    enforcement_level: EnforcementLevel = EnforcementLevel.GUIDE
+
+    # Configuration
+    config: Optional[dict] = None  # Rule-specific parameters
+
+    # Status
+    enabled: bool = True
+
+    # Timestamps
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    def is_blocking(self) -> bool:
+        """Check if rule blocks operations when violated"""
+        return self.enforcement_level == EnforcementLevel.BLOCK
+
+    def is_active(self) -> bool:
+        """Check if rule is enabled and should be enforced"""
+        return self.enabled
+```
+
+**Strengths**:
+- ✅ Type-safe with Pydantic validation
+- ✅ Helper methods (`is_blocking()`, `is_active()`)
+- ✅ Flexible config (dict for JSON)
+- ✅ Clear docstrings with examples
+
+**Weaknesses**:
+- ❌ No versioning fields
+- ❌ No rationale field
+- ❌ No amendment tracking
+
+### 1.3 CRUD Methods (COMPLETE)
+
+**Location**: `agentpm/core/database/methods/rules.py`
+
+```python
+# Available operations
+create_rule(service, rule: Rule) -> Rule
+get_rule(service, rule_db_id: int) -> Optional[Rule]
+get_rule_by_rule_id(service, project_id: int, rule_id: str) -> Optional[Rule]
+update_rule(service, rule_db_id: int, **updates) -> Optional[Rule]
+delete_rule(service, rule_db_id: int) -> bool
+list_rules(service, project_id, enforcement_level, enabled_only) -> List[Rule]
+get_blocking_rules(service, project_id: int) -> List[Rule]  # Get BLOCK-level rules
+```
+
+**Capabilities**:
+- ✅ Full CRUD operations
+- ✅ Query by enforcement level
+- ✅ Filter enabled/disabled rules
+- ✅ Get blocking rules (critical enforcement)
+
+**Missing**:
+- ❌ No version history queries
+- ❌ No audit log retrieval
+- ❌ No diff between versions
+- ❌ No rollback operations
+
+### 1.4 **CRITICAL FINDING**: Rules Table is UNUSED
+
+**Search for actual usage**:
+```bash
+# Files that reference rules
+find agentpm -name "*.py" -exec grep -l "get_blocking_rules\|list_rules\|Rule(" {} \;
+```
+
+**Result**: ONLY 4 files found:
+1. `database/models/rule.py` (model definition)
+2. `database/methods/rules.py` (CRUD methods)
+3. `database/adapters/rule_adapter.py` (conversion)
+4. `database/enums/types.py` (EnforcementLevel enum)
+
+**NO FILES** in `core/workflow/`, `cli/`, or any enforcement logic reference the rules table.
+
+**Test coverage**:
+```bash
+find tests-BAK -name "*.py" -exec grep -l "rule\|Rule" {} \;
+```
+
+**Result**: Only 2 files:
+1. `test_schema.py` (table creation test)
+2. `test_merger.py` (unrelated context test)
+
+**Conclusion**: The rules table is **infrastructure-ready but completely unused**.
+
+---
+
+## Part 2: How Enforcement Actually Works (HARDCODED)
+
+### 2.1 Time-Boxing Enforcement
+
+**Location**: `agentpm/core/workflow/type_validators.py` (lines 25-93)
+
+```python
+# HARDCODED time limits
+TASK_TYPE_MAX_HOURS: Dict[TaskType, float] = {
+    TaskType.SIMPLE: 1.0,
+    TaskType.REVIEW: 2.0,
+    TaskType.BUGFIX: 4.0,
+    TaskType.IMPLEMENTATION: 4.0,    # ⚠️ HARDCODED - Should be in rules table
+    TaskType.DEPLOYMENT: 4.0,
+    TaskType.REFACTORING: 4.0,
+    TaskType.TESTING: 6.0,
+    TaskType.DOCUMENTATION: 6.0,
+    TaskType.DESIGN: 8.0,
+    TaskType.ANALYSIS: 8.0,
+}
+
+@staticmethod
+def validate_time_box(task_type: TaskType, effort_hours: Optional[float]) -> ValidationResult:
+    """Validate task effort against type-specific time limits."""
+    if effort_hours is None:
+        return ValidationResult(valid=False, reason="Task effort_hours must be estimated")
+
+    max_hours = TASK_TYPE_MAX_HOURS.get(task_type)  # ⚠️ Dictionary lookup, not database query
+
+    if effort_hours > max_hours:
+        return ValidationResult(
+            valid=False,
+            reason=(
+                f"{task_type.value.upper()} tasks limited to {max_hours} hours "
+                f"(estimated: {effort_hours}h). Break into smaller tasks."
+            )
+        )
+
+    return ValidationResult(valid=True)
+```
+
+**Problem**: This should be:
+```python
+# Data-driven enforcement (what it SHOULD be)
+rule = db.rules.get_rule_by_rule_id(project_id, f"TIME-BOX-{task_type.value.upper()}")
+if rule and rule.is_active():
+    max_hours = rule.config.get("max_hours", 4.0)
+    if effort_hours > max_hours:
+        if rule.is_blocking():
+            return ValidationResult(valid=False, reason=f"Rule {rule.name} violated")
+        else:
+            # Log warning but allow
+```
+
+### 2.2 Required Tasks Enforcement
+
+**Location**: `agentpm/core/workflow/work_item_requirements.py`
+
+```python
+# HARDCODED required task types
+REQUIRED_TASK_TYPES: Dict[WorkItemType, Set[TaskType]] = {
+    WorkItemType.FEATURE: {
+        TaskType.DESIGN,
+        TaskType.IMPLEMENTATION,
+        TaskType.TESTING,
+        TaskType.DOCUMENTATION,
+    },
+    WorkItemType.BUGFIX: {
+        TaskType.ANALYSIS,
+        TaskType.BUGFIX,
+        TaskType.TESTING,
+    },
+    # ... more hardcoded mappings
+}
+```
+
+**Problem**: These are **governance rules** that should be in the database, not hardcoded constants.
+
+### 2.3 Where Rules SHOULD Be Used (But Aren't)
+
+**Workflow Service** (`core/workflow/service.py`):
+```python
+def transition_task(self, task_id: int, new_status: TaskStatus) -> Task:
+    """
+    Transition task with quality gate validation.
+
+    ⚠️ Currently: Calls hardcoded validators
+    ✅ Should: Query project rules and enforce dynamically
+    """
+    # Current (hardcoded)
+    validation = TypeSpecificValidators.validate_time_box(task.type, task.effort_hours)
+
+    # Should be (data-driven)
+    blocking_rules = self.db.rules.get_blocking_rules(task.work_item.project_id)
+    for rule in blocking_rules:
+        if rule.rule_id.startswith("TIME-BOX"):
+            # Check rule violation
+            # Use rule.config for parameters
+```
+
+---
+
+## Part 3: What's in _RULES Directory?
+
+**Location**: `/Users/nigelcopley/.project_manager/_RULES/`
+
+**Contents**:
+```
+AGENT_SELECTION.md          # Agent assignment logic
+ARCHITECTURE_PRINCIPLES.md  # Design patterns
+CODE_QUALITY_STANDARDS.md   # Quality metrics
+CONTEXT_STRUCTURE.md        # Context hierarchy
+CORE_PRINCIPLES.md          # CI-001 to CI-006 gates
+DATA_GOVERNANCE.md          # Database standards
+DEVELOPMENT_PRINCIPLES.md   # Development workflow
+FEATURE_WORKFLOW_RULES.md   # Feature lifecycle
+OPERATIONAL_STANDARDS.md    # DevOps practices
+QUICK_REFERENCE.md          # Daily workflow
+README.md                   # Navigation
+RULES_COVERAGE_MATRIX.md    # Compliance tracking
+TASK_WORKFLOW_RULES.md      # Task lifecycle
+TESTING_RULES.md            # Testing standards
+WORK_ITEM_WORKFLOW_RULES.md # Work item lifecycle
+```
+
+**Nature**: These are **AIPM V1 methodology documentation**, NOT V2 runtime rules.
+
+**Relationship to V2**:
+- ❌ NOT referenced by V2 code
+- ❌ NOT stored in V2 database
+- ✅ Useful as **human documentation**
+- ✅ Could be **source material** for generating V2 rules
+
+**Example from CORE_PRINCIPLES.md**:
+```yaml
+CI-004: Testing Quality Gate
+mandatory_requirements:
+  test_coverage: "≥90% for new code (CI-004 requirement)"
+  enforcement: "BLOCK - No deployment without coverage"
+
+implementation_pattern: |
+  # ⚠️ This is documentation, not enforced by V2
+  if coverage < 0.9:
+      raise TestingQualityGate("CI-004 violation")
+```
+
+**Reality**: V2 doesn't check this. It's just documentation.
+
+---
+
+## Part 4: What Constitution Would Add
+
+**spec-kit Constitution Concept**:
+
+### 4.1 Constitution Template Structure
+
+```markdown
+# Project Constitution
+
+## Core Principles
+
+### I. Time-Boxing (BLOCK)
+IMPLEMENTATION tasks limited to ≤4 hours.
+Rationale: Forces proper decomposition, prevents over-engineering.
+
+### II. Test Coverage (BLOCK)
+Maintain ≥90% test coverage on new code.
+Rationale: Quality gate, prevents regressions.
+
+### III. Framework Agnosticism (GUIDE)
+Core services remain technology-neutral.
+Rationale: Plugin architecture, avoid vendor lock-in.
+
+## Governance
+- Constitution supersedes all other practices
+- Amendments require ratification, version bump
+- Breaking changes = MAJOR version
+- New principles = MINOR version
+- Clarifications = PATCH version
+
+**Version**: 1.2.0 | **Ratified**: 2025-09-15 | **Last Amended**: 2025-10-02
+```
+
+### 4.2 Constitution Benefits
+
+#### **Versioning & History** (MISSING in V2)
+```sql
+-- Add to rules table
+ALTER TABLE rules ADD COLUMN version TEXT DEFAULT '1.0.0';
+ALTER TABLE rules ADD COLUMN ratified_at TIMESTAMP;
+ALTER TABLE rules ADD COLUMN amended_by TEXT;
+ALTER TABLE rules ADD COLUMN amendment_notes TEXT;
+
+-- Or: Separate constitution_versions table
+CREATE TABLE constitution_versions (
+    id INTEGER PRIMARY KEY,
+    project_id INTEGER,
+    version TEXT,              -- "1.2.0"
+    constitution_text TEXT,    -- Full markdown
+    rules_snapshot TEXT,       -- JSON of all rules at this version
+    ratified_at TIMESTAMP,
+    ratified_by TEXT,
+    amendment_notes TEXT,
+    FOREIGN KEY (project_id) REFERENCES projects(id)
+);
+```
+
+**What it enables**:
+- ✅ See what changed between v1.0 and v1.1
+- ✅ Rollback to previous rule versions
+- ✅ Audit trail of governance decisions
+- ✅ Blame/attribution for rule changes
+
+#### **Human-Readable Documentation** (MISSING in V2)
+```python
+# Current V2 (database-only, not readable)
+Rule(
+    rule_id="TIME-BOX-IMPL",
+    enforcement_level=EnforcementLevel.BLOCK,
+    config={"max_hours": 4.0}
+)
+
+# With Constitution (markdown + database)
+# Constitution file (.aipm/constitution.md):
+"""
+## Time-Boxing Rules (v1.2.0)
+
+### IMPLEMENTATION Tasks - BLOCK
+Maximum: 4 hours
+Rationale: Forces proper task decomposition
+Examples:
+  ❌ Bad: "Implement user auth" (8h estimate)
+  ✅ Good: "Implement JWT generation" (3h)
+          "Implement token validation" (2h)
+"""
+
+# Generated rules in database (from constitution)
+Rule(rule_id="TIME-BOX-IMPL", ...)
+```
+
+**Benefit**: Non-technical stakeholders can read/approve governance changes.
+
+#### **Semantic Versioning** (MISSING in V2)
+
+**Constitution amendment process**:
+```bash
+# 1. Propose amendment
+apm constitution amend --proposal "Increase IMPLEMENTATION time-box to 6h"
+
+# 2. Generate impact analysis
+# - Which projects affected?
+# - How many existing tasks violate new rule?
+# - Breaking change? (MAJOR bump)
+
+# 3. Ratification workflow
+apm constitution ratify --version 2.0.0 --notes "Approved by team vote"
+
+# 4. Automatic rule updates
+# - Update all project rules
+# - Notify affected users
+# - Archive old constitution version
+```
+
+**Version bump rules**:
+- **MAJOR** (1.0.0 → 2.0.0): Breaking changes (stricter enforcement, removed exemptions)
+- **MINOR** (1.0.0 → 1.1.0): New principles added (backwards compatible)
+- **PATCH** (1.0.0 → 1.0.1): Clarifications, typo fixes (no behavior change)
+
+#### **AI-Driven Consistency Checks** (MISSING in V2)
+
+**Constitution as source of truth**:
+```python
+# spec-kit pattern: Constitution validates code/configs
+constitution = load_constitution(".aipm/constitution.md")
+
+# Check: Does workflow validator match constitution?
+constitution_rule = constitution.get_principle("TIME-BOX-IMPL")
+code_enforcement = TASK_TYPE_MAX_HOURS[TaskType.IMPLEMENTATION]
+
+if constitution_rule.max_hours != code_enforcement:
+    raise InconsistencyError(
+        f"Constitution says {constitution_rule.max_hours}h, "
+        f"but code enforces {code_enforcement}h. Update one or the other."
+    )
+```
+
+**Benefit**: Catch drift between documentation and enforcement.
+
+#### **Amendment Governance** (MISSING in V2)
+
+**Current V2**:
+```python
+# Just update database (no approval, no history)
+db.rules.update_rule(rule_id=123, config={"max_hours": 6.0})
+```
+
+**With Constitution**:
+```python
+# Formal amendment process
+amendment = ConstitutionAmendment(
+    principle="TIME-BOX-IMPL",
+    change_type="parameter_update",
+    old_value={"max_hours": 4.0},
+    new_value={"max_hours": 6.0},
+    rationale="Team capacity increased, 4h too restrictive",
+    proposed_by="user@example.com",
+    proposed_at=datetime.now(),
+)
+
+# Requires approval before applying
+if amendment.is_breaking_change():
+    version_bump = "MAJOR"  # 1.0.0 → 2.0.0
+else:
+    version_bump = "MINOR"  # 1.0.0 → 1.1.0
+
+# After ratification
+constitution.amend(amendment, version_bump)
+# - Updates markdown
+# - Updates database rules
+# - Archives old version
+# - Notifies affected projects
+```
+
+---
+
+## Part 5: Technical Recommendation
+
+### Option A: Add Versioning to Rules Table ✅ **RECOMMENDED**
+
+**Minimal change, high value**:
+
+```sql
+-- Extend existing rules table
+ALTER TABLE rules ADD COLUMN version TEXT DEFAULT '1.0.0';
+ALTER TABLE rules ADD COLUMN ratified_at TIMESTAMP;
+ALTER TABLE rules ADD COLUMN ratified_by TEXT;
+ALTER TABLE rules ADD COLUMN amendment_notes TEXT;
+ALTER TABLE rules ADD COLUMN supersedes_rule_id INTEGER;  -- Link to previous version
+
+CREATE INDEX idx_rules_version ON rules(project_id, rule_id, version);
+
+-- New table for constitution metadata
+CREATE TABLE project_constitutions (
+    id INTEGER PRIMARY KEY,
+    project_id INTEGER NOT NULL,
+    version TEXT NOT NULL,                  -- "1.2.0"
+    constitution_markdown TEXT NOT NULL,    -- Full markdown text
+    ratified_at TIMESTAMP NOT NULL,
+    ratified_by TEXT,
+    amendment_summary TEXT,                 -- What changed in this version
+    FOREIGN KEY (project_id) REFERENCES projects(id),
+    UNIQUE(project_id, version)
+);
+```
+
+**Implementation**:
+1. **Keep existing `rules` table** (works as-is)
+2. **Add version fields** (track changes)
+3. **Add `project_constitutions` table** (human-readable layer)
+4. **Two-way sync**:
+   - Constitution markdown → generates/updates `rules` table
+   - `rules` table changes → update constitution markdown
+
+**Benefits**:
+- ✅ Minimal schema changes
+- ✅ Backwards compatible
+- ✅ Adds versioning/audit without breaking existing code
+- ✅ Constitution is optional (can use raw rules if desired)
+
+### Option B: Replace Rules with Constitution ❌ **NOT RECOMMENDED**
+
+**Radical change**:
+- Delete `rules` table
+- Constitution becomes sole source of truth
+- Parse markdown → generate validation logic dynamically
+
+**Problems**:
+- ❌ Breaks existing (admittedly unused) infrastructure
+- ❌ Performance hit (parse markdown on every validation)
+- ❌ Harder to query ("give me all BLOCK-level rules")
+- ❌ More complex implementation
+
+### Option C: Keep Rules Table As-Is, Skip Constitution ❌ **NOT RECOMMENDED**
+
+**Status quo**:
+- Rules table exists but unused
+- Enforcement stays hardcoded
+
+**Problems**:
+- ❌ No versioning/audit trail
+- ❌ No human-readable governance
+- ❌ Technical debt (unused database table)
+- ❌ Hardcoded validators are brittle
+
+---
+
+## Part 6: Practical Examples
+
+### 6.1 Current V2 (Hardcoded)
+
+```python
+# type_validators.py (HARDCODED)
+TASK_TYPE_MAX_HOURS = {
+    TaskType.IMPLEMENTATION: 4.0,  # ⚠️ Change requires code edit
+}
+
+def validate_time_box(task_type, effort_hours):
+    max_hours = TASK_TYPE_MAX_HOURS.get(task_type)
+    if effort_hours > max_hours:
+        raise ValidationError(f"Exceeds {max_hours}h limit")
+```
+
+**To change the limit**: Edit Python code, redeploy.
+
+### 6.2 With Rules Table (Data-Driven)
+
+```python
+# Dynamic enforcement from database
+rule = db.rules.get_rule_by_rule_id(project_id, "TIME-BOX-IMPL")
+max_hours = rule.config["max_hours"]  # ✅ Configurable per project
+
+if effort_hours > max_hours:
+    if rule.enforcement_level == EnforcementLevel.BLOCK:
+        raise ValidationError(f"Rule {rule.name} violated")
+    else:
+        log_warning(f"Rule {rule.name} warning")
+```
+
+**To change the limit**: Update database record, no code changes.
+
+### 6.3 With Constitution (Versioned + Auditable)
+
+```markdown
+<!-- .aipm/constitution.md -->
+# Project Constitution v1.2.0
+
+## Time-Boxing Rules
+
+### IMPLEMENTATION Tasks (v1.2.0) - BLOCK
+**Limit**: ≤4 hours per task
+**Rationale**: Forces proper decomposition, prevents over-engineering.
+
+**Amendment History**:
+- v1.0.0 (2025-09-15): Initial limit 4h
+- v1.1.0 (2025-09-20): Added exemption for integration tasks
+- v1.2.0 (2025-10-02): Removed exemption (caused confusion)
+
+**Examples**:
+- ❌ "Implement OAuth2 system" (12h estimate)
+- ✅ "Generate JWT tokens" (3h)
+- ✅ "Validate token expiry" (2h)
+```
+
+```python
+# Python enforcement (generated from constitution)
+constitution = Constitution.load(".aipm/constitution.md")
+rule_def = constitution.get_principle("TIME-BOX-IMPL")
+
+# Auto-sync to database
+db.rules.create_or_update(
+    rule_id="TIME-BOX-IMPL",
+    enforcement_level=rule_def.enforcement_level,  # "BLOCK"
+    config={"max_hours": rule_def.max_hours},      # 4.0
+    version=constitution.version,                  # "1.2.0"
+    ratified_at=constitution.ratified_at,
+)
+```
+
+**To change the limit**:
+1. Amend constitution markdown
+2. Version bump (breaking change = MAJOR)
+3. Auto-sync to database
+4. Audit trail preserved
+
+---
+
+## Part 7: Rules Table Gaps Analysis
+
+### What V2's Rules Table **CAN** Do:
+- ✅ Store rules per project
+- ✅ Four enforcement levels (BLOCK/LIMIT/GUIDE/ENHANCE)
+- ✅ Enable/disable rules
+- ✅ JSON config for rule parameters
+- ✅ Query by enforcement level
+- ✅ Full CRUD operations
+
+### What V2's Rules Table **CANNOT** Do:
+- ❌ Track version history
+- ❌ Show what changed between versions
+- ❌ Rollback to previous rules
+- ❌ Audit who changed what, when, why
+- ❌ Approve/ratify rule changes (governance workflow)
+- ❌ Generate human-readable documentation
+- ❌ Validate consistency with enforcement code
+- ❌ Notify affected users of rule changes
+
+### What Constitution **ADDS**:
+- ✅ Semantic versioning (1.0.0 → 1.1.0 → 2.0.0)
+- ✅ Amendment history (what/when/who/why)
+- ✅ Ratification workflow (proposal → approval → deployment)
+- ✅ Human-readable markdown (stakeholders can review)
+- ✅ Two-way sync (markdown ↔ database)
+- ✅ Consistency validation (constitution vs. code)
+- ✅ Breaking change detection (MAJOR version bumps)
+
+---
+
+## Part 8: Migration Path (Recommended)
+
+### Phase 1: Make Rules Table Operational (2-3h)
+**Current**: Rules table exists but unused
+**Goal**: Actually use it for enforcement
+
+```python
+# 1. Seed default rules from hardcoded validators
+def seed_project_rules(project_id: int):
+    """Populate rules table from current hardcoded limits"""
+    for task_type, max_hours in TASK_TYPE_MAX_HOURS.items():
+        db.rules.create_rule(Rule(
+            project_id=project_id,
+            rule_id=f"TIME-BOX-{task_type.value.upper()}",
+            name=f"Time-box for {task_type.value} tasks",
+            enforcement_level=EnforcementLevel.BLOCK,
+            config={"max_hours": max_hours},
+            enabled=True,
+        ))
+
+# 2. Update validators to query database
+def validate_time_box(task: Task) -> ValidationResult:
+    rule = db.rules.get_rule_by_rule_id(
+        task.work_item.project_id,
+        f"TIME-BOX-{task.type.value.upper()}"
+    )
+
+    if not rule or not rule.is_active():
+        return ValidationResult(valid=True)  # No rule = allow
+
+    max_hours = rule.config.get("max_hours")
+    if task.effort_hours > max_hours:
+        if rule.is_blocking():
+            return ValidationResult(
+                valid=False,
+                reason=f"Rule {rule.name}: max {max_hours}h (you: {task.effort_hours}h)"
+            )
+
+    return ValidationResult(valid=True)
+```
+
+**Deliverable**: Rules table actively used, configurable per project.
+
+### Phase 2: Add Versioning (1-2h)
+**Goal**: Track rule changes over time
+
+```sql
+ALTER TABLE rules ADD COLUMN version TEXT DEFAULT '1.0.0';
+ALTER TABLE rules ADD COLUMN ratified_at TIMESTAMP;
+ALTER TABLE rules ADD COLUMN amendment_notes TEXT;
+
+CREATE TABLE rule_history (
+    id INTEGER PRIMARY KEY,
+    rule_id INTEGER,              -- FK to rules.id
+    version TEXT,
+    changed_at TIMESTAMP,
+    changed_by TEXT,
+    change_summary TEXT,
+    old_config TEXT,              -- JSON snapshot
+    new_config TEXT,              -- JSON snapshot
+    FOREIGN KEY (rule_id) REFERENCES rules(id)
+);
+```
+
+**Deliverable**: Audit trail, rollback capability.
+
+### Phase 3: Add Constitution Layer (3-4h)
+**Goal**: Human-readable governance document
+
+```python
+class Constitution:
+    """Constitution manages versioned project governance"""
+
+    def __init__(self, project_id: int):
+        self.project_id = project_id
+        self.markdown_path = f".aipm/constitutions/project-{project_id}.md"
+        self.version = self._load_version()
+
+    def sync_to_database(self):
+        """Parse markdown, update rules table"""
+        principles = self._parse_markdown()
+        for principle in principles:
+            db.rules.create_or_update(
+                rule_id=principle.id,
+                name=principle.name,
+                enforcement_level=principle.enforcement,
+                config=principle.config,
+                version=self.version,
+            )
+
+    def sync_from_database(self):
+        """Query rules table, regenerate markdown"""
+        rules = db.rules.list_rules(self.project_id)
+        markdown = self._generate_markdown(rules)
+        self._write_markdown(markdown)
+
+    def amend(self, amendment: Amendment) -> str:
+        """Propose amendment, return new version"""
+        if amendment.is_breaking_change():
+            new_version = self._bump_major()
+        elif amendment.adds_new_principle():
+            new_version = self._bump_minor()
+        else:
+            new_version = self._bump_patch()
+
+        # Update markdown
+        self._apply_amendment(amendment)
+        self.version = new_version
+
+        # Sync to database
+        self.sync_to_database()
+
+        return new_version
+```
+
+**Deliverable**: `.aipm/constitutions/project-1.md` with versioned governance.
+
+---
+
+## Conclusion
+
+### **Recommendation: Option A + Phased Migration**
+
+1. **Phase 1** (2-3h): Make rules table operational
+   - Seed from hardcoded validators
+   - Update validators to query database
+   - **Value**: Per-project configuration, no code changes for rule updates
+
+2. **Phase 2** (1-2h): Add versioning
+   - `version`, `ratified_at` columns
+   - `rule_history` table
+   - **Value**: Audit trail, rollback, compliance tracking
+
+3. **Phase 3** (3-4h): Constitution layer
+   - Markdown → database sync
+   - Database → markdown sync
+   - Semantic versioning
+   - **Value**: Human-readable governance, stakeholder approval workflow
+
+**Total effort**: 6-9 hours for complete constitution system.
+
+### **Value Proposition**
+
+**Without Constitution** (current):
+- ❌ Hardcoded enforcement (brittle)
+- ❌ Code changes required for rule updates
+- ❌ No audit trail
+- ❌ No stakeholder-readable governance
+
+**With Constitution**:
+- ✅ Data-driven enforcement (flexible)
+- ✅ Database updates for rule changes (no deploys)
+- ✅ Full audit trail (who/what/when/why)
+- ✅ Markdown governance (stakeholders can review/approve)
+- ✅ Semantic versioning (breaking changes tracked)
+- ✅ Two-way sync (markdown ↔ database)
+
+**Constitution is worth implementing**.
+
+---
+
+## Files Referenced
+
+### V2 Codebase
+- `agentpm/core/database/utils/schema.py` (rules table schema)
+- `agentpm/core/database/models/rule.py` (Rule Pydantic model)
+- `agentpm/core/database/methods/rules.py` (CRUD operations)
+- `agentpm/core/database/adapters/rule_adapter.py` (conversion logic)
+- `agentpm/core/database/enums/types.py` (EnforcementLevel enum)
+- `agentpm/core/workflow/type_validators.py` (HARDCODED enforcement)
+- `agentpm/core/workflow/work_item_requirements.py` (HARDCODED requirements)
+- `agentpm/RULES.md` (V2-specific implementation rules)
+
+### V1 Methodology (Reference Only)
+- `_RULES/CORE_PRINCIPLES.md` (CI gates documentation)
+- `_RULES/TASK_WORKFLOW_RULES.md` (Task lifecycle)
+- `_RULES/WORK_ITEM_WORKFLOW_RULES.md` (Work item lifecycle)
+- `_RULES/*.md` (15 methodology documents)
+
+### spec-kit Reference
+- `external-analysis/spec-kit/memory/constitution.md` (template)
+- `external-analysis/spec-kit/templates/commands/constitution.md` (amendment workflow)
+
+---
+
+**Analysis Complete**: 2025-10-02
+**Compressed Size**: ~8,000 tokens (from potential 50,000+ token exhaustive scan)
+**Recommendation Confidence**: HIGH

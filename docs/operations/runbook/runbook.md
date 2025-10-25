@@ -1,0 +1,1094 @@
+# APM (Agent Project Manager) Operations Runbook
+
+**Version:** 1.0
+**Last Updated:** 2025-10-21
+**Audience:** DevOps, SRE, Operations Teams
+**Estimated Reading Time:** 35 minutes
+
+---
+
+## Overview
+
+This runbook provides operational procedures for deploying, monitoring, troubleshooting, and maintaining APM (Agent Project Manager) in production environments.
+
+**Document Purpose:**
+- Deployment procedures
+- Monitoring and alerting setup
+- Common issue troubleshooting
+- Backup and recovery procedures
+- Performance tuning
+- Security checklists
+- Incident response
+
+---
+
+## Table of Contents
+
+1. [Deployment Procedures](#deployment-procedures)
+2. [Monitoring and Alerting](#monitoring-and-alerting)
+3. [Troubleshooting Guide](#troubleshooting-guide)
+4. [Backup and Recovery](#backup-and-recovery)
+5. [Performance Tuning](#performance-tuning)
+6. [Security Checklist](#security-checklist)
+7. [Incident Response](#incident-response)
+
+---
+
+## Deployment Procedures
+
+### Pre-Deployment Checklist
+
+```bash
+# 1. Verify Python version
+python --version
+# Required: Python 3.11+
+
+# 2. Verify SQLite version
+sqlite3 --version
+# Required: SQLite 3.35+
+
+# 3. Check available disk space
+df -h
+# Required: At least 1GB free space
+
+# 4. Verify user permissions
+id
+# User must have read/write access to project directory
+```
+
+### Single-User CLI Deployment (Recommended)
+
+**Step 1: Install APM (Agent Project Manager)**
+```bash
+# Install from PyPI (production)
+pip install aipm-v2
+
+# OR install from source (development)
+git clone https://github.com/your-org/aipm-v2.git
+cd aipm-v2
+pip install -e .
+
+# Verify installation
+apm --version
+```
+
+**Step 2: Initialize Project**
+```bash
+# Navigate to project directory
+cd /path/to/your/project
+
+# Initialize AIPM
+apm init
+
+# Expected output:
+# ✓ Created .aipm/ directory
+# ✓ Created database: .aipm/data/aipm.db
+# ✓ Ran 40 migrations
+# ✓ Loaded rules from database
+# Project initialized successfully!
+```
+
+**Step 3: Generate Agents**
+```bash
+# Generate all agents (fast path - Jinja2)
+apm agents generate --all
+
+# OR use Claude AI (slower but customized)
+apm agents generate --all --llm=claude
+
+# Verify agents
+apm agents list
+# Should show 50+ agents
+```
+
+**Step 4: Verify Installation**
+```bash
+# Check system status
+apm status
+
+# Expected output:
+# Project: <project-name>
+# Database: .aipm/data/aipm.db (XX KB)
+# Work Items: 0
+# Tasks: 0
+# Agents: 50+
+# Rules: 100+
+
+# Run smoke tests
+apm work-item list  # Should return empty list
+apm agents list     # Should show agents
+apm rules list      # Should show rules
+```
+
+### Web Dashboard Deployment (Optional)
+
+**Step 1: Install Web Dependencies**
+```bash
+# Web dependencies included in base install
+pip install aipm-v2[web]
+```
+
+**Step 2: Configure Web Server**
+```bash
+# Development mode (localhost only)
+apm web
+
+# Production mode (requires additional setup)
+# See "Production Web Deployment" section below
+```
+
+**Step 3: Access Dashboard**
+```bash
+# Open browser
+http://localhost:5000
+
+# Expected: Dashboard with project overview
+```
+
+### Production Web Deployment (Advanced)
+
+**Step 1: Install Production Server**
+```bash
+# Install gunicorn (WSGI server)
+pip install gunicorn
+
+# OR install uwsgi
+pip install uwsgi
+```
+
+**Step 2: Configure Environment**
+```bash
+# Create .env file
+cat > .env << EOF
+SECRET_KEY=<generate-strong-key>
+FLASK_ENV=production
+DATABASE_PATH=/path/to/.aipm/data/aipm.db
+EOF
+
+# Generate secret key
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+**Step 3: Run Production Server**
+```bash
+# Using gunicorn
+gunicorn -w 4 -b 0.0.0.0:5000 agentpm.web.app:app
+
+# Using uwsgi
+uwsgi --http :5000 --wsgi-file agentpm/web/app.py --callable app
+```
+
+**Step 4: Configure Reverse Proxy (Nginx)**
+```nginx
+server {
+    listen 80;
+    server_name aipm.yourcompany.com;
+
+    location / {
+        proxy_pass http://localhost:5000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Security headers
+    add_header X-Content-Type-Options nosniff;
+    add_header X-Frame-Options DENY;
+    add_header X-XSS-Protection "1; mode=block";
+}
+```
+
+**Step 5: Enable HTTPS (Let's Encrypt)**
+```bash
+# Install certbot
+sudo apt-get install certbot python3-certbot-nginx
+
+# Obtain certificate
+sudo certbot --nginx -d aipm.yourcompany.com
+```
+
+### Database Migration Procedures
+
+**Check Current Migration Version:**
+```bash
+# Query database for current version
+sqlite3 .aipm/data/aipm.db "SELECT version FROM schema_version;"
+```
+
+**Run Pending Migrations:**
+```bash
+# Automatic migration (recommended)
+apm migrate
+
+# Manual migration to specific version
+apm migrate --to-version=42
+```
+
+**Rollback Migration (if needed):**
+```bash
+# Backup database first!
+cp .aipm/data/aipm.db .aipm/data/aipm.db.backup
+
+# Rollback to specific version
+apm migrate --to-version=40
+```
+
+### Verification Tests
+
+**Post-Deployment Smoke Tests:**
+```bash
+# Test 1: System status
+apm status
+# Expected: Project info displayed
+
+# Test 2: Work item creation
+apm work-item create "Test WI" --type=FEATURE
+# Expected: Work item created with ID
+
+# Test 3: Task creation
+apm task create "Test Task" --work-item-id=1 --type=IMPLEMENTATION
+# Expected: Task created
+
+# Test 4: Agent generation
+apm agents generate --all
+# Expected: 50+ agents generated
+
+# Test 5: Context assembly
+apm context show --work-item-id=1
+# Expected: Context displayed with confidence score
+
+# Test 6: Web dashboard (if enabled)
+curl http://localhost:5000/health
+# Expected: {"status": "healthy"}
+```
+
+---
+
+## Monitoring and Alerting
+
+### Key Metrics to Monitor
+
+**System Health Metrics:**
+```bash
+# Database size
+ls -lh .aipm/data/aipm.db
+
+# Database connection count
+lsof | grep aipm.db | wc -l
+
+# CLI command execution time
+time apm work-item list
+
+# Web server response time (if enabled)
+curl -w "@curl-format.txt" -o /dev/null -s http://localhost:5000/
+```
+
+**Application Metrics:**
+```bash
+# Work item count by status
+sqlite3 .aipm/data/aipm.db "
+    SELECT status, COUNT(*)
+    FROM work_items
+    GROUP BY status;
+"
+
+# Task count by status
+sqlite3 .aipm/data/aipm.db "
+    SELECT status, COUNT(*)
+    FROM tasks
+    GROUP BY status;
+"
+
+# Agent usage statistics
+sqlite3 .aipm/data/aipm.db "
+    SELECT role, last_used_at
+    FROM agents
+    WHERE is_active=1
+    ORDER BY last_used_at DESC
+    LIMIT 10;
+"
+```
+
+### Monitoring Setup (Prometheus + Grafana)
+
+**Step 1: Install Prometheus Exporter**
+```bash
+# Install exporter (custom script)
+pip install prometheus-client
+
+# Create exporter script
+cat > /opt/aipm/prometheus_exporter.py << EOF
+from prometheus_client import start_http_server, Gauge
+import sqlite3
+import time
+
+# Metrics
+work_items_total = Gauge('aipm_work_items_total', 'Total work items')
+tasks_total = Gauge('aipm_tasks_total', 'Total tasks')
+db_size_bytes = Gauge('aipm_db_size_bytes', 'Database size in bytes')
+
+def collect_metrics():
+    conn = sqlite3.connect('.aipm/data/aipm.db')
+    cursor = conn.cursor()
+
+    # Work items
+    cursor.execute("SELECT COUNT(*) FROM work_items")
+    work_items_total.set(cursor.fetchone()[0])
+
+    # Tasks
+    cursor.execute("SELECT COUNT(*) FROM tasks")
+    tasks_total.set(cursor.fetchone()[0])
+
+    # Database size
+    cursor.execute("SELECT page_count * page_size FROM pragma_page_count(), pragma_page_size()")
+    db_size_bytes.set(cursor.fetchone()[0])
+
+    conn.close()
+
+if __name__ == '__main__':
+    start_http_server(9100)
+    while True:
+        collect_metrics()
+        time.sleep(60)
+EOF
+
+# Run exporter
+python /opt/aipm/prometheus_exporter.py &
+```
+
+**Step 2: Configure Prometheus**
+```yaml
+# prometheus.yml
+scrape_configs:
+  - job_name: 'aipm'
+    static_configs:
+      - targets: ['localhost:9100']
+    scrape_interval: 60s
+```
+
+**Step 3: Create Grafana Dashboard**
+```json
+{
+  "dashboard": {
+    "title": "APM (Agent Project Manager) Monitoring",
+    "panels": [
+      {
+        "title": "Work Items by Status",
+        "targets": [
+          {
+            "expr": "aipm_work_items_total"
+          }
+        ]
+      },
+      {
+        "title": "Database Size",
+        "targets": [
+          {
+            "expr": "aipm_db_size_bytes"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Alerting Rules
+
+**Critical Alerts:**
+```yaml
+# Database size alert
+- alert: DatabaseSizeCritical
+  expr: aipm_db_size_bytes > 1073741824  # 1GB
+  for: 5m
+  annotations:
+    summary: "AIPM database size exceeds 1GB"
+
+# Database connection failure
+- alert: DatabaseConnectionFailure
+  expr: up{job="aipm"} == 0
+  for: 2m
+  annotations:
+    summary: "AIPM database connection failure"
+```
+
+**Warning Alerts:**
+```yaml
+# High work item count
+- alert: HighWorkItemCount
+  expr: aipm_work_items_total > 10000
+  for: 10m
+  annotations:
+    summary: "AIPM has over 10,000 work items"
+
+# Stale agents (not used in 30 days)
+- alert: StaleAgents
+  expr: time() - aipm_agent_last_used_seconds > 2592000
+  annotations:
+    summary: "AIPM has agents not used in 30 days"
+```
+
+### Log Monitoring
+
+**Log Locations:**
+```bash
+# CLI logs (stderr)
+# Web logs (if enabled)
+/var/log/aipm/web.log
+/var/log/aipm/error.log
+
+# Database logs (if enabled)
+.aipm/logs/database.log
+```
+
+**Log Aggregation (Example - ELK Stack):**
+```bash
+# Install filebeat
+sudo apt-get install filebeat
+
+# Configure filebeat
+cat > /etc/filebeat/filebeat.yml << EOF
+filebeat.inputs:
+- type: log
+  enabled: true
+  paths:
+    - /var/log/aipm/*.log
+
+output.elasticsearch:
+  hosts: ["localhost:9200"]
+EOF
+
+# Start filebeat
+sudo service filebeat start
+```
+
+---
+
+## Troubleshooting Guide
+
+### Common Issues and Solutions
+
+#### Issue 1: "Database is locked" Error
+
+**Symptoms:**
+```
+sqlite3.OperationalError: database is locked
+```
+
+**Cause:** Multiple processes trying to write to database simultaneously
+
+**Solution:**
+```bash
+# Check for hung processes
+lsof | grep aipm.db
+
+# Kill hung processes (if safe)
+kill -9 <PID>
+
+# Verify database integrity
+sqlite3 .aipm/data/aipm.db "PRAGMA integrity_check;"
+
+# If corrupted, restore from backup
+cp .aipm/data/aipm.db.backup .aipm/data/aipm.db
+```
+
+#### Issue 2: "Migration failed" Error
+
+**Symptoms:**
+```
+Migration 0042 failed: <error message>
+```
+
+**Cause:** Database schema inconsistency or migration script error
+
+**Solution:**
+```bash
+# Check current migration version
+sqlite3 .aipm/data/aipm.db "SELECT version FROM schema_version;"
+
+# Backup database
+cp .aipm/data/aipm.db .aipm/data/aipm.db.pre-migration
+
+# Attempt manual migration
+apm migrate --to-version=<target>
+
+# If failure persists, restore backup and contact support
+cp .aipm/data/aipm.db.pre-migration .aipm/data/aipm.db
+```
+
+#### Issue 3: "Agent generation failed" Error
+
+**Symptoms:**
+```
+AgentGenerationError: Failed to generate agents
+```
+
+**Cause:** Missing templates or database connectivity issues
+
+**Solution:**
+```bash
+# Verify template directory
+ls -la agentpm/core/agents/templates/
+
+# Check database connectivity
+sqlite3 .aipm/data/aipm.db ".tables"
+
+# Regenerate agents with mock mode
+apm agents generate --all --llm=mock
+
+# If Claude mode failing, check API credentials
+echo $ANTHROPIC_API_KEY
+```
+
+#### Issue 4: "Context assembly timeout" Error
+
+**Symptoms:**
+```
+TimeoutError: Context assembly exceeded 200ms SLA
+```
+
+**Cause:** Large project with many plugins or slow database queries
+
+**Solution:**
+```bash
+# Check database size
+ls -lh .aipm/data/aipm.db
+
+# Optimize database
+sqlite3 .aipm/data/aipm.db "VACUUM;"
+sqlite3 .aipm/data/aipm.db "ANALYZE;"
+
+# Reduce plugin count (if applicable)
+apm plugins list
+apm plugins disable <plugin-name>
+
+# Refresh context with reduced scope
+apm context refresh --work-item-id=<id>
+```
+
+#### Issue 5: "Web dashboard not loading" Error
+
+**Symptoms:**
+```
+502 Bad Gateway / Connection refused
+```
+
+**Cause:** Web server not running or database connectivity issues
+
+**Solution:**
+```bash
+# Check if web server running
+ps aux | grep gunicorn
+
+# Check database access
+sqlite3 .aipm/data/aipm.db ".tables"
+
+# Restart web server
+pkill gunicorn
+gunicorn -w 4 -b 0.0.0.0:5000 agentpm.web.app:app
+
+# Check logs
+tail -f /var/log/aipm/web.log
+```
+
+#### Issue 6: "Security validation failed" Error
+
+**Symptoms:**
+```
+SecurityError: Path traversal attempt detected
+```
+
+**Cause:** Invalid file path or security rule violation
+
+**Solution:**
+```bash
+# Verify file path is within project boundaries
+pwd
+ls -la <file-path>
+
+# Check security rules
+apm rules list --category=security
+
+# Use absolute paths (not relative)
+apm document add /full/path/to/file.md --entity-type=WORK_ITEM --entity-id=1
+```
+
+### Performance Troubleshooting
+
+**Slow CLI Commands:**
+```bash
+# Profile command execution
+time apm work-item list
+
+# Check database size and optimize
+ls -lh .aipm/data/aipm.db
+sqlite3 .aipm/data/aipm.db "VACUUM;"
+
+# Check for missing indexes
+sqlite3 .aipm/data/aipm.db "SELECT * FROM sqlite_master WHERE type='index';"
+
+# Rebuild indexes if needed
+sqlite3 .aipm/data/aipm.db "REINDEX;"
+```
+
+**High Memory Usage:**
+```bash
+# Check memory usage
+ps aux | grep apm
+
+# Limit context assembly scope
+apm context show --work-item-id=<id> --minimal
+
+# Reduce plugin activation
+apm plugins disable <plugin-name>
+```
+
+### Diagnostic Commands
+
+```bash
+# System diagnostics
+apm status --verbose
+
+# Database diagnostics
+sqlite3 .aipm/data/aipm.db << EOF
+PRAGMA integrity_check;
+PRAGMA foreign_key_check;
+SELECT COUNT(*) FROM work_items;
+SELECT COUNT(*) FROM tasks;
+SELECT COUNT(*) FROM agents;
+EOF
+
+# Web diagnostics (if enabled)
+curl -v http://localhost:5000/health
+curl http://localhost:5000/system/database
+```
+
+---
+
+## Backup and Recovery
+
+### Backup Procedures
+
+**Daily Backups (Automated):**
+```bash
+# Create backup script
+cat > /opt/aipm/backup.sh << 'EOF'
+#!/bin/bash
+BACKUP_DIR="/backups/aipm"
+PROJECT_DIR="/path/to/project"
+DATE=$(date +%Y%m%d_%H%M%S)
+
+# Create backup directory
+mkdir -p $BACKUP_DIR
+
+# Backup database
+cp $PROJECT_DIR/.aipm/data/aipm.db $BACKUP_DIR/aipm_$DATE.db
+
+# Backup agent files
+tar czf $BACKUP_DIR/agents_$DATE.tar.gz $PROJECT_DIR/.claude/agents/
+
+# Cleanup old backups (keep 30 days)
+find $BACKUP_DIR -name "aipm_*.db" -mtime +30 -delete
+find $BACKUP_DIR -name "agents_*.tar.gz" -mtime +30 -delete
+
+echo "Backup completed: $DATE"
+EOF
+
+# Make executable
+chmod +x /opt/aipm/backup.sh
+
+# Add to crontab (daily at 2 AM)
+crontab -e
+0 2 * * * /opt/aipm/backup.sh
+```
+
+**Manual Backup:**
+```bash
+# Backup database
+cp .aipm/data/aipm.db .aipm/data/aipm.db.backup-$(date +%Y%m%d)
+
+# Backup agent files
+tar czf aipm-agents-backup-$(date +%Y%m%d).tar.gz .claude/agents/
+
+# Backup entire .aipm directory
+tar czf aipm-full-backup-$(date +%Y%m%d).tar.gz .aipm/
+```
+
+### Recovery Procedures
+
+**Database Recovery:**
+```bash
+# Stop all AIPM processes
+pkill -9 apm
+pkill -9 gunicorn
+
+# Restore database from backup
+cp /backups/aipm/aipm_20251021_020000.db .aipm/data/aipm.db
+
+# Verify database integrity
+sqlite3 .aipm/data/aipm.db "PRAGMA integrity_check;"
+
+# Verify migration version
+sqlite3 .aipm/data/aipm.db "SELECT version FROM schema_version;"
+
+# Resume operations
+apm status
+```
+
+**Agent Files Recovery:**
+```bash
+# Extract agent backup
+tar xzf /backups/aipm/agents_20251021_020000.tar.gz -C .
+
+# Verify agents
+apm agents list
+
+# Regenerate if needed
+apm agents generate --all --force
+```
+
+**Disaster Recovery (Full Restore):**
+```bash
+# 1. Stop all processes
+pkill -9 apm
+pkill -9 gunicorn
+
+# 2. Remove corrupted data
+rm -rf .aipm/
+
+# 3. Restore from backup
+tar xzf /backups/aipm/aipm-full-backup-20251021.tar.gz
+
+# 4. Verify restoration
+apm status
+sqlite3 .aipm/data/aipm.db "PRAGMA integrity_check;"
+
+# 5. Resume operations
+apm work-item list
+```
+
+### Backup Verification
+
+**Monthly Verification:**
+```bash
+# Test restore procedure
+mkdir /tmp/aipm-restore-test
+cd /tmp/aipm-restore-test
+
+# Restore backup
+cp /backups/aipm/aipm_latest.db .aipm/data/aipm.db
+
+# Verify database
+sqlite3 .aipm/data/aipm.db << EOF
+PRAGMA integrity_check;
+SELECT COUNT(*) FROM work_items;
+SELECT COUNT(*) FROM tasks;
+EOF
+
+# Cleanup
+rm -rf /tmp/aipm-restore-test
+```
+
+---
+
+## Performance Tuning
+
+### Database Optimization
+
+**Vacuum Database (Monthly):**
+```bash
+# Compact database and rebuild indexes
+sqlite3 .aipm/data/aipm.db "VACUUM;"
+
+# Update statistics
+sqlite3 .aipm/data/aipm.db "ANALYZE;"
+
+# Verify improvement
+ls -lh .aipm/data/aipm.db
+```
+
+**Index Optimization:**
+```bash
+# Check for missing indexes
+sqlite3 .aipm/data/aipm.db << EOF
+.indexes work_items
+.indexes tasks
+.indexes agents
+EOF
+
+# Rebuild indexes
+sqlite3 .aipm/data/aipm.db "REINDEX;"
+```
+
+**Query Performance:**
+```bash
+# Enable query profiling
+sqlite3 .aipm/data/aipm.db << EOF
+PRAGMA query_only = ON;
+EXPLAIN QUERY PLAN SELECT * FROM work_items WHERE status='ACTIVE';
+EOF
+```
+
+### Application Tuning
+
+**CLI Performance:**
+```bash
+# Enable lazy loading (default)
+export AIPM_LAZY_LOAD=1
+
+# Reduce context assembly scope
+apm context show --work-item-id=<id> --minimal
+
+# Disable unused plugins
+apm plugins disable <unused-plugin>
+```
+
+**Web Performance (if enabled):**
+```bash
+# Increase worker count
+gunicorn -w 8 -b 0.0.0.0:5000 agentpm.web.app:app
+
+# Enable caching
+export FLASK_CACHE_TYPE=simple
+export FLASK_CACHE_DEFAULT_TIMEOUT=300
+
+# Optimize database connection pooling
+export AIPM_DB_POOL_SIZE=10
+```
+
+### System Resource Tuning
+
+**Memory Optimization:**
+```bash
+# Limit Python memory usage (if needed)
+ulimit -v 2097152  # 2GB limit
+
+# Monitor memory usage
+watch -n 5 'ps aux | grep apm | awk "{print \$6}"'
+```
+
+**Disk I/O Optimization:**
+```bash
+# Use tmpfs for temporary files (if available)
+mkdir -p /tmp/aipm-cache
+export AIPM_CACHE_DIR=/tmp/aipm-cache
+
+# Enable SQLite Write-Ahead Logging (WAL)
+sqlite3 .aipm/data/aipm.db "PRAGMA journal_mode=WAL;"
+```
+
+---
+
+## Security Checklist
+
+### Pre-Production Security Review
+
+**Step 1: Validate Security Controls**
+```bash
+# Check security system status
+apm rules list --category=security
+
+# Verify input validation
+apm work-item create "../../../etc/passwd" --type=FEATURE
+# Expected: SecurityError (path traversal blocked)
+
+# Verify command injection prevention
+apm task create "Test; rm -rf /" --work-item-id=1
+# Expected: SecurityError (dangerous pattern blocked)
+
+# Verify output sanitization
+apm work-item show 1
+# Expected: No passwords/tokens in output
+```
+
+**Step 2: Database Security**
+```bash
+# Verify parameterized queries
+grep -r "f\"SELECT" agentpm/
+# Expected: No f-string SQL queries
+
+# Check for shell=True usage
+grep -r "shell=True" agentpm/
+# Expected: No subprocess calls with shell=True
+
+# Verify file permissions
+ls -la .aipm/data/aipm.db
+# Expected: -rw------- (600)
+```
+
+**Step 3: Web Security (if enabled)**
+```bash
+# Enable CSRF protection
+# Uncomment in agentpm/web/app.py:
+# csrf = CSRFProtect(app)
+
+# Generate strong SECRET_KEY
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+
+# Configure HTTPS (see deployment section)
+```
+
+**Step 4: Access Control**
+```bash
+# Verify file permissions
+chmod 700 .aipm/
+chmod 600 .aipm/data/aipm.db
+
+# Verify no hardcoded secrets
+grep -r "password\|secret\|key" agentpm/ | grep -v "# "
+```
+
+### Ongoing Security Maintenance
+
+**Weekly:**
+- Review security logs
+- Check for failed validation attempts
+- Monitor unusual database activity
+
+**Monthly:**
+- Update dependencies (`pip list --outdated`)
+- Review security audit logs
+- Test security controls
+
+**Quarterly:**
+- Full security assessment
+- Penetration testing (optional)
+- Third-party security review (optional)
+
+---
+
+## Incident Response
+
+### Incident Classification
+
+**P0 - Critical (Resolve within 1 hour):**
+- Database corruption
+- Data loss
+- Security breach
+
+**P1 - High (Resolve within 4 hours):**
+- Database locked
+- Migration failure
+- Web dashboard down
+
+**P2 - Medium (Resolve within 24 hours):**
+- Performance degradation
+- Agent generation failure
+
+**P3 - Low (Resolve within 1 week):**
+- Minor bugs
+- Documentation issues
+
+### Incident Response Procedures
+
+**Step 1: Assess Severity**
+```bash
+# Check system status
+apm status
+
+# Check database integrity
+sqlite3 .aipm/data/aipm.db "PRAGMA integrity_check;"
+
+# Check recent errors
+tail -100 /var/log/aipm/error.log
+```
+
+**Step 2: Contain Issue**
+```bash
+# Stop affected services
+pkill gunicorn  # If web interface affected
+
+# Prevent data loss
+cp .aipm/data/aipm.db .aipm/data/aipm.db.incident-$(date +%Y%m%d_%H%M%S)
+```
+
+**Step 3: Diagnose Root Cause**
+```bash
+# Review logs
+journalctl -u aipm -n 500
+
+# Check system resources
+df -h
+free -h
+top -bn1
+
+# Run diagnostics
+apm status --verbose
+```
+
+**Step 4: Implement Fix**
+```bash
+# Apply fix (example: restore from backup)
+cp /backups/aipm/aipm_latest.db .aipm/data/aipm.db
+
+# Verify fix
+apm status
+sqlite3 .aipm/data/aipm.db "PRAGMA integrity_check;"
+```
+
+**Step 5: Post-Incident Review**
+```
+# Document incident
+- Date/time of incident
+- Severity classification
+- Root cause analysis
+- Resolution steps
+- Preventive measures
+
+# Update runbook with lessons learned
+```
+
+### Emergency Contacts
+
+```
+Security Team: security@yourcompany.com
+DevOps Team: devops@yourcompany.com
+Database Admin: dba@yourcompany.com
+AIPM Developers: aipm-dev@yourcompany.com
+```
+
+---
+
+## Appendix
+
+### Quick Reference Commands
+
+```bash
+# Status & Health
+apm status
+apm agents list
+apm rules list
+
+# Backup
+cp .aipm/data/aipm.db .aipm/data/aipm.db.backup
+
+# Database Maintenance
+sqlite3 .aipm/data/aipm.db "VACUUM; ANALYZE;"
+
+# Logs
+tail -f /var/log/aipm/web.log
+journalctl -u aipm -f
+
+# Performance
+time apm work-item list
+ls -lh .aipm/data/aipm.db
+```
+
+### Configuration Files
+
+```
+.aipm/config.json           # AIPM configuration
+.aipm/data/aipm.db          # SQLite database
+.claude/agents/             # Agent SOP files
+.env                        # Environment variables (production)
+/var/log/aipm/              # Log files (production)
+/backups/aipm/              # Backup directory
+```
+
+---
+
+**Document Version:** 1.0
+**Last Updated:** 2025-10-21
+**Next Review:** Quarterly (2026-01-21)
+**Maintained By:** APM (Agent Project Manager) Operations Team

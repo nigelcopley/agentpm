@@ -1,0 +1,287 @@
+"""
+Ignore patterns utility for respecting .gitignore, .aipmignore, and other ignore files
+
+Ported from AIPM V1 with V2-specific enhancements.
+
+Pattern: Gitignore-compatible pattern matching with wildcards and negation support
+"""
+
+import re
+from pathlib import Path
+from typing import List, Dict
+
+
+class IgnorePatternMatcher:
+    """
+    Handles ignore pattern matching for files and directories.
+
+    Respects:
+    - .gitignore patterns
+    - .aipmignore custom patterns (AIPM-specific exclusions)
+    - Default patterns (venv, node_modules, .git, etc.)
+
+    Supports gitignore wildcards:
+    - `*` matches any characters except /
+    - `**` matches any number of directories
+    - `?` matches any single character except /
+    - `!pattern` for negation (TODO: full negation support)
+
+    Example:
+        matcher = IgnorePatternMatcher(project_root)
+        if matcher.should_ignore(file_path):
+            continue  # Skip this file
+    """
+
+    def __init__(self, project_root: Path):
+        """
+        Initialize matcher with project root.
+
+        Args:
+            project_root: Path to project root directory
+        """
+        self.project_root = project_root
+        self.ignore_patterns: Dict[str, List[str]] = {}
+        self.compiled_patterns: Dict[str, List[re.Pattern]] = {}
+        self._load_ignore_files()
+
+    def _load_ignore_files(self) -> None:
+        """Load patterns from various ignore files"""
+        ignore_files = {
+            ".gitignore": self._load_gitignore(),
+            ".aipmignore": self._load_aipmignore(),
+            "default": self._get_default_patterns()
+        }
+
+        for ignore_type, patterns in ignore_files.items():
+            if patterns:
+                self.ignore_patterns[ignore_type] = patterns
+                self.compiled_patterns[ignore_type] = [
+                    self._compile_pattern(pattern) for pattern in patterns
+                ]
+
+    def _load_gitignore(self) -> List[str]:
+        """
+        Load patterns from .gitignore.
+
+        Returns:
+            List of gitignore patterns (empty if file doesn't exist)
+        """
+        gitignore_path = self.project_root / ".gitignore"
+        if not gitignore_path.exists():
+            return []
+
+        patterns = []
+        try:
+            with open(gitignore_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    # Skip empty lines and comments
+                    if line and not line.startswith('#'):
+                        patterns.append(line)
+        except Exception:
+            # If we can't read .gitignore, just skip it
+            pass
+
+        return patterns
+
+    def _load_aipmignore(self) -> List[str]:
+        """
+        Load patterns from .aipmignore (AIPM-specific ignore file).
+
+        Use .aipmignore for AIPM-specific exclusions that shouldn't be in .gitignore.
+        For example: test fixtures, example projects, documentation code samples.
+
+        Returns:
+            List of aipmignore patterns (empty if file doesn't exist)
+        """
+        aipmignore_path = self.project_root / ".aipmignore"
+        if not aipmignore_path.exists():
+            return []
+
+        patterns = []
+        try:
+            with open(aipmignore_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    # Skip empty lines and comments
+                    if line and not line.startswith('#'):
+                        patterns.append(line)
+        except Exception:
+            # If we can't read .aipmignore, just skip it
+            pass
+
+        return patterns
+
+    def _get_default_patterns(self) -> List[str]:
+        """
+        Get default ignore patterns for common artifacts.
+
+        These patterns are always applied, even without .gitignore.
+        Covers version control, dependencies, build outputs, IDE files, etc.
+
+        Returns:
+            List of default patterns
+        """
+        return [
+            # Version control
+            ".git/",
+            ".svn/",
+            ".hg/",
+
+            # Dependencies and packages
+            "node_modules/",
+            "bower_components/",
+            "__pycache__/",
+            "*.pyc",
+            "*.pyo",
+            "*.pyd",
+            ".Python",
+            "pip-log.txt",
+            "pip-delete-this-directory.txt",
+            ".tox/",
+            ".coverage",
+            ".pytest_cache/",
+            "venv/",
+            "env/",
+            ".venv/",
+            ".env/",
+            "ENV/",
+            "env.bak/",
+            "venv.bak/",
+
+            # IDE and editor files
+            ".vscode/",
+            ".idea/",
+            "*.swp",
+            "*.swo",
+            "*~",
+            ".DS_Store",
+            "Thumbs.db",
+
+            # Build artifacts
+            "dist/",
+            "build/",
+            "*.egg-info/",
+            ".eggs/",
+            "target/",
+            "out/",
+            "bin/",
+            "obj/",
+
+            # Logs and temporary files
+            "*.log",
+            "logs/",
+            "*.tmp",
+            "*.temp",
+            ".cache/",
+            ".tmp/",
+
+            # Database files (usually not part of source)
+            "*.db",
+            "*.sqlite",
+            "*.sqlite3",
+
+            # Archives
+            "*.zip",
+            "*.tar.gz",
+            "*.rar",
+            "*.7z",
+
+            # AIPM artifacts (don't analyze our own generated content)
+            ".aipm/",
+        ]
+
+    def _compile_pattern(self, pattern: str) -> re.Pattern:
+        """
+        Compile a gitignore-style pattern to regex.
+
+        Handles wildcards:
+        - `**` → matches any number of directories
+        - `*` → matches any characters except /
+        - `?` → matches any single character except /
+
+        Args:
+            pattern: Gitignore-style pattern
+
+        Returns:
+            Compiled regex pattern
+        """
+        # Handle negation patterns (starting with !)
+        if pattern.startswith('!'):
+            # TODO: Implement gitignore-style negation pattern support with proper inclusion logic
+            pattern = pattern[1:]
+
+        # Escape special regex characters except * and ?
+        escaped = re.escape(pattern)
+
+        # Convert gitignore wildcards to regex
+        escaped = escaped.replace(r'\*\*', '.*')  # ** matches any number of directories
+        escaped = escaped.replace(r'\*', '[^/]*')  # * matches any characters except /
+        escaped = escaped.replace(r'\?', '[^/]')   # ? matches any single character except /
+
+        # Handle directory patterns (ending with /)
+        if pattern.endswith('/'):
+            escaped = escaped[:-1] + r'(/.*)?$'  # Remove escaped / and add directory match
+        else:
+            escaped = escaped + r'(/.*)?$'  # Match file or directory and its contents
+
+        # Ensure pattern matches from start of relative path
+        if not escaped.startswith('.*'):
+            escaped = r'(^|.*/?)' + escaped
+
+        try:
+            return re.compile(escaped, re.IGNORECASE)
+        except re.error:
+            # If pattern compilation fails, create a pattern that never matches
+            return re.compile(r'(?!.*)')
+
+    def should_ignore(self, path: Path) -> bool:
+        """
+        Check if a path should be ignored based on loaded patterns.
+
+        Args:
+            path: Path to check (can be absolute or relative)
+
+        Returns:
+            True if path should be ignored, False otherwise
+        """
+        # Get relative path from project root
+        try:
+            rel_path = path.relative_to(self.project_root)
+            rel_path_str = str(rel_path).replace('\\', '/')  # Normalize path separators
+        except ValueError:
+            # Path is not under project root
+            return True
+
+        # Check against all pattern types
+        for ignore_type, compiled_patterns in self.compiled_patterns.items():
+            for pattern in compiled_patterns:
+                if pattern.match(rel_path_str):
+                    return True
+
+        return False
+
+    def filter_paths(self, paths: List[Path]) -> List[Path]:
+        """
+        Filter a list of paths, removing ignored ones.
+
+        Args:
+            paths: List of paths to filter
+
+        Returns:
+            Filtered list with ignored paths removed
+        """
+        return [path for path in paths if not self.should_ignore(path)]
+
+    def get_ignored_summary(self) -> Dict[str, int]:
+        """
+        Get summary of ignore patterns loaded.
+
+        Returns:
+            Dictionary mapping ignore type to pattern count
+            Example: {".gitignore": 45, ".aipmignore": 3, "default": 52}
+        """
+        return {
+            ignore_type: len(patterns)
+            for ignore_type, patterns in self.ignore_patterns.items()
+        }

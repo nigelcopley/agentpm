@@ -1,0 +1,33 @@
+{
+  "work_item_id": 101,
+  "name": "Implement filter caching layer",
+  "description": "Add Redis-backed caching for compound search filters.",
+  "type": "implementation",
+  "status": "proposed",
+  "priority": 2,
+  "effort_hours": 4.0,
+  "assigned_to": "python-implementation",
+  "quality_metadata": {
+    "acceptance_criteria": [
+      {
+        "criterion": "Cache reduces DB load by at least 30%.",
+        "met": false
+      },
+      {
+        "criterion": "Cache invalidation occurs within 60s of data change.",
+        "met": false
+      },
+      {
+        "criterion": "Telemetry emits cache hit ratio metrics.",
+        "met": false
+      }
+    ],
+    "test_plan": "Unit tests for cache helpers, integration tests for API, load test replay.",
+    "risks": [
+      {
+        "description": "Redis eviction policy may flush hot keys.",
+        "mitigation": "Adjust TTL and monitor eviction metrics."
+      }
+    ]
+  }
+}

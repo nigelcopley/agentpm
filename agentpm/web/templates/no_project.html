@@ -1,0 +1,29 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}No Project - APM (Agent Project Manager){% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center">
+    <div class="max-w-md w-full text-center">
+        <div class="mb-8">
+            <i class="bi bi-folder-x text-6xl text-gray-300 mb-4"></i>
+            <h1 class="text-2xl font-bold text-gray-900 mb-2">No Project Found</h1>
+            <p class="text-gray-600">No AIPM project has been initialized yet.</p>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Get Started</h2>
+            <p class="text-gray-600 mb-4">Initialize an AIPM project to start managing your work items, tasks, and ideas.</p>
+            
+            <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                <h3 class="font-medium text-gray-900 mb-2">Run this command:</h3>
+                <code class="text-sm bg-gray-800 text-green-400 p-2 rounded block">apm init</code>
+            </div>
+            
+            <p class="text-sm text-gray-500">
+                This will create a new AIPM project in the current directory.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

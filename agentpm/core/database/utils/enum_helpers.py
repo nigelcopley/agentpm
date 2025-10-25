@@ -1,0 +1,283 @@
+"""
+Enum Helper Utilities - Cross-Cutting Enum Operations
+
+Provides utilities for working with multiple enums, migration generation,
+and schema validation. Individual enum operations (choices, from_string, labels)
+are methods on the enum classes themselves.
+
+Pattern: Cross-cutting concerns that work with multiple enums or generate artifacts
+"""
+
+from typing import Type, Optional
+from enum import Enum
+import sqlite3
+
+
+def generate_check_constraint(enum_class: Type[Enum], field_name: str) -> str:
+    """
+    Generate SQL CHECK constraint from Pydantic enum.
+
+    Ensures database constraints match enum definitions automatically.
+    Use in migrations to keep SQL and Python enums in sync.
+
+    Args:
+        enum_class: Pydantic enum class (e.g., WorkItemType)
+        field_name: Database field name (e.g., 'type', 'status')
+
+    Returns:
+        SQL CHECK constraint string
+
+    Example:
+        >>> from agentpm.core.database.enums import WorkItemType
+        >>> constraint = generate_check_constraint(WorkItemType, 'type')
+        >>> print(constraint)
+        "CHECK(type IN ('feature', 'enhancement', 'bugfix', ...))"
+    """
+    if not hasattr(enum_class, 'choices'):
+        # Fallback for enums without .choices() method
+        values = [f"'{item.value}'" for item in enum_class]
+    else:
+        values = [f"'{value}'" for value in enum_class.choices()]
+
+    values_str = ", ".join(values)
+    return f"CHECK({field_name} IN ({values_str}))"
+
+
+def validate_enum_constraint_sync(
+    conn: sqlite3.Connection,
+    table: str,
+    field: str,
+    enum_class: Type[Enum]
+) -> tuple[bool, list[str]]:
+    """
+    Validate that database CHECK constraint matches enum values.
+
+    Detects drift between Python enums and SQL constraints.
+
+    Args:
+        conn: Database connection
+        table: Table name
+        field: Field name with CHECK constraint
+        enum_class: Corresponding enum class
+
+    Returns:
+        Tuple of (is_synced, list_of_differences)
+
+    Example:
+        >>> conn = sqlite3.connect('aipm.db')
+        >>> synced, diffs = validate_enum_constraint_sync(
+        ...     conn, 'work_items', 'type', WorkItemType
+        ... )
+        >>> if not synced:
+        ...     print(f"Drift detected: {diffs}")
+    """
+    # Get table schema
+    cursor = conn.execute(f"SELECT sql FROM sqlite_master WHERE type='table' AND name=?", (table,))
+    schema = cursor.fetchone()
+
+    if not schema:
+        return False, [f"Table '{table}' not found"]
+
+    schema_sql = schema[0]
+
+    # Extract CHECK constraint values for the field
+    # Pattern: field_name TEXT CHECK(field_name IN ('val1', 'val2', ...))
+    # Also handle nullable: CHECK(field IS NULL OR field IN ('val1', 'val2', ...))
+    import re
+    pattern = rf"{field}\s+[^C]*CHECK\s*\(\s*{field}\s+IN\s*\(\s*([^)]+)\s*\)"
+    nullable_pattern = rf"{field}\s+[^C]*CHECK\s*\(\s*{field}\s+IS\s+NULL\s+OR\s+{field}\s+IN\s*\(\s*([^)]+)\s*\)"
+    
+    match = re.search(pattern, schema_sql, re.IGNORECASE)
+    if not match:
+        match = re.search(nullable_pattern, schema_sql, re.IGNORECASE)
+    
+    if not match:
+        return False, [f"No CHECK constraint found for {table}.{field}"]
+
+    # Parse SQL constraint values
+    sql_values_str = match.group(1)
+    sql_values = {v.strip().strip("'\"") for v in sql_values_str.split(',')}
+
+    # Get enum values
+    enum_values = set(enum_class.choices())
+
+    # Compare
+    missing_in_sql = enum_values - sql_values
+    extra_in_sql = sql_values - enum_values
+
+    differences = []
+    if missing_in_sql:
+        differences.append(f"Missing in SQL: {missing_in_sql}")
+    if extra_in_sql:
+        differences.append(f"Extra in SQL: {extra_in_sql}")
+
+    is_synced = len(differences) == 0
+    return is_synced, differences
+
+
+def get_enum_for_table_field(table: str, field: str) -> Optional[Type[Enum]]:
+    """
+    Map database table.field to corresponding enum class.
+
+    Centralized mapping for schema validation and migration generation.
+
+    Args:
+        table: Table name
+        field: Field name
+
+    Returns:
+        Enum class or None if no enum exists for this field
+
+    Example:
+        >>> enum = get_enum_for_table_field('work_items', 'type')
+        >>> print(enum.__name__)
+        'WorkItemType'
+    """
+    from agentpm.core.database.enums import (
+        WorkItemType, WorkItemStatus,
+        TaskType, TaskStatus,
+        ProjectStatus,
+        IdeaStatus, IdeaSource,
+        EntityType, ContextType,
+        DocumentType, DocumentFormat,
+        EnforcementLevel,
+        Phase,
+        ConfidenceBand,
+        SourceType,
+        EventType,
+        AgentTier
+    )
+
+    # Mapping of (table, field) → enum class
+    ENUM_MAPPING = {
+        # Work Items
+        ('work_items', 'type'): WorkItemType,
+        ('work_items', 'status'): WorkItemStatus,
+        ('work_items', 'phase'): Phase,
+
+        # Tasks
+        ('tasks', 'type'): TaskType,
+        ('tasks', 'status'): TaskStatus,
+
+        # Projects
+        ('projects', 'status'): ProjectStatus,
+
+        # Ideas
+        ('ideas', 'status'): IdeaStatus,
+        ('ideas', 'source'): IdeaSource,
+
+        # Contexts
+        ('contexts', 'entity_type'): EntityType,
+        ('contexts', 'context_type'): ContextType,
+        ('contexts', 'confidence_band'): ConfidenceBand,
+
+        # Document References
+        ('document_references', 'entity_type'): EntityType,
+        ('document_references', 'document_type'): DocumentType,
+        ('document_references', 'format'): DocumentFormat,
+
+        # Evidence Sources
+        ('evidence_sources', 'entity_type'): EntityType,
+        ('evidence_sources', 'source_type'): SourceType,
+
+        # Rules
+        ('rules', 'enforcement_level'): EnforcementLevel,
+
+        # Events
+        ('events', 'event_type'): EventType,
+
+        # Agents
+        ('agents', 'tier'): AgentTier,
+
+        # Dependencies
+        ('task_dependencies', 'dependency_type'): None,  # Inline enum, not separate class
+        ('work_item_dependencies', 'dependency_type'): None,
+    }
+
+    return ENUM_MAPPING.get((table, field))
+
+
+def validate_all_enum_constraints(conn: sqlite3.Connection) -> dict[str, list[str]]:
+    """
+    Validate all enum CHECK constraints in database.
+
+    Scans all table.field mappings and checks for enum/constraint drift.
+
+    Args:
+        conn: Database connection
+
+    Returns:
+        Dictionary of {table.field: [differences]} for mismatched constraints
+
+    Example:
+        >>> conn = sqlite3.connect('aipm.db')
+        >>> issues = validate_all_enum_constraints(conn)
+        >>> if issues:
+        ...     print(f"Found {len(issues)} mismatches")
+        ...     for location, diffs in issues.items():
+        ...         print(f"{location}: {diffs}")
+    """
+    # Get all enum mappings
+    from agentpm.core.database.enums import types as enum_types_module
+
+    issues = {}
+
+    # Check each mapped field
+    for (table, field), enum_class in get_all_table_field_enum_mappings().items():
+        if enum_class is None:
+            continue  # Skip inline enums
+
+        is_synced, differences = validate_enum_constraint_sync(conn, table, field, enum_class)
+
+        if not is_synced:
+            issues[f"{table}.{field}"] = differences
+
+    return issues
+
+
+def get_all_table_field_enum_mappings() -> dict[tuple[str, str], Optional[Type[Enum]]]:
+    """
+    Get complete mapping of all table.field → enum class relationships.
+
+    Used by schema validators and migration generators.
+
+    Returns:
+        Dictionary mapping (table, field) tuples to enum classes
+    """
+    # Reuse the mapping from get_enum_for_table_field
+    from agentpm.core.database.enums import (
+        WorkItemType, WorkItemStatus,
+        TaskType, TaskStatus,
+        ProjectStatus,
+        IdeaStatus, IdeaSource,
+        EntityType, ContextType,
+        DocumentType, DocumentFormat,
+        EnforcementLevel,
+        Phase,
+        ConfidenceBand,
+        SourceType,
+        EventType,
+        AgentTier
+    )
+
+    return {
+        ('work_items', 'type'): WorkItemType,
+        ('work_items', 'status'): WorkItemStatus,
+        ('work_items', 'phase'): Phase,
+        ('tasks', 'type'): TaskType,
+        ('tasks', 'status'): TaskStatus,
+        ('projects', 'status'): ProjectStatus,
+        ('ideas', 'status'): IdeaStatus,
+        ('ideas', 'source'): IdeaSource,
+        ('contexts', 'entity_type'): EntityType,
+        ('contexts', 'context_type'): ContextType,
+        ('contexts', 'confidence_band'): ConfidenceBand,
+        ('document_references', 'entity_type'): EntityType,
+        ('document_references', 'document_type'): DocumentType,
+        ('document_references', 'format'): DocumentFormat,
+        ('evidence_sources', 'entity_type'): EntityType,
+        ('evidence_sources', 'source_type'): SourceType,
+        ('rules', 'enforcement_level'): EnforcementLevel,
+        ('events', 'event_type'): EventType,
+        ('agents', 'tier'): AgentTier,
+    }

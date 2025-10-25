@@ -1,0 +1,151 @@
+{% extends "layouts/modern_base.html" %}
+
+{% block title %}Events Audit Log{% endblock %}
+
+{% block content %}
+<section class="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+  <div>
+    <h1 class="text-3xl font-semibold text-gray-900">Events Audit Log</h1>
+    <p class="mt-2 text-sm text-gray-500">Trace workflow transitions, tooling actions, and decisions captured across the platform.</p>
+  </div>
+  <span class="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
+    <i class="bi bi-activity"></i>
+    {{ view.total_events }} recent events
+  </span>
+</section>
+
+{% set workflow = view.category_counts.get('workflow', 0) %}
+{% set errors = view.category_counts.get('error', 0) %}
+{% set decisions = view.category_counts.get('decision', 0) %}
+{% set reasoning = view.category_counts.get('reasoning', 0) %}
+
+<section class="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+  {% for label, value, icon, tone in [
+    ('Workflow', workflow, 'bi-diagram-3', 'text-primary'),
+    ('Errors', errors, 'bi-exclamation-octagon', 'text-rose-600'),
+    ('Decisions', decisions, 'bi-lightbulb', 'text-amber-600'),
+    ('Reasoning', reasoning, 'bi-cpu', 'text-sky-600')
+  ] %}
+  <article class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+    <header class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+      <i class="{{ icon }} {{ tone }}"></i>
+      {{ label }} events
+    </header>
+    <p class="mt-3 text-3xl font-semibold text-gray-900">{{ value }}</p>
+    <p class="text-xs text-gray-500">Last observation window</p>
+  </article>
+  {% endfor %}
+</section>
+
+<section class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+  <header class="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-gray-500">
+    <i class="bi bi-funnel text-primary"></i>
+    Filters
+  </header>
+  <form method="GET" action="/events" class="grid gap-4 md:grid-cols-4">
+    <label class="space-y-2">
+      <span class="text-sm font-medium text-gray-600">Category</span>
+      <select name="category" class="form-select">
+        <option value="">All</option>
+        {% for option in ['workflow','tool_usage','decision','reasoning','error','session_lifecycle'] %}
+        <option value="{{ option }}" {% if view.category_filter == option %}selected{% endif %}>{{ option.replace('_', ' ').title() }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="space-y-2">
+      <span class="text-sm font-medium text-gray-600">Type</span>
+      <input type="text" name="type" value="{{ view.type_filter or '' }}" placeholder="workflow_transition" class="form-input" />
+    </label>
+    <label class="space-y-2">
+      <span class="text-sm font-medium text-gray-600">Severity</span>
+      <select name="severity" class="form-select">
+        <option value="">All</option>
+        {% for option in ['debug','info','warning','error','critical'] %}
+        <option value="{{ option }}" {% if view.severity_filter == option %}selected{% endif %}>{{ option.title() }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="space-y-2">
+      <span class="text-sm font-medium text-gray-600">Limit</span>
+      <select name="limit" class="form-select">
+        {% for option in [50,100,200,500] %}
+        <option value="{{ option }}" {% if request.args.get('limit','100')|int == option %}selected{% endif %}>{{ option }} events</option>
+        {% endfor %}
+      </select>
+    </label>
+    <div class="md:col-span-4 flex items-center gap-3">
+      <button type="submit" class="btn btn-primary">
+        <i class="bi bi-funnel"></i>
+        Apply Filters
+      </button>
+      {% if view.category_filter or view.type_filter or view.severity_filter or request.args.get('limit') %}
+      <a href="/events" class="btn btn-secondary">
+        <i class="bi bi-x-circle"></i>
+        Clear
+      </a>
+      {% endif %}
+    </div>
+  </form>
+</section>
+
+<section class="mt-8 space-y-4">
+  {% if view.events_list %}
+    {% for event in view.events_list %}
+    {% set severity_class = {
+      'critical':'bg-rose-100 text-rose-700',
+      'error':'bg-amber-100 text-amber-700',
+      'warning':'bg-yellow-100 text-yellow-700',
+      'info':'bg-sky-100 text-sky-700',
+      'debug':'bg-gray-100 text-gray-600'
+    }[event.event_severity] if event.event_severity in ['critical','error','warning','info','debug'] else 'bg-gray-100 text-gray-600' %}
+    <article class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+      <header class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">{{ event.timestamp.strftime('%Y-%m-%d %H:%M:%S') if event.timestamp else 'Unknown time' }}</p>
+          <h2 class="text-lg font-semibold text-gray-900">{{ event.event_type.replace('_', ' ').title() }}</h2>
+          <p class="text-xs text-gray-400">Source: {{ event.source or 'Unknown' }}</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <span class="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">{{ event.event_category }}</span>
+          <span class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold {{ severity_class }}">{{ event.event_severity.title() }}</span>
+        </div>
+      </header>
+
+      {% if event.work_item_id or event.task_id %}
+      <div class="mt-4 flex flex-wrap gap-4 text-sm text-gray-600">
+        {% if event.work_item_id %}
+          <a href="/work-items/{{ event.work_item_id }}" class="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600 hover:text-primary">
+            <i class="bi bi-kanban"></i>
+            {{ event.work_item_name or ('WI-' ~ event.work_item_id) }}
+          </a>
+        {% endif %}
+        {% if event.task_id %}
+          <a href="/tasks/{{ event.task_id }}" class="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600 hover:text-primary">
+            <i class="bi bi-check2-square"></i>
+            {{ event.task_name or ('Task #' ~ event.task_id) }}
+          </a>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {% if event.event_data %}
+      <details class="group mt-4 rounded-xl border border-gray-200 bg-gray-50">
+        <summary class="flex cursor-pointer items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-gray-700">
+          <span class="flex items-center gap-2"><i class="bi bi-code-square text-primary"></i> Event Data</span>
+          <i class="bi bi-chevron-down text-gray-400 transition group-open:-rotate-180"></i>
+        </summary>
+        <div class="border-t border-gray-200 bg-gray-900 px-4 py-4 text-xs text-emerald-200">
+          <pre class="max-h-64 overflow-y-auto whitespace-pre-wrap leading-relaxed">{{ event.event_data | tojson(indent=2) }}</pre>
+        </div>
+      </details>
+      {% endif %}
+    </article>
+    {% endfor %}
+  {% else %}
+  <div class="rounded-2xl border border-gray-200 bg-white p-12 text-center text-sm text-gray-500">
+    <i class="bi bi-info-circle text-lg text-gray-400"></i>
+    <p class="mt-2">No events match the current filters. Adjust your filters or check back later.</p>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

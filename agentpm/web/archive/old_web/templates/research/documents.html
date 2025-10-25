@@ -1,0 +1,162 @@
+{% extends "layouts/modern_base.html" %}
+{% from 'macros/breadcrumb.html' import breadcrumb %}
+
+{% block title %}Document References - APM (Agent Project Manager) Dashboard{% endblock %}
+
+{% block content %}
+{{ breadcrumb([
+    {'label': 'Research', 'url': '/research'},
+    {'label': 'Document References', 'url': None}
+]) }}
+
+<!-- Page Header -->
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-5">
+            <i class="bi bi-file-text text-primary"></i> Document References
+        </h1>
+        <p class="lead text-muted">Research documents and references for project context</p>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="card shadow-soft">
+            <div class="card-body">
+                <form method="GET" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="project_id" class="form-label">Project</label>
+                        <select name="project_id" id="project_id" class="form-select">
+                            <option value="">All Projects</option>
+                            {% for project in projects %}
+                            <option value="{{ project.id }}" {% if current_project_id == project.id %}selected{% endif %}>
+                                {{ project.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="document_type" class="form-label">Document Type</label>
+                        <select name="document_type" id="document_type" class="form-select">
+                            <option value="">All Types</option>
+                            <option value="architecture" {% if current_document_type == 'architecture' %}selected{% endif %}>Architecture</option>
+                            <option value="design" {% if current_document_type == 'design' %}selected{% endif %}>Design</option>
+                            <option value="requirements" {% if current_document_type == 'requirements' %}selected{% endif %}>Requirements</option>
+                            <option value="research" {% if current_document_type == 'research' %}selected{% endif %}>Research</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="sort" class="form-label">Sort By</label>
+                        <select name="sort" id="sort" class="form-select">
+                            <option value="created_desc" {% if current_sort == 'created_desc' %}selected{% endif %}>Newest First</option>
+                            <option value="created_asc" {% if current_sort == 'created_asc' %}selected{% endif %}>Oldest First</option>
+                            <option value="title_asc" {% if current_sort == 'title_asc' %}selected{% endif %}>Title A-Z</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="limit" class="form-label">Limit</label>
+                        <select name="limit" id="limit" class="form-select">
+                            <option value="25" {% if current_limit == 25 %}selected{% endif %}>25</option>
+                            <option value="50" {% if current_limit == 50 %}selected{% endif %}>50</option>
+                            <option value="100" {% if current_limit == 100 %}selected{% endif %}>100</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-funnel"></i> Apply Filters
+                        </button>
+                        <a href="{{ url_for('research.document_references_view') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i> Clear
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Documents List -->
+<div class="row">
+    <div class="col">
+        <div class="card shadow-soft">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-list-ul"></i> Documents ({{ documents_list|length }})
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if documents_list %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Type</th>
+                                <th>Entity</th>
+                                <th>Format</th>
+                                <th>Created</th>
+                                <th>Size</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for doc in documents_list %}
+                            <tr>
+                                <td>
+                                    <strong>{{ doc.title or 'Untitled' }}</strong>
+                                    {% if doc.description %}
+                                    <br><small class="text-muted">{{ doc.description[:100] }}{% if doc.description|length > 100 %}...{% endif %}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge badge-info">{{ doc.document_type.value if doc.document_type else 'Unknown' }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge badge-secondary">{{ doc.entity_type.value if doc.entity_type else 'Unknown' }} #{{ doc.entity_id }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge badge-light">{{ doc.format.value if doc.format else 'Unknown' }}</span>
+                                </td>
+                                <td>
+                                    {% if doc.created_at %}
+                                    <small>{{ doc.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                    {% else %}
+                                    <small class="text-muted">Unknown</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if doc.file_size_bytes %}
+                                    <small>{{ (doc.file_size_bytes / 1024)|round(1) }} KB</small>
+                                    {% else %}
+                                    <small class="text-muted">-</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if doc.file_path %}
+                                    <a href="{{ doc.file_path }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-file-text display-1 text-muted"></i>
+                    <h4 class="mt-3 text-muted">No Documents Found</h4>
+                    <p class="text-muted">No document references match your current filters.</p>
+                    <a href="{{ url_for('research.document_references_view') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-clockwise"></i> Clear Filters
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,274 @@
+{# Consolidated Base Template for APM (Agent Project Manager) Web Application #}
+{% from 'macros/breadcrumb.html' import breadcrumb, breadcrumb_compact, breadcrumb_with_icons %}
+{% from 'macros/skeleton.html' import skeleton_card, skeleton_table, skeleton_list, skeleton_text, skeleton_metric, skeleton_form %}
+{% from 'macros/quick_actions.html' import quick_actions, quick_actions_icon, quick_actions_button_group %}
+{% from 'macros/alerts.html' import alert %}
+
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}APM (Agent Project Manager) Dashboard{% endblock %}</title>
+
+    <!-- Brand System CSS -->
+    <!-- Theme System CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme-system.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/loading-states.css') }}">
+
+    <!-- Iconography (Bootstrap Icons) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Additional CSS -->
+    {% block extra_css %}{% endblock %}
+    
+    <!-- Meta Tags -->
+    <meta name="description" content="{% block description %}AI Project Manager V2 - Professional project management dashboard{% endblock %}">
+    <meta name="keywords" content="{% block keywords %}AI, project management, task management, workflow, automation{% endblock %}">
+    <meta name="author" content="APM (Agent Project Manager)">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}">
+    <meta property="og:description" content="{{ self.description() }}">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="{{ request.url }}">
+    <meta property="twitter:title" content="{{ self.title() }}">
+    <meta property="twitter:description" content="{{ self.description() }}">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    
+    <!-- Alpine.js -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    
+    <!-- Custom JavaScript -->
+    <script src="{{ url_for('static', filename='js/brand-system.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/hook.js') }}"></script>
+    
+    <!-- Additional JavaScript -->
+    {% block extra_js %}{% endblock %}
+</head>
+
+<body class="h-full bg-gray-50 font-inter antialiased" 
+      x-data="{ 
+        loading: false,
+        notifications: [],
+        sidebarOpen: false
+      }"
+      @htmx:before-request="loading = true"
+      @htmx:after-request="loading = false"
+      @htmx:response-error="notifications.push({type: 'error', message: 'Request failed'})"
+      @keydown.escape="sidebarOpen = false">
+
+    <!-- Loading Overlay -->
+    <div x-show="loading" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm"
+         style="display: none;">
+        <div class="flex flex-col items-center space-y-4">
+            <div class="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+            <p class="text-sm text-gray-600">Loading...</p>
+        </div>
+    </div>
+
+    <!-- Notifications -->
+    <div class="fixed top-4 right-4 z-40 space-y-2">
+        <template x-for="notification in notifications" :key="notification.id">
+            <div x-show="true"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 transform translate-x-full"
+                 x-transition:enter-end="opacity-100 transform translate-x-0"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100 transform translate-x-0"
+                 x-transition:leave-end="opacity-0 transform translate-x-full"
+                 class="rounded-lg border border-gray-200 bg-white p-4 shadow-lg"
+                 :class="{
+                   'border-red-200 bg-red-50': notification.type === 'error',
+                   'border-green-200 bg-green-50': notification.type === 'success',
+                   'border-yellow-200 bg-yellow-50': notification.type === 'warning',
+                   'border-blue-200 bg-blue-50': notification.type === 'info'
+                 }">
+                <div class="flex items-center space-x-3">
+                    <div class="flex-shrink-0">
+                        <svg x-show="notification.type === 'error'" class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                        </svg>
+                        <svg x-show="notification.type === 'success'" class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                        <svg x-show="notification.type === 'warning'" class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                        </svg>
+                        <svg x-show="notification.type === 'info'" class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-medium text-gray-900" x-text="notification.message"></p>
+                    </div>
+                    <button @click="notifications = notifications.filter(n => n.id !== notification.id)"
+                            class="flex-shrink-0 text-gray-400 hover:text-gray-600">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <!-- Comprehensive Header -->
+    {% include 'components/layout/header_comprehensive.html' %}
+
+    <!-- Main Layout -->
+    <div class="flex min-h-[calc(100vh-4rem)]">
+        <!-- Mobile Sidebar Overlay -->
+        <div x-show="sidebarOpen" 
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-40 bg-gray-600 bg-opacity-75 lg:hidden"
+             style="display: none;"
+             @click="sidebarOpen = false"></div>
+
+        <!-- Sidebar -->
+        {% if sidebar_template %}
+        <div class="hidden lg:block lg:w-64 lg:flex-shrink-0">
+            {% include sidebar_template %}
+        </div>
+        {% endif %}
+
+        <!-- Mobile Sidebar -->
+        {% if sidebar_template %}
+        <div x-show="sidebarOpen"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="-translate-x-full"
+             x-transition:enter-end="translate-x-0"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="translate-x-0"
+             x-transition:leave-end="-translate-x-full"
+             class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg lg:hidden"
+             style="display: none;">
+            <div class="h-full overflow-y-auto">
+                {% include sidebar_template %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <!-- Breadcrumbs -->
+                {% if breadcrumbs %}
+                <div class="mb-6">
+                    {{ breadcrumb(breadcrumbs) }}
+                </div>
+                {% endif %}
+
+                <!-- Page Header -->
+                {% if page_title %}
+                <div class="mb-8">
+                    <h1 class="text-3xl font-bold text-gray-900">{{ page_title }}</h1>
+                    {% if page_description %}
+                    <p class="mt-2 text-lg text-gray-600">{{ page_description }}</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <div class="mb-6 space-y-4">
+                    {% for category, message in messages %}
+                    {{ alert(message, category) }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endwith %}
+
+                <!-- Page Content -->
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div class="flex items-center space-x-4">
+                    <span class="text-sm text-gray-500">© 2024 APM (Agent Project Manager)</span>
+                    <span class="text-sm text-gray-400">•</span>
+                    <span class="text-sm text-gray-500">AI Project Manager</span>
+                </div>
+                <div class="mt-4 md:mt-0">
+                    <nav class="flex space-x-6">
+                        <a href="/system/health" class="text-sm text-gray-500 hover:text-gray-700">System Health</a>
+                        <a href="/system/settings" class="text-sm text-gray-500 hover:text-gray-700">Settings</a>
+                        <a href="/search/" class="text-sm text-gray-500 hover:text-gray-700">Search</a>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Global JavaScript -->
+    <script>
+        // Global notification system
+        window.showNotification = function(message, type = 'info') {
+            const notification = {
+                id: Date.now(),
+                message: message,
+                type: type
+            };
+            
+            // Get the notifications array from the body's Alpine.js data
+            const body = document.body;
+            if (body._x_dataStack && body._x_dataStack[0]) {
+                body._x_dataStack[0].notifications.push(notification);
+                
+                // Auto-remove after 5 seconds
+                setTimeout(() => {
+                    body._x_dataStack[0].notifications = body._x_dataStack[0].notifications.filter(n => n.id !== notification.id);
+                }, 5000);
+            }
+        };
+
+        // Global error handler
+        window.addEventListener('error', function(e) {
+            console.error('Global error:', e.error);
+            showNotification('An unexpected error occurred', 'error');
+        });
+
+        // Global unhandled promise rejection handler
+        window.addEventListener('unhandledrejection', function(e) {
+            console.error('Unhandled promise rejection:', e.reason);
+            showNotification('A request failed', 'error');
+        });
+    </script>
+
+    <!-- Page-specific JavaScript -->
+    {% block page_js %}{% endblock %}
+</body>
+</html>

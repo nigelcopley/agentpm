@@ -1,0 +1,186 @@
+{% extends "layouts/modern_base.html" %}
+
+{% block title %}Work Item Context - {{ view.work_item.name }}{% endblock %}
+
+{% block content %}
+<section class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+  <div>
+    <p class="text-xs font-semibold uppercase tracking-wide text-primary">Context Coverage</p>
+    <h1 class="text-3xl font-bold text-gray-900">{{ view.work_item.name }}</h1>
+    <p class="mt-2 max-w-2xl text-sm text-gray-500">
+      Hierarchical overview of project, work item, and task level contexts assembled for this artifact.
+    </p>
+  </div>
+  <div class="flex flex-wrap gap-3">
+    {% if view.project %}
+    <a href="/projects/{{ view.project.id }}" class="btn btn-outline">
+      <i class="bi bi-folder2-open mr-2"></i>
+      {{ view.project.name }}
+    </a>
+    {% endif %}
+    <a href="/work-items/{{ view.work_item.id }}" class="btn btn-secondary">
+      View Work Item
+    </a>
+  </div>
+</section>
+
+<section class="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+  <article class="card">
+    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Project Context</p>
+    <p class="mt-2 text-3xl font-bold text-gray-900">
+      {{ 'Available' if view.context_quality.has_project_context else 'Missing' }}
+    </p>
+    <p class="mt-1 text-xs text-gray-500">Context contributed by project overview.</p>
+  </article>
+  <article class="card">
+    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Work Item Context</p>
+    <p class="mt-2 text-3xl font-bold text-gray-900">
+      {{ 'Available' if view.context_quality.has_work_item_context else 'Missing' }}
+    </p>
+    <p class="mt-1 text-xs text-gray-500">Scaffolding owned by this work item.</p>
+  </article>
+  <article class="card">
+    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Task Coverage</p>
+    <p class="mt-2 text-3xl font-bold text-gray-900">
+      {{ view.context_quality.task_contexts_count }}/{{ view.context_quality.total_tasks }}
+    </p>
+    <p class="mt-1 text-xs text-gray-500">Task contexts captured.</p>
+  </article>
+  <article class="card">
+    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Overall Quality</p>
+    <p class="mt-2 text-3xl font-bold text-gray-900">
+      {{ view.context_quality.overall_quality|capitalize }}
+    </p>
+    <p class="mt-1 text-xs text-gray-500">Based on context availability and coverage.</p>
+  </article>
+</section>
+
+<section class="mt-10 grid gap-6 lg:grid-cols-[2fr_1fr]">
+  <article class="card">
+    <header class="flex items-center justify-between">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Context Layers</p>
+        <h2 class="text-xl font-semibold text-gray-900">Project & Work Item</h2>
+      </div>
+      <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+        {{ view.hierarchical_assembly.task_level.contexts|length }} task contexts
+      </span>
+    </header>
+
+    <div class="mt-6 space-y-4">
+      <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+        <h3 class="text-sm font-semibold text-gray-800">Project Context</h3>
+        {% if view.project_context %}
+        <p class="mt-3 text-sm text-gray-600 whitespace-pre-wrap">
+          {{ view.project_context.content if view.project_context.content else 'No content recorded.' }}
+        </p>
+        <dl class="mt-4 grid grid-cols-2 gap-3 text-xs text-gray-500">
+          <div>
+            <dt class="uppercase tracking-wide">Confidence</dt>
+            <dd class="mt-1 font-semibold text-gray-700">
+              {{ '%.1f'|format(view.hierarchical_assembly.project_level.confidence * 100) }}%
+            </dd>
+          </div>
+          <div>
+            <dt class="uppercase tracking-wide">Freshness</dt>
+            <dd class="mt-1 font-semibold text-gray-700">
+              {{ view.hierarchical_assembly.project_level.freshness }} days
+            </dd>
+          </div>
+        </dl>
+        {% else %}
+        <p class="mt-3 text-sm text-gray-500">No project context found.</p>
+        {% endif %}
+      </div>
+
+      <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+        <h3 class="text-sm font-semibold text-gray-800">Work Item Context</h3>
+        {% if view.work_item_context %}
+        <p class="mt-3 text-sm text-gray-600 whitespace-pre-wrap">
+          {{ view.work_item_context.content if view.work_item_context.content else 'No content recorded.' }}
+        </p>
+        <dl class="mt-4 grid grid-cols-2 gap-3 text-xs text-gray-500">
+          <div>
+            <dt class="uppercase tracking-wide">Confidence</dt>
+            <dd class="mt-1 font-semibold text-gray-700">
+              {{ '%.1f'|format(view.hierarchical_assembly.work_item_level.confidence * 100) }}%
+            </dd>
+          </div>
+          <div>
+            <dt class="uppercase tracking-wide">Freshness</dt>
+            <dd class="mt-1 font-semibold text-gray-700">
+              {{ view.hierarchical_assembly.work_item_level.freshness }} days
+            </dd>
+          </div>
+        </dl>
+        {% else %}
+        <p class="mt-3 text-sm text-gray-500">No work item specific context available.</p>
+        {% endif %}
+      </div>
+    </div>
+  </article>
+
+  <article class="card">
+    <header>
+      <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Coverage Summary</p>
+      <h2 class="text-xl font-semibold text-gray-900">At a Glance</h2>
+    </header>
+    <ul class="mt-6 space-y-3 text-sm text-gray-600">
+      <li>Context coverage: {{ '%.1f'|format(view.context_quality.context_coverage) }}%</li>
+      <li>Task contexts recorded: {{ view.context_quality.task_contexts_count }}</li>
+      <li>Total tasks: {{ view.context_quality.total_tasks }}</li>
+      <li>Average task context confidence:
+        {{ '%.1f'|format(view.hierarchical_assembly.task_level.average_confidence * 100) }}%
+      </li>
+      <li>Average task context freshness:
+        {{ view.hierarchical_assembly.task_level.average_freshness|round(1) }} days
+      </li>
+    </ul>
+  </article>
+</section>
+
+<section class="mt-10 card">
+  <header>
+    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Task Level</p>
+    <h2 class="text-xl font-semibold text-gray-900">Individual Contexts</h2>
+  </header>
+  {% if view.task_contexts %}
+  <div class="mt-6 space-y-4">
+    {% for context in view.task_contexts %}
+    <article class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+      <header class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-semibold text-gray-800">Task Context #{{ context.id }}</p>
+          <p class="text-xs text-gray-500">{{ context.context_type.value if context.context_type else 'Context' }}</p>
+        </div>
+        <a href="/tasks/{{ context.entity_id }}" class="text-sm font-medium text-primary hover:text-primary-dark">
+          View Task
+        </a>
+      </header>
+      <p class="mt-3 text-sm text-gray-600 whitespace-pre-wrap">
+        {{ context.content if context.content else 'No context content recorded.' }}
+      </p>
+      <dl class="mt-3 grid grid-cols-2 gap-3 text-xs text-gray-500">
+        <div>
+          <dt class="uppercase tracking-wide">Confidence</dt>
+          <dd class="mt-1 font-semibold text-gray-700">
+            {{ '%.1f'|format((context.confidence_score or 0) * 100) }}%
+          </dd>
+        </div>
+        <div>
+          <dt class="uppercase tracking-wide">Updated</dt>
+          <dd class="mt-1 font-semibold text-gray-700">
+            {% if context.updated_at %}{{ context.updated_at.strftime('%Y-%m-%d') }}{% else %}Unknown{% endif %}
+          </dd>
+        </div>
+      </dl>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="mt-6 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-sm text-gray-500">
+    No task level contexts have been recorded yet.
+  </p>
+  {% endif %}
+</section>
+{% endblock %}

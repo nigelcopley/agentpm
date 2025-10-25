@@ -1,0 +1,59 @@
+{% extends 'components/layout/sidebar_base.html' %}
+{% import 'components/layout/sidebar_base.html' as base %}
+
+{% block sidebar_content %}
+  <section class="mb-8 space-y-3">
+    <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Idea Snapshot</h3>
+    <div class="grid grid-cols-2 gap-3">
+      {{ base.stats_card('All Ideas', total_ideas if total_ideas is defined else 0) }}
+      {% if status_distribution is defined %}
+        {{ base.stats_card('Research', status_distribution.get('research', 0), 'bg-info/10', 'text-info-600') }}
+        {{ base.stats_card('Proposed', status_distribution.get('proposed', 0), 'bg-warning/10', 'text-warning-600') }}
+        {{ base.stats_card('Converted', status_distribution.get('converted', 0), 'bg-success/10', 'text-success-600') }}
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="mb-8 space-y-3" data-filter-group="status">
+    <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Lifecycle</h3>
+    <div class="flex flex-col gap-2 filter-group" data-filter-group="status">
+      {% for value, label in [
+        ('all', 'All Ideas'),
+        ('idea', 'Idea'),
+        ('research', 'Research'),
+        ('design', 'Design'),
+        ('proposed', 'Proposed'),
+        ('rejected', 'Rejected'),
+        ('converted', 'Converted')
+      ] %}
+      <button type="button" class="filter-btn" data-filter-group="status" data-filter="{{ value }}" :class="buttonClasses('status','{{ value }}')" @click="setFilter('status','{{ value }}',$event)">
+        <span>{{ label }}</span>
+        <span class="badge badge-gray">{{ status_distribution.get(value, 0) if status_distribution is defined else 0 }}</span>
+      </button>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% if popular_tags %}
+  <section class="mb-8 space-y-3">
+    <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Popular Tags</h3>
+    <div class="flex flex-wrap gap-2">
+      {% for tag, count in popular_tags %}
+      <button type="button" class="filter-btn rounded-full border border-gray-200 px-3 py-1 text-xs font-medium text-gray-600 hover:border-primary/40 hover:text-primary" data-filter-group="tags" data-filter="{{ tag }}" @click="toggleTag('{{ tag }}')">
+        #{{ tag }} <span class="ml-2 inline-flex h-5 items-center justify-center rounded-full bg-gray-100 px-2 text-[11px] text-gray-500">{{ count }}</span>
+      </button>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="mt-auto space-y-2">
+    <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Quick Actions</h3>
+    <button type="button" class="btn btn-primary w-full" @click="createIdea">
+      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m6-6H6" />
+      </svg>
+      New Idea
+    </button>
+  </section>
+{% endblock %}

@@ -1,0 +1,326 @@
+#!/usr/bin/env python3
+"""
+Service Dependency Mapper
+
+Analyzes import dependencies between services in the AIPM CLI codebase
+to create a comprehensive dependency graph before Phase 2 consolidation.
+"""
+
+import ast
+import re
+from pathlib import Path
+from typing import Dict, List, Set, Tuple, Optional
+from collections import defaultdict, deque
+import json
+
+
+class DependencyMapper:
+    """Maps dependencies between Python files in the services directory"""
+
+    def __init__(self, project_root: Path):
+        self.project_root = project_root
+        self.aipm_root = project_root / "aipm-cli" / "aipm_cli"
+        self.services_root = self.aipm_root / "services"
+        self.dependency_graph: Dict[str, Set[str]] = defaultdict(set)
+        self.reverse_graph: Dict[str, Set[str]] = defaultdict(set)
+        self.file_metadata: Dict[str, Dict] = {}
+
+    def discover_python_files(self) -> List[Path]:
+        """Discover all Python files in the services directory"""
+        python_files = []
+
+        # Get all Python files under services/
+        if self.services_root.exists():
+            for py_file in self.services_root.rglob("*.py"):
+                if py_file.name != "__init__.py":  # Skip __init__.py files
+                    python_files.append(py_file)
+
+        return python_files
+
+    def extract_imports(self, file_path: Path) -> Tuple[List[str], Dict]:
+        """Extract import statements and metadata from a Python file"""
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            # Parse the AST to extract imports
+            tree = ast.parse(content)
+            imports = []
+
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import):
+                    for alias in node.names:
+                        imports.append(alias.name)
+                elif isinstance(node, ast.ImportFrom):
+                    if node.module:
+                        # Handle relative imports
+                        if node.level > 0:
+                            # This is a relative import - need to resolve it
+                            module_name = self._resolve_relative_import(file_path, node.module, node.level)
+                            if module_name:
+                                imports.append(module_name)
+                        else:
+                            imports.append(node.module)
+
+            # Extract metadata
+            metadata = {
+                'lines_of_code': len(content.splitlines()),
+                'classes': [node.name for node in ast.walk(tree) if isinstance(node, ast.ClassDef)],
+                'functions': [node.name for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)],
+                'docstring': ast.get_docstring(tree) or "",
+                'file_size': len(content)
+            }
+
+            return imports, metadata
+
+        except Exception as e:
+            print(f"Error parsing {file_path}: {e}")
+            return [], {}
+
+    def _resolve_relative_import(self, file_path: Path, module: Optional[str], level: int) -> Optional[str]:
+        """Resolve relative imports to absolute module names"""
+        try:
+            # Get the current file's module path relative to project root
+            relative_path = file_path.relative_to(self.project_root)
+
+            # Remove the .py extension and convert to module notation
+            current_module_parts = list(relative_path.with_suffix('').parts)
+
+            # Go up 'level' directories
+            if level >= len(current_module_parts):
+                return None
+
+            base_parts = current_module_parts[:-level] if level > 0 else current_module_parts[:-1]
+
+            if module:
+                return '.'.join(base_parts + module.split('.'))
+            else:
+                return '.'.join(base_parts)
+
+        except Exception:
+            return None
+
+    def build_dependency_graph(self) -> Dict[str, Dict]:
+        """Build the complete dependency graph"""
+        python_files = self.discover_python_files()
+
+        print(f"🔍 Analyzing {len(python_files)} Python files in services/")
+
+        for file_path in python_files:
+            # Create a relative module name for easier reading
+            relative_path = file_path.relative_to(self.aipm_root)
+            module_name = str(relative_path.with_suffix('')).replace('/', '.')
+
+            imports, metadata = self.extract_imports(file_path)
+            self.file_metadata[module_name] = metadata
+            self.file_metadata[module_name]['file_path'] = str(file_path)
+
+            # Filter imports to only include aipm_cli modules
+            aipm_imports = []
+            for imp in imports:
+                if imp.startswith('aipm_cli.services') or imp.startswith('aipm_cli.models'):
+                    # Convert to relative path for consistency
+                    if imp.startswith('aipm_cli.'):
+                        relative_import = imp[9:]  # Remove 'aipm_cli.' prefix
+                        aipm_imports.append(relative_import)
+                        self.dependency_graph[module_name].add(relative_import)
+                        self.reverse_graph[relative_import].add(module_name)
+
+        return {
+            'forward_dependencies': dict(self.dependency_graph),
+            'reverse_dependencies': dict(self.reverse_graph),
+            'file_metadata': self.file_metadata
+        }
+
+    def detect_circular_dependencies(self) -> List[List[str]]:
+        """Detect circular dependencies using DFS"""
+        def dfs(node: str, path: Set[str], visited: Set[str]) -> List[List[str]]:
+            if node in path:
+                # Found a cycle
+                cycle_start = list(path).index(node) if node in path else 0
+                return [list(path)[cycle_start:] + [node]]
+
+            if node in visited:
+                return []
+
+            visited.add(node)
+            path.add(node)
+
+            cycles = []
+            for neighbor in self.dependency_graph.get(node, []):
+                cycles.extend(dfs(neighbor, path.copy(), visited))
+
+            path.discard(node)
+            return cycles
+
+        all_cycles = []
+        visited = set()
+
+        for node in self.dependency_graph:
+            if node not in visited:
+                cycles = dfs(node, set(), visited)
+                all_cycles.extend(cycles)
+
+        return all_cycles
+
+    def analyze_consolidation_impact(self) -> Dict[str, List[str]]:
+        """Analyze which files would be impacted by Phase 2 consolidation"""
+
+        # Define the consolidation groups from Phase 2 plan
+        consolidation_groups = {
+            'core_services': [
+                'services.context',
+                'services.database',
+                'services.orchestration'
+            ],
+            'intelligence_services': [
+                'services.context_confidence',
+                'services.context_scorecard',
+                'services.pm_methodology_context'
+            ],
+            'workflow_services': [
+                'services.action_gates',
+                'services.readiness_assessment',
+                'services.kanban_workflow'
+            ],
+            'utility_services': [
+                'services.file_operation_classifier',
+                'services.init_questionnaire',
+                'services.gate_recovery_system'
+            ]
+        }
+
+        impact_analysis = {}
+
+        for group_name, group_modules in consolidation_groups.items():
+            impacted_files = set()
+
+            for module in group_modules:
+                # Find all files that depend on modules in this group
+                for dependent in self.reverse_graph.get(module, []):
+                    # Check if the dependent is outside this consolidation group
+                    dependent_module = dependent.split('.')[0] + '.' + dependent.split('.')[1] if '.' in dependent else dependent
+                    if not any(dependent_module.startswith(gm.split('.')[0] + '.' + gm.split('.')[1]) for gm in group_modules):
+                        impacted_files.add(dependent)
+
+            impact_analysis[group_name] = list(impacted_files)
+
+        return impact_analysis
+
+    def generate_consolidation_report(self) -> str:
+        """Generate a comprehensive consolidation readiness report"""
+        dependency_data = self.build_dependency_graph()
+        circular_deps = self.detect_circular_dependencies()
+        impact_analysis = self.analyze_consolidation_impact()
+
+        # Calculate statistics
+        total_files = len(self.file_metadata)
+        total_dependencies = sum(len(deps) for deps in self.dependency_graph.values())
+        avg_dependencies = total_dependencies / total_files if total_files > 0 else 0
+
+        # Find highly connected files
+        high_dependency_files = [(k, len(v)) for k, v in self.dependency_graph.items() if len(v) > 5]
+        high_dependents = [(k, len(v)) for k, v in self.reverse_graph.items() if len(v) > 3]
+
+        report = f"""# Service Dependency Analysis Report
+Generated: September 2024
+
+## 📊 Overview Statistics
+- **Total Service Files**: {total_files}
+- **Total Dependencies**: {total_dependencies}
+- **Average Dependencies per File**: {avg_dependencies:.1f}
+- **Circular Dependencies Found**: {len(circular_deps)}
+
+## 🔗 Dependency Analysis
+
+### High Dependency Files (>5 imports)
+"""
+
+        for file_name, dep_count in sorted(high_dependency_files, key=lambda x: x[1], reverse=True):
+            report += f"- `{file_name}`: {dep_count} dependencies\n"
+
+        report += f"""
+### Highly Depended Upon Files (>3 dependents)
+"""
+
+        for file_name, dep_count in sorted(high_dependents, key=lambda x: x[1], reverse=True):
+            report += f"- `{file_name}`: {dep_count} files depend on it\n"
+
+        if circular_deps:
+            report += f"""
+## ⚠️ Circular Dependencies
+"""
+            for i, cycle in enumerate(circular_deps, 1):
+                report += f"**Cycle {i}**: {' → '.join(cycle)}\n"
+        else:
+            report += "\n## ✅ No Circular Dependencies Found\n"
+
+        report += f"""
+## 🎯 Phase 2 Consolidation Impact Analysis
+
+"""
+        for group_name, impacted_files in impact_analysis.items():
+            report += f"### {group_name.replace('_', ' ').title()}\n"
+            report += f"**Files that will need import updates**: {len(impacted_files)}\n"
+            for file in sorted(impacted_files):
+                report += f"- `{file}`\n"
+            report += "\n"
+
+        report += """
+## 🚨 Recommendations
+
+### Before Phase 2 Consolidation:
+1. **Resolve circular dependencies** if any exist
+2. **Test highly connected services** first (>5 dependencies)
+3. **Create backup** of high-dependence files (>3 dependents)
+4. **Update imports systematically** using the import update script
+
+### Consolidation Priority:
+1. Start with **utility services** (lowest impact)
+2. Move to **workflow services**
+3. Consolidate **intelligence services**
+4. Finally merge **core services**
+
+### Risk Mitigation:
+- Test each consolidation group independently
+- Maintain existing interfaces during transition
+- Use the import update script for consistent path changes
+- Validate functionality after each group consolidation
+"""
+
+        return report
+
+
+def main():
+    """Generate dependency mapping report"""
+    project_root = Path(__file__).parent.parent
+    mapper = DependencyMapper(project_root)
+
+    print("🗺️ AIPM Service Dependency Mapping")
+    print("=" * 50)
+
+    # Generate the comprehensive report
+    report = mapper.generate_consolidation_report()
+
+    # Save the report
+    output_path = project_root / "docs" / "todo" / "dependency-mapping-report.md"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(output_path, 'w', encoding='utf-8') as f:
+        f.write(report)
+
+    print(f"📄 Report saved to: {output_path}")
+
+    # Also save raw data as JSON for import script use
+    raw_data_path = project_root / "docs" / "todo" / "service-dependencies.json"
+    dependency_data = mapper.build_dependency_graph()
+
+    with open(raw_data_path, 'w', encoding='utf-8') as f:
+        json.dump(dependency_data, f, indent=2, default=str)
+
+    print(f"📊 Raw dependency data saved to: {raw_data_path}")
+    print("✅ Dependency mapping complete!")
+
+
+if __name__ == "__main__":
+    main()

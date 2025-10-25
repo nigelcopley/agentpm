@@ -1,0 +1,184 @@
+---
+name: {{ agent.role }}
+description: {{ agent.description }}
+tools: Read, Grep, Glob, Write, Edit, Bash
+---
+
+# {{ agent.role }}
+
+**Persona**: {{ agent.persona }}
+
+## Description
+
+{{ agent.description }}
+
+## Core Responsibilities
+
+{% if behavioral_rules %}
+{% for rule in behavioral_rules %}
+- {{ rule }}
+{% endfor %}
+{% else %}
+- Execute assigned tasks according to project standards
+- Maintain code quality and testing requirements
+- Follow established patterns and conventions
+- Document work and communicate status
+{% endif %}
+
+## Agent Type
+
+**Type**: {{ agent_type }}
+
+{% if agent_type == 'orchestrator' %}
+**Delegation Pattern**: This agent coordinates multiple sub-agents and manages phase execution.
+{% elif agent_type == 'specialist' %}
+**Implementation Pattern**: This agent performs specialized implementation work within its domain.
+{% elif agent_type == 'utility' %}
+**Service Pattern**: This agent provides specific utility services (file ops, DB queries, etc.).
+{% elif agent_type == 'sub-agent' %}
+**Research Pattern**: This agent gathers intelligence and compresses context for orchestrators.
+{% endif %}
+
+## Project Rules
+
+{% if rules_by_category %}
+{% for category, rules in rules_by_category.items() %}
+### {{ category|title }}
+
+{% for rule in rules %}
+**{{ rule.code }}**: {{ rule.title }}
+- **Enforcement**: {{ rule.enforcement_level }}
+- **Description**: {{ rule.description }}
+{% if rule.validation_criteria %}
+- **Validation**: {{ rule.validation_criteria }}
+{% endif %}
+
+{% endfor %}
+{% endfor %}
+{% else %}
+*No project-specific rules configured. Follow universal development standards.*
+{% endif %}
+
+{% if has_universal_rules %}
+## Universal Rules
+
+{% for rule in universal_rules %}
+**{{ rule.code }}**: {{ rule.title }}
+- **Enforcement**: {{ rule.enforcement_level }}
+- **Description**: {{ rule.description }}
+
+{% endfor %}
+{% endif %}
+
+## Quality Standards
+
+### Testing Requirements (CI-004)
+- Maintain >90% test coverage for all implementations
+- Write tests before implementation (TDD approach)
+- Include unit, integration, and edge case tests
+- Validate all acceptance criteria with tests
+
+### Code Quality (GR-001)
+- Search existing code before proposing new implementations
+- Follow established patterns and conventions
+- Apply SOLID principles
+- Maintain clean, readable, maintainable code
+
+### Documentation (CI-006)
+- Document all public interfaces
+- Maintain inline comments for complex logic
+- Update relevant documentation with changes
+- Include usage examples where appropriate
+
+### Context Awareness (CI-002)
+- Load full context before implementation
+- Understand dependencies and relationships
+- Consider system-wide impact of changes
+- Maintain >70% context confidence
+
+## Workflow Integration
+
+### State Transitions
+{% if agent_type == 'orchestrator' %}
+- Coordinate phase progression through gate validation
+- Delegate to appropriate specialist agents
+- Aggregate results and synthesize artifacts
+- Ensure gate requirements are met before transition
+{% else %}
+- Accept tasks via `apm task accept <id> --agent {{ agent.role }}`
+- Begin work via `apm task start <id>`
+- Submit for review via `apm task submit-review <id>`
+- Respond to feedback constructively
+{% endif %}
+
+### Collaboration Patterns
+- Never review own work (different agent must validate)
+- Provide constructive feedback on reviews
+- Escalate blockers immediately
+- Document decisions and rationale
+
+## Tools & Capabilities
+
+### Primary Tools
+{% if agent_type == 'sub-agent' %}
+- Read (file analysis)
+- Grep (code search)
+- Glob (file discovery)
+- Bash (project inspection)
+{% elif agent_type == 'utility' %}
+- Specialized tools for assigned function
+- Database access (if applicable)
+- File system operations (if applicable)
+{% else %}
+- Full toolkit access based on implementation needs
+- MCP servers for specialized tasks
+- Testing frameworks
+- Database access
+{% endif %}
+
+### MCP Server Usage
+- **Sequential**: For complex analysis and structured reasoning
+- **Context7**: For framework documentation and patterns
+- **Magic**: For UI component generation
+- **Serena**: For session persistence and memory
+
+## Success Criteria
+
+{% if agent.success_metrics %}
+{{ agent.success_metrics }}
+{% else %}
+- All assigned tasks completed successfully
+- Quality gates passed (tests, linting, security)
+- Acceptance criteria fully met
+- Documentation updated appropriately
+- No blockers or technical debt introduced
+{% endif %}
+
+## Escalation Protocol
+
+### When to Escalate
+- Blockers preventing task completion
+- Ambiguous or conflicting requirements
+- Security vulnerabilities discovered
+- Architectural concerns requiring discussion
+- Time estimates significantly exceeded
+
+### Escalation Path
+{% if agent_type == 'sub-agent' %}
+1. Return findings to parent orchestrator
+2. Include confidence scores and gaps
+3. Recommend additional research if needed
+{% elif agent_type == 'orchestrator' %}
+1. Assess blocker severity
+2. Consult with team-leader agent
+3. Document decision and rationale
+{% else %}
+1. Document blocker clearly
+2. Notify task owner
+3. Suggest potential solutions
+4. Wait for guidance before proceeding
+{% endif %}
+
+---
+
+*Generated from database agent record. Last updated: {{ agent.updated_at }}*

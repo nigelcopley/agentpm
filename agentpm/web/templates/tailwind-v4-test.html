@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en" class="theme-light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tailwind v4 Theme System Test</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme-system.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <script src="{{ url_for('static', filename='js/theme-switcher.js') }}"></script>
+</head>
+<body class="bg-surface-primary text-text-primary min-h-screen p-8">
+    <div class="max-w-4xl mx-auto space-y-8">
+        <!-- Header -->
+        <div class="text-center">
+            <h1 class="text-4xl font-bold text-primary mb-4">Tailwind v4 Theme System</h1>
+            <p class="text-secondary text-lg">Testing the new CSS-first configuration with @theme directive</p>
+        </div>
+
+        <!-- Theme Switcher -->
+        <div class="card p-6">
+            <h2 class="card-title mb-4">Theme Switcher</h2>
+            <div class="theme-toggles">
+                <button class="theme-toggle" onclick="switchTheme('light')">Light</button>
+                <button class="theme-toggle" onclick="switchTheme('dark')">Dark</button>
+                <button class="theme-toggle" onclick="switchTheme('royal')">Royal</button>
+                <button class="theme-toggle" onclick="switchTheme('modern')">Modern</button>
+            </div>
+        </div>
+
+        <!-- Button Components -->
+        <div class="card p-6">
+            <h2 class="card-title mb-4">Button Components</h2>
+            <div class="flex flex-wrap gap-4">
+                <button class="btn btn-primary">Primary</button>
+                <button class="btn btn-secondary">Secondary</button>
+                <button class="btn btn-outline-primary">Outline Primary</button>
+                <button class="btn btn-outline-secondary">Outline Secondary</button>
+                <button class="btn btn-ghost">Ghost</button>
+            </div>
+            <div class="flex flex-wrap gap-4 mt-4">
+                <button class="btn btn-primary btn-sm">Small</button>
+                <button class="btn btn-primary btn-lg">Large</button>
+                <button class="btn btn-primary btn-xl">Extra Large</button>
+            </div>
+        </div>
+
+        <!-- AIPM Phase Badges -->
+        <div class="card p-6">
+            <h2 class="card-title mb-4">AIPM Phase Badges</h2>
+            <div class="flex flex-wrap gap-4">
+                <span class="phase-badge phase-badge-d1">D1 - Discovery</span>
+                <span class="phase-badge phase-badge-p1">P1 - Planning</span>
+                <span class="phase-badge phase-badge-i1">I1 - Implementation</span>
+                <span class="phase-badge phase-badge-r1">R1 - Review</span>
+                <span class="phase-badge phase-badge-o1">O1 - Operations</span>
+                <span class="phase-badge phase-badge-e1">E1 - Evolution</span>
+            </div>
+        </div>
+
+        <!-- Confidence Indicators -->
+        <div class="card p-6">
+            <h2 class="card-title mb-4">Confidence Indicators</h2>
+            <div class="flex flex-wrap gap-4">
+                <span class="confidence-indicator confidence-high">High Confidence</span>
+                <span class="confidence-indicator confidence-medium">Medium Confidence</span>
+                <span class="confidence-indicator confidence-low">Low Confidence</span>
+            </div>
+        </div>
+
+        <!-- Form Components -->
+        <div class="card p-6">
+            <h2 class="card-title mb-4">Form Components</h2>
+            <div class="space-y-4">
+                <div class="form-group">
+                    <label class="form-label">Text Input</label>
+                    <input type="text" class="form-input" placeholder="Enter text...">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Textarea</label>
+                    <textarea class="form-textarea" placeholder="Enter description..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Select</label>
+                    <select class="form-select">
+                        <option>Option 1</option>
+                        <option>Option 2</option>
+                        <option>Option 3</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        <input type="checkbox" class="form-checkbox">
+                        Checkbox Option
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alert Components -->
+        <div class="space-y-4">
+            <div class="alert alert-success">
+                <div class="alert-title">Success!</div>
+                <div class="alert-description">This is a success alert message.</div>
+            </div>
+            <div class="alert alert-warning">
+                <div class="alert-title">Warning</div>
+                <div class="alert-description">This is a warning alert message.</div>
+            </div>
+            <div class="alert alert-error">
+                <div class="alert-title">Error</div>
+                <div class="alert-description">This is an error alert message.</div>
+            </div>
+            <div class="alert alert-info">
+                <div class="alert-title">Info</div>
+                <div class="alert-description">This is an info alert message.</div>
+            </div>
+        </div>
+
+        <!-- Metric Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="metric-card p-6">
+                <div class="metric-value">1,234</div>
+                <div class="metric-label">Total Projects</div>
+                <div class="metric-change metric-change-positive">+12% from last month</div>
+            </div>
+            <div class="metric-card p-6">
+                <div class="metric-value">89%</div>
+                <div class="metric-label">Success Rate</div>
+                <div class="metric-change metric-change-positive">+3% from last month</div>
+            </div>
+            <div class="metric-card p-6">
+                <div class="metric-value">45</div>
+                <div class="metric-label">Active Tasks</div>
+                <div class="metric-change metric-change-negative">-5% from last month</div>
+            </div>
+        </div>
+
+        <!-- Progress Bars -->
+        <div class="card p-6">
+            <h2 class="card-title mb-4">Progress Indicators</h2>
+            <div class="space-y-4">
+                <div>
+                    <div class="flex justify-between text-sm mb-2">
+                        <span>Project Completion</span>
+                        <span>75%</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-primary" style="width: 75%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between text-sm mb-2">
+                        <span>Quality Score</span>
+                        <span>92%</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-success" style="width: 92%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center text-tertiary">
+            <p>Tailwind CSS v4 Theme System - Built with @theme directive and CSS custom properties</p>
+        </div>
+    </div>
+
+    <script>
+        // Theme switching functionality
+        function switchTheme(themeName) {
+            document.documentElement.className = `theme-${themeName}`;
+            localStorage.setItem('theme', themeName);
+            
+            // Update active button
+            document.querySelectorAll('.theme-toggle').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        // Load saved theme on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.className = `theme-${savedTheme}`;
+            
+            // Set active button
+            document.querySelectorAll('.theme-toggle').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.toLowerCase() === savedTheme) {
+                    btn.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

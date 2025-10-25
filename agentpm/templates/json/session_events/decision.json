@@ -1,0 +1,13 @@
+{
+  "decision": "Adopt Redis caching for search filter combinations.",
+  "rationale": "Provides sub-200ms response time and leverages existing infrastructure.",
+  "alternatives_considered": [
+    "Materialized views refreshed nightly",
+    "Elasticsearch dedicated index"
+  ],
+  "trade_offs": "Redis requires eviction monitoring; materialized views would introduce delay.",
+  "task_id": 415,
+  "work_item_id": 101,
+  "decision_owner": "architecture-guild",
+  "timestamp": "2025-01-15T17:05:22"
+}

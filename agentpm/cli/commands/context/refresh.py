@@ -1,0 +1,200 @@
+"""
+apm context refresh - Refresh context (trigger plugin re-detection)
+"""
+
+import click
+from pathlib import Path
+from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.table import Table
+from agentpm.cli.utils.project import ensure_project_root, get_current_project_id
+from agentpm.cli.utils.services import get_database_service
+from agentpm.cli.utils.validation import validate_task_exists
+from agentpm.core.detection import DetectionOrchestrator
+from agentpm.core.plugins import PluginOrchestrator
+from agentpm.core.database.models import Context, UnifiedSixW
+from agentpm.core.database.enums import ContextType, EntityType
+from agentpm.core.database.adapters import ContextAdapter
+
+
+@click.command()
+@click.option(
+    '--task-id', 'task_id',
+    type=int,
+    help='Refresh context for specific task'
+)
+@click.option(
+    '--min-confidence', 'min_confidence',
+    type=float,
+    default=0.6,  # Lowered from 0.7 now that gitignore filters false positives
+    help='Minimum confidence threshold for detection (0.0-1.0)'
+)
+@click.pass_context
+def refresh(ctx: click.Context, task_id: int, min_confidence: float):
+    """
+    Refresh context by re-running plugin detection and enrichment.
+
+    Re-runs two-phase framework detection and regenerates project facts.
+    Use when project structure changes significantly (new dependencies,
+    framework migrations, or major refactoring).
+
+    \b
+    What This Does:
+      • Re-scans project for framework indicators
+      • Re-runs plugin detection on all candidate technologies
+      • Regenerates project facts and code amalgamations
+      • Updates context files in .aipm/contexts/
+
+    \b
+    Examples:
+      apm context refresh                    # Refresh all project context
+      apm context refresh --task-id=5        # Refresh context for task
+      apm context refresh --min-confidence=0.7  # Higher confidence threshold
+    """
+    console = ctx.obj['console']
+    project_root = ensure_project_root(ctx)
+    project_id = get_current_project_id(ctx)
+    db = get_database_service(project_root)
+
+    if task_id:
+        validate_task_exists(db, task_id, ctx)
+
+    console.print("\n🔄 [cyan]Refreshing project context...[/cyan]\n")
+
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        console=console
+    ) as progress:
+
+        # Phase 1: Re-run detection
+        task1 = progress.add_task("[cyan]Detecting frameworks and tools...", total=1)
+
+        detection_orchestrator = DetectionOrchestrator(min_confidence=min_confidence)
+        detection_result = detection_orchestrator.detect_all(project_root)
+
+        progress.update(task1, advance=1, completed=1)
+
+        # Phase 2: Re-run enrichment if technologies detected
+        enrichment = None
+        if detection_result.matches:
+            task2 = progress.add_task("[cyan]Extracting project facts...", total=1)
+
+            plugin_orchestrator = PluginOrchestrator(min_confidence=min_confidence)
+            enrichment = plugin_orchestrator.enrich_context(project_root, detection_result)
+
+            progress.update(task2, advance=1, completed=1)
+
+            # Task 3: Update database with refreshed context
+            task3 = progress.add_task("[cyan]Updating database...", total=1)
+
+            try:
+                # Get existing project context or create new one
+                existing_context = ContextAdapter.get_entity_context(db, EntityType.PROJECT, project_id)
+
+                # Build plugin facts structure with full context
+                plugin_facts = {
+                    'detected_technologies': {
+                        tech: {
+                            'confidence': match.confidence,
+                            'plugin_id': next((d.plugin_id for d in enrichment.deltas if tech in d.plugin_id), None),
+                            'evidence': match.evidence  # Include boost reasoning
+                        }
+                        for tech, match in detection_result.matches.items()
+                    },
+                    'plugin_enrichment': {
+                        delta.plugin_id: delta.additions
+                        for delta in enrichment.deltas
+                    },
+                    'enrichment_metadata': {
+                        'scan_time_ms': detection_result.scan_time_ms,
+                        'total_plugins': enrichment.total_plugins,
+                        'enriched_at': str(enrichment.enriched_at)
+                    },
+                    'technology_dependencies': {
+                        tech: {
+                            'dependencies': [edge.parent for edge in detection_orchestrator._dependency_graph.get_dependencies(tech)],
+                            'dependents': [edge.child for edge in detection_orchestrator._dependency_graph.get_dependents(tech)]
+                        }
+                        for tech in detection_result.matches.keys()
+                    }
+                }
+
+                if existing_context:
+                    # Update existing context
+                    avg_confidence = sum(m.confidence for m in detection_result.matches.values()) / len(detection_result.matches)
+
+                    # Update patterns in 6W
+                    if not existing_context.six_w:
+                        existing_context.six_w = UnifiedSixW()
+                    existing_context.six_w.existing_patterns = [f"{tech}: {match.confidence:.0%}" for tech, match in detection_result.matches.items()]
+
+                    # Use update with correct signature (context_id + kwargs)
+                    ContextAdapter.update(
+                        db,
+                        existing_context.id,
+                        confidence_score=avg_confidence,
+                        confidence_factors={'plugin_facts': plugin_facts},
+                        six_w=existing_context.six_w
+                    )
+                else:
+                    # Create new project context
+                    six_w = UnifiedSixW()
+                    six_w.existing_patterns = [f"{tech}: {match.confidence:.0%}" for tech, match in detection_result.matches.items()]
+
+                    project_context = Context(
+                        project_id=project_id,
+                        context_type=ContextType.PROJECT_CONTEXT,
+                        entity_type=EntityType.PROJECT,
+                        entity_id=project_id,
+                        six_w=six_w,
+                        confidence_score=sum(m.confidence for m in detection_result.matches.values()) / len(detection_result.matches),
+                        confidence_factors={'plugin_facts': plugin_facts}
+                    )
+                    ContextAdapter.create(db, project_context)
+
+                progress.update(task3, advance=1, completed=1)
+
+            except Exception as e:
+                console.print(f"[dim yellow]⚠️  Database update failed ({e})[/dim yellow]")
+                progress.update(task3, advance=1, completed=1)
+
+    # Show results
+    console.print("\n✅ [green]Context refreshed successfully![/green]\n")
+
+    if detection_result.matches:
+        table = Table(title="🔍 Detected Technologies")
+        table.add_column("Technology", style="cyan")
+        table.add_column("Confidence", justify="right", style="green")
+        table.add_column("Plugin", style="dim")
+        table.add_column("Facts", justify="right", style="yellow")
+
+        for tech, match in detection_result.matches.items():
+            conf_pct = f"{match.confidence:.0%}"
+
+            # Get plugin info from enrichment
+            plugin_id = "N/A"
+            facts_count = 0
+            if enrichment:
+                for delta in enrichment.deltas:
+                    if tech in delta.plugin_id:
+                        plugin_id = delta.plugin_id
+                        facts_count = len(delta.additions)
+                        break
+
+            table.add_row(
+                tech.capitalize(),
+                conf_pct,
+                plugin_id,
+                str(facts_count)
+            )
+
+        console.print(table)
+
+        if enrichment:
+            # Count total facts from all deltas
+            total_facts = sum(len(delta.additions) for delta in enrichment.deltas)
+            console.print(f"\n📊 [dim]Extracted {total_facts} total facts from {enrichment.total_plugins} plugins in {detection_result.scan_time_ms:.0f}ms[/dim]")
+            console.print(f"📝 [dim]Context files written to: .aipm/contexts/[/dim]\n")
+    else:
+        console.print("📦 [yellow]No technologies detected above confidence threshold[/yellow]")
+        console.print(f"   ℹ️  Try lowering --min-confidence (current: {min_confidence})\n")

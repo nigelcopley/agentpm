@@ -1,0 +1,250 @@
+---
+name: {{ role }}
+description: {{ description }}
+tools: Read, Grep, Glob, Write, Edit, Bash
+---
+
+# {{ role }}
+
+{% if tier == 1 %}## 🔬 Sub-Agent (Research & Analysis){% elif tier == 3 %}## 🎯 Master Orchestrator{% else %}## 🛠️ {{ agent_type|title }} Agent{% endif %}
+
+**Tier**: {{ tier }}{% if tier == 1 %} (Sub-Agent){% elif tier == 2 %} (Specialist){% elif tier == 3 %} (Master){% endif %}
+**Status**: {% if is_active %}✅ Active{% else %}⏸️ Inactive{% endif %}
+{% if agent_type %}**Type**: {{ agent_type }}{% endif %}
+
+---
+
+## 🎯 Identity
+
+**Role**: `{{ role }}`
+**Display Name**: {{ display_name }}
+{% if description %}**Description**: {{ description }}{% endif %}
+
+{% if tier == 1 %}
+**Purpose**: {{ purpose|default('Context compression and intelligence gathering') }}
+**Output**: Compressed intelligence reports (1-2k tokens from 20-70k token analysis)
+{% elif tier == 2 %}
+**Purpose**: {{ purpose|default('Implementation and quality assurance') }}
+**Output**: Production-ready deliverables with quality validation
+{% elif tier == 3 %}
+**Purpose**: {{ purpose|default('Strategic routing and phase orchestration') }}
+**Output**: Coordinated multi-agent workflow execution
+{% endif %}
+
+---
+
+## ⚡ Activation Triggers
+
+{% if activation_triggers %}
+{% for trigger in activation_triggers %}
+- {{ trigger }}
+{% endfor %}
+{% else %}
+- {{ default_trigger|default('Explicit delegation via Task tool') }}
+{% endif %}
+
+---
+
+## 🔄 Delegation Pattern
+
+{% if reports_to %}
+**Reports To**: `{{ reports_to }}`
+{% endif %}
+
+{% if delegates_to %}
+**Delegates To**:
+{% for agent in delegates_to %}
+- `{{ agent }}` {% if agent_descriptions and agent in agent_descriptions %}— {{ agent_descriptions[agent] }}{% endif %}
+{% endfor %}
+{% else %}
+**Delegates To**: None (terminal execution)
+{% endif %}
+
+{% if workflow %}
+**Workflow**:
+```
+{{ workflow }}
+```
+{% endif %}
+
+---
+
+## 🧰 MCP Tool Preferences
+
+{% if mcp_tools %}
+{% for phase, tools in mcp_tools.items() %}
+**{{ phase }}**:
+{% for tool in tools %}
+- `{{ tool.name }}`{% if tool.usage %} — {{ tool.usage }}{% endif %}
+{% endfor %}
+
+{% endfor %}
+{% else %}
+**Standard Tools**: Grep, Glob, Read, Edit, Bash
+**MCP Servers**: Context7 (docs), Sequential (analysis), Magic (UI)
+{% endif %}
+
+---
+
+## 🚀 Parallel Execution
+
+{% if parallel_capable %}
+**Capability**: ✅ Parallel execution enabled
+{% if parallel_patterns %}
+**Patterns**:
+{% for pattern in parallel_patterns %}
+- {{ pattern }}
+{% endfor %}
+{% endif %}
+{% else %}
+**Capability**: ⏸️ Sequential only (dependencies require ordered execution)
+{% endif %}
+
+---
+
+{% if symbol_mode %}
+## 💬 Symbol Vocabulary
+
+{% if custom_symbols %}
+{% for symbol, meaning in custom_symbols.items() %}
+- `{{ symbol }}` — {{ meaning }}
+{% endfor %}
+{% else %}
+**Standard Symbols**:
+- `🎯` — Target/Goal
+- `⚡` — Action/Execute
+- `🔄` — Process/Loop
+- `✅` — Complete/Pass
+- `❌` — Fail/Block
+- `⚠️` — Warning/Risk
+- `💡` — Insight/Discovery
+- `📊` — Analysis/Report
+- `🧰` — Tool/Resource
+- `🔍` — Search/Investigate
+{% endif %}
+{% endif %}
+
+---
+
+## 📋 Examples
+
+{% if examples %}
+{% for example in examples %}
+### {{ example.title }}
+
+**Input**:
+```
+{{ example.input }}
+```
+
+{% if example.delegation %}
+**Delegation**:
+```
+{{ example.delegation }}
+```
+{% endif %}
+
+**Output**:
+```
+{{ example.output }}
+```
+
+{% if example.notes %}
+**Notes**: {{ example.notes }}
+{% endif %}
+
+---
+{% endfor %}
+{% else %}
+### Example: Standard Workflow
+
+**Input**:
+```
+{{ sample_input|default('Task delegation from upstream orchestrator') }}
+```
+
+**Processing**:
+1. Analyze input context
+2. {% if delegates_to %}Delegate to sub-agents{% else %}Execute implementation{% endif %}
+3. Validate against quality gates
+4. Return structured output
+
+**Output**:
+```
+{{ sample_output|default('Completed deliverable with confidence metrics') }}
+```
+{% endif %}
+
+---
+
+## 🛡️ Quality Gates
+
+{% if quality_gates %}
+{% for gate in quality_gates %}
+- **{{ gate.name }}**: {{ gate.description }}
+{% endfor %}
+{% else %}
+**Standard Gates**:
+- CI-001: Agent validation
+- CI-002: Context quality (≥70% confidence)
+- CI-004: Testing quality (≥90% coverage)
+- CI-006: Documentation standards
+{% endif %}
+
+---
+
+## 📝 Work Item Requirements
+
+{% if work_item_types %}
+{% for wi_type in work_item_types %}
+- **{{ wi_type.name }}**: {{ wi_type.requirements }}
+{% endfor %}
+{% else %}
+**Standard Requirements**:
+- FEATURE: DESIGN + IMPLEMENTATION + TESTING + DOCUMENTATION
+- IMPLEMENTATION: Time-boxed ≤4.0 hours
+- All work items: Linked tasks, acceptance criteria, evidence
+{% endif %}
+
+---
+
+## 🚫 Prohibited Actions
+
+{% if prohibited %}
+{% for action in prohibited %}
+- ❌ {{ action }}
+{% endfor %}
+{% else %}
+- ❌ No direct database writes (delegate to `workitem-writer`)
+- ❌ No skipping quality gates
+- ❌ No self-approval (different agent reviews)
+- ❌ No bypassing time-boxing rules
+{% endif %}
+
+---
+
+## 📚 Reference
+
+{% if sop_content %}
+{{ sop_content }}
+{% endif %}
+
+{% if capabilities %}
+**Capabilities**:
+{% for capability in capabilities %}
+- {{ capability }}
+{% endfor %}
+{% endif %}
+
+{% if metadata and metadata != '{}' %}
+**Metadata**:
+```json
+{{ metadata }}
+```
+{% endif %}
+
+---
+
+**Last Updated**: {% if updated_at %}{{ updated_at }}{% else %}{{ now }}{% endif %}
+{% if file_path %}**File Path**: `{{ file_path }}`{% endif %}
+{% if generated_at %}**Generated**: {{ generated_at }}{% endif %}

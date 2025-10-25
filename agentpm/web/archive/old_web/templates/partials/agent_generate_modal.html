@@ -1,0 +1,84 @@
+{# Tailwind agent generation modal content (loaded via HTMX) #}
+<div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+  <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-500">
+    <i class="bi bi-magic text-primary"></i>
+    Generate Agents
+  </h2>
+  <button type="button" class="text-sm text-gray-400 transition hover:text-primary" onclick="closeAgentModal()">
+    <i class="bi bi-x-lg"></i>
+  </button>
+</div>
+
+<form method="POST" hx-post="/agents/generate" hx-target="#agents-tbody" hx-swap="innerHTML">
+  <div class="px-6 py-4 space-y-4 text-sm text-gray-600">
+    <p class="text-gray-600">
+      Automatically generate agents based on detected frameworks in your project.
+    </p>
+
+    {% if detected_frameworks %}
+    <div class="space-y-2">
+      <p class="font-semibold text-gray-800">Detected frameworks</p>
+      <div class="flex flex-wrap gap-2">
+        {% for framework in detected_frameworks %}
+        <span class="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+          {{ framework.name }}{% if framework.version %} {{ framework.version }}{% endif %}
+        </span>
+        {% endfor %}
+      </div>
+    </div>
+    {% else %}
+    <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+      <i class="bi bi-exclamation-triangle"></i>
+      No frameworks detected in project. You can still create agents manually.
+    </div>
+    {% endif %}
+
+    {% if suggested_agents %}
+    <div class="space-y-3">
+      <p class="font-semibold text-gray-800">Select agents to generate</p>
+      <div class="space-y-2">
+        {% for agent_role in suggested_agents %}
+        <label class="flex items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
+          <input class="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" type="checkbox" name="agents[]" value="{{ agent_role }}" checked>
+          <span>
+            <span class="font-semibold text-gray-900">{{ agent_role }}</span>
+            <span class="mt-1 block text-xs text-gray-500">
+              {% if agent_role == 'python-developer' %}
+                Python implementation specialist
+              {% elif agent_role == 'frontend-developer' %}
+                Web interface developer
+              {% elif agent_role == 'testing-specialist' %}
+                Pytest and QA specialist
+              {% elif agent_role == 'database-developer' %}
+                Database and schema steward
+              {% else %}
+                Specialized agent for your project
+              {% endif %}
+            </span>
+          </span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    {% else %}
+    <div class="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-700">
+      No agent suggestions available. Manual agent creation coming soon.
+    </div>
+    {% endif %}
+
+    <p class="text-xs text-gray-400">
+      <i class="bi bi-info-circle"></i>
+      Framework detection analyses project structure, imports, and configuration files.
+    </p>
+  </div>
+
+  <div class="flex items-center justify-end gap-3 border-t border-gray-100 px-6 py-4">
+    <button type="button" class="btn btn-secondary" onclick="closeAgentModal()">Cancel</button>
+    {% if suggested_agents %}
+    <button type="submit" class="btn btn-primary">
+      <i class="bi bi-magic"></i>
+      Generate Selected Agents
+    </button>
+    {% endif %}
+  </div>
+</form>

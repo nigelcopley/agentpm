@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+"""
+Claude Code Stop Hook - Python Version
+
+Called when Claude Code session is interrupted (Ctrl+C, timeout, crash).
+Can save emergency state, log interruption, or clean up resources.
+
+Hook Input (JSON):
+{
+    "session_id": "uuid",
+    "reason": "user_interrupt" | "timeout" | "error"
+}
+
+Hook Output (stdout): NOT injected into context (session ending)
+Note: This hook should be FAST (<500ms) as user is waiting
+"""
+
+import json
+import sys
+from pathlib import Path
+from datetime import datetime
+
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+
+
+def main():
+    """Main hook entry point - BLOCKS exit if session summaries missing."""
+    try:
+        hook_data = json.loads(sys.stdin.read()) if not sys.stdin.isatty() else {}
+        session_id = hook_data.get('session_id', 'unknown')
+        reason = hook_data.get('reason', 'unknown')
+
+        # Log
+        print(f"🪝 Stop: session={session_id}, reason={reason}", file=sys.stderr)
+
+        # ⚠️ CRITICAL: Validate session summaries (CAN BLOCK via JSON response)
+        from agentpm.core.database import DatabaseService
+        from agentpm.core.database.methods import sessions as session_methods
+
+        db_path = PROJECT_ROOT / ".aipm" / "data" / "aipm.db"
+        db = DatabaseService(str(db_path))
+
+        # Get current session
+        session = session_methods.get_session(db, session_id)
+
+        if session and session.is_active:
+            metadata = session.metadata
+
+            # Check if summaries exist
+            if not metadata.current_status or not metadata.next_session:
+                # BLOCK by returning decision=block
+                response = {
+                    "decision": "block",
+                    "reason": "Missing required session handover summaries. Use:\n" +
+                             "  apm session update --current-status '...'\n" +
+                             "  apm session update --next-session '...'"
+                }
+                print(json.dumps(response))
+                sys.exit(0)
+
+        # Summaries present - allow exit
+        response = {"decision": "allow"}
+        print(json.dumps(response))
+        sys.exit(0)
+
+    except Exception as e:
+        print(f"❌ Stop hook error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

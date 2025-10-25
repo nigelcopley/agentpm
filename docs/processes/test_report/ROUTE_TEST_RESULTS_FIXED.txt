@@ -1,0 +1,108 @@
+
+[96m================================================================================[0m
+[96mAPM (Agent Project Manager) Web Route Testing[0m
+[96mBase URL: http://127.0.0.1:5555[0m
+[96mTotal Routes: 28[0m
+[96m================================================================================[0m
+
+[91m✗[0m Dashboard                                [91mCONNECTION FAILED[0m
+  [93m→ Cannot connect to http://127.0.0.1:5555 - is Flask running?[0m
+[91m✗[0m Work Items List                          [91mCONNECTION FAILED[0m
+  [93m→ Cannot connect to http://127.0.0.1:5555 - is Flask running?[0m
+[91m✗[0m Work Item Detail (ID=1)                  [91mCONNECTION FAILED[0m
+  [93m→ Cannot connect to http://127.0.0.1:5555 - is Flask running?[0m
+[91m✗[0m Tasks List                               [91mCONNECTION FAILED[0m
+  [93m→ Cannot connect to http://127.0.0.1:5555 - is Flask running?[0m
+[91m✗[0m Task Detail (ID=1)                       [91mCONNECTION FAILED[0m
+  [93m→ Cannot connect to http://127.0.0.1:5555 - is Flask running?[0m
+[91m✗[0m Projects List                            [91mCONNECTION FAILED[0m
+  [93m→ Cannot connect to http://127.0.0.1:5555 - is Flask running?[0m
+[91m✗[0m Project Detail (ID=1)                    [91mCONNECTION FAILED[0m
+  [93m→ Cannot connect to http://127.0.0.1:5555 - is Flask running?[0m
+[91m✗[0m Project Settings                         [91mCONNECTION FAILED[0m
+  [93m→ Cannot connect to http://127.0.0.1:5555 - is Flask running?[0m
+[91m✗[0m Agents List                              [91mCONNECTION FAILED[0m
+  [93m→ Cannot connect to http://127.0.0.1:5555 - is Flask running?[0m
+[91m✗[0m Agent Detail (ID=1)                      [91mCONNECTION FAILED[0m
+  [93m→ Cannot connect to http://127.0.0.1:5555 - is Flask running?[0m
+[91m✗[0m Rules List                               [91mCONNECTION FAILED[0m
+  [93m→ Cannot connect to http://127.0.0.1:5555 - is Flask running?[0m
+[91m✗[0m Rule Detail (ID=1)                       [91mCONNECTION FAILED[0m
+  [93m→ Cannot connect to http://127.0.0.1:5555 - is Flask running?[0m
+[91m✗[0m Documents List                           [91mCONNECTION FAILED[0m
+  [93m→ Cannot connect to http://127.0.0.1:5555 - is Flask running?[0m
+[91m✗[0m Research Documents                       [91mCONNECTION FAILED[0m
+  [93m→ Cannot connect to http://127.0.0.1:5555 - is Flask running?[0m
+[91m✗[0m Evidence List                            [91mCONNECTION FAILED[0m
+  [93m→ Cannot connect to http://127.0.0.1:5555 - is Flask running?[0m
+[91m✗[0m Research Evidence                        [91mCONNECTION FAILED[0m
+  [93m→ Cannot connect to http://127.0.0.1:5555 - is Flask running?[0m
+[91m✗[0m Search Page                              [91mCONNECTION FAILED[0m
+  [93m→ Cannot connect to http://127.0.0.1:5555 - is Flask running?[0m
+[91m✗[0m Search Results                           [91mCONNECTION FAILED[0m
+  [93m→ Cannot connect to http://127.0.0.1:5555 - is Flask running?[0m
+[91m✗[0m Contexts List                            [91mCONNECTION FAILED[0m
+  [93m→ Cannot connect to http://127.0.0.1:5555 - is Flask running?[0m
+[91m✗[0m Context Detail (ID=1)                    [91mCONNECTION FAILED[0m
+  [93m→ Cannot connect to http://127.0.0.1:5555 - is Flask running?[0m
+[91m✗[0m Ideas List                               [91mCONNECTION FAILED[0m
+  [93m→ Cannot connect to http://127.0.0.1:5555 - is Flask running?[0m
+[91m✗[0m Idea Detail (ID=1)                       [91mCONNECTION FAILED[0m
+  [93m→ Cannot connect to http://127.0.0.1:5555 - is Flask running?[0m
+[91m✗[0m Sessions List                            [91mCONNECTION FAILED[0m
+  [93m→ Cannot connect to http://127.0.0.1:5555 - is Flask running?[0m
+[91m✗[0m Session Detail (ID=1)                    [91mCONNECTION FAILED[0m
+  [93m→ Cannot connect to http://127.0.0.1:5555 - is Flask running?[0m
+[91m✗[0m Events List                              [91mCONNECTION FAILED[0m
+  [93m→ Cannot connect to http://127.0.0.1:5555 - is Flask running?[0m
+[91m✗[0m Database Metrics                         [91mCONNECTION FAILED[0m
+  [93m→ Cannot connect to http://127.0.0.1:5555 - is Flask running?[0m
+[91m✗[0m Workflow Visualization                   [91mCONNECTION FAILED[0m
+  [93m→ Cannot connect to http://127.0.0.1:5555 - is Flask running?[0m
+[91m✗[0m Health Check                             [91mCONNECTION FAILED[0m
+  [93m→ Cannot connect to http://127.0.0.1:5555 - is Flask running?[0m
+
+[96m================================================================================[0m
+[96mSUMMARY[0m
+[96m================================================================================[0m
+
+Total Routes Tested: 28
+[92mSuccessful (200 OK): 0 (0.0%)[0m
+[91mFailed: 28 (100.0%)[0m
+
+[93mFAILURES BY TYPE:[0m
+
+[93mCONNECTION_ERROR:[0m 28 routes
+  • /                              - Cannot connect to http://127.0.0.1:5555 - is Flask running?
+  • /work-items                    - Cannot connect to http://127.0.0.1:5555 - is Flask running?
+  • /work-items/1                  - Cannot connect to http://127.0.0.1:5555 - is Flask running?
+  • /tasks                         - Cannot connect to http://127.0.0.1:5555 - is Flask running?
+  • /tasks/1                       - Cannot connect to http://127.0.0.1:5555 - is Flask running?
+  • /projects                      - Cannot connect to http://127.0.0.1:5555 - is Flask running?
+  • /projects/1                    - Cannot connect to http://127.0.0.1:5555 - is Flask running?
+  • /projects/1/settings           - Cannot connect to http://127.0.0.1:5555 - is Flask running?
+  • /agents                        - Cannot connect to http://127.0.0.1:5555 - is Flask running?
+  • /agents/1                      - Cannot connect to http://127.0.0.1:5555 - is Flask running?
+  • /rules                         - Cannot connect to http://127.0.0.1:5555 - is Flask running?
+  • /rules/1                       - Cannot connect to http://127.0.0.1:5555 - is Flask running?
+  • /documents                     - Cannot connect to http://127.0.0.1:5555 - is Flask running?
+  • /research/documents            - Cannot connect to http://127.0.0.1:5555 - is Flask running?
+  • /evidence                      - Cannot connect to http://127.0.0.1:5555 - is Flask running?
+  • /research/evidence             - Cannot connect to http://127.0.0.1:5555 - is Flask running?
+  • /search                        - Cannot connect to http://127.0.0.1:5555 - is Flask running?
+  • /search?q=test                 - Cannot connect to http://127.0.0.1:5555 - is Flask running?
+  • /contexts                      - Cannot connect to http://127.0.0.1:5555 - is Flask running?
+  • /contexts/1                    - Cannot connect to http://127.0.0.1:5555 - is Flask running?
+  • /ideas                         - Cannot connect to http://127.0.0.1:5555 - is Flask running?
+  • /ideas/1                       - Cannot connect to http://127.0.0.1:5555 - is Flask running?
+  • /sessions                      - Cannot connect to http://127.0.0.1:5555 - is Flask running?
+  • /sessions/1                    - Cannot connect to http://127.0.0.1:5555 - is Flask running?
+  • /events                        - Cannot connect to http://127.0.0.1:5555 - is Flask running?
+  • /system/database               - Cannot connect to http://127.0.0.1:5555 - is Flask running?
+  • /workflow                      - Cannot connect to http://127.0.0.1:5555 - is Flask running?
+  • /system/health                 - Cannot connect to http://127.0.0.1:5555 - is Flask running?
+
+[96mRECOMMENDATIONS:[0m
+
+[91mConnection Failed:[0m Start Flask server: python3 -m flask --app agentpm.web.app run --port 5002
+

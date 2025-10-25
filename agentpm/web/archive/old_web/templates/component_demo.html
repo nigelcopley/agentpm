@@ -1,0 +1,288 @@
+{% extends "layouts/modern_base.html" %}
+{% from 'macros/breadcrumb.html' import breadcrumb, breadcrumb_compact, breadcrumb_with_icons %}
+{% from 'macros/skeleton.html' import skeleton_card, skeleton_table, skeleton_list, skeleton_text, skeleton_metric, skeleton_form %}
+{% from 'macros/quick_actions.html' import quick_actions, quick_actions_icon, quick_actions_button_group %}
+
+{% block title %}Component Library Demo - APM (Agent Project Manager){% endblock %}
+
+{% block content %}
+<div class="space-y-12">
+  <!-- Page Header -->
+  <div>
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">Component Library Demo</h1>
+    <p class="text-gray-600">WI-141 Phase 1: Reusable Jinja2 Component Macros</p>
+  </div>
+
+  <!-- Breadcrumb Navigation -->
+  <section class="card p-6">
+    <h2 class="text-2xl font-semibold text-gray-900 mb-4">Breadcrumb Navigation</h2>
+    <p class="text-gray-600 mb-6">Standard breadcrumb patterns with mobile responsiveness and accessibility.</p>
+
+    <div class="space-y-8">
+      <!-- Example 1: Basic Breadcrumb -->
+      <div>
+        <h3 class="text-lg font-medium text-gray-800 mb-3">Basic Breadcrumb</h3>
+        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+          {{ breadcrumb([
+              {'label': 'Dashboard', 'url': '/'},
+              {'label': 'Work Items', 'url': '/work-items'},
+              {'label': 'WI-141'}
+          ]) }}
+        </div>
+        <pre class="mt-3 p-4 bg-gray-900 text-gray-100 rounded-lg text-xs overflow-x-auto"><code>{{ "{{ breadcrumb([
+    {'label': 'Dashboard', 'url': '/'},
+    {'label': 'Work Items', 'url': '/work-items'},
+    {'label': 'WI-141'}
+]) }}" }}</code></pre>
+      </div>
+
+      <!-- Example 2: Compact Breadcrumb -->
+      <div>
+        <h3 class="text-lg font-medium text-gray-800 mb-3">Compact Breadcrumb</h3>
+        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+          {{ breadcrumb_compact([
+              {'label': 'Projects', 'url': '/projects'},
+              {'label': 'APM (Agent Project Manager)', 'url': '/projects/aipm-v2'},
+              {'label': 'Settings'}
+          ]) }}
+        </div>
+        <pre class="mt-3 p-4 bg-gray-900 text-gray-100 rounded-lg text-xs overflow-x-auto"><code>{{ "{{ breadcrumb_compact([
+    {'label': 'Projects', 'url': '/projects'},
+    {'label': 'APM (Agent Project Manager)', 'url': '/projects/aipm-v2'},
+    {'label': 'Settings'}
+]) }}" }}</code></pre>
+      </div>
+
+      <!-- Example 3: Breadcrumb with Icons -->
+      <div>
+        <h3 class="text-lg font-medium text-gray-800 mb-3">Breadcrumb with Icons</h3>
+        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+          {{ breadcrumb_with_icons([
+              {'label': 'Dashboard', 'url': '/', 'icon': 'house-door'},
+              {'label': 'Work Items', 'url': '/work-items', 'icon': 'kanban'},
+              {'label': 'WI-141', 'icon': 'file-text'}
+          ]) }}
+        </div>
+        <pre class="mt-3 p-4 bg-gray-900 text-gray-100 rounded-lg text-xs overflow-x-auto"><code>{{ "{{ breadcrumb_with_icons([
+    {'label': 'Dashboard', 'url': '/', 'icon': 'house-door'},
+    {'label': 'Work Items', 'url': '/work-items', 'icon': 'kanban'},
+    {'label': 'WI-141', 'icon': 'file-text'}
+]) }}" }}</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- Skeleton Loaders -->
+  <section class="card p-6">
+    <h2 class="text-2xl font-semibold text-gray-900 mb-4">Skeleton Loaders</h2>
+    <p class="text-gray-600 mb-6">Loading states for better perceived performance.</p>
+
+    <div class="space-y-8">
+      <!-- Example 1: Skeleton Card -->
+      <div>
+        <h3 class="text-lg font-medium text-gray-800 mb-3">Skeleton Card</h3>
+        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+          {{ skeleton_card(count=2, show_avatar=True) }}
+        </div>
+        <pre class="mt-3 p-4 bg-gray-900 text-gray-100 rounded-lg text-xs overflow-x-auto"><code>{{ "{{ skeleton_card(count=2, show_avatar=True) }}" }}</code></pre>
+      </div>
+
+      <!-- Example 2: Skeleton Table -->
+      <div>
+        <h3 class="text-lg font-medium text-gray-800 mb-3">Skeleton Table</h3>
+        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+          {{ skeleton_table(rows=5, columns=4) }}
+        </div>
+        <pre class="mt-3 p-4 bg-gray-900 text-gray-100 rounded-lg text-xs overflow-x-auto"><code>{{ "{{ skeleton_table(rows=5, columns=4) }}" }}</code></pre>
+      </div>
+
+      <!-- Example 3: Skeleton List -->
+      <div>
+        <h3 class="text-lg font-medium text-gray-800 mb-3">Skeleton List</h3>
+        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+          {{ skeleton_list(items=5, show_icon=True) }}
+        </div>
+        <pre class="mt-3 p-4 bg-gray-900 text-gray-100 rounded-lg text-xs overflow-x-auto"><code>{{ "{{ skeleton_list(items=5, show_icon=True) }}" }}</code></pre>
+      </div>
+
+      <!-- Example 4: Skeleton Metrics -->
+      <div>
+        <h3 class="text-lg font-medium text-gray-800 mb-3">Skeleton Metric Cards</h3>
+        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+          {{ skeleton_metric(count=4) }}
+        </div>
+        <pre class="mt-3 p-4 bg-gray-900 text-gray-100 rounded-lg text-xs overflow-x-auto"><code>{{ "{{ skeleton_metric(count=4) }}" }}</code></pre>
+      </div>
+
+      <!-- Example 5: Skeleton Form -->
+      <div>
+        <h3 class="text-lg font-medium text-gray-800 mb-3">Skeleton Form</h3>
+        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 max-w-md">
+          {{ skeleton_form(fields=4, show_submit=True) }}
+        </div>
+        <pre class="mt-3 p-4 bg-gray-900 text-gray-100 rounded-lg text-xs overflow-x-auto"><code>{{ "{{ skeleton_form(fields=4, show_submit=True) }}" }}</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick Actions Dropdowns -->
+  <section class="card p-6">
+    <h2 class="text-2xl font-semibold text-gray-900 mb-4">Quick Actions Dropdowns</h2>
+    <p class="text-gray-600 mb-6">Alpine.js-powered contextual action menus.</p>
+
+    <div class="space-y-8">
+      <!-- Example 1: Standard Dropdown -->
+      <div>
+        <h3 class="text-lg font-medium text-gray-800 mb-3">Standard Actions Dropdown</h3>
+        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+          {{ quick_actions('Actions', [
+              {'label': 'View Details', 'url': '#', 'icon': 'eye'},
+              {'label': 'Edit', 'url': '#', 'icon': 'pencil'},
+              {'label': 'Duplicate', 'url': '#', 'icon': 'copy'},
+              {'divider': True},
+              {'label': 'Archive', 'url': '#', 'icon': 'archive'},
+              {'label': 'Delete', 'url': '#', 'icon': 'trash', 'danger': True}
+          ]) }}
+        </div>
+        <pre class="mt-3 p-4 bg-gray-900 text-gray-100 rounded-lg text-xs overflow-x-auto"><code>{{ "{{ quick_actions('Actions', [
+    {'label': 'View Details', 'url': '#', 'icon': 'eye'},
+    {'label': 'Edit', 'url': '#', 'icon': 'pencil'},
+    {'label': 'Duplicate', 'url': '#', 'icon': 'copy'},
+    {'divider': True},
+    {'label': 'Delete', 'url': '#', 'icon': 'trash', 'danger': True}
+]) }}" }}</code></pre>
+      </div>
+
+      <!-- Example 2: Icon-Only Dropdown -->
+      <div>
+        <h3 class="text-lg font-medium text-gray-800 mb-3">Icon-Only Dropdown (Table Row Actions)</h3>
+        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+          <div class="flex items-center justify-between">
+            <span class="text-gray-700">Work Item #WI-141</span>
+            {{ quick_actions_icon([
+                {'label': 'Edit', 'url': '#', 'icon': 'pencil'},
+                {'label': 'View', 'url': '#', 'icon': 'eye'},
+                {'divider': True},
+                {'label': 'Delete', 'url': '#', 'icon': 'trash', 'danger': True}
+            ], aria_label='Work item actions') }}
+          </div>
+        </div>
+        <pre class="mt-3 p-4 bg-gray-900 text-gray-100 rounded-lg text-xs overflow-x-auto"><code>{{ "{{ quick_actions_icon([
+    {'label': 'Edit', 'url': '#', 'icon': 'pencil'},
+    {'label': 'Delete', 'url': '#', 'icon': 'trash', 'danger': True}
+], aria_label='Work item actions') }}" }}</code></pre>
+      </div>
+
+      <!-- Example 3: Button Group with Overflow -->
+      <div>
+        <h3 class="text-lg font-medium text-gray-800 mb-3">Button Group with Overflow Menu</h3>
+        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+          {{ quick_actions_button_group(
+              primary_actions=[
+                  {'label': 'Edit', 'url': '#', 'icon': 'pencil', 'class': 'btn-primary'},
+                  {'label': 'Duplicate', 'url': '#', 'icon': 'copy'}
+              ],
+              overflow_actions=[
+                  {'label': 'Export', 'url': '#', 'icon': 'download'},
+                  {'label': 'Share', 'url': '#', 'icon': 'share'},
+                  {'divider': True},
+                  {'label': 'Archive', 'url': '#', 'icon': 'archive'},
+                  {'label': 'Delete', 'url': '#', 'icon': 'trash', 'danger': True}
+              ]
+          ) }}
+        </div>
+        <pre class="mt-3 p-4 bg-gray-900 text-gray-100 rounded-lg text-xs overflow-x-auto"><code>{{ "{{ quick_actions_button_group(
+    primary_actions=[
+        {'label': 'Edit', 'url': '#', 'icon': 'pencil', 'class': 'btn-primary'},
+        {'label': 'Duplicate', 'url': '#', 'icon': 'copy'}
+    ],
+    overflow_actions=[
+        {'label': 'Export', 'url': '#', 'icon': 'download'},
+        {'label': 'Delete', 'url': '#', 'icon': 'trash', 'danger': True}
+    ]
+) }}" }}</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- Implementation Notes -->
+  <section class="card p-6 bg-blue-50 border-blue-200">
+    <h2 class="text-2xl font-semibold text-blue-900 mb-4">Implementation Notes</h2>
+    <div class="space-y-4 text-blue-900">
+      <div>
+        <h3 class="font-medium mb-2">Accessibility Features:</h3>
+        <ul class="list-disc list-inside space-y-1 text-sm">
+          <li>Breadcrumbs: ARIA navigation landmarks, aria-current="page" for current location</li>
+          <li>Skeleton loaders: Use with aria-busy="true" on container, announce "Loading" to screen readers</li>
+          <li>Quick actions: Keyboard accessible (Tab, Enter, Escape), proper ARIA attributes</li>
+        </ul>
+      </div>
+
+      <div>
+        <h3 class="font-medium mb-2">Mobile Responsiveness:</h3>
+        <ul class="list-disc list-inside space-y-1 text-sm">
+          <li>Breadcrumbs: Collapse middle items on mobile, show first + last items</li>
+          <li>Skeleton loaders: Maintain layout structure, adapt to container size</li>
+          <li>Quick actions: Touch-friendly tap targets (44x44px minimum)</li>
+        </ul>
+      </div>
+
+      <div>
+        <h3 class="font-medium mb-2">Alpine.js Integration:</h3>
+        <ul class="list-disc list-inside space-y-1 text-sm">
+          <li>Quick actions use x-data, @click, @click.away for state management</li>
+          <li>Smooth transitions with x-transition directives</li>
+          <li>No additional JavaScript required (Alpine.js loaded in base template)</li>
+        </ul>
+      </div>
+
+      <div>
+        <h3 class="font-medium mb-2">Design System Compliance:</h3>
+        <ul class="list-disc list-inside space-y-1 text-sm">
+          <li>Uses Tailwind CSS 3.4.14 utility classes</li>
+          <li>Follows APM (Agent Project Manager) color palette (primary, success, error, gray scale)</li>
+          <li>WCAG 2.1 Level AA compliant (4.5:1 contrast ratios)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Documentation Links -->
+  <section class="card p-6">
+    <h2 class="text-2xl font-semibold text-gray-900 mb-4">Documentation</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <a href="#" class="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:border-primary hover:bg-gray-50 transition">
+        <i class="bi bi-file-text text-2xl text-primary"></i>
+        <div>
+          <div class="font-medium text-gray-900">Design System</div>
+          <div class="text-sm text-gray-600">docs/architecture/web/design-system.md</div>
+        </div>
+      </a>
+
+      <a href="#" class="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:border-primary hover:bg-gray-50 transition">
+        <i class="bi bi-code-square text-2xl text-primary"></i>
+        <div>
+          <div class="font-medium text-gray-900">Component Snippets</div>
+          <div class="text-sm text-gray-600">docs/architecture/web/component-snippets.md</div>
+        </div>
+      </a>
+
+      <a href="#" class="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:border-primary hover:bg-gray-50 transition">
+        <i class="bi bi-lightning text-2xl text-primary"></i>
+        <div>
+          <div class="font-medium text-gray-900">Quick Start Guide</div>
+          <div class="text-sm text-gray-600">docs/architecture/web/quick-start.md</div>
+        </div>
+      </a>
+
+      <a href="#" class="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:border-primary hover:bg-gray-50 transition">
+        <i class="bi bi-github text-2xl text-primary"></i>
+        <div>
+          <div class="font-medium text-gray-900">Work Item #141</div>
+          <div class="text-sm text-gray-600">Component Library Creation</div>
+        </div>
+      </a>
+    </div>
+  </section>
+</div>
+{% endblock %}

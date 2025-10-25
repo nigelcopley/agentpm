@@ -1,0 +1,70 @@
+{% extends "layouts/modern_base.html" %}
+
+{% block title %}Debug Work Items{% endblock %}
+
+{% block content %}
+<div class="mb-8 flex items-center justify-between">
+    <div>
+        <h1 class="text-3xl font-semibold text-gray-900">Debug Work Items</h1>
+        <p class="mt-2 text-sm text-gray-500">Raw data snapshot for troubleshooting work item aggregates.</p>
+    </div>
+</div>
+
+<div class="space-y-4">
+    {% for item in work_items %}
+    <section class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+        <header class="mb-4 flex items-center justify-between">
+            <div>
+                <h2 class="text-lg font-semibold text-gray-900">Work Item #{{ item.work_item.id }}</h2>
+                <p class="text-sm text-gray-500">{{ item.work_item.name }}</p>
+            </div>
+            <span class="badge badge-{{ item.work_item.status.value|lower|replace('_', '-') }}">
+                {{ item.work_item.status.value.replace('_', ' ').title() }}
+            </span>
+        </header>
+        <dl class="grid grid-cols-1 gap-4 text-sm text-gray-600 sm:grid-cols-2">
+            <div>
+                <dt class="font-medium text-gray-500">Type</dt>
+                <dd class="mt-1 text-gray-800">{{ item.work_item.type.value }}</dd>
+            </div>
+            <div>
+                <dt class="font-medium text-gray-500">Priority</dt>
+                <dd class="mt-1 text-gray-800">{{ item.work_item.priority or '—' }}</dd>
+            </div>
+            <div>
+                <dt class="font-medium text-gray-500">Tasks Count</dt>
+                <dd class="mt-1 text-gray-800">
+                    {{ item.tasks_count }}
+                    <span class="ml-2 text-xs text-gray-400">({{ item.tasks_count.__class__.__name__ }})</span>
+                </dd>
+            </div>
+            <div>
+                <dt class="font-medium text-gray-500">Completed Tasks</dt>
+                <dd class="mt-1 text-gray-800">
+                    {{ item.completed_tasks }}
+                    <span class="ml-2 text-xs text-gray-400">({{ item.completed_tasks.__class__.__name__ }})</span>
+                </dd>
+            </div>
+            <div>
+                <dt class="font-medium text-gray-500">Progress Percent</dt>
+                <dd class="mt-1 text-gray-800">
+                    {{ item.progress_percent }}%
+                    <span class="ml-2 text-xs text-gray-400">({{ item.progress_percent.__class__.__name__ }})</span>
+                </dd>
+            </div>
+            <div>
+                <dt class="font-medium text-gray-500">Total Effort Hours</dt>
+                <dd class="mt-1 text-gray-800">
+                    {{ item.total_effort_hours }}h
+                    <span class="ml-2 text-xs text-gray-400">({{ item.total_effort_hours.__class__.__name__ }})</span>
+                </dd>
+            </div>
+        </dl>
+    </section>
+    {% else %}
+    <div class="rounded-2xl border border-dashed border-gray-200 bg-white p-10 text-center text-gray-500">
+        No work item data available.
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

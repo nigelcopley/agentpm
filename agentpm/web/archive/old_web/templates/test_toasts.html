@@ -1,0 +1,200 @@
+{% extends "layouts/modern_base.html" %}
+
+{% block title %}Toast Notification Test - APM (Agent Project Manager){% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="text-center mb-5">
+                <h1 class="display-5 mb-3">
+                    <i class="bi bi-chat-square-text-fill text-gradient"></i>
+                    Toast Notification Test
+                </h1>
+                <p class="lead text-muted">
+                    WI-36 Configuration Portal - Task #180 Implementation
+                </p>
+            </div>
+
+            <!-- Test Card -->
+            <div class="card shadow-soft mb-4">
+                <div class="card-body p-4">
+                    <h4 class="card-title mb-4">
+                        <i class="bi bi-megaphone"></i> Test Toast Types
+                    </h4>
+                    <p class="text-muted mb-4">
+                        Click the buttons below to test each toast notification type.
+                        Toasts will appear in the bottom-right corner with auto-dismiss after 5 seconds.
+                    </p>
+
+                    <!-- HTMX Toast Triggers -->
+                    <div class="d-grid gap-3">
+                        <!-- Success Toast -->
+                        <button
+                            class="btn btn-success btn-lg d-flex align-items-center justify-content-between"
+                            hx-post="/test-toast/success"
+                            hx-swap="none">
+                            <span>
+                                <i class="bi bi-check-circle-fill me-2"></i>
+                                Test Success Toast
+                            </span>
+                            <i class="bi bi-arrow-right"></i>
+                        </button>
+
+                        <!-- Error Toast -->
+                        <button
+                            class="btn btn-danger btn-lg d-flex align-items-center justify-content-between"
+                            hx-post="/test-toast/error"
+                            hx-swap="none">
+                            <span>
+                                <i class="bi bi-x-circle-fill me-2"></i>
+                                Test Error Toast
+                            </span>
+                            <i class="bi bi-arrow-right"></i>
+                        </button>
+
+                        <!-- Warning Toast -->
+                        <button
+                            class="btn btn-warning btn-lg d-flex align-items-center justify-content-between"
+                            hx-post="/test-toast/warning"
+                            hx-swap="none">
+                            <span>
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                Test Warning Toast
+                            </span>
+                            <i class="bi bi-arrow-right"></i>
+                        </button>
+
+                        <!-- Info Toast -->
+                        <button
+                            class="btn btn-info btn-lg d-flex align-items-center justify-content-between"
+                            hx-post="/test-toast/info"
+                            hx-swap="none">
+                            <span>
+                                <i class="bi bi-info-circle-fill me-2"></i>
+                                Test Info Toast
+                            </span>
+                            <i class="bi bi-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- JavaScript Toast Test -->
+            <div class="card shadow-soft mb-4">
+                <div class="card-body p-4">
+                    <h4 class="card-title mb-4">
+                        <i class="bi bi-code-slash"></i> JavaScript API Test
+                    </h4>
+                    <p class="text-muted mb-4">
+                        Test the JavaScript toast API directly (bypasses HTMX).
+                    </p>
+
+                    <div class="d-grid gap-3">
+                        <button
+                            class="btn btn-outline-success"
+                            onclick="showSuccess('JavaScript success toast!')">
+                            showSuccess() - Convenience Method
+                        </button>
+
+                        <button
+                            class="btn btn-outline-danger"
+                            onclick="showError('JavaScript error toast!')">
+                            showError() - Convenience Method
+                        </button>
+
+                        <button
+                            class="btn btn-outline-warning"
+                            onclick="showWarning('JavaScript warning toast!')">
+                            showWarning() - Convenience Method
+                        </button>
+
+                        <button
+                            class="btn btn-outline-info"
+                            onclick="showInfo('JavaScript info toast!')">
+                            showInfo() - Convenience Method
+                        </button>
+
+                        <button
+                            class="btn btn-outline-primary"
+                            onclick="showToast('Custom duration: 10 seconds', 'info', 10000)">
+                            showToast() - Custom Duration (10s)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Multiple Toasts Test -->
+            <div class="card shadow-soft mb-4">
+                <div class="card-body p-4">
+                    <h4 class="card-title mb-4">
+                        <i class="bi bi-stack"></i> Toast Stacking Test
+                    </h4>
+                    <p class="text-muted mb-4">
+                        Test multiple toasts appearing simultaneously (max 5 toasts enforced).
+                    </p>
+
+                    <button
+                        class="btn btn-primary btn-lg w-100"
+                        onclick="testMultipleToasts()">
+                        <i class="bi bi-layers-fill me-2"></i>
+                        Show 3 Toasts at Once
+                    </button>
+                </div>
+            </div>
+
+            <!-- Acceptance Criteria Checklist -->
+            <div class="card border-success shadow-soft">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-check-square"></i> Acceptance Criteria
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            Toast displays for success/error/warning/info types
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            Toasts auto-dismiss after 5 seconds
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            Manual close button works
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            Multiple toasts stack correctly without overlap
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            HTMX integration (X-Toast-* headers)
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Back Link -->
+            <div class="text-center mt-4">
+                <a href="/" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Test multiple toasts
+    function testMultipleToasts() {
+        showSuccess('First toast: Success!');
+        setTimeout(() => showWarning('Second toast: Warning!'), 500);
+        setTimeout(() => showInfo('Third toast: Info!'), 1000);
+    }
+</script>
+{% endblock %}

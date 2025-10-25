@@ -1,0 +1,9 @@
+{
+  "error_type": "test_failed",
+  "message": "tests/test_filter_service.py::test_cache_eviction FAILED",
+  "stack_trace": "AssertionError: Expected eviction after TTL",
+  "severity": "warning",
+  "resolution": "Increase TTL to 10 minutes and rerun tests.",
+  "retry_command": "pytest tests/test_filter_service.py::test_cache_eviction",
+  "related_task_id": 415
+}

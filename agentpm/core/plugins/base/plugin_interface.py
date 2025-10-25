@@ -1,0 +1,274 @@
+"""
+Base Plugin Interface
+
+Abstract base class for all AIPM plugins.
+
+Plugins extract framework-specific facts and generate code amalgamations.
+They do NOT detect (DetectionService does that).
+They do NOT recommend (not a recommendation engine).
+
+Pattern: ABC with abstractmethod, focused on context extraction
+"""
+
+from abc import ABC, abstractmethod
+from pathlib import Path
+from typing import Dict, Any, List
+
+from .types import PluginCategory
+
+
+class BasePlugin(ABC):
+    """
+    Base plugin interface for framework-specific context extraction.
+
+    Plugins provide TWO capabilities:
+    1. Extract project facts (versions, dependencies, structure, standards)
+    2. Generate code amalgamations (classes, functions, framework-specific groupings)
+
+    Agents use plugin outputs to:
+    - Understand project technical foundation
+    - Find code examples and patterns
+    - Populate work item and task contexts appropriately
+    """
+
+    @property
+    @abstractmethod
+    def plugin_id(self) -> str:
+        """
+        Plugin identifier.
+
+        Format: category:technology
+        Examples: 'lang:python', 'framework:django', 'testing:pytest'
+
+        Returns:
+            Unique plugin identifier
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def enriches(self) -> str:
+        """
+        Technology this plugin enriches.
+
+        Must match technology name in DetectionResult.
+        Examples: 'python', 'django', 'pytest'
+
+        Returns:
+            Technology name
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def category(self) -> PluginCategory:
+        """
+        Plugin category.
+
+        Returns:
+            PluginCategory enum value
+        """
+        pass
+
+    @abstractmethod
+    def detect(self, project_path: Path) -> float:
+        """
+        Detect if this technology is present in the project.
+
+        Phase 2 of two-phase detection (called only on candidates from Phase 1).
+
+        3-phase detection approach:
+        - Phase 1: Files (30% max) - Config files, specific file patterns
+        - Phase 2: Imports (40% max) - Import statement analysis (strongest signal)
+        - Phase 3: Structure (30% max) - Directory layout validation
+
+        Performance target: <50ms per plugin
+
+        Args:
+            project_path: Path to project directory
+
+        Returns:
+            Confidence score from 0.0 to 1.0
+            - 0.0: Technology definitely not present
+            - 0.3-0.5: Weak indicators only
+            - 0.5-0.7: Moderate confidence
+            - 0.7-0.9: High confidence
+            - 0.9-1.0: Definitive match
+
+        Example (Python plugin):
+            confidence = 0.0
+            if (path / "pyproject.toml").exists(): confidence += 0.15
+            if has_python_imports(path): confidence += 0.40
+            if (path / "tests").exists(): confidence += 0.15
+            return min(confidence, 1.0)
+        """
+        pass
+
+    @abstractmethod
+    def extract_project_facts(self, project_path: Path) -> Dict[str, Any]:
+        """
+        Extract framework-specific project facts.
+
+        Returns TECHNICAL FACTS ONLY that populate PROJECT LEVEL context:
+        - Technical Foundation (language/framework versions, database, API patterns)
+        - Code Standards (style guide, testing requirements, linter/formatter)
+        - Project Structure (directory layout, module organization, entry points)
+        - Dependencies (runtime + dev with versions)
+        - Development Workflow (CI/CD detected from pipeline files)
+
+        Example (Python):
+            {
+                'python_version': '3.11.5',
+                'package_manager': 'poetry',
+                'dependencies': {'runtime': [...], 'dev': [...]},
+                'project_structure': {'source_dir': 'agentpm/', 'entry_points': [...]},
+                'code_standards': {'formatter': 'black', 'test_framework': 'pytest'}
+            }
+
+        Complexity: EASY - just file parsing (pyproject.toml, requirements.txt, config files)
+        Performance: <500ms
+
+        Args:
+            project_path: Path to project directory
+
+        Returns:
+            Dictionary of framework-specific facts (no recommendations, no business logic)
+
+        Raises:
+            Exception: If extraction fails (caught by orchestrator)
+        """
+        pass
+
+    @abstractmethod
+    def generate_code_amalgamations(self, project_path: Path) -> Dict[str, str]:
+        """
+        Generate framework-specific code groupings for agent reference.
+
+        Creates searchable code files stored in .aipm/contexts/ that agents use to:
+        - Find code examples
+        - Discover existing patterns
+        - Reference similar implementations
+
+        Example (Python):
+            {
+                'classes': '# All Python Classes\\n# File: models/project.py\\nclass Project(BaseModel):\\n...',
+                'functions': '# All Python Functions\\n# File: methods/projects.py\\ndef create_project(...):\\n...',
+                'imports': '# All Import Statements\\nfrom pydantic import BaseModel\\n...'
+            }
+
+        Stored as: .aipm/contexts/{plugin_id}_{type}.txt
+
+        Complexity: MEDIUM - basic code parsing (grep or simple AST)
+        Performance: <2s
+
+        Args:
+            project_path: Path to project directory
+
+        Returns:
+            Dictionary mapping amalgamation_type to content string
+
+        Raises:
+            Exception: If generation fails (caught by orchestrator)
+        """
+        pass
+
+    # ========== PHASE 2/3 METHODS (Deferred - Stub Implementations) ==========
+
+    def discover_patterns(self, project_path: Path) -> Dict[str, Any]:
+        """
+        PHASE 2 (DEFERRED): Discover project-specific code conventions.
+
+        Analyzes existing code to identify patterns THIS project follows:
+        - Model conventions (managers, soft deletes, validation)
+        - View patterns (CBV vs FBV, mixins, pagination)
+        - Code organization patterns
+        - Testing conventions
+
+        Example (Django):
+            {
+                'model_conventions': {
+                    'uses_managers': True,
+                    'manager_example': 'users/models.py:UserManager',
+                    'soft_delete_pattern': 'is_active flag',
+                    'examples': ['See User model for soft delete pattern']
+                },
+                'view_patterns': {
+                    'primary_style': 'CBV',
+                    'examples': ['products/views.py:ProductListView']
+                }
+            }
+
+        Default (Phase 1): Returns empty dict
+        Implementation: Deferred to Phase 2
+        """
+        return {}  # Phase 1 stub
+
+    def extract_code_templates(self, project_path: Path) -> Dict[str, str]:
+        """
+        PHASE 2 (DEFERRED): Extract code templates from existing code.
+
+        Generates templates by analyzing actual project code:
+        - new_model template (from existing model)
+        - new_view template (from existing view)
+        - new_test template (from existing test)
+
+        Templates are PROJECT-SPECIFIC, not generic examples.
+
+        Example (Django):
+            {
+                'new_model': '''
+# Template extracted from Product model
+class {ModelName}(BaseModel):
+    objects = {ModelName}Manager()
+
+    class Meta:
+        db_table = '{table}'
+
+    def clean(self):
+        # Validation
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+'''
+            }
+
+        Default (Phase 1): Returns empty dict
+        Implementation: Deferred to Phase 2
+        """
+        return {}  # Phase 1 stub
+
+    def validate_project_setup(
+        self,
+        project_path: Path,
+        detected_technologies: List[str]
+    ) -> Dict[str, Any]:
+        """
+        PHASE 3 (DEFERRED): Validate project completeness.
+
+        Context-aware validation based on detected technologies:
+        - Pure Python: check venv, package config, tests
+        - Python + Django: also check manage.py, settings.py, migrations
+        - Python + CLI: also check entry point, console script config
+
+        Returns:
+            {
+                'missing_required': [
+                    {'item': 'venv', 'severity': 'error', 'impact': 'Dependency conflicts'}
+                ],
+                'missing_optional': [
+                    {'item': 'mypy.ini', 'severity': 'info', 'impact': 'No type checking'}
+                ],
+                'validation_score': 0.75,
+                'is_complete': False
+            }
+
+        Default (Phase 1): Assumes project complete
+        Implementation: Deferred to Phase 3
+        """
+        return {
+            'validation_score': 1.0,
+            'missing_required': [],
+            'missing_optional': [],
+            'is_complete': True
+        }  # Phase 1 stub

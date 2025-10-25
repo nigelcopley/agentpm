@@ -1,0 +1,175 @@
+{#
+  Breadcrumb Navigation Macro
+
+  Renders hierarchical breadcrumb navigation with proper accessibility and responsive behavior.
+
+  Usage:
+    {% from 'macros/breadcrumb.html' import breadcrumb %}
+
+    {{ breadcrumb([
+        {'label': 'Dashboard', 'url': '/'},
+        {'label': 'Work Items', 'url': '/work-items'},
+        {'label': work_item.name, 'url': None}  {# current page #}
+    ]) }}
+
+  Parameters:
+    - items (list): List of breadcrumb items with 'label' and 'url' keys
+                    The last item (url=None) is marked as current page
+    - show_home (bool): Whether to show Dashboard as first item - default: True
+    - mobile_responsive (bool): Collapse breadcrumbs on mobile - default: True
+
+  Features:
+    - Semantic HTML5 nav with aria-label
+    - aria-current="page" for current page
+    - Mobile-friendly collapse (shows only last 2 items on small screens)
+    - Hover states and proper spacing
+    - Bootstrap Icons for separators
+#}
+
+{% macro breadcrumb(items, show_home=True, mobile_responsive=True) %}
+
+{% if items %}
+<nav aria-label="Breadcrumb navigation" class="mb-6">
+    <ol class="flex items-center space-x-2 text-sm text-gray-600">
+        {# Always show Dashboard/Home link #}
+        {% if show_home %}
+        <li>
+            <a href="/"
+               class="hover:text-primary transition-colors duration-200 flex items-center gap-1"
+               title="Return to Dashboard">
+                <i class="bi bi-house-door"></i>
+                <span class="{% if mobile_responsive %}hidden sm:inline{% endif %}">Dashboard</span>
+            </a>
+        </li>
+        {% endif %}
+
+        {# Render breadcrumb items #}
+        {% for item in items %}
+        <li class="flex items-center {% if mobile_responsive and not loop.last and loop.index < (items|length - 1) %}hidden md:flex{% endif %}">
+            {# Separator #}
+            <svg class="w-4 h-4 mx-2 text-gray-400" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+            </svg>
+
+            {# Breadcrumb Item #}
+            {% if item.url %}
+                {# Clickable link #}
+                <a href="{{ item.url }}"
+                   class="hover:text-primary transition-colors duration-200 truncate max-w-xs"
+                   title="{{ item.label }}">
+                    {{ item.label }}
+                </a>
+            {% else %}
+                {# Current page (non-clickable) #}
+                <span class="text-gray-900 font-medium truncate max-w-xs" aria-current="page">
+                    {{ item.label }}
+                </span>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ol>
+</nav>
+{% endif %}
+
+{% endmacro %}
+
+
+{#
+  Compact Breadcrumb Macro
+
+  Renders a minimal breadcrumb for constrained spaces (modals, sidebars, etc.)
+
+  Usage:
+    {% from 'macros/breadcrumb.html' import breadcrumb_compact %}
+
+    {{ breadcrumb_compact([
+        {'label': 'Projects', 'url': '/projects'},
+        {'label': project.name, 'url': None}
+    ]) }}
+#}
+
+{% macro breadcrumb_compact(items) %}
+
+{% if items %}
+<nav aria-label="Breadcrumb navigation" class="mb-4">
+    <ol class="flex items-center space-x-1 text-xs text-gray-500">
+        {% for item in items %}
+        <li class="flex items-center">
+            {# Separator (not before first item) #}
+            {% if not loop.first %}
+            <i class="bi bi-chevron-right mx-1 text-gray-400" aria-hidden="true"></i>
+            {% endif %}
+
+            {# Breadcrumb Item #}
+            {% if item.url %}
+                <a href="{{ item.url }}" class="hover:text-primary transition-colors truncate max-w-[100px]">
+                    {{ item.label }}
+                </a>
+            {% else %}
+                <span class="text-gray-900 font-medium truncate max-w-[100px]" aria-current="page">
+                    {{ item.label }}
+                </span>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ol>
+</nav>
+{% endif %}
+
+{% endmacro %}
+
+
+{#
+  Breadcrumb with Icon Macro
+
+  Enhanced breadcrumb where each item can have an optional icon.
+
+  Usage:
+    {% from 'macros/breadcrumb.html' import breadcrumb_with_icons %}
+
+    {{ breadcrumb_with_icons([
+        {'label': 'Dashboard', 'url': '/', 'icon': 'house-door'},
+        {'label': 'Work Items', 'url': '/work-items', 'icon': 'kanban'},
+        {'label': work_item.name, 'url': None, 'icon': 'file-text'}
+    ]) }}
+#}
+
+{% macro breadcrumb_with_icons(items, mobile_responsive=True) %}
+
+{% if items %}
+<nav aria-label="Breadcrumb navigation" class="mb-6">
+    <ol class="flex items-center space-x-2 text-sm text-gray-600">
+        {% for item in items %}
+        <li class="flex items-center {% if mobile_responsive and not loop.last and loop.index < (items|length - 1) %}hidden md:flex{% endif %}">
+            {# Separator (not before first item) #}
+            {% if not loop.first %}
+            <svg class="w-4 h-4 mx-2 text-gray-400" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+            </svg>
+            {% endif %}
+
+            {# Breadcrumb Item with Icon #}
+            {% if item.url %}
+                <a href="{{ item.url }}"
+                   class="hover:text-primary transition-colors duration-200 flex items-center gap-1.5 truncate max-w-xs"
+                   title="{{ item.label }}">
+                    {% if item.icon %}
+                    <i class="bi bi-{{ item.icon }}" aria-hidden="true"></i>
+                    {% endif %}
+                    <span>{{ item.label }}</span>
+                </a>
+            {% else %}
+                <span class="text-gray-900 font-medium flex items-center gap-1.5 truncate max-w-xs" aria-current="page">
+                    {% if item.icon %}
+                    <i class="bi bi-{{ item.icon }}" aria-hidden="true"></i>
+                    {% endif %}
+                    <span>{{ item.label }}</span>
+                </span>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ol>
+</nav>
+{% endif %}
+
+{% endmacro %}

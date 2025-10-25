@@ -1,0 +1,254 @@
+/**
+ * Smart Filters CSS
+ *
+ * Styles for the smart filtering system across all dashboard views
+ */
+
+/* Filter Controls Container */
+.filter-controls {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Filter Row Spacing */
+.filter-controls .mb-2:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* Filter Labels */
+.filter-controls .form-label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+/* Filter Button Groups */
+.filter-controls .btn-group {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.filter-controls .btn-group .btn {
+    transition: all 0.2s ease;
+    border-radius: 4px;
+}
+
+.filter-controls .btn-group .btn.active {
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+    transform: scale(1.05);
+}
+
+/* Filter Count Badge */
+.filter-count-badge {
+    margin-left: 0.25rem;
+    vertical-align: middle;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 10px;
+    animation: pulse 0.6s ease-in-out;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+/* Clear Filters Button */
+[data-clear-filters] {
+    white-space: nowrap;
+}
+
+[data-clear-filters]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+}
+
+/* Visible Count Display */
+.visible-count {
+    font-weight: 600;
+    color: #495057;
+}
+
+/* Sort Indicator */
+.sort-indicator {
+    margin-left: 0.25rem;
+    font-weight: bold;
+    color: #0d6efd;
+    user-select: none;
+}
+
+/* Sortable Column Headers */
+th[data-sort-column] {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.15s ease;
+    position: relative;
+}
+
+th[data-sort-column]:hover {
+    background-color: #e9ecef;
+}
+
+th[data-sort-column]:hover::after {
+    content: '⇅';
+    position: absolute;
+    right: 0.5rem;
+    opacity: 0.5;
+    font-size: 0.8rem;
+}
+
+th[data-sort-column]:active {
+    background-color: #dee2e6;
+}
+
+/* Responsive Filter Layout */
+@media (max-width: 768px) {
+    .filter-controls {
+        padding: 0.75rem;
+    }
+
+    .filter-controls .btn-group {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .filter-controls .btn-group .btn {
+        width: 100%;
+        text-align: left;
+    }
+
+    .visible-count {
+        font-size: 0.875rem;
+    }
+
+    [data-clear-filters] {
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+}
+
+/* Filter Button Hover Effects */
+.filter-controls .btn-outline-primary:hover {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+}
+
+.filter-controls .btn-outline-secondary:hover {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+
+.filter-controls .btn-outline-success:hover {
+    background-color: #198754;
+    border-color: #198754;
+    color: white;
+}
+
+.filter-controls .btn-outline-warning:hover {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #000;
+}
+
+.filter-controls .btn-outline-info:hover {
+    background-color: #0dcaf0;
+    border-color: #0dcaf0;
+    color: #000;
+}
+
+.filter-controls .btn-outline-danger:hover {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+/* Active Filter Button Styles */
+.filter-controls .btn-outline-primary.active {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+}
+
+.filter-controls .btn-outline-secondary.active {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+
+.filter-controls .btn-outline-success.active {
+    background-color: #198754;
+    border-color: #198754;
+    color: white;
+}
+
+.filter-controls .btn-outline-warning.active {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #000;
+}
+
+.filter-controls .btn-outline-info.active {
+    background-color: #0dcaf0;
+    border-color: #0dcaf0;
+    color: #000;
+}
+
+/* Loading State for Filters */
+.filter-controls.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.filter-controls.loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Smooth Transition for Row Hiding/Showing */
+.agent-row,
+.task-row,
+.work-item-row {
+    transition: opacity 0.2s ease, height 0.2s ease;
+}
+
+.agent-row[style*="display: none"],
+.task-row[style*="display: none"],
+.work-item-row[style*="display: none"] {
+    opacity: 0;
+}
+
+/* Keyboard Focus Styles for Accessibility */
+.filter-controls .btn:focus-visible {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+}
+
+th[data-sort-column]:focus-visible {
+    outline: 2px solid #0d6efd;
+    outline-offset: -2px;
+}
+
+/* Print Styles - Hide Filters */
+@media print {
+    .filter-controls,
+    [data-clear-filters],
+    .sort-indicator {
+        display: none !important;
+    }
+}

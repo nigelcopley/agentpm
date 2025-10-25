@@ -1,0 +1,212 @@
+# APM (Agent Project Manager) Dashboard - Quick Start Guide
+
+**Get the dashboard running in 5 minutes**
+
+---
+
+## Installation
+
+```bash
+# Install dashboard dependencies
+pip install -e .[dev]
+```
+
+That's it! Flask and all dependencies are now installed.
+
+---
+
+## Running the Dashboard
+
+### From Your AIPM Project
+
+**Most Common Usage** - Run from your AIPM project directory:
+
+```bash
+# Navigate to your AIPM project
+cd /path/to/your/aipm-project
+
+# Start the dashboard (auto-detects .aipm/data/aipm.db)
+flask --app agentpm.web.app run
+
+# Open in browser
+open http://localhost:5000
+```
+
+✅ **No configuration needed!** The dashboard automatically finds your project's database.
+
+---
+
+### From Any Directory
+
+If you're not in an AIPM project directory, specify the database path:
+
+```bash
+# Set database path explicitly
+AIPM_DB_PATH=/path/to/project/.aipm/data/aipm.db flask --app agentpm.web.app run
+
+# Or export for the session
+export AIPM_DB_PATH=/path/to/project/.aipm/data/aipm.db
+flask --app agentpm.web.app run
+```
+
+---
+
+### With Debug Mode
+
+Enable auto-reload and detailed errors during development:
+
+```bash
+flask --app agentpm.web.app run --debug
+```
+
+---
+
+## First Steps
+
+Once the dashboard is running, explore these key pages:
+
+### 1. **Dashboard** - http://localhost:5000
+- Project overview with real-time metrics
+- Interactive charts (work items, tasks, compliance)
+- Quick navigation to all sections
+
+### 2. **Work Items** - http://localhost:5000/work-items
+- All work items with progress tracking
+- Task counts and completion percentages
+- Time-boxing compliance indicators
+
+### 3. **Tasks** - http://localhost:5000/tasks
+- Complete task listing with status badges
+- Dependencies and blockers
+- Effort hours and priority
+
+### 4. **Agents** - http://localhost:5000/agents
+- Agent registry with capabilities
+- Task assignments and activity status
+- Toggle agents active/inactive
+
+### 5. **Rules** - http://localhost:5000/rules
+- Governance rules management
+- Enable/disable enforcement (BLOCK ↔ GUIDE)
+- Category filtering
+
+---
+
+## Common Tasks
+
+### View Project Context
+```
+Navigate to: Dashboard → Project Context
+Or visit: http://localhost:5000/project/1/context
+```
+
+Shows complete 6W framework (WHO/WHAT/WHERE/WHEN/WHY/HOW) and project intelligence.
+
+---
+
+### Browse Context Files
+```
+Navigate to: Dashboard → Context Files
+Or visit: http://localhost:5000/context/files
+```
+
+Explore `.aipm/contexts/` directory with file previews.
+
+---
+
+### View Task Dependencies
+```
+Navigate to: Tasks → [Select Task] → Dependencies Tab
+Or visit: http://localhost:5000/task/<id>
+```
+
+Shows prerequisites, dependents, and blockers for any task.
+
+---
+
+### View Session History
+```
+Navigate to: Work Items → [Select Work Item] → Summaries
+Or visit: http://localhost:5000/work-item/<id>/summaries
+```
+
+Timeline of work sessions with key decisions and completed tasks.
+
+---
+
+## Troubleshooting
+
+### Database Not Found
+
+**Error**: `FileNotFoundError: .aipm/data/aipm.db`
+
+**Fix**: Run from project directory or set `AIPM_DB_PATH`
+```bash
+cd /path/to/your/aipm-project
+flask --app agentpm.web.app run
+```
+
+---
+
+### Port Already in Use
+
+**Error**: `Address already in use`
+
+**Fix**: Use different port or kill existing process
+```bash
+# Option 1: Different port
+flask --app agentpm.web.app run --port=8080
+
+# Option 2: Kill existing Flask
+lsof -ti:5000 | xargs kill -9
+```
+
+---
+
+### Flask Not Found
+
+**Error**: `ModuleNotFoundError: No module named 'flask'`
+
+**Fix**: Install dependencies
+```bash
+pip install -e .[dev]
+```
+
+---
+
+## Next Steps
+
+- **Read Full Documentation**: `agentpm/web/README.md`
+- **Customize Configuration**: Set `SECRET_KEY`, `FLASK_ENV`
+- **Explore Charts**: View interactive visualizations in project detail
+- **Test HTMX Features**: Toggle rules/agents to see dynamic updates
+- **Deploy to Production**: Use Gunicorn or uWSGI
+
+---
+
+## Quick Reference
+
+| Task | Command |
+|------|---------|
+| **Start Dashboard** | `flask --app agentpm.web.app run` |
+| **Debug Mode** | `flask --app agentpm.web.app run --debug` |
+| **Custom Port** | `flask --app agentpm.web.app run --port=8080` |
+| **Set Database** | `AIPM_DB_PATH=/path/to/aipm.db flask --app agentpm.web.app run` |
+| **Health Check** | `curl http://localhost:5000/health` |
+
+---
+
+## Getting Help
+
+- **Full Documentation**: `agentpm/web/README.md` (comprehensive guide)
+- **Troubleshooting**: `agentpm/web/README.md#troubleshooting` (common issues)
+- **Flask Docs**: https://flask.palletsprojects.com/
+- **HTMX Docs**: https://htmx.org/docs/
+
+---
+
+**That's it!** You're ready to use the APM (Agent Project Manager) dashboard. 🚀
+
+**Time to productive**: ~5 minutes
+**Zero configuration**: Auto-detects your project database
+**Professional UI**: Bootstrap 5 + Chart.js + HTMX

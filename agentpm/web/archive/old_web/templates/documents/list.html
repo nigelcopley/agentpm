@@ -1,0 +1,218 @@
+{% extends "layouts/modern_base.html" %}
+{% from 'macros/breadcrumb.html' import breadcrumb %}
+{% from 'macros/skeleton.html' import skeleton_table %}
+{% from 'macros/quick_actions.html' import quick_actions_icon %}
+{% from 'macros/empty_state.html' import render as empty_state %}
+
+{% block title %}Document References{% endblock %}
+
+{% block content %}
+{# Breadcrumbs: Dashboard → Documents #}
+{{ breadcrumb([
+    {'label': 'Documents', 'url': None}
+], show_home=True) }}
+<section class="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+  <div>
+    <h1 class="text-3xl font-semibold text-gray-900">Document References</h1>
+    <p class="mt-2 text-sm text-gray-500">Centralised repository of ADRs, design notes, test plans, and supporting documentation.</p>
+  </div>
+  <span class="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
+    <i class="bi bi-archive"></i>
+    {{ view.total_documents }} documents tracked
+  </span>
+</section>
+
+<section class="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+  {% for label, count, icon in [
+    ('Total', view.total_documents, 'bi-journal-richtext'),
+    ('Architecture', view.type_counts.get('architecture', 0), 'bi-diagram-3'),
+    ('Design', view.type_counts.get('design', 0), 'bi-brush'),
+    ('ADRs', view.type_counts.get('adr', 0), 'bi-lightbulb')
+  ] %}
+  <article class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+    <header class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+      <i class="{{ icon }} text-primary"></i>
+      {{ label }}
+    </header>
+    <p class="mt-3 text-3xl font-semibold text-gray-900">{{ count }}</p>
+    <p class="text-xs text-gray-500">{{ label }} documents available</p>
+  </article>
+  {% endfor %}
+</section>
+
+<section class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+  <header class="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-gray-500">
+    <i class="bi bi-funnel text-primary"></i>
+    Filters
+  </header>
+  <form method="GET" action="/documents" class="grid gap-4 md:grid-cols-4" x-data="{ loading: false }" @submit="loading = true">
+    <label class="space-y-2">
+      <span class="text-sm font-medium text-gray-600">Entity Type</span>
+      <select name="entity_type" class="form-select">
+        <option value="">All</option>
+        <option value="project" {% if view.entity_type_filter == 'project' %}selected{% endif %}>Project</option>
+        <option value="work_item" {% if view.entity_type_filter == 'work_item' %}selected{% endif %}>Work Item</option>
+        <option value="task" {% if view.entity_type_filter == 'task' %}selected{% endif %}>Task</option>
+      </select>
+    </label>
+    <label class="space-y-2">
+      <span class="text-sm font-medium text-gray-600">Document Type</span>
+      <select name="document_type" class="form-select">
+        <option value="">All</option>
+        {% for option in ['architecture','design','specification','api_doc','user_guide','admin_guide','troubleshooting','adr','test_plan','migration_guide'] %}
+        <option value="{{ option }}" {% if view.document_type_filter == option %}selected{% endif %}>{{ option.replace('_', ' ').title() }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="space-y-2">
+      <span class="text-sm font-medium text-gray-600">Format</span>
+      <select name="format" class="form-select">
+        <option value="">All</option>
+        {% for option in ['markdown','yaml','json','pdf','html'] %}
+        <option value="{{ option }}" {% if view.format_filter == option %}selected{% endif %}>{{ option.upper() }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="space-y-2">
+      <span class="text-sm font-medium text-gray-600">Sort By</span>
+      <select name="sort" class="form-select">
+        <option value="created_desc" {% if current_sort == 'created_desc' %}selected{% endif %}>Newest First</option>
+        <option value="created_asc" {% if current_sort == 'created_asc' %}selected{% endif %}>Oldest First</option>
+        <option value="title_asc" {% if current_sort == 'title_asc' %}selected{% endif %}>Title (A-Z)</option>
+        <option value="title_desc" {% if current_sort == 'title_desc' %}selected{% endif %}>Title (Z-A)</option>
+        <option value="path_asc" {% if current_sort == 'path_asc' %}selected{% endif %}>Path (A-Z)</option>
+        <option value="path_desc" {% if current_sort == 'path_desc' %}selected{% endif %}>Path (Z-A)</option>
+      </select>
+    </label>
+  </form>
+  <div class="mt-4 flex items-center gap-2">
+    <button type="button"
+            onclick="document.querySelector('form').submit()"
+            class="btn btn-primary"
+            :disabled="loading"
+            :class="{ 'opacity-50 cursor-wait': loading }">
+      <span x-show="loading" class="inline-flex items-center gap-2">
+        <i class="bi bi-hourglass-split animate-spin"></i>
+        <span>Loading...</span>
+      </span>
+      <span x-show="!loading">Apply Filters & Sort</span>
+    </button>
+    {% if view.entity_type_filter or view.document_type_filter or view.format_filter or current_sort != 'created_desc' %}
+    <a href="/documents" class="btn btn-secondary">Clear</a>
+    {% endif %}
+  </div>
+</section>
+
+{% if view.grouped_by_type %}
+  {% for doc_type, docs in view.grouped_by_type.items() %}
+  <section class="mt-8 rounded-2xl border border-gray-200 bg-white shadow-sm">
+    <header class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+      <div class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-gray-500">
+        {% set icon = 'bi-file-earmark' %}
+        {% if doc_type == 'architecture' %}{% set icon = 'bi-diagram-3' %}
+        {% elif doc_type == 'design' %}{% set icon = 'bi-brush' %}
+        {% elif doc_type == 'adr' %}{% set icon = 'bi-lightbulb' %}
+        {% elif doc_type == 'test_plan' %}{% set icon = 'bi-bug' %}
+        {% endif %}
+        <i class="{{ icon }} text-primary"></i>
+        {{ doc_type.replace('_', ' ').title() }}
+      </div>
+      <span class="text-xs font-medium text-gray-400">{{ docs|length }} documents</span>
+    </header>
+    <div class="overflow-x-auto" x-data="{ tableLoading: false }">
+      {# Show skeleton loader on page load (optional - can be triggered by Alpine.js or server-side) #}
+      <div x-show="tableLoading" x-cloak aria-busy="true" aria-label="Loading documents">
+        {{ skeleton_table(rows=5, columns=8) }}
+      </div>
+
+      <table class="min-w-full divide-y divide-gray-100 text-left text-sm text-gray-700" x-show="!tableLoading">
+        <thead class="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <tr>
+            <th class="px-6 py-3">Entity</th>
+            <th class="px-4 py-3">File Path</th>
+            <th class="px-4 py-3">Title</th>
+            <th class="px-4 py-3">Format</th>
+            <th class="px-4 py-3">Size</th>
+            <th class="px-4 py-3">Created</th>
+            <th class="px-4 py-3">Updated</th>
+            <th class="px-4 py-3 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for doc in docs %}
+          <tr class="transition hover:bg-primary/5">
+            <td class="px-6 py-4 align-top">
+              <div class="font-semibold text-gray-900">{{ doc.entity_type.replace('_',' ').title() }}</div>
+              <div class="text-xs text-gray-400">
+                {% if doc.entity_name %}
+                  {{ doc.entity_name | truncate(30) }}
+                {% else %}
+                  ID: {{ doc.entity_id }}
+                {% endif %}
+              </div>
+            </td>
+            <td class="px-4 py-4 align-top">
+              <code class="rounded bg-gray-100 px-2 py-1 text-xs text-gray-600">{{ doc.file_path | truncate(60) }}</code>
+            </td>
+            <td class="px-4 py-4 align-top">
+              {% if doc.title %}
+              <div class="font-semibold text-gray-900">{{ doc.title }}</div>
+              {% if doc.description %}
+              <p class="mt-1 text-xs text-gray-500">{{ doc.description | truncate(50) }}</p>
+              {% endif %}
+              {% else %}
+              <span class="text-xs italic text-gray-400">No title</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-4 align-top">
+              {% set format_icon = 'bi-file-earmark' %}
+              {% if doc.format == 'markdown' %}{% set format_icon = 'bi-markdown' %}
+              {% elif doc.format == 'yaml' %}{% set format_icon = 'bi-file-earmark-code' %}
+              {% elif doc.format == 'json' %}{% set format_icon = 'bi-braces' %}
+              {% elif doc.format == 'pdf' %}{% set format_icon = 'bi-file-pdf' %}
+              {% elif doc.format == 'html' %}{% set format_icon = 'bi-filetype-html' %}
+              {% endif %}
+              {% set format_label = doc.format.upper() if doc.format else 'UNKNOWN' %}
+              <span class="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
+                <i class="{{ format_icon }}"></i>
+                {{ format_label }}
+              </span>
+            </td>
+            <td class="px-4 py-4 align-top text-sm text-gray-600">{{ format_file_size(doc.file_size_bytes) }}</td>
+            <td class="px-4 py-4 align-top text-sm text-gray-600">{{ doc.created_at.strftime('%Y-%m-%d') if doc.created_at else '—' }}</td>
+            <td class="px-4 py-4 align-top text-sm text-gray-600">{{ doc.updated_at.strftime('%Y-%m-%d') if doc.updated_at else '—' }}</td>
+            <td class="px-4 py-4 align-top text-right">
+              <div class="flex flex-wrap items-center justify-end gap-2">
+                {# Primary action button #}
+                <a href="/documents/{{ doc.id }}"
+                   class="inline-flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/10 px-3 py-2 text-xs font-semibold text-primary transition hover:bg-primary/20"
+                   aria-label="View document {{ doc.title or doc.file_path }}">
+                  <i class="bi bi-eye" aria-hidden="true"></i>
+                  <span>View</span>
+                </a>
+
+                {# Quick actions dropdown #}
+                {{ quick_actions_icon([
+                    {'label': 'Download', 'url': '/documents/download/' ~ doc.id, 'icon': 'download'},
+                    {'label': 'Copy Path', 'url': '#', 'icon': 'clipboard'},
+                    {'divider': True},
+                    {'label': 'Archive', 'url': '/documents/' ~ doc.id ~ '/archive', 'icon': 'archive'}
+                ], aria_label='Document actions for ' ~ (doc.title or doc.file_path)) }}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endfor %}
+{% else %}
+{{ empty_state(
+    icon='file-text',
+    heading='No documents found',
+    description='Document references link files to work items, tasks, or other entities. Add references via the CLI: apm document add --entity-type=work_item --entity-id=<id> --file-path=<path>',
+    size='normal'
+) }}
+{% endif %}
+{% endblock %}

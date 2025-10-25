@@ -1,0 +1,80 @@
+{% extends "layouts/modern_base.html" %}
+
+{% block title %}No Project Found - APM (Agent Project Manager){% endblock %}
+
+{% block content %}
+<!-- Empty State: No Project Exists -->
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-6">
+            <div class="card shadow-sm border-0 animate-fade-in" style="margin-top: 5rem;">
+                <div class="card-body text-center p-5">
+                    <!-- Icon -->
+                    <div class="mb-4">
+                        <i class="bi bi-folder2-open" style="font-size: 5rem; color: var(--royal-primary);"></i>
+                    </div>
+
+                    <!-- Heading -->
+                    <h2 class="fw-bold mb-3">No Project Found</h2>
+
+                    <!-- Description -->
+                    <p class="text-muted mb-4">
+                        This APM (Agent Project Manager) instance doesn't have any projects yet.
+                        To get started, you'll need to initialize a project using the CLI.
+                    </p>
+
+                    <!-- Instructions Card -->
+                    <div class="card bg-light border-0 mb-4">
+                        <div class="card-body text-start">
+                            <h6 class="fw-bold mb-3">
+                                <i class="bi bi-terminal"></i> Quick Start
+                            </h6>
+
+                            <p class="small text-muted mb-2">
+                                <strong>Option 1:</strong> Initialize AIPM in an existing project directory
+                            </p>
+                            <div class="bg-dark text-light p-3 rounded mb-3 font-monospace small">
+                                cd /path/to/your/project<br>
+                                apm init "My Project" .
+                            </div>
+
+                            <p class="small text-muted mb-2">
+                                <strong>Option 2:</strong> Create a new project
+                            </p>
+                            <div class="bg-dark text-light p-3 rounded mb-3 font-monospace small">
+                                apm init "My Project" /path/to/new/project
+                            </div>
+
+                            <p class="small text-muted mb-0">
+                                After initializing, refresh this page to see your project dashboard.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Help Links -->
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="#" class="btn btn-outline-primary" onclick="location.reload(); return false;">
+                            <i class="bi bi-arrow-clockwise"></i> Refresh Page
+                        </a>
+                        <a href="/system/database" class="btn btn-secondary">
+                            <i class="bi bi-database"></i> Database Status
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Help -->
+            <div class="text-center mt-4">
+                <p class="small text-muted">
+                    <i class="bi bi-info-circle"></i>
+                    Need help? Check the
+                    <a href="https://github.com/your-org/aipm-v2" target="_blank" class="text-decoration-none">
+                        documentation
+                    </a>
+                    or run <code>apm --help</code>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

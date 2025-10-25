@@ -1,0 +1,201 @@
+{% extends "layouts/modern_base.html" %}
+{% from 'macros/breadcrumb.html' import breadcrumb %}
+{% from 'macros/skeleton.html' import skeleton_table %}
+{% from 'macros/empty_state.html' import compact as empty_state_compact %}
+
+{% block title %}Evidence Sources{% endblock %}
+
+{% block content %}
+{# Breadcrumbs: Dashboard → Evidence #}
+{{ breadcrumb([
+    {'label': 'Evidence', 'url': None}
+], show_home=True) }}
+<section class="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+  <div>
+    <h1 class="text-3xl font-semibold text-gray-900">Evidence Sources</h1>
+    <p class="mt-2 text-sm text-gray-500">Curated evidence streams powering confidence scoring and context assembly.</p>
+  </div>
+  <span class="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
+    <i class="bi bi-database"></i>
+    {{ view.total_evidence }} sources catalogued
+  </span>
+</section>
+
+<section class="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+  {% set high_conf = view.evidence_list | selectattr('confidence', 'ge', 0.8) | list | length %}
+  {% set documentation = view.evidence_list | selectattr('source_type', 'eq', 'documentation') | list | length %}
+  {% set research = view.evidence_list | selectattr('source_type', 'eq', 'research') | list | length %}
+  {% for label, value, icon in [
+    ('Total Sources', view.total_evidence, 'bi-collection'),
+    ('High Confidence (≥80%)', high_conf, 'bi-shield-check'),
+    ('Documentation', documentation, 'bi-journal-richtext'),
+    ('Research', research, 'bi-search')
+  ] %}
+  <article class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+    <header class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+      <i class="{{ icon }} text-primary"></i>
+      {{ label }}
+    </header>
+    <p class="mt-3 text-3xl font-semibold text-gray-900">{{ value }}</p>
+    <p class="text-xs text-gray-500">{{ label }}</p>
+  </article>
+  {% endfor %}
+</section>
+
+<section class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+  <header class="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-gray-500">
+    <i class="bi bi-funnel text-primary"></i>
+    Filters
+  </header>
+  <form method="GET" action="/evidence" class="grid gap-4 md:grid-cols-4" x-data="{ loading: false }" @submit="loading = true">
+    <label class="space-y-2">
+      <span class="text-sm font-medium text-gray-600">Entity Type</span>
+      <select name="entity_type" class="form-select">
+        <option value="">All</option>
+        <option value="project" {% if view.entity_type_filter == 'project' %}selected{% endif %}>Project</option>
+        <option value="work_item" {% if view.entity_type_filter == 'work_item' %}selected{% endif %}>Work Item</option>
+        <option value="task" {% if view.entity_type_filter == 'task' %}selected{% endif %}>Task</option>
+      </select>
+    </label>
+    <label class="space-y-2">
+      <span class="text-sm font-medium text-gray-600">Source Type</span>
+      <select name="source_type" class="form-select">
+        <option value="">All</option>
+        {% for option in ['documentation','research','stackoverflow','github','internal_doc','meeting_notes','expert_opinion'] %}
+        <option value="{{ option }}" {% if view.source_type_filter == option %}selected{% endif %}>{{ option.replace('_',' ').title() }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="space-y-2">
+      <span class="text-sm font-medium text-gray-600">Min Confidence</span>
+      <select name="min_confidence" class="form-select">
+        <option value="">All</option>
+        {% for option, label in [(0.9,'Very High (≥90%)'),(0.8,'High (≥80%)'),(0.7,'Medium (≥70%)'),(0.5,'Low (≥50%)')] %}
+        <option value="{{ option }}" {% if view.min_confidence_filter == option %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="space-y-2">
+      <span class="text-sm font-medium text-gray-600">Sort By</span>
+      <select name="sort" class="form-select">
+        <option value="created_desc" {% if current_sort == 'created_desc' %}selected{% endif %}>Newest First</option>
+        <option value="created_asc" {% if current_sort == 'created_asc' %}selected{% endif %}>Oldest First</option>
+        <option value="source_asc" {% if current_sort == 'source_asc' %}selected{% endif %}>Source (A-Z)</option>
+        <option value="source_desc" {% if current_sort == 'source_desc' %}selected{% endif %}>Source (Z-A)</option>
+        <option value="confidence_desc" {% if current_sort == 'confidence_desc' %}selected{% endif %}>Confidence (High to Low)</option>
+        <option value="confidence_asc" {% if current_sort == 'confidence_asc' %}selected{% endif %}>Confidence (Low to High)</option>
+      </select>
+    </label>
+  </form>
+  <div class="mt-4 flex items-center gap-2">
+    <button type="button"
+            onclick="document.querySelector('form').submit()"
+            class="btn btn-primary"
+            :disabled="loading"
+            :class="{ 'opacity-50 cursor-wait': loading }">
+      <span x-show="loading" class="inline-flex items-center gap-2">
+        <i class="bi bi-hourglass-split animate-spin"></i>
+        <span>Loading...</span>
+      </span>
+      <span x-show="!loading">Apply Filters & Sort</span>
+    </button>
+    {% if view.entity_type_filter or view.source_type_filter or view.min_confidence_filter or current_sort != 'created_desc' %}
+    <a href="/evidence" class="btn btn-secondary">Clear</a>
+    {% endif %}
+  </div>
+</section>
+
+<section class="mt-8 rounded-2xl border border-gray-200 bg-white shadow-sm">
+  <header class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+    <div class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-gray-500">
+      <i class="bi bi-list-check text-primary"></i>
+      Evidence Sources
+    </div>
+    <span class="text-xs font-medium text-gray-400">{{ view.evidence_list|length }} results</span>
+  </header>
+
+  {% if view.evidence_list %}
+  <div class="overflow-x-auto" x-data="{ tableLoading: false }">
+    {# Skeleton loader #}
+    <div x-show="tableLoading" x-cloak aria-busy="true" aria-label="Loading evidence sources">
+      {{ skeleton_table(rows=5, columns=7) }}
+    </div>
+
+    <table class="min-w-full divide-y divide-gray-100 text-left text-sm text-gray-700" x-show="!tableLoading">
+      <thead class="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
+        <tr>
+          <th class="px-6 py-3">Entity</th>
+          <th class="px-4 py-3">Source</th>
+          <th class="px-4 py-3">Type</th>
+          <th class="px-4 py-3">Excerpt</th>
+          <th class="px-4 py-3">Confidence</th>
+          <th class="px-4 py-3">Captured</th>
+          <th class="px-4 py-3">Author</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {% for evidence in view.evidence_list %}
+        <tr class="transition hover:bg-primary/5">
+          <td class="px-6 py-4 align-top">
+            <div class="font-semibold text-gray-900">{{ evidence.entity_type }}</div>
+            <div class="text-xs text-gray-400">
+              {% if evidence.entity_name %}
+                {{ evidence.entity_name }}
+              {% else %}
+                ID: {{ evidence.entity_id }}
+              {% endif %}
+            </div>
+          </td>
+          <td class="px-4 py-4 align-top">
+            <a href="{{ evidence.url }}"
+               target="_blank"
+               rel="noopener noreferrer"
+               class="inline-flex items-center gap-1 text-sm font-medium text-primary hover:text-primary-dark hover:underline"
+               aria-label="Open evidence source: {{ evidence.url }} (opens in new tab)">
+              <span class="truncate max-w-xs">{{ evidence.url | truncate(50) }}</span>
+              <i class="bi bi-box-arrow-up-right flex-shrink-0" aria-hidden="true"></i>
+            </a>
+          </td>
+          <td class="px-4 py-4 align-top">
+            <span class="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">{{ evidence.source_type }}</span>
+          </td>
+          <td class="px-4 py-4 align-top text-sm text-gray-600">
+            {% if evidence.excerpt %}
+              {{ evidence.excerpt | truncate(80) }}
+            {% else %}
+              <span class="text-xs italic text-gray-400">No excerpt</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-4 align-top">
+            {% set confidence_pct = (evidence.confidence * 100) | int %}
+            {# Design system colors: success (≥80%), warning (60-79%), error (<60%) #}
+            {% set confidence_color = 'success' if confidence_pct >= 80 else 'warning' if confidence_pct >= 60 else 'error' %}
+            {% set confidence_bg = 'bg-success' if confidence_pct >= 80 else 'bg-warning' if confidence_pct >= 60 else 'bg-error' %}
+            {% set confidence_label = 'High confidence' if confidence_pct >= 80 else 'Medium confidence' if confidence_pct >= 60 else 'Low confidence' %}
+
+            <div class="flex items-center gap-3">
+              {# Progress bar with ARIA label #}
+              <div class="h-2 w-24 overflow-hidden rounded-full bg-gray-100" role="progressbar" aria-valuenow="{{ confidence_pct }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ confidence_label }}: {{ confidence_pct }}%">
+                <span class="block h-full rounded-full {{ confidence_bg }}" style="width: {{ confidence_pct }}%"></span>
+              </div>
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-{{ confidence_color }}/10 px-2.5 py-1 text-xs font-semibold text-{{ confidence_color }}">
+                <i class="bi bi-{{ 'check-circle-fill' if confidence_pct >= 80 else 'exclamation-triangle-fill' if confidence_pct >= 60 else 'x-circle-fill' }}" aria-hidden="true"></i>
+                <span>{{ confidence_pct }}%</span>
+              </span>
+            </div>
+          </td>
+          <td class="px-4 py-4 align-top text-sm text-gray-600">{{ evidence.captured_at.strftime('%Y-%m-%d %H:%M') if evidence.captured_at else '—' }}</td>
+          <td class="px-4 py-4 align-top text-sm text-gray-600">{{ evidence.created_by or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  {{ empty_state_compact(
+      icon='journal-check',
+      message='No evidence sources found. Adjust filters or ingest new evidence via the workflow.'
+  ) }}
+  {% endif %}
+</section>
+{% endblock %}

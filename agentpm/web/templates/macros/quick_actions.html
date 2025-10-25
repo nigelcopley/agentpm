@@ -1,0 +1,273 @@
+{#
+  Quick Actions Dropdown Macro
+
+  APM (Agent Project Manager) Design System Component
+  Version: 1.0.0
+
+  Description:
+    Alpine.js-powered dropdown menu for contextual actions.
+    Keyboard accessible with proper ARIA attributes.
+
+  Usage:
+    {% from 'macros/quick_actions.html' import quick_actions, action_item %}
+
+    {{ quick_actions('Actions', [
+        {'label': 'Edit', 'url': '/edit', 'icon': 'pencil'},
+        {'label': 'Duplicate', 'url': '/duplicate', 'icon': 'copy'},
+        {'divider': True},
+        {'label': 'Delete', 'url': '/delete', 'icon': 'trash', 'danger': True}
+    ]) }}
+
+  Features:
+    - Alpine.js powered (lightweight reactivity)
+    - Click-away to close
+    - Keyboard accessible (Tab, Enter, Escape)
+    - Icon + text pattern
+    - Danger action styling
+    - Dividers for grouping
+
+  Design System Reference:
+    - docs/architecture/web/component-snippets.md (Lines 573-604)
+    - docs/architecture/web/design-system.md (Dropdowns section)
+#}
+
+{#
+  Quick Actions Dropdown
+
+  Main dropdown component with trigger button and menu.
+
+  Parameters:
+    - label (str): Button text (default: 'Actions')
+    - actions (list): List of action items (dicts with label, url, icon, etc.)
+    - button_class (str): Button style class (default: 'btn-secondary')
+    - align (str): Menu alignment - 'left' or 'right' (default: 'right')
+    - icon (str): Button icon (default: 'three-dots-vertical')
+    - class (str): Additional container classes
+#}
+{% macro quick_actions(label='Actions', actions=[], button_class='btn-secondary', align='right', icon='three-dots-vertical', class='') %}
+<div x-data="{ open: false }" class="relative inline-block {{ class }}">
+  {# Trigger Button #}
+  <button
+    @click="open = !open"
+    @click.away="open = false"
+    type="button"
+    class="btn {{ button_class }} flex items-center gap-2"
+    aria-haspopup="true"
+    :aria-expanded="open"
+    aria-label="{{ label }} menu">
+    <span>{{ label }}</span>
+    <i class="bi bi-{{ icon }} transition-transform duration-200"
+       :class="{ 'rotate-180': open && '{{ icon }}' === 'chevron-down' }"></i>
+  </button>
+
+  {# Dropdown Menu #}
+  <div
+    x-show="open"
+    x-transition:enter="transition ease-out duration-100"
+    x-transition:enter-start="opacity-0 scale-95"
+    x-transition:enter-end="opacity-100 scale-100"
+    x-transition:leave="transition ease-in duration-75"
+    x-transition:leave-start="opacity-100 scale-100"
+    x-transition:leave-end="opacity-0 scale-95"
+    class="absolute {% if align == 'right' %}right-0{% else %}left-0{% endif %} mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50"
+    role="menu"
+    @keydown.escape.window="open = false">
+
+    {% for action in actions %}
+      {% if action.divider %}
+        {# Divider #}
+        <div class="border-t border-gray-200 my-1" role="separator"></div>
+      {% else %}
+        {# Action Item #}
+        <a
+          href="{{ action.url }}"
+          class="block px-4 py-2 text-sm {% if action.danger %}text-error{% else %}text-gray-700{% endif %} hover:bg-gray-50 transition-colors duration-150 flex items-center gap-2"
+          role="menuitem"
+          @click="open = false">
+          {% if action.icon %}
+          <i class="bi bi-{{ action.icon }} text-base" aria-hidden="true"></i>
+          {% endif %}
+          <span>{{ action.label }}</span>
+          {% if action.badge %}
+          <span class="ml-auto badge badge-{{ action.badge_type|default('gray') }} badge-sm">
+            {{ action.badge }}
+          </span>
+          {% endif %}
+        </a>
+      {% endif %}
+    {% endfor %}
+  </div>
+</div>
+{% endmacro %}
+
+
+{#
+  Quick Actions Icon Button
+
+  Minimal icon-only trigger (common for table rows, card headers).
+
+  Parameters:
+    - actions (list): List of action items
+    - icon (str): Button icon (default: 'three-dots-vertical')
+    - button_class (str): Button style (default: icon button style)
+    - align (str): Menu alignment - 'left' or 'right' (default: 'right')
+    - aria_label (str): Screen reader label (default: 'Actions')
+#}
+{% macro quick_actions_icon(actions=[], icon='three-dots-vertical', button_class='', align='right', aria_label='Actions') %}
+<div x-data="{ open: false }" class="relative inline-block">
+  {# Icon-Only Trigger #}
+  <button
+    @click="open = !open"
+    @click.away="open = false"
+    type="button"
+    class="{{ button_class if button_class else 'p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors' }}"
+    aria-haspopup="true"
+    :aria-expanded="open"
+    aria-label="{{ aria_label }}">
+    <i class="bi bi-{{ icon }} text-lg"></i>
+  </button>
+
+  {# Dropdown Menu #}
+  <div
+    x-show="open"
+    x-transition:enter="transition ease-out duration-100"
+    x-transition:enter-start="opacity-0 scale-95"
+    x-transition:enter-end="opacity-100 scale-100"
+    x-transition:leave="transition ease-in duration-75"
+    x-transition:leave-start="opacity-100 scale-100"
+    x-transition:leave-end="opacity-0 scale-95"
+    class="absolute {% if align == 'right' %}right-0{% else %}left-0{% endif %} mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50"
+    role="menu"
+    @keydown.escape.window="open = false">
+
+    {% for action in actions %}
+      {% if action.divider %}
+        <div class="border-t border-gray-200 my-1" role="separator"></div>
+      {% else %}
+        <a
+          href="{{ action.url }}"
+          class="block px-4 py-2 text-sm {% if action.danger %}text-error{% else %}text-gray-700{% endif %} hover:bg-gray-50 transition-colors flex items-center gap-2"
+          role="menuitem"
+          @click="open = false">
+          {% if action.icon %}
+          <i class="bi bi-{{ action.icon }}" aria-hidden="true"></i>
+          {% endif %}
+          <span>{{ action.label }}</span>
+        </a>
+      {% endif %}
+    {% endfor %}
+  </div>
+</div>
+{% endmacro %}
+
+
+{#
+  Quick Actions Button Group
+
+  Multiple action buttons with optional dropdown for overflow.
+
+  Parameters:
+    - primary_actions (list): Visible action buttons (max 3 recommended)
+    - overflow_actions (list): Actions in dropdown menu
+    - class (str): Additional container classes
+#}
+{% macro quick_actions_button_group(primary_actions=[], overflow_actions=[], class='') %}
+<div class="flex items-center gap-2 {{ class }}">
+  {# Primary Action Buttons #}
+  {% for action in primary_actions %}
+  <a
+    href="{{ action.url }}"
+    class="btn {{ action.class|default('btn-secondary') }} {% if action.icon_only %}px-3{% endif %}"
+    {% if action.aria_label %}aria-label="{{ action.aria_label }}"{% endif %}>
+    {% if action.icon %}
+    <i class="bi bi-{{ action.icon }} {% if not action.icon_only %}mr-2{% endif %}"></i>
+    {% endif %}
+    {% if not action.icon_only %}
+    <span>{{ action.label }}</span>
+    {% endif %}
+  </a>
+  {% endfor %}
+
+  {# Overflow Dropdown #}
+  {% if overflow_actions %}
+  <div class="border-l border-gray-300 pl-2">
+    {{ quick_actions_icon(overflow_actions, icon='three-dots', aria_label='More actions') }}
+  </div>
+  {% endif %}
+</div>
+{% endmacro %}
+
+
+{#
+  Examples:
+
+  1. Standard dropdown with mixed actions:
+     {{ quick_actions('Actions', [
+         {'label': 'View Details', 'url': '/view', 'icon': 'eye'},
+         {'label': 'Edit', 'url': '/edit', 'icon': 'pencil'},
+         {'divider': True},
+         {'label': 'Archive', 'url': '/archive', 'icon': 'archive'},
+         {'label': 'Delete', 'url': '/delete', 'icon': 'trash', 'danger': True}
+     ]) }}
+
+  2. Icon-only for table rows:
+     {{ quick_actions_icon([
+         {'label': 'Edit', 'url': '/edit/123', 'icon': 'pencil'},
+         {'label': 'Delete', 'url': '/delete/123', 'icon': 'trash', 'danger': True}
+     ], aria_label='Work item actions') }}
+
+  3. Button group with overflow:
+     {{ quick_actions_button_group(
+         primary_actions=[
+             {'label': 'Edit', 'url': '/edit', 'icon': 'pencil', 'class': 'btn-primary'},
+             {'label': 'Duplicate', 'url': '/duplicate', 'icon': 'copy'}
+         ],
+         overflow_actions=[
+             {'label': 'Export', 'url': '/export', 'icon': 'download'},
+             {'label': 'Share', 'url': '/share', 'icon': 'share'},
+             {'divider': True},
+             {'label': 'Delete', 'url': '/delete', 'icon': 'trash', 'danger': True}
+         ]
+     ) }}
+
+  4. With badges:
+     {{ quick_actions('Notifications', [
+         {'label': 'Inbox', 'url': '/inbox', 'icon': 'inbox', 'badge': '5', 'badge_type': 'primary'},
+         {'label': 'Drafts', 'url': '/drafts', 'icon': 'file-text', 'badge': '2', 'badge_type': 'gray'}
+     ]) }}
+
+  5. Left-aligned dropdown:
+     {{ quick_actions('Filter', [
+         {'label': 'All Items', 'url': '?filter=all', 'icon': 'grid'},
+         {'label': 'Active Only', 'url': '?filter=active', 'icon': 'check-circle'},
+         {'label': 'Archived', 'url': '?filter=archived', 'icon': 'archive'}
+     ], align='left') }}
+
+  Accessibility Notes:
+  - Button has aria-haspopup="true" for dropdown indication
+  - aria-expanded reflects open state (Alpine.js binding)
+  - Escape key closes dropdown (@keydown.escape.window)
+  - Click-away closes dropdown (@click.away)
+  - Icon-only buttons have aria-label
+  - role="menu" on dropdown, role="menuitem" on actions
+  - Keyboard navigation with Tab key
+
+  Alpine.js Features:
+  - x-data="{ open: false }": Component state
+  - @click="open = !open": Toggle dropdown
+  - @click.away="open = false": Close on outside click
+  - x-show="open": Show/hide menu
+  - x-transition: Smooth open/close animation
+  - @keydown.escape.window: Close on Escape key
+
+  Color Palette:
+  - Default: text-gray-700 hover:bg-gray-50
+  - Danger: text-error (red for destructive actions)
+  - Border: border-gray-200
+  - Background: bg-white with shadow-lg
+
+  Performance:
+  - Minimal JavaScript (Alpine.js ~15KB)
+  - CSS transitions (GPU-accelerated)
+  - No jQuery or heavy dependencies
+#}

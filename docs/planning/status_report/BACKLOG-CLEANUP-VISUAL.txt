@@ -1,0 +1,206 @@
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                    APM (Agent Project Manager) BACKLOG CLEANUP REVIEW                             ║
+║                          2025-10-21                                           ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ EXECUTIVE SUMMARY                                                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Total Reviewed: 48 work items (47 draft + 1 ready)                        │
+│                                                                             │
+│  Recommendations:                                                           │
+│    ✗ CLOSE:      21 items (44%) → Test/obsolete items                     │
+│    ★ ACTIVATE:    3 items (6%)  → Launch-critical (OPTIONAL)              │
+│    → DEFER v1.1: 12 items (25%) → Post-launch improvements                │
+│    → DEFER v1.2+: 10 items (21%) → Future enhancements                     │
+│    ⚡ MERGE:       2 items (4%)  → Consolidate duplicates                  │
+│                                                                             │
+│  Impact:                                                                    │
+│    Before: 48 unmanaged draft items (POOR backlog health)                 │
+│    After:  27 managed items (EXCELLENT backlog health)                    │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ BREAKDOWN BY CATEGORY                                                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ✗ CLOSE IMMEDIATELY (21 items)                                            │
+│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━    │
+│    • Test Items (18):  WI-84, 85, 86, 87, 91-99, 105, 106, 110, 130, 136  │
+│    • Completed (1):    WI-133 → mark as DONE (8/8 tasks complete!)        │
+│    • Obsolete (2):     WI-80, 82 (features exist or not needed)           │
+│    • Duplicate (2):    WI-127 (merge into WI-128)                          │
+│                                                                             │
+│  ★ ACTIVATE FOR v1.0 (3 items) - OPTIONAL                                  │
+│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━    │
+│    • WI-143: Preflight E2E Testing (8.0h)                                  │
+│    • WI-144: Live Project E2E Testing (4.0h)                               │
+│    • WI-142: Extract AIPM as orcx - Public Repo (8.5h)                     │
+│    Total: 20.5 hours additional effort                                     │
+│                                                                             │
+│  → DEFER TO v1.1 (12 items, 208 hours)                                     │
+│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━    │
+│    Priority 1 - Core Improvements (100h):                                  │
+│      • WI-129: System Harmony Validation                                   │
+│      • WI-128: Final Destination Roadmap                                   │
+│      • WI-124: Universal LLM Standards                                     │
+│      • WI-139: Core/CLI Audit Recommendations                              │
+│                                                                             │
+│    Priority 2 - Docs & Quality (64h):                                      │
+│      • WI-141: Web Frontend Polish                                         │
+│      • WI-111: Unified Documentation Structure                             │
+│      • WI-135: Document CLI Commands Integration                           │
+│      • WI-122: Migrate Doc Quality Rules                                   │
+│                                                                             │
+│    Priority 3 - Features (44h):                                            │
+│      • WI-79: Bug & Issue Management                                       │
+│      • WI-101: Modernize Dashboard                                         │
+│      • WI-83: Task Notes Modal                                             │
+│      • WI-131: Prevent Done Task Updates                                   │
+│                                                                             │
+│  → DEFER TO v1.2+ (10 items, 240 hours)                                    │
+│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━    │
+│    • WI-64, 67, 73: Framework enhancements                                 │
+│    • WI-68-72: Advanced agent/evidence/BI features                         │
+│    • WI-66, 107: Architecture refactors                                    │
+│    • WI-121, 123, 75: Advanced features                                    │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ EFFORT ANALYSIS                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Total if ALL activated:     580 hours                                     │
+│  Recommended activate (v1.0): 20.5 hours  (3 launch-critical items)        │
+│  Deferred to v1.1:           208 hours   (12 items)                        │
+│  Deferred to v1.2+:          240 hours   (10 items)                        │
+│  Closed/Merged:                0 hours   (21 items - no new work)          │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ BEFORE & AFTER COMPARISON                                                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  BEFORE CLEANUP:                    │  AFTER CLEANUP:                      │
+│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   │
+│  Status: POOR                       │  Status: EXCELLENT                   │
+│                                     │                                      │
+│  Draft (unknown):  47 items ⚠️     │  Cancelled:    51 items (+21) ✓     │
+│  Ready:             1 item          │  Done:         59 items (+1) ✓      │
+│  Active:            5 items ✓      │  Ready:         4 items (+3) ★      │
+│  Review:            1 item          │  Draft (v1.1): 12 items ← managed   │
+│  Done:             58 items ✓      │  Draft (v1.2+):10 items ← archived  │
+│  Other:            30 items         │  Active:        5 items ✓           │
+│                                     │  Review:        1 item              │
+│  Clarity: LOW                       │  Clarity: HIGH                       │
+│                                     │                                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ EXECUTION PLAN                                                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Phase 1: CLEANUP (30 minutes)                                             │
+│    • Close 21 items (test/obsolete/duplicate)                              │
+│    • Mark WI-133 as DONE                                                   │
+│                                                                             │
+│  Phase 2: ACTIVATE (optional, 2 hours planning + 20.5h execution)          │
+│    • Review WI-142/143/144                                                 │
+│    • Create tasks                                                          │
+│    • Update timeline                                                       │
+│                                                                             │
+│  Phase 3: DOCUMENT (15 minutes)                                            │
+│    • Tag v1.1 items (12)                                                   │
+│    • Archive v1.2+ items (10)                                              │
+│    • Update roadmap                                                        │
+│                                                                             │
+│  METHODS:                                                                  │
+│    Option A: Automated → ./scripts/backlog-cleanup.sh                      │
+│    Option B: Manual → See BACKLOG-QUICK-REFERENCE.md                       │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ LAUNCH INTEGRATION                                                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Option B (7-Day Launch) Timeline:                                         │
+│                                                                             │
+│  Days 1-2:  Critical Closure + Cleanup (30 min backlog cleanup)            │
+│  Days 3-4:  WI-140 Refactor + WI-142 Repo Setup (if activating)            │
+│  Days 5-6:  WI-143 Preflight Testing + WI-144 Live Testing (if activating) │
+│  Day 7:     Launch                                                          │
+│                                                                             │
+│  Impact: +20.5 hours if activating all 3 launch-critical items              │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ DECISION REQUIRED                                                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ✓ Execute Phase 1 cleanup? (30 minutes, RECOMMENDED)                      │
+│    [ ] YES → Run ./scripts/backlog-cleanup.sh                              │
+│    [ ] NO  → Defer cleanup                                                 │
+│                                                                             │
+│  ★ Activate WI-142/143/144 for launch? (20.5 hours, OPTIONAL)              │
+│    [ ] YES → Public launch with full E2E testing                           │
+│    [ ] NO  → Defer to post-launch, private release first                   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ DOCUMENTS CREATED                                                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  1. backlog-cleanup-review.md (21KB)                                        │
+│     → Full analysis, detailed rationale, execution commands                │
+│                                                                             │
+│  2. BACKLOG-CLEANUP-SUMMARY.md (6KB)                                        │
+│     → Executive summary, approval section                                  │
+│                                                                             │
+│  3. BACKLOG-QUICK-REFERENCE.md (4KB)                                        │
+│     → One-page quick reference, decision tree, FAQ                         │
+│                                                                             │
+│  4. backlog-cleanup.sh (5KB)                                                │
+│     → Automated execution script with safety checks                        │
+│                                                                             │
+│  5. BACKLOG-CLEANUP-INDEX.md                                                │
+│     → Navigation guide to all documentation                                │
+│                                                                             │
+│  6. BACKLOG-CLEANUP-VISUAL.txt (this file)                                 │
+│     → Visual summary for quick comprehension                               │
+│                                                                             │
+│  Location: /docs/planning/status_report/                                   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ QUICK START                                                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  For Immediate Action:                                                     │
+│    cd /Users/nigelcopley/.project_manager/aipm-v2                          │
+│    ./scripts/backlog-cleanup.sh                                            │
+│                                                                             │
+│  For Detailed Review:                                                      │
+│    cat docs/planning/status_report/BACKLOG-QUICK-REFERENCE.md              │
+│                                                                             │
+│  For Stakeholder Approval:                                                 │
+│    cat docs/planning/status_report/BACKLOG-CLEANUP-SUMMARY.md              │
+│                                                                             │
+│  For Complete Analysis:                                                    │
+│    cat docs/planning/status_report/backlog-cleanup-review.md               │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║  RECOMMENDATION: Execute Phase 1 cleanup (30 min) + Review WI-142/143/144    ║
+║  IMPACT: Backlog health EXCELLENT, clear v1.0/v1.1/v1.2+ boundaries           ║
+║  CONFIDENCE: HIGH (detailed analysis, reversible actions, safety checks)      ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+

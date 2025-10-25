@@ -1,0 +1,682 @@
+"""
+Django Plugin - Framework-Specific Context Extraction
+
+Extracts Django project facts and generates code amalgamations.
+
+Pattern: BasePlugin implementation for Django framework
+"""
+
+from pathlib import Path
+from typing import Dict, Any, List, Optional
+import re
+
+from ...base.plugin_interface import BasePlugin
+from ...base.types import PluginCategory
+from ...utils import find_config_files
+from .....utils import IgnorePatternMatcher
+
+
+class DjangoPlugin(BasePlugin):
+    """
+    Django framework plugin for context extraction.
+
+    Provides:
+    1. Project facts (Django version, apps, settings, database)
+    2. Code amalgamations (models, views, serializers, urls)
+    """
+
+    @property
+    def plugin_id(self) -> str:
+        return "framework:django"
+
+    @property
+    def enriches(self) -> str:
+        return "django"
+
+    @property
+    def category(self) -> PluginCategory:
+        return PluginCategory.FRAMEWORK
+
+    def __init__(self):
+        """Initialize Django plugin with ignore pattern matcher."""
+        self._ignore_matcher = None
+
+    def _get_filtered_glob(self, project_path: Path, pattern: str, limit: int = None) -> List[Path]:
+        """
+        Glob with ignore pattern filtering.
+
+        Respects .gitignore, .aipmignore, and default patterns to avoid
+        detecting test fixtures or examples as real project code.
+
+        Args:
+            project_path: Project root path
+            pattern: Glob pattern (e.g., "**/*.py")
+            limit: Optional limit on number of results
+
+        Returns:
+            List of filtered paths
+        """
+        # Lazy initialize ignore matcher
+        if self._ignore_matcher is None:
+            self._ignore_matcher = IgnorePatternMatcher(project_path)
+
+        results = []
+        for path in project_path.glob(pattern):
+            if not self._ignore_matcher.should_ignore(path):
+                results.append(path)
+                if limit and len(results) >= limit:
+                    break
+        return results
+
+    def detect(self, project_path: Path) -> float:
+        """
+        Detect Django presence with 3-phase approach.
+
+        Phase 1: Files (30%) - Django-specific config files
+        Phase 2: Imports (40%) - Django imports in Python files
+        Phase 3: Structure (30%) - Django project patterns
+
+        Returns:
+            Confidence score 0.0-1.0
+        """
+        confidence = 0.0
+
+        # Phase 1: Files (0.3 max)
+        if (project_path / "manage.py").exists():
+            confidence += 0.20  # Strong signal
+        if (project_path / "settings.py").exists():
+            confidence += 0.10
+        else:
+            # Check for Django settings in config directory
+            settings_files = self._get_filtered_glob(project_path, "**/settings*.py", limit=1)
+            if settings_files:
+                confidence += 0.10
+
+        # Phase 2: Imports (0.4 max) - Check for Django imports
+        py_files = self._get_filtered_glob(project_path, "**/*.py", limit=20)
+        django_import_found = False
+        for py_file in py_files:
+            try:
+                content = py_file.read_text()
+                if "from django" in content or "import django" in content:
+                    confidence += 0.40
+                    django_import_found = True
+                    break
+            except Exception:
+                continue
+
+        # Check requirements for Django (if imports not found)
+        if not django_import_found:
+            req_files = self._get_filtered_glob(project_path, "**/requirements*.txt", limit=5)
+            for req_file in req_files:
+                try:
+                    content = req_file.read_text().lower()
+                    if "django" in content:
+                        confidence += 0.20  # Weaker signal than imports
+                        break
+                except Exception:
+                    continue
+
+        # Phase 3: Structure (0.3 max)
+        # Look for Django app structure (filtered to avoid test projects)
+        if self._get_filtered_glob(project_path, "**/models.py", limit=1):
+            confidence += 0.10
+        if self._get_filtered_glob(project_path, "**/views.py", limit=1):
+            confidence += 0.10
+        if self._get_filtered_glob(project_path, "**/urls.py", limit=1):
+            confidence += 0.10
+
+        return min(confidence, 1.0)
+
+    def extract_project_facts(self, project_path: Path) -> Dict[str, Any]:
+        """
+        Extract Django project facts.
+
+        Returns technical facts about Django configuration and structure.
+        """
+        facts = {}
+
+        # Framework info
+        facts['framework'] = 'Django'
+        facts['django_version'] = self._get_django_version(project_path)
+
+        # Project structure
+        facts['project_type'] = self._detect_project_type(project_path)
+        facts['django_apps'] = self._discover_apps(project_path)
+        facts['settings_module'] = self._find_settings_module(project_path)
+
+        # Database configuration
+        facts['database'] = self._detect_database(project_path)
+
+        # Django features
+        facts['features'] = self._detect_features(project_path)
+
+        return facts
+
+    def generate_code_amalgamations(self, project_path: Path) -> Dict[str, str]:
+        """
+        Generate comprehensive Django code amalgamations based on detected libraries.
+
+        Strategy: Detect installed Django libraries (DRF, Celery, Channels, etc.)
+        and collect ALL patterns for each library, not just what exists in this project.
+
+        This provides complete pattern coverage for AI agents:
+        - Even if project has no serializers yet, agent knows the pattern
+        - Even if no Celery tasks yet, agent knows how to create them
+
+        Returns Django-specific code groupings organized by pattern.
+        """
+        amalgamations = {}
+
+        # Detect installed Django ecosystem libraries
+        libraries = self._detect_django_libraries(project_path)
+
+        # === CORE DJANGO PATTERNS (always collect) ===
+        amalgamations['models'] = self._collect_models(project_path)
+        amalgamations['views'] = self._collect_views(project_path)
+        amalgamations['urls'] = self._collect_urls(project_path)
+        amalgamations['admin'] = self._collect_admin(project_path)
+        amalgamations['forms'] = self._collect_forms(project_path)
+        amalgamations['signals'] = self._collect_signals(project_path)
+        amalgamations['management_commands'] = self._collect_management_commands(project_path)
+
+        # === DJANGO REST FRAMEWORK PATTERNS ===
+        if libraries.get('has_drf'):
+            amalgamations['drf_serializers'] = self._collect_serializers(project_path)
+            amalgamations['drf_viewsets'] = self._collect_viewsets(project_path)
+            amalgamations['drf_permissions'] = self._collect_permissions(project_path)
+            amalgamations['drf_routers'] = self._collect_routers(project_path)
+            amalgamations['drf_pagination'] = self._collect_pagination(project_path)
+
+        # === DJANGO NINJA PATTERNS ===
+        if libraries.get('has_ninja'):
+            amalgamations['ninja_routers'] = self._collect_ninja_routers(project_path)
+            amalgamations['ninja_schemas'] = self._collect_ninja_schemas(project_path)
+
+        # === DJANGO FILTER PATTERNS ===
+        if libraries.get('has_filter'):
+            amalgamations['filters'] = self._collect_filters(project_path)
+
+        # === DJANGO CMS PATTERNS ===
+        if libraries.get('has_cms'):
+            amalgamations['cms_plugins'] = self._collect_cms_plugins(project_path)
+            amalgamations['cms_models'] = self._collect_cms_models(project_path)
+
+        # === CELERY PATTERNS ===
+        if libraries.get('has_celery'):
+            amalgamations['celery_tasks'] = self._collect_celery_tasks(project_path)
+            amalgamations['celery_beat'] = self._collect_celery_beat(project_path)
+
+        # === DJANGO CHANNELS PATTERNS ===
+        if libraries.get('has_channels'):
+            amalgamations['consumers'] = self._collect_consumers(project_path)
+            amalgamations['routing'] = self._collect_routing(project_path)
+
+        # === GRAPHQL PATTERNS ===
+        if libraries.get('has_graphql'):
+            amalgamations['graphql_schema'] = self._collect_graphql_schema(project_path)
+            amalgamations['graphql_resolvers'] = self._collect_graphql_resolvers(project_path)
+
+        return amalgamations
+
+    # ========== Library Detection ==========
+
+    def _detect_django_libraries(self, project_path: Path) -> Dict[str, bool]:
+        """
+        Detect which Django ecosystem libraries are installed.
+
+        Checks requirements files for common Django libraries to determine
+        which patterns to collect.
+
+        Returns:
+            Dictionary of library flags
+            Example: {'has_drf': True, 'has_ninja': True, 'has_celery': True}
+        """
+        libraries = {
+            # API Frameworks
+            'has_drf': False,
+            'has_ninja': False,
+
+            # CMS & Content
+            'has_cms': False,
+            'has_wagtail': False,
+
+            # Task Queues
+            'has_celery': False,
+
+            # Real-time
+            'has_channels': False,
+
+            # GraphQL
+            'has_graphql': False,
+
+            # Search
+            'has_elasticsearch': False,
+            'has_meilisearch': False,
+
+            # Additional Features
+            'has_filter': False,  # django-filter
+            'has_fsm': False,     # django-fsm (state machines)
+            'has_tenants': False, # django-tenants (multi-tenancy)
+        }
+
+        # Check requirements files
+        req_files = list(project_path.glob("**/requirements*.txt")) + \
+                   list(project_path.glob("**/pyproject.toml")) + \
+                   list(project_path.glob("**/Pipfile"))
+
+        for req_file in req_files:
+            try:
+                content = req_file.read_text().lower()
+
+                # API frameworks
+                if 'djangorestframework' in content or 'rest_framework' in content:
+                    libraries['has_drf'] = True
+                if 'django-ninja' in content:
+                    libraries['has_ninja'] = True
+
+                # CMS
+                if 'django-cms' in content or 'djangocms' in content:
+                    libraries['has_cms'] = True
+                if 'wagtail' in content:
+                    libraries['has_wagtail'] = True
+
+                # Task queues
+                if 'celery' in content:
+                    libraries['has_celery'] = True
+
+                # Real-time
+                if 'channels' in content:
+                    libraries['has_channels'] = True
+
+                # GraphQL
+                if 'graphene' in content or 'strawberry' in content or 'ariadne' in content:
+                    libraries['has_graphql'] = True
+
+                # Search
+                if 'elasticsearch' in content:
+                    libraries['has_elasticsearch'] = True
+                if 'meilisearch' in content or 'django-meili' in content:
+                    libraries['has_meilisearch'] = True
+
+                # Additional features
+                if 'django-filter' in content:
+                    libraries['has_filter'] = True
+                if 'django-fsm' in content:
+                    libraries['has_fsm'] = True
+                if 'django-tenants' in content:
+                    libraries['has_tenants'] = True
+
+            except Exception:
+                continue
+
+        return libraries
+
+    # ========== Helper Methods ==========
+
+    def _get_django_version(self, project_path: Path) -> Optional[str]:
+        """Extract Django version from requirements"""
+        req_files = list(project_path.glob("**/requirements*.txt"))
+        for req_file in req_files:
+            try:
+                content = req_file.read_text()
+                match = re.search(r'Django[>=<]+([0-9.]+)', content, re.IGNORECASE)
+                if match:
+                    return match.group(1)
+            except Exception:
+                continue
+        return None
+
+    def _detect_project_type(self, project_path: Path) -> str:
+        """Detect if API, full-stack, or admin"""
+        if any(project_path.glob("**/serializers.py")):
+            return "django_rest_api"
+        elif any(project_path.glob("**/templates/**/*.html")):
+            return "django_fullstack"
+        else:
+            return "django_project"
+
+    def _discover_apps(self, project_path: Path) -> List[str]:
+        """Find Django apps by looking for apps.py files"""
+        apps = []
+        for apps_py in project_path.glob("**/apps.py"):
+            app_dir = apps_py.parent
+            # Get app name from directory
+            app_name = app_dir.name
+            if app_name not in ['migrations', '__pycache__']:
+                apps.append(app_name)
+        return apps[:10]  # Return first 10 apps
+
+    def _find_settings_module(self, project_path: Path) -> Optional[str]:
+        """Find Django settings module path"""
+        settings_files = list(project_path.glob("**/settings.py")) + \
+                        list(project_path.glob("**/settings/**/*.py"))
+
+        if settings_files:
+            settings_file = settings_files[0]
+            rel_path = settings_file.relative_to(project_path)
+            # Convert path to module notation
+            module_path = str(rel_path).replace('/', '.').replace('.py', '')
+            return module_path
+        return None
+
+    def _detect_database(self, project_path: Path) -> str:
+        """Detect database from settings or requirements"""
+        req_files = list(project_path.glob("**/requirements*.txt"))
+        for req_file in req_files:
+            try:
+                content = req_file.read_text().lower()
+                if "psycopg" in content or "postgresql" in content:
+                    return "PostgreSQL"
+                elif "mysqlclient" in content or "pymysql" in content:
+                    return "MySQL"
+            except Exception:
+                continue
+        return "SQLite"  # Django default
+
+    def _detect_features(self, project_path: Path) -> List[str]:
+        """Detect Django features in use"""
+        features = []
+
+        if any(project_path.glob("**/serializers.py")):
+            features.append("Django REST Framework")
+        if any(project_path.glob("**/admin.py")):
+            features.append("Django Admin")
+        if any(project_path.glob("**/templates/**")):
+            features.append("Django Templates")
+        if any(project_path.glob("**/static/**")):
+            features.append("Static Files")
+
+        return features
+
+    def _collect_models(self, project_path: Path) -> str:
+        """
+        Collect all Django models.
+
+        Handles both patterns:
+        - Single file: app/models.py
+        - Module: app/models/__init__.py + app/models/user.py + app/models/product.py
+        """
+        models_content = []
+
+        # Pattern 1: Single models.py files
+        for models_file in project_path.glob("**/models.py"):
+            try:
+                content = models_file.read_text()
+                # Skip if it's just imports (likely a models/__init__.py that imports from submodules)
+                if len(content.strip()) > 200 or "class " in content:
+                    models_content.append(f"# {models_file.relative_to(project_path)}\n{content}\n")
+            except Exception:
+                continue
+
+        # Pattern 2: Models in models/ directory (app/models/*.py)
+        for models_dir in project_path.glob("**/models"):
+            if models_dir.is_dir():
+                for model_file in models_dir.glob("*.py"):
+                    if model_file.name != '__init__.py':  # Skip __init__, get actual model files
+                        try:
+                            content = model_file.read_text()
+                            models_content.append(f"# {model_file.relative_to(project_path)}\n{content}\n")
+                        except Exception:
+                            continue
+
+        return "\n".join(models_content[:20])  # Up to 20 model files
+
+    def _collect_views(self, project_path: Path) -> str:
+        """Collect all Django views"""
+        views_content = []
+        for views_file in project_path.glob("**/views.py"):
+            try:
+                content = views_file.read_text()
+                views_content.append(f"# {views_file.relative_to(project_path)}\n{content}\n")
+            except Exception:
+                continue
+        return "\n".join(views_content[:5])  # First 5 views files
+
+    def _collect_urls(self, project_path: Path) -> str:
+        """Collect all URL configurations"""
+        urls_content = []
+        for urls_file in project_path.glob("**/urls.py"):
+            try:
+                content = urls_file.read_text()
+                urls_content.append(f"# {urls_file.relative_to(project_path)}\n{content}\n")
+            except Exception:
+                continue
+        return "\n".join(urls_content[:5])  # First 5 URLs files
+
+    def _collect_serializers(self, project_path: Path) -> str:
+        """Collect Django REST Framework serializers"""
+        serializers_content = []
+        for serializer_file in project_path.glob("**/serializers.py"):
+            try:
+                content = serializer_file.read_text()
+                serializers_content.append(f"# {serializer_file.relative_to(project_path)}\n{content}\n")
+            except Exception:
+                continue
+        return "\n".join(serializers_content[:10])  # Up to 10 serializer files
+
+    def _collect_viewsets(self, project_path: Path) -> str:
+        """Collect DRF ViewSets from views.py files"""
+        viewset_content = []
+        for views_file in project_path.glob("**/views.py"):
+            try:
+                content = views_file.read_text()
+                # Only include if contains ViewSet patterns
+                if "ViewSet" in content or "APIView" in content:
+                    viewset_content.append(f"# {views_file.relative_to(project_path)}\n{content}\n")
+            except Exception:
+                continue
+        return "\n".join(viewset_content[:10])
+
+    def _collect_permissions(self, project_path: Path) -> str:
+        """Collect DRF custom permissions"""
+        permissions_content = []
+        for perm_file in project_path.glob("**/permissions.py"):
+            try:
+                content = perm_file.read_text()
+                permissions_content.append(f"# {perm_file.relative_to(project_path)}\n{content}\n")
+            except Exception:
+                continue
+        return "\n".join(permissions_content[:5])
+
+    def _collect_filters(self, project_path: Path) -> str:
+        """Collect DRF filters"""
+        filters_content = []
+        for filter_file in project_path.glob("**/filters.py"):
+            try:
+                content = filter_file.read_text()
+                filters_content.append(f"# {filter_file.relative_to(project_path)}\n{content}\n")
+            except Exception:
+                continue
+        return "\n".join(filters_content[:5])
+
+    def _collect_admin(self, project_path: Path) -> str:
+        """Collect Django admin customizations"""
+        admin_content = []
+        for admin_file in project_path.glob("**/admin.py"):
+            try:
+                content = admin_file.read_text()
+                # Skip empty admin files (just imports)
+                if len(content.strip()) > 100:
+                    admin_content.append(f"# {admin_file.relative_to(project_path)}\n{content}\n")
+            except Exception:
+                continue
+        return "\n".join(admin_content[:10])
+
+    def _collect_forms(self, project_path: Path) -> str:
+        """Collect Django forms"""
+        forms_content = []
+        for forms_file in project_path.glob("**/forms.py"):
+            try:
+                content = forms_file.read_text()
+                forms_content.append(f"# {forms_file.relative_to(project_path)}\n{content}\n")
+            except Exception:
+                continue
+        return "\n".join(forms_content[:10])
+
+    def _collect_signals(self, project_path: Path) -> str:
+        """Collect Django signal handlers"""
+        signals_content = []
+        for signals_file in project_path.glob("**/signals.py"):
+            try:
+                content = signals_file.read_text()
+                signals_content.append(f"# {signals_file.relative_to(project_path)}\n{content}\n")
+            except Exception:
+                continue
+        return "\n".join(signals_content[:5])
+
+    def _collect_celery_tasks(self, project_path: Path) -> str:
+        """Collect Celery task definitions"""
+        tasks_content = []
+        for tasks_file in project_path.glob("**/tasks.py"):
+            try:
+                content = tasks_file.read_text()
+                # Only include if contains Celery patterns
+                if "@task" in content or "@shared_task" in content or "celery" in content.lower():
+                    tasks_content.append(f"# {tasks_file.relative_to(project_path)}\n{content}\n")
+            except Exception:
+                continue
+        return "\n".join(tasks_content[:10])
+
+    def _collect_management_commands(self, project_path: Path) -> str:
+        """Collect Django management commands"""
+        commands_content = []
+        for cmd_file in project_path.glob("**/management/commands/*.py"):
+            if cmd_file.name != '__init__.py':
+                try:
+                    content = cmd_file.read_text()
+                    commands_content.append(f"# {cmd_file.relative_to(project_path)}\n{content}\n")
+                except Exception:
+                    continue
+        return "\n".join(commands_content[:10])
+
+    def _collect_routers(self, project_path: Path) -> str:
+        """Collect DRF router configurations"""
+        routers_content = []
+        # Check in urls.py files for router usage
+        for urls_file in project_path.glob("**/urls.py"):
+            try:
+                content = urls_file.read_text()
+                if "router" in content.lower() or "DefaultRouter" in content:
+                    routers_content.append(f"# {urls_file.relative_to(project_path)}\n{content}\n")
+            except Exception:
+                continue
+        return "\n".join(routers_content[:5])
+
+    def _collect_pagination(self, project_path: Path) -> str:
+        """Collect DRF pagination classes"""
+        pagination_content = []
+        for py_file in project_path.glob("**/pagination.py"):
+            try:
+                content = py_file.read_text()
+                pagination_content.append(f"# {py_file.relative_to(project_path)}\n{content}\n")
+            except Exception:
+                continue
+        return "\n".join(pagination_content[:5])
+
+    def _collect_celery_beat(self, project_path: Path) -> str:
+        """Collect Celery beat schedules"""
+        beat_content = []
+        # Check celery.py or settings for beat schedules
+        for py_file in project_path.glob("**/celery.py"):
+            try:
+                content = py_file.read_text()
+                if "beat_schedule" in content or "CELERYBEAT" in content:
+                    beat_content.append(f"# {py_file.relative_to(project_path)}\n{content}\n")
+            except Exception:
+                continue
+        return "\n".join(beat_content[:3])
+
+    def _collect_consumers(self, project_path: Path) -> str:
+        """Collect Django Channels consumers"""
+        consumers_content = []
+        for consumer_file in project_path.glob("**/consumers.py"):
+            try:
+                content = consumer_file.read_text()
+                consumers_content.append(f"# {consumer_file.relative_to(project_path)}\n{content}\n")
+            except Exception:
+                continue
+        return "\n".join(consumers_content[:5])
+
+    def _collect_routing(self, project_path: Path) -> str:
+        """Collect Channels routing configuration"""
+        routing_content = []
+        for routing_file in project_path.glob("**/routing.py"):
+            try:
+                content = routing_file.read_text()
+                routing_content.append(f"# {routing_file.relative_to(project_path)}\n{content}\n")
+            except Exception:
+                continue
+        return "\n".join(routing_content[:5])
+
+    def _collect_graphql_schema(self, project_path: Path) -> str:
+        """Collect GraphQL schema definitions"""
+        schema_content = []
+        for schema_file in project_path.glob("**/schema.py"):
+            try:
+                content = schema_file.read_text()
+                if "graphql" in content.lower() or "graphene" in content.lower():
+                    schema_content.append(f"# {schema_file.relative_to(project_path)}\n{content}\n")
+            except Exception:
+                continue
+        return "\n".join(schema_content[:5])
+
+    def _collect_graphql_resolvers(self, project_path: Path) -> str:
+        """Collect GraphQL resolvers"""
+        resolvers_content = []
+        for py_file in project_path.glob("**/resolvers.py"):
+            try:
+                content = py_file.read_text()
+                resolvers_content.append(f"# {py_file.relative_to(project_path)}\n{content}\n")
+            except Exception:
+                continue
+        return "\n".join(resolvers_content[:5])
+
+    def _collect_ninja_routers(self, project_path: Path) -> str:
+        """Collect Django Ninja router/API definitions"""
+        ninja_content = []
+        for api_file in list(project_path.glob("**/api.py")) + \
+                        list(project_path.glob("**/routers/**/*.py")):
+            try:
+                content = api_file.read_text()
+                if "NinjaAPI" in content or "@api" in content or "Router()" in content:
+                    ninja_content.append(f"# {api_file.relative_to(project_path)}\n{content}\n")
+            except Exception:
+                continue
+        return "\n".join(ninja_content[:10])
+
+    def _collect_ninja_schemas(self, project_path: Path) -> str:
+        """Collect Django Ninja schema definitions"""
+        schemas_content = []
+        for schema_file in list(project_path.glob("**/schemas.py")) + \
+                          list(project_path.glob("**/schema.py")):
+            try:
+                content = schema_file.read_text()
+                if "Schema" in content or "ninja" in content.lower():
+                    schemas_content.append(f"# {schema_file.relative_to(project_path)}\n{content}\n")
+            except Exception:
+                continue
+        return "\n".join(schemas_content[:10])
+
+    def _collect_cms_plugins(self, project_path: Path) -> str:
+        """Collect Django CMS plugin definitions"""
+        cms_content = []
+        for cms_file in project_path.glob("**/cms_plugins.py"):
+            try:
+                content = cms_file.read_text()
+                cms_content.append(f"# {cms_file.relative_to(project_path)}\n{content}\n")
+            except Exception:
+                continue
+        return "\n".join(cms_content[:10])
+
+    def _collect_cms_models(self, project_path: Path) -> str:
+        """Collect Django CMS model extensions"""
+        cms_models_content = []
+        for models_file in project_path.glob("**/models.py"):
+            try:
+                content = models_file.read_text()
+                if "CMSPlugin" in content or "Placeholder" in content:
+                    cms_models_content.append(f"# {models_file.relative_to(project_path)}\n{content}\n")
+            except Exception:
+                continue
+        return "\n".join(cms_models_content[:10])

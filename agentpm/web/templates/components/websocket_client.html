@@ -1,0 +1,341 @@
+<!-- WebSocket Client Integration (WI-125) -->
+<!--
+    Real-time update system using Socket.IO WebSocket client
+
+    Features:
+    - Auto-connects on page load
+    - Joins project-specific rooms
+    - Listens for entity update events
+    - Updates UI elements without polling
+
+    Events:
+    - work_item_updated: Updates work item cards/rows
+    - task_updated: Updates task cards/rows
+    - rule_toggled: Updates rule toggle switches
+    - project_updated: Updates project info
+-->
+
+<!-- Socket.IO Client Library -->
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+<script>
+(function() {
+    'use strict';
+
+    // Initialize Socket.IO connection
+    const socket = io({
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionAttempts: 5
+    });
+
+    // Store current project ID for room management
+    let currentProjectId = null;
+
+    // Extract project ID from page context (if available)
+    function detectProjectId() {
+        // Try multiple sources for project ID
+        const sources = [
+            () => document.querySelector('[data-project-id]')?.dataset.projectId,
+            () => window.location.pathname.match(/\/project\/(\d+)/)?.[1],
+            () => document.querySelector('meta[name="project-id"]')?.content
+        ];
+
+        for (const source of sources) {
+            const id = source();
+            if (id) {
+                return parseInt(id, 10);
+            }
+        }
+
+        return null;
+    }
+
+    // Connection event handlers
+    socket.on('connect', function() {
+        console.log('WebSocket connected:', socket.id);
+
+        // Join project room if we're on a project page
+        currentProjectId = detectProjectId();
+        if (currentProjectId) {
+            socket.emit('join_project', { project_id: currentProjectId });
+        }
+
+        // Show connection indicator (optional)
+        updateConnectionStatus('connected');
+    });
+
+    socket.on('disconnect', function() {
+        console.log('WebSocket disconnected');
+        updateConnectionStatus('disconnected');
+    });
+
+    socket.on('reconnect', function(attemptNumber) {
+        console.log('WebSocket reconnected after', attemptNumber, 'attempts');
+        updateConnectionStatus('connected');
+
+        // Rejoin project room
+        if (currentProjectId) {
+            socket.emit('join_project', { project_id: currentProjectId });
+        }
+    });
+
+    socket.on('error', function(error) {
+        console.error('WebSocket error:', error);
+        updateConnectionStatus('error');
+    });
+
+    // Room management confirmations
+    socket.on('joined_project', function(data) {
+        console.log('Joined project room:', data.project_id);
+    });
+
+    socket.on('left_project', function(data) {
+        console.log('Left project room:', data.project_id);
+    });
+
+    // ========================================
+    // Entity Update Event Handlers
+    // ========================================
+
+    /**
+     * Work Item Updated Event
+     * Updates work item cards/rows in real-time
+     */
+    socket.on('work_item_updated', function(data) {
+        console.log('Work item updated:', data);
+
+        // Find work item elements by ID
+        const selectors = [
+            `[data-work-item-id="${data.work_item_id}"]`,
+            `#work-item-${data.work_item_id}`,
+            `.work-item-card[data-id="${data.work_item_id}"]`
+        ];
+
+        selectors.forEach(selector => {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach(element => {
+                // Update status badge
+                const statusBadge = element.querySelector('.status-badge, .badge-status');
+                if (statusBadge) {
+                    statusBadge.textContent = data.status;
+                    statusBadge.className = `badge badge-${data.status.toLowerCase()}`;
+                }
+
+                // Update phase indicator
+                const phaseIndicator = element.querySelector('.phase-indicator');
+                if (phaseIndicator && data.phase) {
+                    phaseIndicator.textContent = data.phase;
+                }
+
+                // Add flash animation
+                element.classList.add('flash-update');
+                setTimeout(() => {
+                    element.classList.remove('flash-update');
+                }, 1000);
+            });
+        });
+
+        // Show toast notification
+        if (typeof showToast === 'function') {
+            showToast(`Work item updated: ${data.name}`, 'info', 3000);
+        }
+    });
+
+    /**
+     * Task Updated Event
+     * Updates task cards/rows in real-time
+     */
+    socket.on('task_updated', function(data) {
+        console.log('Task updated:', data);
+
+        // Find task elements by ID
+        const selectors = [
+            `[data-task-id="${data.task_id}"]`,
+            `#task-${data.task_id}`,
+            `.task-card[data-id="${data.task_id}"]`
+        ];
+
+        selectors.forEach(selector => {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach(element => {
+                // Update status badge
+                const statusBadge = element.querySelector('.status-badge, .badge-status');
+                if (statusBadge) {
+                    statusBadge.textContent = data.status;
+                    statusBadge.className = `badge badge-${data.status.toLowerCase()}`;
+                }
+
+                // Update assigned agent
+                const assignedTo = element.querySelector('.assigned-to');
+                if (assignedTo && data.assigned_to) {
+                    assignedTo.textContent = data.assigned_to;
+                }
+
+                // Add flash animation
+                element.classList.add('flash-update');
+                setTimeout(() => {
+                    element.classList.remove('flash-update');
+                }, 1000);
+            });
+        });
+
+        // Show toast notification
+        if (typeof showToast === 'function') {
+            showToast(`Task updated: ${data.name}`, 'info', 3000);
+        }
+    });
+
+    /**
+     * Rule Toggled Event
+     * Updates rule toggle switches in real-time
+     */
+    socket.on('rule_toggled', function(data) {
+        console.log('Rule toggled:', data);
+
+        // Find rule elements by ID
+        const selectors = [
+            `[data-rule-id="${data.rule_id}"]`,
+            `#rule-${data.rule_id}`,
+            `.rule-row[data-id="${data.rule_id}"]`
+        ];
+
+        selectors.forEach(selector => {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach(element => {
+                // Update toggle switch state
+                const toggle = element.querySelector('input[type="checkbox"]');
+                if (toggle) {
+                    toggle.checked = data.enabled;
+                }
+
+                // Update status badge
+                const statusBadge = element.querySelector('.badge-enabled, .badge-disabled');
+                if (statusBadge) {
+                    statusBadge.textContent = data.enabled ? 'Enabled' : 'Disabled';
+                    statusBadge.className = data.enabled ? 'badge badge-success' : 'badge badge-secondary';
+                }
+
+                // Add flash animation
+                element.classList.add('flash-update');
+                setTimeout(() => {
+                    element.classList.remove('flash-update');
+                }, 1000);
+            });
+        });
+
+        // Show toast notification
+        if (typeof showToast === 'function') {
+            showToast(`Rule ${data.rule_code} ${data.enabled ? 'enabled' : 'disabled'}`, 'success', 3000);
+        }
+    });
+
+    /**
+     * Project Updated Event
+     * Updates project info in real-time
+     */
+    socket.on('project_updated', function(data) {
+        console.log('Project updated:', data);
+
+        // Find project elements by ID
+        const selectors = [
+            `[data-project-id="${data.project_id}"]`,
+            `#project-${data.project_id}`,
+            `.project-card[data-id="${data.project_id}"]`
+        ];
+
+        selectors.forEach(selector => {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach(element => {
+                // Update project name
+                const nameElement = element.querySelector('.project-name');
+                if (nameElement) {
+                    nameElement.textContent = data.name;
+                }
+
+                // Update status
+                const statusBadge = element.querySelector('.status-badge');
+                if (statusBadge) {
+                    statusBadge.textContent = data.status;
+                }
+
+                // Add flash animation
+                element.classList.add('flash-update');
+                setTimeout(() => {
+                    element.classList.remove('flash-update');
+                }, 1000);
+            });
+        });
+
+        // Show toast notification
+        if (typeof showToast === 'function') {
+            showToast(`Project updated: ${data.name}`, 'info', 3000);
+        }
+    });
+
+    // ========================================
+    // Connection Status Indicator
+    // ========================================
+
+    function updateConnectionStatus(status) {
+        const indicator = document.getElementById('ws-status-indicator');
+        if (!indicator) return;
+
+        const statusConfig = {
+            connected: {
+                icon: 'bi-wifi',
+                color: 'text-success',
+                title: 'Connected'
+            },
+            disconnected: {
+                icon: 'bi-wifi-off',
+                color: 'text-danger',
+                title: 'Disconnected'
+            },
+            error: {
+                icon: 'bi-exclamation-triangle',
+                color: 'text-warning',
+                title: 'Connection Error'
+            }
+        };
+
+        const config = statusConfig[status] || statusConfig.disconnected;
+
+        indicator.className = `bi ${config.icon} ${config.color}`;
+        indicator.title = config.title;
+    }
+
+    // ========================================
+    // Keepalive Ping
+    // ========================================
+
+    // Send ping every 30 seconds to keep connection alive
+    setInterval(() => {
+        if (socket.connected) {
+            socket.emit('ping');
+        }
+    }, 30000);
+
+    socket.on('pong', function(data) {
+        console.log('Keepalive pong received');
+    });
+
+    // Expose socket globally for debugging (optional)
+    window.aipmSocket = socket;
+
+    console.log('WebSocket client initialized');
+})();
+</script>
+
+<!-- Flash animation CSS -->
+<style>
+@keyframes flash-update {
+    0% { background-color: inherit; }
+    50% { background-color: rgba(59, 130, 246, 0.2); }
+    100% { background-color: inherit; }
+}
+
+.flash-update {
+    animation: flash-update 1s ease-in-out;
+}
+</style>

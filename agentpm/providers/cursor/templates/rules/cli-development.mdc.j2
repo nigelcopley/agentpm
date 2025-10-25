@@ -1,0 +1,476 @@
+---
+globs:
+  - "agentpm/cli/**/*.py"
+  - "agentpm/commands/**/*.py"
+description: CLI development patterns with Click and Rich
+priority: 85
+---
+
+# CLI Development Standards
+
+## 1. Click + Rich Architecture
+
+### Core Pattern
+
+**APM (Agent Project Manager) uses Click for commands and Rich for all output:**
+
+```python
+import click
+from rich.console import Console
+from rich.table import Table
+from rich.panel import Panel
+
+console = Console()
+
+@click.command()
+@click.argument('work_item_id', type=int)
+@click.option('--verbose', is_flag=True, help='Show detailed output')
+def show(work_item_id: int, verbose: bool):
+    """Show work item details"""
+    try:
+        # Fetch work item
+        work_item = methods.get_work_item(work_item_id)
+
+        if not work_item:
+            console.print(f"[red][/red] Work item {work_item_id} not found")
+            raise click.Abort()
+
+        # Display with Rich
+        table = Table(title=f"Work Item #{work_item_id}")
+        table.add_column("Field", style="cyan")
+        table.add_column("Value", style="white")
+
+        table.add_row("Name", work_item.name)
+        table.add_row("Status", work_item.status)
+        table.add_row("Created", work_item.created_at.strftime("%Y-%m-%d"))
+
+        console.print(table)
+
+    except Exception as e:
+        console.print(f"[red][/red] Error: {str(e)}")
+        raise click.Abort()
+```
+
+### No Plain Print Statements
+
+```python
+#  CORRECT: Use Rich console
+from rich.console import Console
+console = Console()
+console.print("[green][/green] Operation successful")
+
+# L INCORRECT: Plain print
+print("Operation successful")
+```
+
+---
+
+## 2. Command Patterns
+
+### LazyGroup for Fast Startup
+
+**Use LazyGroup to keep CLI startup <100ms:**
+
+```python
+from click import Group
+
+class LazyGroup(Group):
+    """Lazy load commands for fast startup"""
+
+    def __init__(self, *args, lazy_subcommands=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.lazy_subcommands = lazy_subcommands or {}
+
+    def list_commands(self, ctx):
+        return sorted(self.lazy_subcommands.keys())
+
+    def get_command(self, ctx, cmd_name):
+        if cmd_name in self.lazy_subcommands:
+            module_path, func_name = self.lazy_subcommands[cmd_name]
+            module = importlib.import_module(module_path)
+            return getattr(module, func_name)
+        return None
+
+@click.group(cls=LazyGroup, lazy_subcommands={
+    'work-item': ('agentpm.cli.work_item_commands', 'work_item'),
+    'task': ('agentpm.cli.task_commands', 'task'),
+    'status': ('agentpm.cli.status_commands', 'status'),
+})
+def cli():
+    """APM (Agent Project Manager) CLI"""
+    pass
+```
+
+### Consistent Option Naming
+
+**Use kebab-case for options:**
+
+```python
+#  CORRECT: Kebab-case
+@click.option('--work-item-id', type=int, help='Work item ID')
+@click.option('--project-path', type=click.Path(), help='Project path')
+@click.option('--show-details', is_flag=True, help='Show detailed output')
+
+# L INCORRECT: snake_case or camelCase
+@click.option('--work_item_id', type=int)
+@click.option('--projectPath', type=int)
+```
+
+### Comprehensive Help Text
+
+**All commands require clear help text:**
+
+```python
+@click.command()
+@click.argument('name')
+@click.option('--type', type=click.Choice(['feature', 'bug', 'enhancement']),
+              required=True, help='Work item type')
+@click.option('--priority', type=click.Choice(['low', 'medium', 'high']),
+              default='medium', help='Priority level (default: medium)')
+def create(name: str, type: str, priority: str):
+    """
+    Create a new work item.
+
+    NAME: Work item name (required, 1-200 characters)
+
+    Examples:
+
+        # Create a feature
+        apm work-item create "User Authentication" --type=feature
+
+        # Create a high-priority bug
+        apm work-item create "Login fails" --type=bug --priority=high
+    """
+    pass
+```
+
+---
+
+## 3. Input Validation
+
+### Click Validators at Boundaries
+
+**Validate input at CLI boundary, not in business logic:**
+
+```python
+from click import BadParameter
+
+def validate_work_item_name(ctx, param, value):
+    """Validate work item name"""
+    if not value or len(value) < 1:
+        raise BadParameter("Name must be at least 1 character")
+    if len(value) > 200:
+        raise BadParameter("Name must be at most 200 characters")
+    return value
+
+@click.command()
+@click.argument('name', callback=validate_work_item_name)
+def create(name: str):
+    """Create work item with validated name"""
+    pass
+```
+
+### Type Hints with Click Types
+
+**Use Click's built-in types for validation:**
+
+```python
+from click import Path, IntRange, Choice
+
+@click.command()
+@click.option('--effort', type=IntRange(min=1, max=40),
+              help='Effort in hours (1-40)')
+@click.option('--db-path', type=Path(exists=True, dir_okay=False),
+              help='Database file path')
+@click.option('--status', type=Choice(['draft', 'active', 'complete']),
+              help='Work item status')
+def update(effort: int, db_path: str, status: str):
+    """Update work item with validated inputs"""
+    pass
+```
+
+### Error Messages with Guidance
+
+**Provide actionable error messages:**
+
+```python
+#  CORRECT: Actionable error
+if not work_item:
+    console.print(
+        f"[red][/red] Work item {work_item_id} not found\n"
+        f"[yellow]'[/yellow] Use 'apm work-item list' to see available work items"
+    )
+    raise click.Abort()
+
+# L INCORRECT: Vague error
+if not work_item:
+    console.print("Not found")
+    raise click.Abort()
+```
+
+---
+
+## 4. Output Formatting
+
+### Rich Tables for Lists
+
+**Use Rich tables for structured data:**
+
+```python
+from rich.table import Table
+
+def display_work_items(work_items: List[WorkItem]):
+    """Display work items in a table"""
+    table = Table(title="Work Items", show_header=True, header_style="bold cyan")
+
+    table.add_column("ID", style="dim", width=6)
+    table.add_column("Name", style="white", min_width=30)
+    table.add_column("Status", style="yellow", width=12)
+    table.add_column("Type", style="cyan", width=12)
+    table.add_column("Created", style="dim", width=12)
+
+    for wi in work_items:
+        # Color-code status
+        status_color = {
+            "draft": "dim",
+            "active": "yellow",
+            "complete": "green",
+            "blocked": "red"
+        }.get(wi.status, "white")
+
+        table.add_row(
+            str(wi.id),
+            wi.name,
+            f"[{status_color}]{wi.status}[/{status_color}]",
+            wi.type,
+            wi.created_at.strftime("%Y-%m-%d")
+        )
+
+    console.print(table)
+```
+
+### Rich Panels for Status
+
+**Use panels for important information:**
+
+```python
+from rich.panel import Panel
+from rich.text import Text
+
+def display_gate_status(gate_result: GateValidationResult):
+    """Display gate validation result"""
+    # Build status text
+    status_text = Text()
+    status_text.append("Phase: ", style="bold")
+    status_text.append(f"{gate_result.phase}\n")
+    status_text.append("Status: ", style="bold")
+
+    if gate_result.passed:
+        status_text.append("PASSED ", style="bold green")
+        panel_style = "green"
+    else:
+        status_text.append("FAILED ", style="bold red")
+        panel_style = "red"
+
+        # Show missing criteria
+        status_text.append("\n\nMissing Criteria:\n", style="bold yellow")
+        for criterion in gate_result.missing:
+            status_text.append(f"  " {criterion}\n", style="yellow")
+
+    # Display panel
+    console.print(Panel(
+        status_text,
+        title=f"Gate Validation: {gate_result.phase}",
+        border_style=panel_style,
+        expand=False
+    ))
+```
+
+### Color Coding
+
+**Consistent color scheme:**
+
+| Color | Use Case | Example |
+|-------|----------|---------|
+| **Green** | Success, passing | `[green][/green] Test passed` |
+| **Yellow** | Warning, in-progress | `[yellow] [/yellow] Coverage at 85%` |
+| **Red** | Error, failure | `[red][/red] Validation failed` |
+| **Cyan** | Information, headings | `[cyan]Work Item #123[/cyan]` |
+| **Dim** | Secondary info | `[dim]Created: 2025-10-20[/dim]` |
+
+```python
+# Success
+console.print("[green][/green] Work item created successfully")
+
+# Warning
+console.print("[yellow] [/yellow] Coverage below 90% threshold")
+
+# Error
+console.print("[red][/red] Gate validation failed")
+
+# Info
+console.print("[cyan]'[/cyan] Use 'apm work-item show <id>' for details")
+```
+
+---
+
+## 5. Performance
+
+### Startup: <100ms
+
+**Requirements:**
+- Use LazyGroup for command loading
+- Minimize imports in CLI entry point
+- Load heavy dependencies only when needed
+
+```python
+#  CORRECT: Lazy loading
+@click.command()
+def heavy_command():
+    """Command with heavy dependencies"""
+    # Import only when command is executed
+    from agentpm.heavy_module import HeavyClass
+    heavy = HeavyClass()
+    heavy.execute()
+
+# L INCORRECT: Top-level imports
+from agentpm.heavy_module import HeavyClass  # Slows startup
+
+@click.command()
+def heavy_command():
+    heavy = HeavyClass()
+    heavy.execute()
+```
+
+### Command Execution: <2s
+
+**Most commands should complete in <2 seconds:**
+
+- Database queries: Use indexes, optimize SQL
+- Context assembly: Cache where appropriate
+- Output formatting: Stream large datasets
+
+```python
+from rich.progress import Progress
+
+def process_large_dataset(items: List[Any]):
+    """Process large dataset with progress indicator"""
+    with Progress() as progress:
+        task = progress.add_task("[cyan]Processing...", total=len(items))
+
+        for item in items:
+            # Process item
+            process_item(item)
+            progress.advance(task)
+```
+
+### Context Generation: <5s
+
+**Context assembly should be fast:**
+
+```python
+from functools import lru_cache
+
+@lru_cache(maxsize=128)
+def get_project_context(project_path: str) -> ProjectContext:
+    """Get project context with caching"""
+    # Expensive context assembly
+    return assemble_context(project_path)
+```
+
+---
+
+## 6. Error Handling
+
+### Graceful Degradation
+
+**Handle errors gracefully:**
+
+```python
+@click.command()
+@click.argument('work_item_id', type=int)
+def show(work_item_id: int):
+    """Show work item details"""
+    try:
+        work_item = methods.get_work_item(work_item_id)
+
+        if not work_item:
+            console.print(
+                f"[red][/red] Work item {work_item_id} not found"
+            )
+            raise click.Abort()
+
+        display_work_item(work_item)
+
+    except DatabaseError as e:
+        console.print(
+            f"[red][/red] Database error: {str(e)}\n"
+            f"[yellow]'[/yellow] Check database connection and try again"
+        )
+        raise click.Abort()
+
+    except Exception as e:
+        console.print(
+            f"[red][/red] Unexpected error: {str(e)}\n"
+            f"[yellow]'[/yellow] Run with --verbose for details"
+        )
+        if verbose:
+            console.print_exception()
+        raise click.Abort()
+```
+
+### User-Friendly Messages
+
+**Translate technical errors to user-friendly messages:**
+
+```python
+ERROR_MESSAGES = {
+    "IntegrityError": "This operation conflicts with existing data. Check for duplicates.",
+    "ValidationError": "Input validation failed. Check your data and try again.",
+    "NotFoundError": "The requested resource was not found.",
+}
+
+def handle_error(error: Exception) -> str:
+    """Get user-friendly error message"""
+    error_type = type(error).__name__
+    return ERROR_MESSAGES.get(error_type, str(error))
+```
+
+---
+
+## 7. Query CLI Rules
+
+**Get CLI development rules from database:**
+
+```bash
+# Query CLI-specific rules
+apm rules list --category=cli
+
+# Query specific CLI rules
+apm rules show CLI-001  # Click framework
+apm rules show CLI-002  # Rich formatting
+apm rules show CLI-003  # Error messages
+```
+
+---
+
+## 8. Quick Checklist
+
+Before committing CLI code, verify:
+
+- [ ] Click used for command structure
+- [ ] Rich used for all output (no print statements)
+- [ ] LazyGroup for fast startup
+- [ ] Type hints on all functions
+- [ ] Input validation at CLI boundary
+- [ ] Comprehensive help text
+- [ ] Error messages are actionable
+- [ ] Color-coded output (green/yellow/red)
+- [ ] Performance within limits (startup <100ms, execution <2s)
+- [ ] Graceful error handling
+
+---
+
+**Version**: 1.0.0
+**Last Updated**: 2025-10-20
+**Priority**: 85 (auto-attach for `agentpm/cli/**/*.py`)

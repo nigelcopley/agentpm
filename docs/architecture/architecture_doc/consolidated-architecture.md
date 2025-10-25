@@ -1,0 +1,958 @@
+# APM (Agent Project Manager) Agent System: Consolidated Architecture Guide
+
+**Version**: 2.0
+**Status**: Production
+**Last Updated**: 2025-10-19
+**Component**: Agent System Architecture
+
+---
+
+## Document Purpose
+
+This document **consolidates** all agent system architecture information from multiple sources into a single, comprehensive reference. It combines:
+- Three-tier orchestration design
+- Database-first architecture principles
+- Agent storage and generation strategies
+- Provider abstraction patterns
+- Multi-provider support
+
+**Source Documents Consolidated**:
+- `docs/design/agent-storage-architecture.md`
+- `docs/design/principle-agents-technical-spec.md`
+- `docs/design/principle-agents-implementation.md`
+- `.claude/agents/master-orchestrator.md`
+- `docs/work-items/wi-46/three-tier-architecture-status.md`
+
+---
+
+## Table of Contents
+
+1. [System Overview](#1-system-overview)
+2. [Three-Tier Architecture](#2-three-tier-architecture)
+3. [Database-First Design](#3-database-first-design)
+4. [Agent Storage Strategy](#4-agent-storage-strategy)
+5. [Provider Abstraction Layer](#5-provider-abstraction-layer)
+6. [Generation Pipeline](#6-generation-pipeline)
+7. [Intelligent Agent Selection](#7-intelligent-agent-selection)
+8. [Communication Patterns](#8-communication-patterns)
+9. [Quality & Testing](#9-quality--testing)
+10. [Migration & Evolution](#10-migration--evolution)
+
+---
+
+## 1. System Overview
+
+### 1.1 Architecture Philosophy
+
+The APM (Agent Project Manager) agent system follows these core principles:
+
+**Database-First**:
+- Agent metadata stored in database (single source of truth)
+- Agent files generated on-demand from database
+- Runtime state tracked in database (active, last_used, performance)
+
+**Provider-Agnostic**:
+- Core system independent of LLM provider
+- Provider-specific generators create appropriate file formats
+- Same database → multiple provider outputs
+
+**Three-Tier Hierarchy**:
+- **Tier 1**: Master Orchestrator (routing)
+- **Tier 2**: Phase Orchestrators (coordination)
+- **Tier 3**: Execution Agents (implementation)
+
+**Intelligent Selection**:
+- Not all agents generated for every project
+- Context-driven selection (5-15 agents per project)
+- Framework and language-specific agents
+
+### 1.2 System Components
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    APM (Agent Project Manager) Agent System                      │
+├─────────────────────────────────────────────────────────────┤
+│                                                               │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │ Database Layer (Source of Truth)                     │  │
+│  │ • agents table (84+ agent records)                   │  │
+│  │ • agent_relationships (orchestration hierarchy)      │  │
+│  │ • Runtime state (active, performance metrics)        │  │
+│  └───────────────────┬──────────────────────────────────┘  │
+│                      │                                       │
+│  ┌───────────────────▼──────────────────────────────────┐  │
+│  │ Core System                                           │  │
+│  │ • AgentGenerator (selection & generation logic)      │  │
+│  │ • AgentLoader (database queries)                     │  │
+│  │ • Three-Tier Orchestration (routing & coordination)  │  │
+│  └───────────────────┬──────────────────────────────────┘  │
+│                      │                                       │
+│  ┌───────────────────▼──────────────────────────────────┐  │
+│  │ Provider Layer                                        │  │
+│  │ ├─ ClaudeCodeGenerator → .claude/agents/*.md        │  │
+│  │ ├─ GeminiGenerator → .gemini/agents/*.xml (planned) │  │
+│  │ └─ CursorGenerator → .cursor/agents/*.json (planned)│  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                               │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 1.3 Agent Count Breakdown
+
+| Tier | Category | Count | Generated Per Project |
+|------|----------|-------|----------------------|
+| 1 | Master Orchestrator | 1 | Always |
+| 2 | Phase Orchestrators | 6 | Always |
+| 3 | Sub-Agents | 36 | Always |
+| 3 | Specialists | 40+ | 5-15 (selected) |
+| 3 | Utilities | 3 | Always |
+| **Total** | **All Agents** | **86+** | **20-30 typical** |
+
+---
+
+## 2. Three-Tier Architecture
+
+### 2.1 Tier Responsibilities
+
+**Tier 1: Master Orchestrator (1 agent)**
+
+```yaml
+Role: master-orchestrator
+Responsibilities:
+  - Route work by artifact type (NOT content)
+  - Coordinate phase progression (D1→P1→I1→R1→O1→E1)
+  - Query gate status (never validates directly)
+  - Escalate blockers to user
+
+Never Does:
+  - Implement code/tests/docs
+  - Read/write files
+  - Run commands
+  - Skip phases
+
+Pattern: Pure routing and coordination
+```
+
+**Tier 2: Phase Orchestrators (6 agents)**
+
+```yaml
+Roles:
+  - definition-orch      # D1 Discovery
+  - planning-orch        # P1 Planning
+  - implementation-orch  # I1 Implementation
+  - review-test-orch     # R1 Review
+  - release-ops-orch     # O1 Operations
+  - evolution-orch       # E1 Evolution
+
+Responsibilities:
+  - Own quality gates (D1-E1)
+  - Delegate to sub-agents (Tier 3)
+  - Aggregate results into phase artifacts
+  - Validate gate criteria before phase completion
+
+Pattern: Coordinate → Delegate → Aggregate → Validate
+```
+
+**Tier 3: Execution Agents (77+ agents)**
+
+```yaml
+Categories:
+  1. Sub-Agents (36):
+     - Single-purpose research/analysis
+     - Examples: context-delivery, ac-writer, test-runner
+
+  2. Specialists (40+):
+     - Domain expertise (language/framework specific)
+     - Examples: python-implementer, django-tester, react-frontend
+
+  3. Utilities (3):
+     - Cross-cutting services
+     - Examples: evidence-writer, workflow-updater
+
+Responsibilities:
+  - Execute specific tasks
+  - Return results to orchestrators
+  - Apply domain expertise
+
+Pattern: Receive task → Execute → Return result
+```
+
+### 2.2 Delegation Flow
+
+```
+User Request
+    ↓
+┌───────────────────────┐
+│ Master Orchestrator   │ ← Tier 1: Route by artifact type
+└──────────┬────────────┘
+           │
+           ↓ Delegates to Phase Orchestrator
+┌──────────────────────────────┐
+│ Phase Orchestrator           │ ← Tier 2: Coordinate phase work
+│ (e.g., definition-orch)      │
+└──────────┬───────────────────┘
+           │
+           ↓ Delegates to Sub-Agents (parallel)
+┌──────────────────────────────┐
+│ Sub-Agent 1: intent-triage   │ ← Tier 3: Execute specific tasks
+│ Sub-Agent 2: ac-writer       │
+│ Sub-Agent 3: risk-notary     │
+│ Sub-Agent 4: gate-check      │
+└──────────┬───────────────────┘
+           │
+           ↓ Return results
+┌──────────────────────────────┐
+│ Phase Orchestrator           │ ← Aggregates results
+│ Validates gate               │
+└──────────┬───────────────────┘
+           │
+           ↓ Return artifact
+┌──────────────────────────────┐
+│ Master Orchestrator          │ ← Routes to next phase or user
+└──────────────────────────────┘
+```
+
+### 2.3 Phase Gates
+
+Each phase orchestrator owns a quality gate:
+
+| Phase | Gate | Required Artifacts | Validation Agent |
+|-------|------|-------------------|------------------|
+| D1 Discovery | business_context + AC≥3 + risks + 6W≥0.70 | workitem.ready | definition-gate-check |
+| P1 Planning | tasks + estimates + dependencies + mitigations | plan.snapshot | planning-gate-check |
+| I1 Implementation | tests + code + docs + migrations | build.bundle | implementation-gate-check |
+| R1 Review | AC verified + tests pass + quality OK | review.approved | quality-gatekeeper |
+| O1 Operations | deployed + healthy + monitored | release.deployed | operability-gatecheck |
+| E1 Evolution | analyzed + improved + backlog updated | evolution.backlog_delta | evolution-gate-check |
+
+**Gate Pattern**:
+```python
+def execute_phase(orchestrator, input_artifact):
+    # 1. Delegate to sub-agents
+    results = orchestrator.coordinate_sub_agents(input_artifact)
+
+    # 2. Validate gate (delegate to gate-check agent)
+    gate_result = delegate_to(f"{orchestrator.phase}-gate-check", results)
+
+    # 3. Return artifact or escalate
+    if gate_result.passed:
+        return create_artifact(orchestrator.output_type, results)
+    else:
+        return escalate_missing_elements(gate_result.missing)
+```
+
+---
+
+## 3. Database-First Design
+
+### 3.1 Core Principle
+
+**Database = Source of Truth, Files = Artifacts**
+
+```
+YAML Definitions (git-versioned)
+    ↓ Sync
+Database (agents table)
+    ↓ Generate
+Agent Files (.claude/agents/*.md)
+```
+
+**Why Database-First?**
+
+❌ **File-Based Problems**:
+- No runtime state tracking
+- Difficult to query metadata
+- Provider-specific formats mixed with definitions
+- Hard to implement multi-provider support
+
+✅ **Database-First Benefits**:
+- Single source of truth
+- Runtime state (active, last_used, performance)
+- Easy querying ("Which agents handle Django?")
+- Provider-agnostic core
+- Regenerable files (delete and regenerate anytime)
+
+### 3.2 Database Schema
+
+```sql
+-- Core agents table
+CREATE TABLE agents (
+    id INTEGER PRIMARY KEY,
+    project_id INTEGER,
+    role TEXT UNIQUE NOT NULL,           -- e.g., "definition-orch"
+    display_name TEXT NOT NULL,          -- "Definition Orchestrator"
+    description TEXT,
+    agent_type TEXT,                     -- orchestrator, specialist, utility, sub-agent
+    tier INTEGER,                        -- 1, 2, or 3
+    capabilities TEXT,                   -- JSON array
+    sop_content TEXT,                    -- Markdown SOP (cache)
+    file_path TEXT,                      -- Generated .md file path
+    generated_at TIMESTAMP,
+    is_active BOOLEAN DEFAULT 1,
+    last_used_at TIMESTAMP,
+    metadata TEXT,                       -- JSON (performance, stats)
+    UNIQUE(project_id, role)
+);
+
+-- Agent relationships (orchestration hierarchy)
+CREATE TABLE agent_relationships (
+    id INTEGER PRIMARY KEY,
+    orchestrator_agent_id INTEGER,
+    sub_agent_id INTEGER,
+    relationship_type TEXT,              -- delegates_to, reports_to
+    FOREIGN KEY(orchestrator_agent_id) REFERENCES agents(id),
+    FOREIGN KEY(sub_agent_id) REFERENCES agents(id)
+);
+
+-- Agent capabilities (queryable)
+CREATE TABLE agent_capabilities (
+    id INTEGER PRIMARY KEY,
+    agent_id INTEGER,
+    capability TEXT,                     -- e.g., "django", "python", "testing"
+    FOREIGN KEY(agent_id) REFERENCES agents(id)
+);
+```
+
+### 3.3 Runtime Reality
+
+**Production Workflow**:
+```python
+# At runtime, rules loaded from database
+rules = db.rule_methods.list_rules(enabled_only=True)
+
+# NOT from files
+# _RULES/*.md files used ONLY during `apm init`
+```
+
+**Code Evidence**:
+```python
+# agentpm/core/rules/loader.py
+def _load_catalog(self) -> dict:
+    """At runtime, rules should ONLY come from the database."""
+    raise RuntimeError(
+        "Rules must be loaded from database. "
+        "Run 'apm init' to populate database with rules."
+    )
+```
+
+**Applies To**:
+- ✅ Rules system (database-first)
+- ✅ Work items and tasks (database entities)
+- ✅ Contexts (JSON in database)
+- ✅ Workflow state (database state machine)
+- ✅ Agents (database + generated files)
+
+**Exceptions** (file-based):
+- Plugin code (`agentpm/core/plugins/`)
+- Agent definitions (`.claude/agents/` - generated)
+- Documentation (`docs/`)
+- Tests (`tests/`)
+
+---
+
+## 4. Agent Storage Strategy
+
+### 4.1 Three-Layer Storage Model
+
+```
+┌──────────────────────────────────────────────────────────┐
+│ Layer 1: Definition (Source - Optional)                  │
+│ Location: agentpm/core/agents/definitions/ (optional)   │
+│ Format: YAML (human-editable)                            │
+│ Purpose: Initial seeding, version control                │
+└───────────────────────┬──────────────────────────────────┘
+                        │ Sync (optional)
+                        ↓
+┌──────────────────────────────────────────────────────────┐
+│ Layer 2: Database (Source of Truth)                      │
+│ Location: .aipm/data/aipm.db → agents table             │
+│ Format: SQLite database                                  │
+│ Purpose: Runtime source of truth, queryable metadata    │
+└───────────────────────┬──────────────────────────────────┘
+                        │ Generate
+                        ↓
+┌──────────────────────────────────────────────────────────┐
+│ Layer 3: Provider Files (Artifacts)                      │
+│ Location: .claude/agents/*.md (or provider-specific)    │
+│ Format: Markdown, XML, JSON (provider-dependent)         │
+│ Purpose: Consumed by LLM providers, regenerable          │
+└──────────────────────────────────────────────────────────┘
+```
+
+### 4.2 Generation Workflow
+
+```python
+# Step 1: Analyze project (detect tech stack)
+from agentpm.core.plugins import detect_tech_stack
+
+tech_stack = detect_tech_stack(project_path)
+# Returns: {languages: ["Python"], frameworks: ["Django"], ...}
+
+# Step 2: Select relevant agents
+from agentpm.core.agents.selection import AgentSelector
+
+selector = AgentSelector()
+selected = selector.select_agents(tech_stack)
+# Returns: 13 agents (not all 84)
+
+# Step 3: Populate database
+from agentpm.core.database.methods import agents as agent_methods
+
+for agent_spec in selected:
+    agent = create_agent_record(agent_spec)
+    agent_methods.create_agent(db, agent)
+
+# Step 4: Generate provider files
+from agentpm.providers.generators import get_generator
+
+generator = get_generator("claude-code")
+for agent in db.agents.list_all():
+    generator.generate(agent, output_dir=".claude/agents")
+```
+
+### 4.3 Provider-Specific Output
+
+**Claude Code** (Anthropic):
+```markdown
+---
+name: definition-orch
+description: Definition Orchestrator
+tools: context7, sequential-thinking
+---
+
+You are the **Definition Orchestrator**.
+...
+```
+**Location**: `.claude/agents/orchestrators/definition-orch.md`
+**Format**: Markdown with YAML frontmatter
+
+**Gemini** (Google) - Planned:
+```xml
+<agent id="definition-orch" tier="2">
+  <name>Definition Orchestrator</name>
+  <description>Requirements &amp; Scope Definition</description>
+  <tools>
+    <tool name="context7" priority="1"/>
+  </tools>
+  <sop><![CDATA[...]]></sop>
+</agent>
+```
+**Location**: `.gemini/agents/definition-orch.xml`
+**Format**: XML
+
+**Cursor** - Planned:
+```json
+{
+  "id": "definition-orch",
+  "name": "Definition Orchestrator",
+  "tier": 2,
+  "tools": ["context7", "sequential-thinking"],
+  "instructions": "..."
+}
+```
+**Location**: `.cursor/agents/definition-orch.json`
+**Format**: JSON
+
+---
+
+## 5. Provider Abstraction Layer
+
+### 5.1 Provider Architecture
+
+```python
+# agentpm/providers/base.py
+
+class BaseProvider(ABC):
+    """Base interface for all LLM providers"""
+
+    @property
+    @abstractmethod
+    def name(self) -> str:
+        """Provider name (e.g., 'anthropic', 'google')"""
+
+    @abstractmethod
+    def generate_agent_files(
+        self, agents: List[Agent], output_dir: Path
+    ) -> None:
+        """Generate provider-specific agent files"""
+
+    @abstractmethod
+    def format_context(self, context: Dict[str, Any]) -> str:
+        """Format context for this provider's LLM"""
+```
+
+### 5.2 Template-Based Generation
+
+**Provider generators use Jinja2 templates**:
+
+```python
+# agentpm/providers/generators/anthropic/claude_code_generator.py
+
+class ClaudeCodeGenerator(TemplateBasedGenerator):
+    def __init__(self, output_dir: Path = Path(".claude/agents")):
+        self.output_dir = output_dir
+        self.template_dir = Path(__file__).parent / "templates"
+        self.jinja_env = Environment(
+            loader=FileSystemLoader(str(self.template_dir))
+        )
+
+    def generate(self, agent: Agent) -> Path:
+        # Select template by tier
+        template_name = {
+            1: "master-orchestrator.md.j2",
+            2: "orchestrator.md.j2",
+            3: "sub-agent.md.j2"
+        }[agent.tier]
+
+        # Render template
+        template = self.jinja_env.get_template(template_name)
+        content = template.render(
+            role=agent.role,
+            display_name=agent.display_name,
+            description=agent.description,
+            tier=agent.tier,
+            capabilities=agent.capabilities,
+            sop_content=agent.sop_content
+        )
+
+        # Write file
+        output_path = self.output_dir / f"{agent.tier_name}s" / f"{agent.role}.md"
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(content)
+
+        return output_path
+```
+
+### 5.3 Multi-Provider Support
+
+```python
+# Registry pattern
+_PROVIDER_REGISTRY = {
+    "claude-code": ClaudeCodeGenerator,
+    "gemini": GeminiGenerator,
+    "cursor": CursorGenerator
+}
+
+def get_generator(provider_name: str) -> BaseProvider:
+    """Get provider generator by name"""
+    generator_class = _PROVIDER_REGISTRY.get(provider_name)
+    if not generator_class:
+        raise ValueError(f"Unknown provider: {provider_name}")
+    return generator_class()
+
+# Auto-detection
+def detect_provider(project_path: Path) -> str:
+    """Detect LLM provider from project structure"""
+    if (project_path / ".claude").exists():
+        return "claude-code"
+    elif (project_path / ".gemini").exists():
+        return "gemini"
+    elif (project_path / ".cursor").exists():
+        return "cursor"
+    return "generic"
+```
+
+---
+
+## 6. Generation Pipeline
+
+### 6.1 Full Pipeline
+
+```
+┌──────────────────────────────────────────────────────────┐
+│ Step 1: Project Analysis                                 │
+│ • Detect languages (Python, TypeScript, etc.)            │
+│ • Detect frameworks (Django, React, etc.)                │
+│ • Detect project type (Web, CLI, Mobile)                 │
+│ • Detect infrastructure (CI/CD, Docker)                  │
+└───────────────────────┬──────────────────────────────────┘
+                        ↓
+┌──────────────────────────────────────────────────────────┐
+│ Step 2: Agent Selection                                  │
+│ • Universal agents (always)                              │
+│ • Language-specific (Python → python-implementer)        │
+│ • Framework-specific (Django → django-backend)           │
+│ • Project type-specific (Web → api-documenter)           │
+│ • Result: 5-15 agents selected (not all 84)             │
+└───────────────────────┬──────────────────────────────────┘
+                        ↓
+┌──────────────────────────────────────────────────────────┐
+│ Step 3: Database Population                              │
+│ • Create agent records in database                       │
+│ • Set tier, type, capabilities                           │
+│ • Mark as active                                          │
+└───────────────────────┬──────────────────────────────────┘
+                        ↓
+┌──────────────────────────────────────────────────────────┐
+│ Step 4: Rule Injection                                   │
+│ • Query enabled rules from database                      │
+│ • Group by category (development, testing, security)     │
+│ • Inject into agent SOP content                          │
+└───────────────────────┬──────────────────────────────────┘
+                        ↓
+┌──────────────────────────────────────────────────────────┐
+│ Step 5: Provider Generation                              │
+│ • Detect current provider (Claude Code, Gemini, etc.)   │
+│ • Load provider-specific generator                       │
+│ • Render templates with agent data                       │
+│ • Write files to provider-specific location              │
+└───────────────────────┬──────────────────────────────────┘
+                        ↓
+┌──────────────────────────────────────────────────────────┐
+│ Step 6: Validation                                        │
+│ • Verify files created                                    │
+│ • Validate structure (YAML frontmatter, etc.)            │
+│ • Update database with file_path and generated_at        │
+└──────────────────────────────────────────────────────────┘
+```
+
+### 6.2 Rule Injection
+
+```python
+# Query rules from database
+enabled_rules = db.rule_methods.list_rules(enabled_only=True)
+
+# Group by category
+rules_by_category = {
+    "Development Principles": [],
+    "Testing Standards": [],
+    "Security Requirements": [],
+    "Workflow Governance": []
+}
+
+for rule in enabled_rules:
+    rules_by_category[rule.category].append(rule)
+
+# Inject into agent SOP
+agent.sop_content += "\n\n## Project Rules\n\n"
+for category, rules in rules_by_category.items():
+    agent.sop_content += f"### {category}\n\n"
+    for rule in rules:
+        agent.sop_content += f"**{rule.code}**: {rule.title}\n"
+        agent.sop_content += f"- **Enforcement**: {rule.enforcement_level}\n"
+        agent.sop_content += f"- **Description**: {rule.description}\n\n"
+```
+
+---
+
+## 7. Intelligent Agent Selection
+
+### 7.1 Selection Algorithm
+
+```python
+# agentpm/core/agents/selection.py
+
+class AgentSelector:
+    UNIVERSAL_AGENTS = {'specifier', 'reviewer', 'planner'}
+
+    def select_agents(self, project_context: Dict) -> List[Dict]:
+        selected = []
+
+        # 1. Universal (always)
+        selected.extend(self._get_universal_agents())
+
+        # 2. Language-specific
+        languages = self._detect_languages(project_context['tech_stack'])
+        if 'python' in languages:
+            selected.extend([
+                'python-implementer',
+                'python-tester',
+                'python-debugger'
+            ])
+
+        # 3. Framework-specific
+        frameworks = self._detect_frameworks(project_context['tech_stack'])
+        if 'django' in frameworks:
+            selected.extend([
+                'django-backend-implementer',
+                'django-api-integrator',
+                'django-tester'
+            ])
+
+        # 4. Project type-specific
+        if 'web' in project_context['app_type'].lower():
+            selected.append('api-documenter')
+
+        # 5. Infrastructure
+        if self._has_cicd(project_context):
+            selected.extend(['cicd-automator', 'deployment-specialist'])
+
+        return selected
+```
+
+### 7.2 Example Selections
+
+**Django + React Project**:
+```
+Tech Stack: Python, TypeScript, Django, React, PostgreSQL
+
+Selected Agents (13):
+  Universal:
+    - specifier, reviewer, planner
+
+  Python:
+    - python-implementer, python-tester, python-debugger
+
+  TypeScript:
+    - typescript-implementer, typescript-tester
+
+  Django:
+    - django-backend-implementer, django-api-integrator, django-tester
+
+  React:
+    - react-frontend-implementer, react-tester
+
+  Web:
+    - api-documenter
+```
+
+**Flask CLI Tool**:
+```
+Tech Stack: Python, Flask, Click
+
+Selected Agents (7):
+  Universal:
+    - specifier, reviewer, planner
+
+  Python:
+    - python-implementer, python-tester, python-debugger
+
+  Flask:
+    - flask-api-implementer
+```
+
+---
+
+## 8. Communication Patterns
+
+### 8.1 Request/Response Contract
+
+```python
+@dataclass
+class AgentRequest:
+    requesting_agent: str      # Who is asking
+    input_artifact: dict       # Input data
+    context: dict             # Additional context
+    expected_output: str      # Output artifact type
+
+@dataclass
+class AgentResponse:
+    responding_agent: str     # Who responded
+    output_artifact: dict     # Result data
+    status: str               # SUCCESS | FAILURE | BLOCKED
+    metadata: dict            # Execution metadata
+```
+
+### 8.2 Delegation Patterns
+
+**Sequential Delegation**:
+```python
+# Phase orchestrator coordinates sub-agents sequentially
+def execute_d1_phase(workitem):
+    # Step 1
+    triage_result = delegate_to("intent-triage", workitem)
+
+    # Step 2 (depends on Step 1)
+    context = delegate_to("context-assembler", triage_result)
+
+    # Step 3 (depends on Step 2)
+    problem = delegate_to("problem-framer", {triage_result, context})
+
+    # ...continue sequence
+```
+
+**Parallel Delegation**:
+```python
+# Independent sub-agents run in parallel
+from concurrent.futures import ThreadPoolExecutor
+
+def execute_r1_phase(build_bundle):
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        # These can run in parallel
+        test_future = executor.submit(delegate_to, "test-runner", build_bundle)
+        static_future = executor.submit(delegate_to, "static-analyzer", build_bundle)
+        security_future = executor.submit(delegate_to, "threat-screener", build_bundle)
+        ac_future = executor.submit(delegate_to, "ac-verifier", build_bundle)
+
+        # Gather results
+        results = {
+            "tests": test_future.result(),
+            "static": static_future.result(),
+            "security": security_future.result(),
+            "acceptance_criteria": ac_future.result()
+        }
+
+    return results
+```
+
+---
+
+## 9. Quality & Testing
+
+### 9.1 Agent Validation
+
+```python
+# Validate agent integrity
+def validate_agent(agent: Agent) -> ValidationResult:
+    checks = []
+
+    # 1. Required fields
+    checks.append(check_required_fields(agent))
+
+    # 2. Tier consistency
+    checks.append(check_tier_consistency(agent))
+
+    # 3. File existence (if generated)
+    if agent.file_path:
+        checks.append(check_file_exists(agent.file_path))
+
+    # 4. SOP content quality
+    checks.append(check_sop_quality(agent.sop_content))
+
+    # 5. Relationship integrity
+    checks.append(check_relationships(agent))
+
+    return ValidationResult(all(checks), checks)
+```
+
+### 9.2 Testing Strategy
+
+**Unit Tests**:
+```python
+# tests/core/agents/test_selector.py
+def test_selector_django_project():
+    selector = AgentSelector()
+    context = {
+        'tech_stack': ['Python', 'Django'],
+        'app_type': 'Web Application'
+    }
+
+    agents = selector.select_agents(context)
+
+    assert 'python-implementer' in [a['name'] for a in agents]
+    assert 'django-backend-implementer' in [a['name'] for a in agents]
+    assert len(agents) >= 10  # Should select 10+ for Django
+```
+
+**Integration Tests**:
+```python
+# tests/integration/test_agent_generation.py
+def test_full_generation_pipeline(tmp_path):
+    # 1. Create project
+    project = create_test_project(tmp_path, tech_stack=['Django'])
+
+    # 2. Generate agents
+    generate_agents(project)
+
+    # 3. Verify database
+    agents = db.agents.list_all()
+    assert len(agents) >= 10
+
+    # 4. Verify files
+    agent_files = list(Path(".claude/agents").rglob("*.md"))
+    assert len(agent_files) == len(agents)
+```
+
+---
+
+## 10. Migration & Evolution
+
+### 10.1 Migration Path
+
+**From**: File-based agent definitions
+**To**: Database-first with generated files
+
+```python
+# scripts/migrate_agents_to_database.py
+
+def migrate_existing_agents():
+    """Export existing agents to database"""
+
+    # 1. Read existing .claude/agents/*.md files
+    agent_files = Path(".claude/agents").rglob("*.md")
+
+    # 2. Parse agent metadata
+    for file in agent_files:
+        metadata = parse_agent_file(file)
+
+        # 3. Create database record
+        agent = Agent(
+            role=metadata['name'],
+            display_name=metadata['display_name'],
+            description=metadata['description'],
+            tier=detect_tier_from_path(file),
+            agent_type=detect_type(metadata),
+            sop_content=file.read_text(),
+            file_path=str(file)
+        )
+
+        # 4. Insert into database
+        db.agents.create_agent(agent)
+
+    # 5. Validate migration
+    assert db.agents.count() == len(list(agent_files))
+```
+
+### 10.2 Evolution Strategy
+
+**Phase 1: Hybrid** (Current)
+- Database stores agent metadata
+- Files generated on-demand
+- Both database and files in sync
+
+**Phase 2: Pure Database** (Future)
+- Database is single source
+- Files generated only when LLM provider needs them
+- No persistent .claude/agents/ directory
+
+**Phase 3: Dynamic** (Future)
+- Agents generated on-the-fly
+- No pre-generation step
+- Just-in-time agent creation based on task
+
+---
+
+## 11. Related Documentation
+
+### 11.1 Architecture Documents
+- **[Three-Tier Orchestration](three-tier-orchestration.md)**: Detailed tier responsibilities
+- **[Agent Selection Algorithm](agent-selection.md)**: Selection logic and examples
+- **[Generation Pipeline](generation-pipeline.md)**: End-to-end generation process
+- **[Provider Generators](provider-generators.md)**: Multi-provider support
+
+### 11.2 Implementation Guides
+- **[Implementation Guide](../guides/implementation-guide.md)**: Step-by-step agent development
+- **[Agent Development Guide](../guides/agent-development-guide.md)**: Create custom agents
+- **[Provider Generator Guide](../guides/provider-generator-guide.md)**: Add new providers
+
+### 11.3 Specifications
+- **[Agent Format Specification](../specifications/agent-format-spec.md)**: File structure
+- **[Database Schema](../specifications/database-schema.md)**: Agent table details
+- **[Rule Injection](../specifications/rule-injection.md)**: Rule embedding process
+
+---
+
+## 12. Summary
+
+### 12.1 Key Takeaways
+
+**Database-First**: Agent metadata in database, files generated on-demand
+**Three-Tier Hierarchy**: Master → Phase Orchestrators → Execution Agents
+**Provider-Agnostic**: Core system supports multiple LLM providers
+**Intelligent Selection**: Context-driven agent selection (5-15 per project, not all 84)
+**Scalable**: Add new agents, providers, or tiers without breaking existing system
+
+### 12.2 Architecture Benefits
+
+✅ **Maintainability**: Clear separation of concerns, single source of truth
+✅ **Extensibility**: Easy to add new agents, providers, or tiers
+✅ **Performance**: Intelligent selection reduces agent count per project
+✅ **Flexibility**: Same core system → multiple provider outputs
+✅ **Reliability**: Database-driven state, regenerable files
+
+---
+
+**Version**: 2.0
+**Status**: Production
+**Last Updated**: 2025-10-19
+**Maintained by**: AIPM Core Team

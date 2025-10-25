@@ -1,0 +1,44 @@
+{% extends 'components/layout/sidebar_base.html' %}
+{% import 'components/layout/sidebar_base.html' as base %}
+
+{% block sidebar_content %}
+  <section class="mb-8 space-y-3">
+    <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Documents Snapshot</h3>
+    <div class="grid grid-cols-2 gap-3">
+      {{ base.stats_card('Total Docs', view.total_documents if view is defined else 0) }}
+      {% if view and view.type_counts %}
+        {% for doc_type, count in view.type_counts|dictsort(by='value', reverse=True) %}
+          {% if loop.index <= 3 %}
+            {{ base.stats_card(doc_type|replace('_',' ')|title, count, 'bg-primary/5', 'text-primary-600') }}
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="mb-8 space-y-3" data-filter-group="document_type">
+    <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Document Type</h3>
+    <div class="flex flex-col gap-2 filter-group" data-filter-group="document_type">
+      {% if view and view.type_counts %}
+        {% for doc_type, count in view.type_counts.items() %}
+        <button type="button" class="filter-btn" data-filter-group="document_type" data-filter="{{ doc_type }}" :class="buttonClasses('document_type','{{ doc_type }}')" @click="setFilter('document_type','{{ doc_type }}',$event)">
+          <span>{{ doc_type|replace('_',' ')|title }}</span>
+          <span class="badge badge-gray">{{ count }}</span>
+        </button>
+        {% endfor %}
+      {% else %}
+        <p class="text-xs text-gray-500">No documents available</p>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="mt-auto space-y-2">
+    <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Quick Actions</h3>
+    <button type="button" class="btn btn-secondary w-full" @click="refreshDocs">
+      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582M20 20v-5h-.581M5 9a7 7 0 0112.95-2M19 15a7 7 0 01-12.95 2" />
+      </svg>
+      Refresh Documents
+    </button>
+  </section>
+{% endblock %}

@@ -1,0 +1,139 @@
+{% extends 'components/layout/sidebar_base.html' %}
+{% import 'components/layout/sidebar_base.html' as base %}
+
+{% block sidebar_content %}
+  <!-- Delivery Snapshot -->
+  <section class="mb-8 space-y-3">
+    <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Delivery Snapshot</h3>
+    <div class="grid grid-cols-2 gap-3">
+      {{ base.stats_card('Total', metrics.total_work_items) }}
+      {{ base.stats_card('Active', metrics.active_work_items, 'bg-warning/10', 'text-warning-600') }}
+      {{ base.stats_card('Blocked', metrics.blocked_work_items, 'bg-error/10', 'text-error-600') }}
+      {{ base.stats_card('Done', metrics.done_work_items, 'bg-success/10', 'text-success-600') }}
+    </div>
+  </section>
+
+  <!-- Workflow Status -->
+  <section class="mb-8 space-y-3" data-filter-group="status">
+    <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Workflow Status</h3>
+    <div class="flex flex-col gap-2 filter-group" data-filter-group="status">
+      {% for value, label, icon in [
+        ('all', 'All Work Items', 'bi-kanban'),
+        ('draft', 'Draft', 'bi-lightbulb'),
+        ('ready', 'Ready', 'bi-rocket'),
+        ('active', 'Active', 'bi-lightning-charge'),
+        ('review', 'Review', 'bi-search'),
+        ('blocked', 'Blocked', 'bi-exclamation-triangle'),
+        ('done', 'Done', 'bi-check-circle'),
+        ('archived', 'Archived', 'bi-archive'),
+        ('cancelled', 'Cancelled', 'bi-slash-circle')
+      ] %}
+      <button type="button" class="filter-btn" data-filter-group="status" data-filter="{{ value }}" :class="buttonClasses('status','{{ value }}')" @click="setFilter('status','{{ value }}',$event)">
+        <span class="flex items-center gap-2"><i class="bi {{ icon }}"></i> {{ label }}</span>
+        <span class="badge badge-gray">
+          {% if value == 'all' %}
+            {{ metrics.total_work_items }}
+          {% elif value == 'draft' %}
+            {{ metrics.draft_work_items }}
+          {% elif value == 'ready' %}
+            {{ metrics.ready_work_items }}
+          {% elif value == 'active' %}
+            {{ metrics.active_work_items }}
+          {% elif value == 'review' %}
+            {{ metrics.review_work_items }}
+          {% elif value == 'blocked' %}
+            {{ metrics.blocked_work_items }}
+          {% elif value == 'done' %}
+            {{ metrics.done_work_items }}
+          {% elif value == 'archived' %}
+            {{ metrics.archived_work_items }}
+          {% elif value == 'cancelled' %}
+            {{ metrics.cancelled_work_items }}
+          {% endif %}
+        </span>
+      </button>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Delivery Phase -->
+  <section class="mb-8 space-y-3" data-filter-group="phase">
+    <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Delivery Phase</h3>
+    <div class="flex flex-col gap-2 filter-group" data-filter-group="phase">
+      {% for value, label, icon, metric in [
+        ('D1_discovery', 'D1 · Discovery', 'bi-compass', metrics.phase_d1_discovery),
+        ('P1_plan', 'P1 · Plan', 'bi-clipboard-data', metrics.phase_p1_plan),
+        ('I1_implementation', 'I1 · Implementation', 'bi-tools', metrics.phase_i1_implementation),
+        ('R1_review', 'R1 · Review', 'bi-search', metrics.phase_r1_review),
+        ('O1_operations', 'O1 · Operations', 'bi-hammer', metrics.phase_o1_operations),
+        ('E1_evolution', 'E1 · Evolution', 'bi-stars', metrics.phase_e1_evolution)
+      ] %}
+      <button type="button" class="filter-btn" data-filter-group="phase" data-filter="{{ value }}" :class="buttonClasses('phase','{{ value }}')" @click="setFilter('phase','{{ value }}',$event)">
+        <span class="flex items-center gap-2"><i class="bi {{ icon }}"></i> {{ label }}</span>
+        <span class="badge badge-gray">{{ metric }}</span>
+      </button>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Work Item Types -->
+  <section class="mb-8 space-y-3" data-filter-group="type">
+    <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Work Item Types</h3>
+    <div class="flex flex-col gap-2 filter-group" data-filter-group="type">
+      {% for value, label, color, metric in [
+        ('feature', 'Feature', 'bg-primary', metrics.feature_work_items),
+        ('enhancement', 'Enhancement', 'bg-info', metrics.enhancement_work_items),
+        ('bugfix', 'Bug Fix', 'bg-error', metrics.bugfix_work_items),
+        ('analysis', 'Analysis', 'bg-amber-500', metrics.analysis_work_items),
+        ('research', 'Research', 'bg-indigo-500', metrics.research_work_items),
+        ('documentation', 'Documentation', 'bg-emerald-500', metrics.documentation_work_items),
+        ('maintenance', 'Maintenance', 'bg-slate-500', metrics.maintenance_work_items)
+      ] %}
+      <button type="button" class="filter-btn" data-filter-group="type" data-filter="{{ value }}" :class="buttonClasses('type','{{ value }}')" @click="setFilter('type','{{ value }}',$event)">
+        <span class="flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-full {{ color }}"></span> {{ label }}</span>
+        <span class="badge badge-gray">{{ metric }}</span>
+      </button>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Priority -->
+  <section class="mb-8 space-y-3" data-filter-group="priority">
+    <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Priority</h3>
+    <div class="flex flex-col gap-2 filter-group" data-filter-group="priority">
+      {% for value, label, color, metric in [
+        ('1', 'Critical (P1)', 'bg-error', metrics.priority_1_work_items),
+        ('2', 'High (P2)', 'bg-amber-500', metrics.priority_2_work_items),
+        ('3', 'Medium (P3)', 'bg-yellow-400', metrics.priority_3_work_items)
+      ] %}
+      <button type="button" class="filter-btn" data-filter-group="priority" data-filter="{{ value }}" :class="buttonClasses('priority','{{ value }}')" @click="setFilter('priority','{{ value }}',$event)">
+        <span class="flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-full {{ color }}"></span> {{ label }}</span>
+        <span class="badge badge-gray">{{ metric }}</span>
+      </button>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Quick Actions -->
+  <section class="mt-auto space-y-2">
+    <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Quick Actions</h3>
+    <button type="button" class="btn btn-primary w-full" @click="createWorkItem">
+      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m6-6H6" />
+      </svg>
+      New Work Item
+    </button>
+    <button type="button" class="btn btn-secondary w-full" @click="createTask">
+      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7H5m14 4H5m14 4H5m14 4H5" />
+      </svg>
+      New Task
+    </button>
+    <button type="button" class="btn btn-secondary w-full" @click="createProject">
+      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M7 10h10m-8 4h6m-9 4h12" />
+      </svg>
+      New Project
+    </button>
+  </section>
+{% endblock %}

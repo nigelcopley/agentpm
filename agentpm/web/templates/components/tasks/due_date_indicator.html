@@ -1,0 +1,14 @@
+<!-- Task Due Date Indicator Component -->
+<!-- Usage: Include this component in templates -->
+<!-- Variables: task.due_date (required) -->
+
+{% if task.due_date %}
+    <div class="flex items-center">
+        <i class="bi bi-calendar-event text-gray-400 mr-1"></i>
+        <span class="text-gray-900">
+            {{ task.due_date.strftime('%Y-%m-%d') }}
+        </span>
+    </div>
+{% else %}
+    <span class="text-gray-400">-</span>
+{% endif %}

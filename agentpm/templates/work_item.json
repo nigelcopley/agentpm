@@ -1,0 +1,46 @@
+{
+  "name": "Search Filtering Feature",
+  "description": "Implement advanced filtering for catalog search results.",
+  "type": "feature",
+  "status": "proposed",
+  "priority": 2,
+  "business_context": "Enterprise accounts require richer filtering to complete evaluation.",
+  "metadata": {
+    "why_value": {
+      "problem": "Customers abandon search when they cannot filter results precisely.",
+      "desired_outcome": "Deliver flexible filtering that keeps results relevant.",
+      "business_impact": "Protect Q1 renewals and improve conversion.",
+      "target_metrics": [
+        "Reduce search abandonment to <15%",
+        "Increase enterprise retention by 5%"
+      ]
+    },
+    "ownership": {
+      "raci": {
+        "responsible": "engineering-lead",
+        "accountable": "product-manager",
+        "consulted": [
+          "qa-lead"
+        ],
+        "informed": [
+          "cto"
+        ]
+      }
+    },
+    "scope": {
+      "in_scope": [
+        "Expose filter UI for categories, price range, and stock",
+        "Add API support for compound filters"
+      ],
+      "out_of_scope": [
+        "Rewrite search ranking algorithm"
+      ]
+    },
+    "artifacts": {
+      "code_paths": [
+        "services/search-service/filter_service.py",
+        "tests/test_filter_service.py"
+      ]
+    }
+  }
+}

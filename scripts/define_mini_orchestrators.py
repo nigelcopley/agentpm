@@ -1,0 +1,721 @@
+#!/usr/bin/env python3
+"""
+Define Mini-Orchestrators - Create all 6 phase-specific orchestrators in database
+
+This script defines the complete mini-orchestrator layer for the three-tier
+orchestration architecture using the AgentBuilder API.
+
+Architecture:
+  Master Orchestrator (tier 3)
+    ├─ Definition Orchestrator (tier 2) - Requirements & scope
+    ├─ Planning Orchestrator (tier 2) - Work breakdown & estimation
+    ├─ Implementation Orchestrator (tier 2) - Code & artifacts
+    ├─ Review/Test Orchestrator (tier 2) - Quality validation
+    ├─ Release/Ops Orchestrator (tier 2) - Deployment & operations
+    └─ Evolution Orchestrator (tier 2) - Continuous improvement
+
+Each mini-orchestrator:
+  - Delegates to 4-6 single-responsibility sub-agents
+  - Enforces phase-specific quality gates
+  - Reports to master-orchestrator
+  - Uses appropriate MCP tools by phase
+
+Usage:
+    python scripts/define_mini_orchestrators.py
+
+Requirements:
+  - Database at .aipm/data/aipm.db
+  - Master orchestrator already defined (tier 3)
+  - Sub-agents already defined (tier 1)
+"""
+
+import sys
+import sqlite3
+from pathlib import Path
+
+# Add project root to path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
+from agentpm.core.agents.builder import AgentBuilder, create_orchestrator_agent
+
+
+# Mini-Orchestrator Definitions
+MINI_ORCHESTRATORS = {
+    'definition-orch': {
+        'display_name': 'Definition Orchestrator',
+        'description': (
+            'Phase 1: Requirements & Scope Definition\n\n'
+            'Drives the Definition phase until gate D1 passes:\n'
+            '- why_value articulated (business value, user impact)\n'
+            '- AC≥3 acceptance criteria defined\n'
+            '- risks identified and assessed\n\n'
+            'Delegates to:\n'
+            '- intent-triage: Classify request type (feature/bug/tech-debt)\n'
+            '- context-assembler: Gather relevant project context\n'
+            '- problem-framer: Frame problem with constraints\n'
+            '- value-articulator: Articulate business/user value\n'
+            '- ac-writer: Define acceptance criteria (≥3)\n'
+            '- risk-notary: Identify and assess risks\n\n'
+            'Quality Gate: D1 (definition-complete)\n'
+            'Produces: workitem.ready artifact'
+        ),
+        'delegates_to': [
+            'intent-triage',
+            'context-assembler',
+            'problem-framer',
+            'value-articulator',
+            'ac-writer',
+            'risk-notary'
+        ],
+        'tools': {
+            'discovery': ['context7'],
+            'reasoning': ['sequential-thinking']
+        },
+        'agent_file_path': '.claude/agents/orchestrators/definition-orch.md',
+        'sop_content': '''# Definition Orchestrator SOP
+
+## Purpose
+Drive Definition phase (gate D1) until requirements are clear and complete.
+
+## Responsibilities
+1. Delegate to sub-agents for requirements analysis
+2. Ensure why_value articulation (business + user value)
+3. Validate AC≥3 acceptance criteria
+4. Confirm risk assessment completed
+5. Enforce gate D1 before proceeding
+
+## Delegation Pattern
+```
+request.raw → intent-triage → context-assembler → problem-framer
+  ↓
+value-articulator + ac-writer + risk-notary (parallel)
+  ↓
+definition.gate-check (D1 validation)
+  ↓
+workitem.ready (next phase)
+```
+
+## Quality Gate: D1
+- ✅ why_value present (business + user value)
+- ✅ AC count ≥ 3
+- ✅ risks identified (with mitigation strategies)
+- ✅ problem framed (with constraints)
+
+## Tools
+- context7: Official framework/library patterns
+- sequential-thinking: Multi-step reasoning for complex requirements
+
+## Escalation
+If confidence < 0.70 or evidence insufficient:
+  → Delegate to discovery-orch for enrichment
+  → Re-run gate check after enrichment
+'''
+    },
+
+    'planning-orch': {
+        'display_name': 'Planning Orchestrator',
+        'description': (
+            'Phase 2: Work Breakdown & Estimation\n\n'
+            'Drives the Planning phase until gate P1 passes:\n'
+            '- steps mapped to acceptance criteria\n'
+            '- estimates provided (≤4 hours per task)\n'
+            '- dependencies mapped\n'
+            '- mitigations planned\n\n'
+            'Delegates to:\n'
+            '- decomposer: Break work into tasks (≤4h each)\n'
+            '- estimator: Provide effort estimates\n'
+            '- dependency-mapper: Map task dependencies\n'
+            '- mitigation-planner: Plan risk mitigations\n'
+            '- backlog-curator: Organize into backlog\n\n'
+            'Quality Gate: P1 (plan-complete)\n'
+            'Produces: plan.snapshot artifact'
+        ),
+        'delegates_to': [
+            'decomposer',
+            'estimator',
+            'dependency-mapper',
+            'mitigation-planner',
+            'backlog-curator'
+        ],
+        'tools': {
+            'reasoning': ['sequential-thinking']
+        },
+        'agent_file_path': '.claude/agents/orchestrators/planning-orch.md',
+        'sop_content': '''# Planning Orchestrator SOP
+
+## Purpose
+Drive Planning phase (gate P1) until work breakdown is complete.
+
+## Responsibilities
+1. Delegate to sub-agents for work breakdown
+2. Ensure steps map to acceptance criteria
+3. Validate estimates (≤4 hours per task)
+4. Confirm dependency mapping
+5. Enforce gate P1 before proceeding
+
+## Delegation Pattern
+```
+workitem.ready → decomposer → estimator → dependency-mapper
+  ↓
+mitigation-planner + backlog-curator (parallel)
+  ↓
+planning.gate-check (P1 validation)
+  ↓
+plan.snapshot (next phase)
+```
+
+## Quality Gate: P1
+- ✅ steps↔AC mapping complete
+- ✅ estimates ≤ 4.0 hours per task
+- ✅ dependencies mapped
+- ✅ mitigations planned for risks
+
+## Tools
+- sequential-thinking: Multi-step reasoning for work breakdown
+
+## Time-Boxing
+- STRICT: Implementation tasks ≤ 4.0 hours
+- FEATURE WorkItems require: DESIGN + IMPLEMENTATION + TESTING + DOCUMENTATION
+
+## Escalation
+If estimates exceed 4 hours:
+  → Delegate to decomposer for further breakdown
+  → Re-validate with estimator
+'''
+    },
+
+    'implementation-orch': {
+        'display_name': 'Implementation Orchestrator',
+        'description': (
+            'Phase 3: Code & Artifact Implementation\n\n'
+            'Drives the Implementation phase until gate I1 passes:\n'
+            '- tests-BAK updated (≥95% coverage)\n'
+            '- feature flags added (if applicable)\n'
+            '- docs updated\n'
+            '- migrations included (if DB changes)\n\n'
+            'Delegates to:\n'
+            '- pattern-applier: Apply framework patterns\n'
+            '- code-implementer: Write production code\n'
+            '- test-implementer: Write comprehensive tests-BAK\n'
+            '- migration-author: Create DB migrations\n'
+            '- doc-toucher: Update documentation\n\n'
+            'Quality Gate: I1 (implementation-complete)\n'
+            'Produces: build.bundle artifact'
+        ),
+        'delegates_to': [
+            'pattern-applier',
+            'code-implementer',
+            'test-implementer',
+            'migration-author',
+            'doc-toucher'
+        ],
+        'tools': {
+            'discovery': ['context7'],
+            'implementation': ['magic', 'morphllm'],
+            'reasoning': ['sequential-thinking']
+        },
+        'agent_file_path': '.claude/agents/orchestrators/implementation-orch.md',
+        'sop_content': '''# Implementation Orchestrator SOP
+
+## Purpose
+Drive Implementation phase (gate I1) until code and artifacts complete.
+
+## Responsibilities
+1. Delegate to sub-agents for implementation
+2. Ensure tests-BAK updated (≥95% coverage)
+3. Validate feature flags added (if applicable)
+4. Confirm documentation updated
+5. Enforce gate I1 before proceeding
+
+## Delegation Pattern
+```
+plan.snapshot → pattern-applier → code-implementer + test-implementer (parallel)
+  ↓
+migration-author + doc-toucher (parallel, if needed)
+  ↓
+implementation.gate-check (I1 validation)
+  ↓
+build.bundle (next phase)
+```
+
+## Quality Gate: I1
+- ✅ tests-BAK updated (≥95% coverage target)
+- ✅ feature flags added (if applicable)
+- ✅ docs updated (inline + external)
+- ✅ migrations included (if DB changes)
+
+## Tools
+- context7: Official framework/library patterns
+- magic: Modern UI component generation (frontend)
+- morphllm: Bulk code transformations (pattern edits)
+- sequential-thinking: Multi-step reasoning
+
+## Code Quality Standards
+- Follow _RULES/CODE_QUALITY_STANDARDS.md
+- Apply _RULES/DEVELOPMENT_PRINCIPLES.md
+- Meet CI-004 (testing quality) requirements
+
+## Escalation
+If tests-BAK fail or coverage < 95%:
+  → Delegate to test-implementer for additional coverage
+  → Re-run implementation.gate-check
+'''
+    },
+
+    'review-test-orch': {
+        'display_name': 'Review & Test Orchestrator',
+        'description': (
+            'Phase 4: Quality Validation\n\n'
+            'Drives the Review/Test phase until gate R1 passes:\n'
+            '- AC verification (all pass)\n'
+            '- tests-BAK green (100% pass rate)\n'
+            '- static analysis OK (linting, typing)\n'
+            '- security scan OK (no critical issues)\n\n'
+            'Delegates to:\n'
+            '- static-analyzer: Run linters and type checkers\n'
+            '- test-runner: Execute test suite\n'
+            '- threat-screener: Security vulnerability scan\n'
+            '- ac-verifier: Validate acceptance criteria\n'
+            '- quality-gatekeeper: Enforce quality gates\n\n'
+            'Quality Gate: R1 (review-approved)\n'
+            'Produces: review.approved artifact'
+        ),
+        'delegates_to': [
+            'static-analyzer',
+            'test-runner',
+            'threat-screener',
+            'ac-verifier',
+            'quality-gatekeeper'
+        ],
+        'tools': {
+            'testing': ['playwright'],
+            'reasoning': ['sequential-thinking']
+        },
+        'agent_file_path': '.claude/agents/orchestrators/review-test-orch.md',
+        'sop_content': '''# Review & Test Orchestrator SOP
+
+## Purpose
+Drive Review/Test phase (gate R1) until quality validated.
+
+## Responsibilities
+1. Delegate to sub-agents for quality validation
+2. Ensure AC verification (all pass)
+3. Validate tests-BAK green (100% pass rate)
+4. Confirm static analysis OK
+5. Enforce gate R1 before proceeding
+
+## Delegation Pattern
+```
+build.bundle → static-analyzer + test-runner + threat-screener (parallel)
+  ↓
+ac-verifier (validate acceptance criteria)
+  ↓
+quality-gatekeeper (R1 validation)
+  ↓
+review.approved (next phase)
+```
+
+## Quality Gate: R1
+- ✅ AC pass (all acceptance criteria met)
+- ✅ tests-BAK green (100% pass rate)
+- ✅ static analysis OK (no blocking issues)
+- ✅ security scan OK (no critical vulnerabilities)
+
+## Tools
+- playwright: Browser testing, E2E scenarios
+- sequential-thinking: Multi-step reasoning for quality assessment
+
+## Quality Standards
+- Follow _RULES/TESTING_RULES.md
+- Apply _RULES/CODE_QUALITY_STANDARDS.md
+- Meet CI-001 through CI-006 requirements
+
+## Escalation
+If any quality gate fails:
+  → Log specific failures with quality-gatekeeper
+  → Return to implementation-orch for fixes
+  → Re-run full validation after fixes
+'''
+    },
+
+    'release-ops-orch': {
+        'display_name': 'Release & Ops Orchestrator',
+        'description': (
+            'Phase 5: Deployment & Operations\n\n'
+            'Drives the Release/Ops phase until gate O1 passes:\n'
+            '- version bumped\n'
+            '- changelog updated\n'
+            '- rollback plan ready\n'
+            '- monitors configured\n\n'
+            'Delegates to:\n'
+            '- versioner: Bump semantic version\n'
+            '- changelog-curator: Update changelog\n'
+            '- deploy-orchestrator: Execute deployment\n'
+            '- health-verifier: Validate deployment health\n'
+            '- incident-scribe: Document incidents (if any)\n\n'
+            'Quality Gate: O1 (operability-ready)\n'
+            'Produces: release.deployed artifact'
+        ),
+        'delegates_to': [
+            'versioner',
+            'changelog-curator',
+            'deploy-orchestrator',
+            'health-verifier',
+            'incident-scribe'
+        ],
+        'tools': {
+            'deployment': ['playwright']
+        },
+        'agent_file_path': '.claude/agents/orchestrators/release-ops-orch.md',
+        'sop_content': '''# Release & Ops Orchestrator SOP
+
+## Purpose
+Drive Release/Ops phase (gate O1) until deployment complete.
+
+## Responsibilities
+1. Delegate to sub-agents for deployment
+2. Ensure version bumped (semantic versioning)
+3. Validate changelog updated
+4. Confirm rollback plan ready
+5. Enforce gate O1 before proceeding
+
+## Delegation Pattern
+```
+review.approved → versioner + changelog-curator (parallel)
+  ↓
+deploy-orchestrator (execute deployment)
+  ↓
+health-verifier (validate deployment)
+  ↓
+operability-gatecheck (O1 validation)
+  ↓
+release.deployed (final)
+```
+
+## Quality Gate: O1
+- ✅ version bumped (semantic versioning)
+- ✅ changelog updated (user-facing changes)
+- ✅ rollback plan ready (tested procedure)
+- ✅ monitors configured (health checks)
+
+## Tools
+- playwright: Deployment testing, health verification
+
+## Operational Standards
+- Follow _RULES/OPERATIONAL_STANDARDS.md
+- Apply semantic versioning (MAJOR.MINOR.PATCH)
+- Maintain rollback capability (always)
+
+## Escalation
+If deployment fails:
+  → Delegate to incident-scribe for documentation
+  → Execute rollback plan
+  → Return to review-test-orch for validation
+'''
+    },
+
+    'evolution-orch': {
+        'display_name': 'Evolution Orchestrator',
+        'description': (
+            'Phase 6: Continuous Improvement\n\n'
+            'Drives the Evolution phase until gate E1 passes:\n'
+            '- metrics/risks linked\n'
+            '- outcomes measured\n'
+            '- priorities assigned\n\n'
+            'Delegates to:\n'
+            '- signal-harvester: Collect telemetry signals\n'
+            '- insight-synthesizer: Extract patterns and insights\n'
+            '- debt-registrar: Track technical debt\n'
+            '- refactor-proposer: Propose improvements\n'
+            '- sunset-planner: Plan deprecations\n\n'
+            'Quality Gate: E1 (evolution-planned)\n'
+            'Produces: evolution.backlog_delta artifact'
+        ),
+        'delegates_to': [
+            'signal-harvester',
+            'insight-synthesizer',
+            'debt-registrar',
+            'refactor-proposer',
+            'sunset-planner'
+        ],
+        'tools': {
+            'reasoning': ['sequential-thinking'],
+            'discovery': ['context7']
+        },
+        'agent_file_path': '.claude/agents/orchestrators/evolution-orch.md',
+        'sop_content': '''# Evolution Orchestrator SOP
+
+## Purpose
+Drive Evolution phase (gate E1) for continuous improvement.
+
+## Responsibilities
+1. Delegate to sub-agents for telemetry analysis
+2. Ensure metrics/risks linked
+3. Validate outcomes measured
+4. Confirm priorities assigned
+5. Enforce gate E1 before proceeding
+
+## Delegation Pattern
+```
+telemetry.snapshot → signal-harvester → insight-synthesizer
+  ↓
+debt-registrar + refactor-proposer + sunset-planner (parallel)
+  ↓
+evolution.gate-check (E1 validation)
+  ↓
+evolution.backlog_delta (backlog updates)
+```
+
+## Quality Gate: E1
+- ✅ metric/risk link (telemetry → work items)
+- ✅ outcome measured (KPIs tracked)
+- ✅ priority assigned (impact assessment)
+
+## Tools
+- sequential-thinking: Multi-step reasoning for pattern analysis
+- context7: Framework/library pattern evolution
+
+## Evolution Patterns
+- Technical debt tracking and remediation
+- Refactoring opportunities identification
+- Deprecation planning (sunset)
+- Pattern extraction and reuse
+
+## Escalation
+If patterns unclear or insufficient telemetry:
+  → Delegate to signal-harvester for additional data
+  → Re-run evolution.gate-check after enrichment
+'''
+    }
+}
+
+
+def get_db_connection():
+    """Get database connection with proper configuration."""
+    db_path = project_root / '.aipm' / 'data' / 'aipm.db'
+
+    if not db_path.exists():
+        raise FileNotFoundError(f"Database not found at {db_path}")
+
+    conn = sqlite3.connect(str(db_path))
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def verify_prerequisites(builder):
+    """Verify master orchestrator and sub-agents exist."""
+    print("\n🔍 Verifying prerequisites...")
+
+    # Check master orchestrator (create if missing)
+    master = builder.get_agent_by_role('master-orchestrator')
+    if not master:
+        print("  ⚠️  Master orchestrator not found - creating...")
+        master_agent = builder.define_agent(
+            role='master-orchestrator',
+            display_name='Master Orchestrator',
+            description='Top-level orchestrator that routes work to phase-specific mini-orchestrators',
+            tier=3,
+            execution_mode='parallel',
+            symbol_mode=True,
+            orchestrator_type='master',
+            agent_file_path='.claude/agents/orchestrators/master-orchestrator.md',
+            sop_content='# Master Orchestrator\n\nRoutes work to appropriate mini-orchestrators by phase.',
+            is_active=True
+        )
+        builder.commit()
+        master = builder.get_agent(master_agent.id)
+        print(f"  ✅ Created master orchestrator (id={master.id})")
+    else:
+        print(f"  ✅ Master orchestrator found (id={master.id})")
+
+    # Check all sub-agents referenced
+    all_sub_agents = set()
+    for orch_config in MINI_ORCHESTRATORS.values():
+        all_sub_agents.update(orch_config['delegates_to'])
+
+    missing_agents = []
+    for role in all_sub_agents:
+        agent = builder.get_agent_by_role(role)
+        if not agent:
+            missing_agents.append(role)
+
+    if missing_agents:
+        print(f"  ⚠️  Missing sub-agents: {', '.join(missing_agents)}")
+        print("     These will be created as placeholders")
+    else:
+        print(f"  ✅ All {len(all_sub_agents)} sub-agents found")
+
+    return master, missing_agents
+
+
+def create_placeholder_agents(builder, missing_agents):
+    """Create placeholder sub-agents for missing references."""
+    if not missing_agents:
+        return []
+
+    print(f"\n📝 Creating {len(missing_agents)} placeholder sub-agents...")
+
+    created = []
+    for role in missing_agents:
+        agent = builder.define_agent(
+            role=role,
+            display_name=role.replace('-', ' ').title(),
+            description=f"Placeholder for {role} sub-agent (tier 1)",
+            tier=1,
+            execution_mode='parallel',
+            symbol_mode=True,
+            orchestrator_type=None,
+            agent_file_path=f'.claude/agents/sub-agents/{role}.md',
+            is_active=True
+        )
+        created.append(agent)
+        print(f"  ✅ Created {role} (id={agent.id})")
+
+    builder.commit()
+    return created
+
+
+def define_mini_orchestrators(builder):
+    """Define all 6 mini-orchestrators."""
+    print("\n🚀 Defining 6 mini-orchestrators...\n")
+
+    created_orchestrators = []
+
+    for role, config in MINI_ORCHESTRATORS.items():
+        print(f"📦 {config['display_name']} ({role})")
+
+        try:
+            # Create orchestrator
+            agent = builder.define_agent(
+                role=role,
+                display_name=config['display_name'],
+                description=config['description'],
+                tier=2,  # Mini-orchestrator
+                execution_mode='parallel',
+                symbol_mode=True,
+                orchestrator_type='mini',
+                agent_file_path=config['agent_file_path'],
+                sop_content=config['sop_content'],
+                is_active=True
+            )
+
+            print(f"  ✅ Created agent (id={agent.id})")
+
+            # Add reports_to relationship (to master-orchestrator)
+            rel_id = builder.add_relationship(
+                agent.id,
+                'master-orchestrator',
+                'reports_to'
+            )
+            print(f"  ✅ Reports to master-orchestrator (rel_id={rel_id})")
+
+            # Add delegates_to relationships (to sub-agents)
+            for sub_agent_role in config['delegates_to']:
+                rel_id = builder.add_relationship(
+                    agent.id,
+                    sub_agent_role,
+                    'delegates_to'
+                )
+                print(f"  ✅ Delegates to {sub_agent_role} (rel_id={rel_id})")
+
+            # Add tools by phase
+            for phase, tool_names in config['tools'].items():
+                for priority, tool_name in enumerate(tool_names, start=1):
+                    tool_id = builder.add_tool(
+                        agent.id,
+                        tool_name,
+                        phase,
+                        priority
+                    )
+                    print(f"  ✅ Added tool: {tool_name} ({phase}, priority={priority})")
+
+            # Commit after each orchestrator
+            builder.commit()
+            created_orchestrators.append(agent)
+            print(f"  ✅ Committed {role}\n")
+
+        except Exception as e:
+            print(f"  ❌ Error creating {role}: {e}")
+            builder.rollback()
+            raise
+
+    return created_orchestrators
+
+
+def print_summary(orchestrators):
+    """Print summary of created orchestrators."""
+    print("\n" + "="*70)
+    print("✅ MINI-ORCHESTRATOR DEFINITION COMPLETE")
+    print("="*70)
+
+    print(f"\nCreated {len(orchestrators)} mini-orchestrators:\n")
+
+    for agent in orchestrators:
+        print(f"  {agent.role:25s} (id={agent.id}, tier={agent.tier})")
+
+    print("\n" + "-"*70)
+    print("Architecture:")
+    print("  Master Orchestrator (tier 3)")
+    for agent in orchestrators:
+        print(f"    ├─ {agent.role} (tier 2)")
+    print("       └─ [Sub-agents] (tier 1)")
+
+    print("\n" + "-"*70)
+    print("Next Steps:")
+    print("  1. Verify: SELECT * FROM agents WHERE tier = 2;")
+    print("  2. Check relationships: SELECT * FROM agent_relationships;")
+    print("  3. Check tools: SELECT * FROM agent_tools;")
+    print("  4. Test orchestration: python examples/orchestration_demo.py")
+    print("="*70 + "\n")
+
+
+def main():
+    """Main execution function."""
+    print("="*70)
+    print("MINI-ORCHESTRATOR DEFINITION SCRIPT")
+    print("="*70)
+    print("\nThis script defines all 6 mini-orchestrators:")
+    print("  1. definition-orch (Definition Phase)")
+    print("  2. planning-orch (Planning Phase)")
+    print("  3. implementation-orch (Implementation Phase)")
+    print("  4. review-test-orch (Review & Test Phase)")
+    print("  5. release-ops-orch (Release & Ops Phase)")
+    print("  6. evolution-orch (Evolution Phase)")
+
+    try:
+        # Get database connection
+        conn = get_db_connection()
+        print(f"\n✅ Connected to database: {project_root / '.aipm' / 'data' / 'aipm.db'}")
+
+        # Initialize builder
+        builder = AgentBuilder(conn, project_id=1)
+
+        # Verify prerequisites
+        master, missing_agents = verify_prerequisites(builder)
+
+        # Create placeholder sub-agents if needed
+        if missing_agents:
+            create_placeholder_agents(builder, missing_agents)
+
+        # Define mini-orchestrators
+        orchestrators = define_mini_orchestrators(builder)
+
+        # Print summary
+        print_summary(orchestrators)
+
+        return 0
+
+    except Exception as e:
+        print(f"\n❌ ERROR: {e}")
+        import traceback
+        traceback.print_exc()
+        return 1
+
+    finally:
+        if 'conn' in locals():
+            conn.close()
+
+
+if __name__ == '__main__':
+    sys.exit(main())

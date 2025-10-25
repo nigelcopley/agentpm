@@ -1,0 +1,451 @@
+---
+globs:
+  - "docs/**/*.md"
+  - "*.md"
+description: Documentation quality and structure standards
+priority: 75
+---
+
+# Documentation Quality Standards
+
+## 1. Document Structure
+
+### Required Path Structure
+
+**All documents MUST follow this structure:**
+
+```
+docs/{category}/{document_type}/{filename}
+```
+
+**Categories**:
+- `architecture` - System design, patterns, ADRs
+- `planning` - Requirements, task breakdowns, estimates
+- `guides` - User guides, developer guides, tutorials
+- `reference` - API docs, command reference, glossary
+- `processes` - Workflows, procedures, checklists
+- `governance` - Policies, standards, quality gates
+- `operations` - Runbooks, deployment guides, monitoring
+- `communication` - Status reports, retrospectives, summaries
+- `testing` - Test plans, test results, coverage reports
+
+**Document Types**:
+- `requirements` - Feature requirements, acceptance criteria
+- `design` - Architecture decisions, design specs
+- `adr` - Architecture Decision Records
+- `user_guide` - End-user documentation
+- `developer_guide` - Developer documentation
+- `runbook` - Operational procedures
+- `status_report` - Project status updates
+- `test_plan` - Testing strategies and plans
+- `specification` - Technical specifications
+
+**Examples**:
+```
+docs/planning/requirements/wi-118-cursor-integration-requirements.md
+docs/architecture/design/database-schema-design.md
+docs/guides/user_guide/getting-started.md
+docs/operations/runbook/deployment-checklist.md
+docs/communication/status_report/sprint-summary.md
+```
+
+---
+
+## 2. Content Standards
+
+### Clear Headings
+
+**Use hierarchical heading structure:**
+
+```markdown
+# Document Title (H1 - only one per document)
+
+## Major Section (H2)
+
+### Subsection (H3)
+
+#### Detail Section (H4)
+```
+
+**Example**:
+```markdown
+# Database Schema Design
+
+## Overview
+
+### Purpose
+This document describes the database schema for APM (Agent Project Manager).
+
+### Scope
+Covers all core tables and relationships.
+
+## Schema Definition
+
+### Core Tables
+
+#### work_items Table
+Primary table for work items.
+
+#### tasks Table
+Tasks associated with work items.
+```
+
+### Code Examples with Syntax Highlighting
+
+**Always specify language for code blocks:**
+
+````markdown
+```python
+# ✅ CORRECT: Language specified
+def calculate_confidence(evidence_count: int) -> float:
+    return min(1.0, evidence_count / 10)
+```
+
+```bash
+# Shell commands
+apm work-item create "Feature" --type=feature
+```
+
+```sql
+-- SQL queries
+SELECT * FROM work_items WHERE status = 'active';
+```
+````
+
+### Tables for Comparisons
+
+**Use tables for structured comparisons:**
+
+```markdown
+| Feature | V1 | V2 | Improvement |
+|---------|----|----|-------------|
+| Startup Time | 500ms | 80ms | 84% faster |
+| Memory Usage | 150MB | 45MB | 70% reduction |
+| Test Coverage | 75% | 91% | 16% increase |
+```
+
+### Decision Rationale
+
+**Always include WHY decisions were made:**
+
+```markdown
+## Design Decision: Three-Layer Architecture
+
+### Decision
+Implement strict three-layer pattern: Models → Adapters → Methods
+
+### Rationale
+- **Separation of Concerns**: Clear boundaries between validation, conversion, and logic
+- **Testability**: Each layer can be tested independently
+- **Type Safety**: Pydantic models provide compile-time validation
+- **Maintainability**: Changes to database schema isolated to adapters
+
+### Alternatives Considered
+1. **Direct SQLite Access**: Rejected - no type safety, poor testability
+2. **ORM (SQLAlchemy)**: Rejected - heavyweight, slower startup
+3. **Two-Layer (Models + Methods)**: Rejected - mixing concerns
+
+### Trade-offs
+- **Pro**: Clear structure, excellent testability, type safety
+- **Con**: More boilerplate code, three files per entity
+- **Decision**: Benefits outweigh boilerplate cost
+```
+
+---
+
+## 3. Style Guide
+
+### Active Voice Preferred
+
+```markdown
+✅ CORRECT: Active voice
+"The system validates input before processing"
+"Users create work items through the CLI"
+
+❌ INCORRECT: Passive voice
+"Input is validated before processing"
+"Work items are created by users through the CLI"
+```
+
+### Present Tense for Current State
+
+```markdown
+✅ CORRECT: Present tense
+"APM (Agent Project Manager) uses a database-driven architecture"
+"The system enforces quality gates at each phase"
+
+❌ INCORRECT: Past tense
+"APM (Agent Project Manager) used a database-driven architecture"
+"The system enforced quality gates"
+```
+
+### Avoid Jargon Without Explanation
+
+```markdown
+✅ CORRECT: Explain terms
+"APM (Agent Project Manager) uses DDD (Domain-Driven Design) principles, which organize code
+around business domains rather than technical layers."
+
+❌ INCORRECT: Unexplained jargon
+"APM (Agent Project Manager) uses DDD principles."
+```
+
+### Include Examples for Complex Concepts
+
+```markdown
+## 6W Context
+
+The 6W context captures essential information about a work item:
+- **WHO**: Stakeholders and users affected
+- **WHAT**: Specific functionality or change
+- **WHEN**: Timeline and milestones
+- **WHERE**: System components affected
+- **WHY**: Business value and rationale
+- **HOW**: Implementation approach
+
+**Example**:
+```yaml
+WHO: Development team, end users
+WHAT: User authentication system
+WHEN: Sprint 5 (2 weeks)
+WHERE: API layer, database, frontend
+WHY: Enable personalized user experience, security compliance
+HOW: OAuth2 integration with JWT tokens
+```
+```
+
+---
+
+## 4. Quality Gates
+
+### Description ≥ 50 Characters
+
+**All documents require meaningful descriptions:**
+
+```markdown
+✅ CORRECT: Detailed description
+---
+title: Database Schema Design
+description: Complete database schema for APM (Agent Project Manager) including tables, relationships, indexes, and migration strategy
+---
+
+❌ INCORRECT: Vague description
+---
+title: Database Schema
+description: DB schema
+---
+```
+
+### No Placeholder Text
+
+**Remove all placeholder text before committing:**
+
+```markdown
+❌ INCORRECT: Placeholders
+## Architecture
+TODO: Add architecture diagram
+TBD: Describe component interactions
+FIXME: Update with latest changes
+
+✅ CORRECT: Complete content
+## Architecture
+The system uses a three-tier architecture:
+[Include actual diagram]
+Components interact through well-defined interfaces...
+```
+
+### Business Context Required
+
+**Technical documents must include business context:**
+
+```markdown
+## Business Context
+
+### Problem
+Current system lacks automated quality gates, leading to:
+- 30% of releases require hotfixes
+- 2-day average time to detect quality issues
+- Manual review bottleneck (8 hours per release)
+
+### Solution
+Automated quality gates enforce standards at each phase:
+- Immediate feedback on quality violations
+- Reduced manual review time by 75%
+- Zero-defect releases through validation
+
+### Value
+- **Time Savings**: 6 hours per release (75% reduction)
+- **Quality Improvement**: 95% reduction in post-release issues
+- **Developer Experience**: Immediate feedback, less rework
+```
+
+### Valid Links
+
+**All links must be valid and accessible:**
+
+```markdown
+✅ CORRECT: Valid relative links
+See [Three-Layer Architecture](../architecture/three-layer-pattern.md)
+Related: [Testing Standards](../../testing/test-standards.md)
+
+✅ CORRECT: Valid absolute URLs
+Reference: [Pydantic Documentation](https://docs.pydantic.dev/)
+
+❌ INCORRECT: Broken links
+See [Architecture](./nonexistent.md)
+Reference: [Docs](http://broken-link.invalid)
+```
+
+---
+
+## 5. Metadata Requirements
+
+### YAML Frontmatter
+
+**All documentation should include metadata:**
+
+```markdown
+---
+title: Cursor Integration Consolidation Design
+version: 1.0.0
+date: 2025-10-20
+work_item: WI-118
+author: AIPM Design Team
+status: Design Phase Complete
+related_documents:
+  - docs/architecture/claude-integration-design.md
+  - docs/developer-guide/cursor-integration.md
+tags:
+  - cursor
+  - integration
+  - consolidation
+  - design
+---
+
+# Cursor Integration Consolidation Design
+
+[Document content...]
+```
+
+**Required Fields**:
+- `title`: Document title
+- `version`: Semantic version (1.0.0)
+- `date`: Creation/update date (YYYY-MM-DD)
+- `author`: Document author/team
+- `status`: Current status
+
+**Optional Fields**:
+- `work_item`: Related work item ID
+- `related_documents`: List of related docs
+- `tags`: Topic tags for searchability
+
+---
+
+## 6. When to Document
+
+### Requirements Documents
+
+**Create when:**
+- New feature proposed
+- Major change requested
+- System behavior unclear
+
+**Template**: `docs/planning/requirements/wi-{id}-{name}.md`
+
+### Design Documents
+
+**Create when:**
+- Architecture decision needed
+- Multiple implementation approaches considered
+- System-wide impact
+
+**Template**: `docs/architecture/design/{feature}-design.md`
+
+### ADRs (Architecture Decision Records)
+
+**Create when:**
+- Significant technical decision made
+- Trade-offs evaluated
+- Long-term impact on system
+
+**Template**: `docs/architecture/adr/adr-{number}-{title}.md`
+
+### User Guides
+
+**Create when:**
+- New user-facing feature added
+- Workflow changes
+- Common tasks need documentation
+
+**Template**: `docs/guides/user_guide/{feature}-guide.md`
+
+### Runbooks
+
+**Create when:**
+- Operational procedures defined
+- Deployment process established
+- Troubleshooting steps documented
+
+**Template**: `docs/operations/runbook/{process}-runbook.md`
+
+---
+
+## 7. Linking to Database
+
+### Add Document References
+
+**When creating/updating docs, register with AIPM:**
+
+```bash
+# Add document to work item
+apm document add \
+  --entity-type=work_item \
+  --entity-id=118 \
+  --file-path="docs/architecture/cursor-integration-design.md" \
+  --document-type=design \
+  --title="Cursor Integration Consolidation Design"
+
+# Update document after changes
+apm document update <doc-id> \
+  --content-hash=$(sha256sum docs/architecture/cursor-integration-design.md | cut -d' ' -f1)
+```
+
+---
+
+## 8. Query Documentation Rules
+
+```bash
+# Get documentation rules from database
+apm rules list --category=documentation
+
+# Get specific documentation rules
+apm rules show DOC-001  # Document structure
+apm rules show DOC-002  # Content standards
+apm rules show CI-006   # Documentation quality gate
+```
+
+---
+
+## 9. Quick Checklist
+
+Before committing documentation, verify:
+
+- [ ] File in correct path: `docs/{category}/{document_type}/{filename}`
+- [ ] YAML frontmatter with required fields
+- [ ] Clear hierarchical heading structure (H1, H2, H3)
+- [ ] Code examples with language specified
+- [ ] Tables for structured comparisons
+- [ ] Active voice and present tense
+- [ ] Decision rationale included
+- [ ] Examples for complex concepts
+- [ ] Description ≥ 50 characters
+- [ ] No placeholder text (TODO, TBD, FIXME)
+- [ ] Business context provided
+- [ ] All links valid and accessible
+- [ ] Document registered in database
+
+---
+
+**Version**: 1.0.0
+**Last Updated**: 2025-10-20
+**Priority**: 75 (auto-attach for `docs/**/*.md`)

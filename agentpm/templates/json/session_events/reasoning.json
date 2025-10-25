@@ -1,0 +1,7 @@
+{
+  "hypothesis": "Cache layer will reduce database load for frequent filter combinations.",
+  "experiment": "Replay production traffic against staging with and without cache.",
+  "result": "Cache lowered DB CPU usage by 35% and kept latency within target.",
+  "confidence": "high",
+  "notes": "Document metrics in performance dashboard after rollout."
+}

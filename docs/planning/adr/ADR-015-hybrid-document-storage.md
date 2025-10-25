@@ -1,0 +1,537 @@
+# ADR-015: Hybrid Document Storage System
+
+**Status**: Proposed
+**Date**: 2025-10-21
+**Deciders**: AIPM Core Team
+**Related**: WI-133 (Document System Enhancement)
+
+---
+
+## Context and Problem Statement
+
+APM (Agent Project Manager)'s document management system currently tracks document **metadata** (path, type, category, hash) in the database but stores actual document **content** only on the filesystem. This creates several challenges:
+
+### Current Limitations
+
+1. **No Single Source of Truth**: Document content lives only in files
+   - Database knows documents exist but not what they contain
+   - Cannot search across document content from database queries
+   - Difficult to verify content integrity without reading files
+
+2. **Limited Search Capabilities**: Cannot perform full-text search
+   - No way to search "find all documents mentioning OAuth2"
+   - Must rely on external tools (grep, ripgrep)
+   - Cannot rank results by relevance
+
+3. **Metadata Disconnect**: Rich metadata exists but isn't tied to content
+   - Database has component, domain, audience fields
+   - But cannot query "show me all authentication design documents containing JWT"
+   - Metadata and content live in separate silos
+
+4. **No Content Versioning**: Cannot track content changes over time
+   - Git provides file history but not queryable from AIPM
+   - No way to restore previous content versions from database
+
+### Requirements
+
+A better system must provide:
+
+- ✅ **Single source of truth** for document content
+- ✅ **Full-text search** across all documents
+- ✅ **Content integrity verification** via hashing
+- ✅ **Git-friendly workflows** (diffs, IDE editing)
+- ✅ **Automatic synchronization** between storage layers
+- ✅ **Performance** for large document sets (1000+ documents)
+- ✅ **Transaction safety** (atomic operations, rollback)
+
+---
+
+## Decision Drivers
+
+| Priority | Driver | Weight |
+|----------|--------|--------|
+| **Critical** | Single source of truth for content | ⭐⭐⭐⭐⭐ |
+| **Critical** | Full-text search capability | ⭐⭐⭐⭐⭐ |
+| **High** | Git-friendly diffs and collaboration | ⭐⭐⭐⭐ |
+| **High** | IDE editing support (VSCode, etc.) | ⭐⭐⭐⭐ |
+| **Medium** | Content versioning and history | ⭐⭐⭐ |
+| **Medium** | Performance at scale (1000+ docs) | ⭐⭐⭐ |
+| **Low** | Implementation complexity | ⭐⭐ |
+
+---
+
+## Considered Options
+
+### Option 1: Database-Only Storage
+
+**Description**: Store all document content in SQLite database, no filesystem copies.
+
+**Architecture**:
+```
+┌─────────────────────────────┐
+│      SQLite Database        │
+├─────────────────────────────┤
+│ • document_references table │
+│   - id, metadata            │
+│   - content (TEXT)          │
+│   - content_hash            │
+│ • FTS5 virtual table        │
+│   - Full-text indexes       │
+└─────────────────────────────┘
+```
+
+**Pros**:
+- ✅ True single source of truth
+- ✅ Full-text search via FTS5
+- ✅ ACID transactions
+- ✅ Content versioning possible
+- ✅ Simple architecture (no sync needed)
+
+**Cons**:
+- ❌ No git diffs (binary database)
+- ❌ Cannot edit in IDE directly
+- ❌ Poor developer experience
+- ❌ Large database file size
+- ❌ Backup/restore more complex
+
+**Verdict**: ❌ **Rejected** - Poor developer experience, no git integration
+
+---
+
+### Option 2: Filesystem-Only Storage
+
+**Description**: Keep current approach - files only, database just tracks metadata.
+
+**Architecture**:
+```
+┌──────────────────────┐      ┌──────────────────────┐
+│  SQLite Database     │      │   Filesystem         │
+├──────────────────────┤      ├──────────────────────┤
+│ • Metadata only      │      │ • docs/ directory    │
+│   - path, type       │      │ • Full content       │
+│   - hash, size       │      │ • Git-tracked        │
+│ • No content         │      │ • IDE-editable       │
+└──────────────────────┘      └──────────────────────┘
+```
+
+**Pros**:
+- ✅ Git-friendly diffs
+- ✅ IDE editing works
+- ✅ Simple implementation
+- ✅ Human-readable backups
+
+**Cons**:
+- ❌ No single source of truth
+- ❌ No full-text search from database
+- ❌ Cannot query content + metadata together
+- ❌ Content integrity checks require file I/O
+- ❌ No content versioning in AIPM
+
+**Verdict**: ❌ **Rejected** - Current state, doesn't solve problems
+
+---
+
+### Option 3: Hybrid Storage (Selected)
+
+**Description**: Database stores authoritative content + metadata, filesystem maintains synchronized copies.
+
+**Architecture**:
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     AIPM Document System                     │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ┌──────────────────────┐         ┌──────────────────────┐ │
+│  │   SQLite Database    │◄───────►│   Filesystem Cache   │ │
+│  │  (Source of Truth)   │  Sync   │   (Git + IDE)        │ │
+│  ├──────────────────────┤         ├──────────────────────┤ │
+│  │ • Full content       │         │ • docs/ directory    │ │
+│  │ • Metadata           │         │ • Git-trackable      │ │
+│  │ • FTS5 indexes       │         │ • IDE-editable       │ │
+│  │ • Content hash       │         │ • Regenerable        │ │
+│  └──────────────────────┘         └──────────────────────┘ │
+│           ▲                                 │                │
+│           │         Conflict Resolution     │                │
+│           └─────────────────────────────────┘                │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Pros**:
+- ✅ Database is single source of truth
+- ✅ Full-text search via FTS5
+- ✅ Git-friendly diffs (from filesystem)
+- ✅ IDE editing works (via sync)
+- ✅ Content integrity via hashing
+- ✅ Transaction safety
+- ✅ Files are regenerable (disaster recovery)
+
+**Cons**:
+- ⚠️ Sync complexity (bidirectional)
+- ⚠️ Conflict resolution needed
+- ⚠️ Storage overhead (content stored twice)
+- ⚠️ Must maintain consistency
+
+**Verdict**: ✅ **Selected** - Best balance of features vs. complexity
+
+---
+
+## Decision
+
+We will implement **Hybrid Storage** (Option 3) with the following design:
+
+### Core Principles
+
+1. **Database as Source of Truth**
+   - All document content stored in `document_references.content` field
+   - SHA-256 hash stored for integrity verification
+   - FTS5 virtual table for full-text search
+
+2. **Filesystem as Cache**
+   - Files synchronized from database on create/update
+   - Files are regenerable (can be deleted and restored from DB)
+   - Git-trackable for collaboration and version control
+
+3. **Bidirectional Sync**
+   - Database → File: On create, update operations
+   - File → Database: On explicit sync command
+   - Conflict detection via content hashing
+   - User-selectable resolution strategies
+
+4. **Transaction Safety**
+   - Database operations are atomic
+   - Rollback on any error
+   - Hash verification prevents corruption
+
+### Implementation Details
+
+**Database Schema**:
+```sql
+-- Add content storage to existing table
+ALTER TABLE document_references
+ADD COLUMN content TEXT;
+
+-- Create FTS5 virtual table
+CREATE VIRTUAL TABLE document_content_fts USING fts5(
+    document_id UNINDEXED,
+    file_path,
+    title,
+    content,
+    content=document_references,
+    content_rowid=id
+);
+
+-- Triggers to keep FTS5 in sync
+CREATE TRIGGER document_ai AFTER INSERT ON document_references BEGIN
+    INSERT INTO document_content_fts(document_id, file_path, title, content)
+    VALUES (new.id, new.file_path, new.title, new.content);
+END;
+```
+
+**Sync Algorithm**:
+```python
+def sync_document(file_path: str, strategy: SyncStrategy = DB_WINS):
+    # 1. Read file content + hash
+    file_content = read_file(file_path)
+    file_hash = sha256(file_content)
+
+    # 2. Read database content + hash
+    doc = db.get_by_path(file_path)
+    db_hash = doc.content_hash
+
+    # 3. Compare hashes
+    if file_hash == db_hash:
+        return "in_sync"
+
+    # 4. Conflict detected - apply strategy
+    if strategy == DB_WINS:
+        write_file(file_path, doc.content)
+    elif strategy == FILE_WINS:
+        db.update(doc.id, content=file_content, hash=file_hash)
+
+    return "synced"
+```
+
+**Conflict Resolution Strategies**:
+- `db-wins` (default): Database content overwrites file
+- `file-wins`: File content updates database
+- `manual`: Prompt user to choose
+- `merge`: Attempt automatic merge (future)
+
+---
+
+## Rationale
+
+### Why Hybrid Over Database-Only?
+
+**Developer Experience Wins**:
+
+Git workflows are critical for software projects:
+```bash
+# With database-only: No meaningful diffs
+git diff .aipm/data/aipm.db
+# Binary file changed
+
+# With hybrid: Clear diffs
+git diff docs/architecture/design/auth-system.md
++ Added JWT token validation section
++ Updated OAuth2 flow diagram
+```
+
+IDE integration is essential for productivity:
+```bash
+# With database-only: Cannot edit
+vim .aipm/data/aipm.db  # Binary gibberish
+
+# With hybrid: Natural editing
+code docs/architecture/design/auth-system.md  # Full IDE support
+```
+
+### Why Hybrid Over Filesystem-Only?
+
+**Search Capabilities Win**:
+
+Without FTS5, searching is limited:
+```bash
+# Filesystem-only: Slow, no ranking
+grep -r "OAuth2" docs/  # Linear scan, no relevance
+
+# Hybrid: Fast, ranked results
+apm document search "OAuth2 authentication"
+# FTS5 BM25 ranking, instant results
+```
+
+**Single Source of Truth Wins**:
+
+Filesystem-only has no authoritative version:
+```bash
+# Filesystem-only: Which is correct?
+docs/design.md (on disk)
+docs/design.md (in git)
+docs/design.md (on another machine)
+
+# Hybrid: Database is always correct
+apm document show 42  # Authoritative version
+```
+
+### Storage Overhead is Acceptable
+
+**Typical Document Sizes**:
+- Small document (1 KB): 2 KB total (DB + file)
+- Medium document (10 KB): 20 KB total
+- Large document (100 KB): 200 KB total
+
+**For 1000 documents** (average 10 KB):
+- Database size: ~10 MB
+- Filesystem size: ~10 MB
+- **Total overhead: 20 MB** (negligible on modern systems)
+
+### Sync Complexity is Manageable
+
+**Most operations don't need sync**:
+- Creating documents: Automatic DB → File sync
+- Updating via CLI: Automatic DB → File sync
+- Searching: Pure database operation (no sync)
+
+**Sync only needed for**:
+- IDE editing workflows
+- External file modifications
+- Manual conflict resolution
+
+**Frequency**: Low (only when editing outside AIPM)
+
+---
+
+## Consequences
+
+### Positive Consequences
+
+1. **Powerful Search**
+   - Full-text search across all documents
+   - Metadata + content combined queries
+   - Relevance ranking (BM25)
+   - Instant results even with 1000+ documents
+
+2. **Developer Friendly**
+   - Git diffs work naturally
+   - IDE editing supported
+   - Standard file-based workflows
+
+3. **Data Integrity**
+   - SHA-256 hashing prevents corruption
+   - Transaction safety ensures consistency
+   - Regenerable files (disaster recovery)
+
+4. **Flexible Workflows**
+   - CLI-first: Direct database updates
+   - IDE-first: File editing + sync
+   - Mixed: Both workflows supported
+
+### Negative Consequences
+
+1. **Sync Complexity**
+   - Bidirectional sync requires conflict resolution
+   - Users must understand sync model
+   - Potential for confusion if sync skipped
+
+   **Mitigation**: Clear documentation, automatic sync where possible
+
+2. **Storage Overhead**
+   - Content stored twice (DB + files)
+   - Approximately 2x storage requirement
+
+   **Mitigation**: Acceptable for typical document sizes (<100 KB)
+
+3. **Consistency Maintenance**
+   - Must keep DB and files in sync
+   - Hash mismatches require resolution
+   - Potential for drift if not synced
+
+   **Mitigation**: Automatic verification commands, clear error messages
+
+4. **Implementation Effort**
+   - More complex than pure DB or pure filesystem
+   - Requires sync service, conflict resolver
+   - Additional testing surface area
+
+   **Mitigation**: Phased implementation, comprehensive test suite
+
+---
+
+## Implementation Plan
+
+### Phase 1: Core Storage (Week 1)
+
+**Tasks**:
+- Add `content` column to `document_references` table
+- Implement content storage in document methods
+- Add content hashing (SHA-256)
+- Update CLI commands to accept content
+
+**Deliverables**:
+- Documents can store content in database
+- Content hash computed and verified
+- CLI: `apm document add --content="..."`
+
+### Phase 2: FTS5 Search (Week 2)
+
+**Tasks**:
+- Create FTS5 virtual table
+- Implement FTS5 triggers (insert, update, delete)
+- Build search service
+- Add search CLI command
+
+**Deliverables**:
+- Full-text search operational
+- CLI: `apm document search "query"`
+- Results ranked by relevance
+
+### Phase 3: Filesystem Sync (Week 3)
+
+**Tasks**:
+- Implement DB → File sync
+- Implement File → DB sync
+- Build conflict detection
+- Add sync CLI commands
+
+**Deliverables**:
+- Bidirectional sync working
+- CLI: `apm document sync --all`
+- Conflict resolution strategies
+
+### Phase 4: Documentation & Testing (Week 4)
+
+**Tasks**:
+- User guide for hybrid storage
+- Developer guide for architecture
+- Comprehensive test suite
+- Migration guide for existing documents
+
+**Deliverables**:
+- Complete documentation
+- 90%+ test coverage
+- Migration scripts
+
+---
+
+## Alternatives Considered (Rejected)
+
+### Alternative 1: External Search Engine (Elasticsearch)
+
+**Description**: Use Elasticsearch for full-text search, keep content in files
+
+**Rejected Because**:
+- Heavyweight dependency (JVM required)
+- Complex deployment and maintenance
+- Overkill for document management use case
+- SQLite FTS5 provides 95% of functionality with zero dependencies
+
+### Alternative 2: Git as Database
+
+**Description**: Use git repository as source of truth, no database storage
+
+**Rejected Because**:
+- Git not designed for structured queries
+- No metadata support (tags, categories)
+- Poor performance for search operations
+- Difficult to integrate with AIPM workflow
+
+### Alternative 3: Content-Addressable Storage (CAS)
+
+**Description**: Store content by hash (like git objects), reference from database
+
+**Rejected Because**:
+- Over-engineered for current needs
+- Deduplication not a priority (documents are unique)
+- Complex garbage collection required
+- YAGNI (You Aren't Gonna Need It)
+
+---
+
+## Related Decisions
+
+- **ADR-001**: Database-First Architecture (established DB as source of truth)
+- **ADR-008**: Universal Documentation System (established path structure)
+- **WI-113**: Document Path Validation (enforces consistent structure)
+- **WI-133**: Document System Enhancement (this ADR's implementation)
+
+---
+
+## References
+
+- [SQLite FTS5 Documentation](https://www.sqlite.org/fts5.html)
+- [BM25 Ranking Algorithm](https://en.wikipedia.org/wiki/Okapi_BM25)
+- [Content-Addressable Storage](https://en.wikipedia.org/wiki/Content-addressable_storage)
+- User Guide: `docs/guides/user_guide/document-content-management.md`
+- Developer Guide: `docs/guides/developer/document-storage-architecture.md`
+
+---
+
+## Decision Outcome
+
+**Chosen Option**: Hybrid Storage (Database + Filesystem)
+
+**Reason**: Provides best balance of:
+- Developer experience (git, IDE)
+- Search capabilities (FTS5)
+- Data integrity (hashing, transactions)
+- Acceptable complexity (sync is manageable)
+
+**Next Steps**:
+1. Create migration for content storage
+2. Implement FTS5 virtual table and triggers
+3. Build sync service with conflict resolution
+4. Update CLI commands
+5. Comprehensive testing and documentation
+
+---
+
+**Approved By**: AIPM Core Team
+**Implementation Target**: 2025-Q4
+**Review Date**: 2025-12-31 (3 months post-implementation)
+
+---
+
+**Version**: 1.0.0
+**Last Updated**: 2025-10-21
+**Status**: Proposed (pending WI-133 implementation)

@@ -1,0 +1,408 @@
+{
+  "metadata": {
+    "report_title": "Database Document Inventory Audit",
+    "database_path": ".aipm/data/aipm.db",
+    "table": "document_references",
+    "generated_at": "2025-10-19T00:00:00",
+    "generated_by": "database-query-agent",
+    "total_documents": 76
+  },
+
+  "executive_summary": {
+    "total_documents": 76,
+    "compliant_documents": 68,
+    "non_compliant_documents": 8,
+    "compliance_rate": "89.5%",
+    "critical_issues": [
+      "8 documents in non-compliant locations (project root, tests/, testing/, agentpm/)",
+      "1 test file ('bad.md') in project root",
+      "Test files stored in tests/ instead of docs/testing/",
+      "Documentation stored in source code directories (agentpm/web/)"
+    ]
+  },
+
+  "category_distribution": {
+    "total_categories": 8,
+    "breakdown": [
+      {"category": "architecture", "count": 27, "percentage": "35.5%"},
+      {"category": "artifacts", "count": 26, "percentage": "34.2%"},
+      {"category": "communication", "count": 7, "percentage": "9.2%"},
+      {"category": "testing", "count": 7, "percentage": "9.2%"},
+      {"category": "guides", "count": 5, "percentage": "6.6%"},
+      {"category": "planning", "count": 3, "percentage": "3.9%"},
+      {"category": "operations", "count": 1, "percentage": "1.3%"}
+    ],
+    "notes": [
+      "26 documents categorized as 'artifacts' - likely needs subcategorization",
+      "Architecture dominates with 35.5% of all documents"
+    ]
+  },
+
+  "document_type_distribution": {
+    "total_types": 12,
+    "breakdown": [
+      {"document_type": "specification", "count": 13, "percentage": "17.1%"},
+      {"document_type": "other", "count": 12, "percentage": "15.8%"},
+      {"document_type": "test_plan", "count": 9, "percentage": "11.8%"},
+      {"document_type": "architecture", "count": 9, "percentage": "11.8%"},
+      {"document_type": "user_guide", "count": 6, "percentage": "7.9%"},
+      {"document_type": "implementation_plan", "count": 6, "percentage": "7.9%"},
+      {"document_type": "technical_specification", "count": 5, "percentage": "6.6%"},
+      {"document_type": "runbook", "count": 5, "percentage": "6.6%"},
+      {"document_type": "requirements", "count": 5, "percentage": "6.6%"},
+      {"document_type": "quality_gates_specification", "count": 3, "percentage": "3.9%"},
+      {"document_type": "design", "count": 2, "percentage": "2.6%"},
+      {"document_type": "adr", "count": 1, "percentage": "1.3%"}
+    ],
+    "concerns": [
+      "12 documents typed as 'other' (15.8%) - needs classification",
+      "Quality gates specification is underrepresented (only 3 documents)"
+    ]
+  },
+
+  "entity_type_distribution": {
+    "breakdown": [
+      {"entity_type": "work_item", "count": 50, "percentage": "65.8%"},
+      {"entity_type": "task", "count": 18, "percentage": "23.7%"},
+      {"entity_type": "project", "count": 7, "percentage": "9.2%"},
+      {"entity_type": "idea", "count": 1, "percentage": "1.3%"}
+    ],
+    "notes": [
+      "Most documents (65.8%) are linked to work items",
+      "Only 1 document linked to ideas - may indicate underutilization"
+    ]
+  },
+
+  "non_compliant_paths": {
+    "total": 8,
+    "critical_violations": [
+      {
+        "file_path": "bad.md",
+        "document_type": "other",
+        "entity_type": "project",
+        "issue": "Test/junk file in project root",
+        "severity": "HIGH",
+        "recommendation": "DELETE - appears to be test data"
+      },
+      {
+        "file_path": "CHANGELOG.md",
+        "document_type": "runbook",
+        "entity_type": "work_item",
+        "entity_id": 109,
+        "issue": "Project-level documentation in root instead of docs/",
+        "severity": "MEDIUM",
+        "recommendation": "MOVE to docs/guides/runbook/CHANGELOG.md"
+      },
+      {
+        "file_path": "O1-DEPLOYMENT-ARTIFACT-v0.1.1.md",
+        "document_type": "runbook",
+        "entity_type": "work_item",
+        "entity_id": 109,
+        "issue": "Deployment artifact in root instead of docs/",
+        "severity": "MEDIUM",
+        "recommendation": "MOVE to docs/operations/runbook/O1-DEPLOYMENT-ARTIFACT-v0.1.1.md"
+      },
+      {
+        "file_path": "R1-GATE-VALIDATION-REPORT.md",
+        "document_type": "requirements",
+        "entity_type": "work_item",
+        "entity_id": 109,
+        "issue": "Gate validation report in root instead of docs/",
+        "severity": "MEDIUM",
+        "recommendation": "MOVE to docs/governance/quality_gates_specification/R1-GATE-VALIDATION-REPORT.md"
+      },
+      {
+        "file_path": "agentpm/web/README.md",
+        "document_type": "user_guide",
+        "entity_type": "work_item",
+        "entity_id": 104,
+        "issue": "User guide stored in source code directory",
+        "severity": "MEDIUM",
+        "recommendation": "MOVE to docs/guides/user_guide/web-admin-guide.md"
+      },
+      {
+        "file_path": "testing/cli-e2e-test/E2E_TEST_REPORT.md",
+        "document_type": "requirements",
+        "entity_type": "work_item",
+        "entity_id": 109,
+        "issue": "Test report in testing/ directory instead of docs/",
+        "severity": "LOW",
+        "recommendation": "MOVE to docs/testing/test_plan/E2E_TEST_REPORT.md"
+      },
+      {
+        "file_path": "tests/cli/commands/TEST_SUMMARY_INIT.md",
+        "document_type": "test_plan",
+        "entity_type": "task",
+        "entity_id": 554,
+        "issue": "Test documentation in tests/ directory instead of docs/",
+        "severity": "LOW",
+        "recommendation": "MOVE to docs/testing/test_plan/TEST_SUMMARY_INIT.md"
+      },
+      {
+        "file_path": "tests/cli/commands/test_init_comprehensive.py",
+        "document_type": "test_plan",
+        "entity_type": "task",
+        "entity_id": 554,
+        "issue": "Test code file tracked as document (wrong usage)",
+        "severity": "HIGH",
+        "recommendation": "REMOVE from document_references - this is source code, not documentation"
+      }
+    ]
+  },
+
+  "location_compliance_matrix": {
+    "compliant_locations": {
+      "docs/architecture": {
+        "total": 29,
+        "types": {
+          "specification": 12,
+          "architecture": 7,
+          "implementation_plan": 5,
+          "technical_specification": 3,
+          "design": 1,
+          "adr": 1
+        },
+        "status": "GOOD"
+      },
+      "docs/communication": {
+        "total": 7,
+        "types": {
+          "other": 7
+        },
+        "status": "NEEDS_REVIEW",
+        "concern": "All documents typed as 'other' - needs classification"
+      },
+      "docs/testing": {
+        "total": 9,
+        "types": {
+          "test_plan": 7,
+          "other": 2
+        },
+        "status": "GOOD"
+      },
+      "docs/guides": {
+        "total": 6,
+        "types": {
+          "user_guide": 4,
+          "runbook": 2
+        },
+        "status": "GOOD"
+      },
+      "docs/planning": {
+        "total": 5,
+        "types": {
+          "requirements": 3,
+          "quality_gates_specification": 1,
+          "implementation_plan": 1
+        },
+        "status": "GOOD"
+      },
+      "docs/operations": {
+        "total": 2,
+        "types": {
+          "runbook": 1,
+          "other": 1
+        },
+        "status": "GOOD"
+      },
+      "docs/governance": {
+        "total": 2,
+        "types": {
+          "quality_gates_specification": 2
+        },
+        "status": "GOOD"
+      },
+      "docs/migrations": {
+        "total": 1,
+        "types": {
+          "other": 1
+        },
+        "status": "GOOD"
+      },
+      "docs/components": {
+        "total": 6,
+        "types": {
+          "architecture": 2,
+          "user_guide": 1,
+          "technical_specification": 1,
+          "specification": 1,
+          "design": 1
+        },
+        "status": "QUESTIONABLE",
+        "concern": "Mixed content - may need to redistribute to primary categories"
+      },
+      "docs/other": {
+        "total": 1,
+        "types": {
+          "technical_specification": 1
+        },
+        "status": "NEEDS_REVIEW",
+        "concern": "Catch-all location - should be recategorized"
+      }
+    },
+    "non_compliant_locations": {
+      "project_root": {
+        "total": 4,
+        "files": ["CHANGELOG.md", "O1-DEPLOYMENT-ARTIFACT-v0.1.1.md", "R1-GATE-VALIDATION-REPORT.md", "bad.md"],
+        "severity": "HIGH"
+      },
+      "agentpm/web": {
+        "total": 1,
+        "files": ["agentpm/web/README.md"],
+        "severity": "MEDIUM"
+      },
+      "testing": {
+        "total": 1,
+        "files": ["testing/cli-e2e-test/E2E_TEST_REPORT.md"],
+        "severity": "LOW"
+      },
+      "tests": {
+        "total": 2,
+        "files": ["tests/cli/commands/TEST_SUMMARY_INIT.md", "tests/cli/commands/test_init_comprehensive.py"],
+        "severity": "MEDIUM",
+        "note": "test_init_comprehensive.py should not be tracked as a document"
+      }
+    }
+  },
+
+  "document_type_to_location_mapping": {
+    "specification": {
+      "expected_location": "docs/architecture/specification/",
+      "actual_locations": ["docs/architecture", "docs/components"],
+      "compliance": "GOOD",
+      "count": 13
+    },
+    "architecture": {
+      "expected_location": "docs/architecture/architecture/",
+      "actual_locations": ["docs/architecture", "docs/components"],
+      "compliance": "GOOD",
+      "count": 9
+    },
+    "implementation_plan": {
+      "expected_location": "docs/planning/implementation_plan/",
+      "actual_locations": ["docs/architecture", "docs/planning"],
+      "compliance": "NEEDS_IMPROVEMENT",
+      "note": "5 in docs/architecture should be in docs/planning",
+      "count": 6
+    },
+    "test_plan": {
+      "expected_location": "docs/testing/test_plan/",
+      "actual_locations": ["docs/testing", "tests/"],
+      "compliance": "NEEDS_IMPROVEMENT",
+      "note": "2 test plans in tests/ directory",
+      "count": 9
+    },
+    "user_guide": {
+      "expected_location": "docs/guides/user_guide/",
+      "actual_locations": ["docs/guides", "docs/components", "agentpm/web"],
+      "compliance": "NEEDS_IMPROVEMENT",
+      "note": "1 in source code directory",
+      "count": 6
+    },
+    "runbook": {
+      "expected_location": "docs/guides/runbook/ or docs/operations/runbook/",
+      "actual_locations": ["docs/guides", "docs/operations", "project_root"],
+      "compliance": "NEEDS_IMPROVEMENT",
+      "note": "2 runbooks in project root",
+      "count": 5
+    },
+    "requirements": {
+      "expected_location": "docs/planning/requirements/",
+      "actual_locations": ["docs/planning", "project_root", "testing/"],
+      "compliance": "NEEDS_IMPROVEMENT",
+      "note": "3 requirements docs in wrong locations",
+      "count": 5
+    },
+    "quality_gates_specification": {
+      "expected_location": "docs/governance/quality_gates_specification/",
+      "actual_locations": ["docs/governance", "docs/planning"],
+      "compliance": "GOOD",
+      "count": 3
+    },
+    "other": {
+      "expected_location": "SHOULD_BE_RECLASSIFIED",
+      "actual_locations": ["docs/communication", "docs/testing", "docs/migrations", "docs/operations", "project_root"],
+      "compliance": "POOR",
+      "note": "12 documents need proper classification",
+      "count": 12
+    }
+  },
+
+  "recommendations": {
+    "immediate_actions": [
+      {
+        "priority": "CRITICAL",
+        "action": "DELETE",
+        "target": "bad.md",
+        "reason": "Test/junk file in project root"
+      },
+      {
+        "priority": "CRITICAL",
+        "action": "REMOVE_FROM_DB",
+        "target": "tests/cli/commands/test_init_comprehensive.py",
+        "reason": "Source code file incorrectly tracked as documentation"
+      },
+      {
+        "priority": "HIGH",
+        "action": "MOVE",
+        "files": [
+          {"from": "CHANGELOG.md", "to": "docs/guides/runbook/CHANGELOG.md"},
+          {"from": "O1-DEPLOYMENT-ARTIFACT-v0.1.1.md", "to": "docs/operations/runbook/O1-DEPLOYMENT-ARTIFACT-v0.1.1.md"},
+          {"from": "R1-GATE-VALIDATION-REPORT.md", "to": "docs/governance/quality_gates_specification/R1-GATE-VALIDATION-REPORT.md"},
+          {"from": "agentpm/web/README.md", "to": "docs/guides/user_guide/web-admin-guide.md"}
+        ],
+        "reason": "Critical documents in wrong locations"
+      },
+      {
+        "priority": "MEDIUM",
+        "action": "RECLASSIFY",
+        "target": "12 documents with document_type='other'",
+        "reason": "Improve document type taxonomy"
+      },
+      {
+        "priority": "MEDIUM",
+        "action": "MOVE",
+        "files": [
+          {"from": "testing/cli-e2e-test/E2E_TEST_REPORT.md", "to": "docs/testing/test_plan/E2E_TEST_REPORT.md"},
+          {"from": "tests/cli/commands/TEST_SUMMARY_INIT.md", "to": "docs/testing/test_plan/TEST_SUMMARY_INIT.md"}
+        ],
+        "reason": "Consolidate test documentation"
+      },
+      {
+        "priority": "LOW",
+        "action": "RELOCATE",
+        "target": "5 implementation_plan docs from docs/architecture/ to docs/planning/",
+        "reason": "Improve logical organization"
+      }
+    ],
+    "governance_improvements": [
+      "Enforce CHECK constraint on document_references.file_path to require 'docs/' prefix",
+      "Add database trigger to validate document_type → location mapping",
+      "Create automated migration script to relocate non-compliant documents",
+      "Add pre-commit hook to prevent documents outside docs/ hierarchy",
+      "Implement document type taxonomy with clear definitions"
+    ],
+    "schema_enhancements": [
+      "Add 'is_compliant' computed column to document_references",
+      "Add 'expected_location' view based on document_type",
+      "Create compliance_audit view with automatic violation detection",
+      "Add migration_history table to track document relocations"
+    ]
+  },
+
+  "compliance_score": {
+    "overall": "89.5%",
+    "breakdown": {
+      "location_compliance": "89.5% (68/76 documents in docs/)",
+      "type_classification": "84.2% (64/76 documents properly typed)",
+      "organizational_quality": "75.0% (estimated based on location/type alignment)"
+    },
+    "grade": "B+",
+    "notes": [
+      "Good overall structure with clear category hierarchy",
+      "Minor violations primarily in legacy/migration documents",
+      "Type taxonomy needs refinement (too many 'other')",
+      "Enforcement mechanisms would prevent regression"
+    ]
+  }
+}

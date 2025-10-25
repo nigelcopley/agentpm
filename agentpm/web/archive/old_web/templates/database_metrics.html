@@ -1,0 +1,342 @@
+{% extends "layouts/modern_base.html" %}
+{% from 'macros/breadcrumb.html' import breadcrumb %}
+
+{% block title %}Database Metrics - APM (Agent Project Manager) Dashboard{% endblock %}
+
+{% block content %}
+{{ breadcrumb([
+    {'label': 'System', 'url': '/system'},
+    {'label': 'Database Metrics', 'url': None}
+]) }}
+<!-- Page Header -->
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-5">
+            <i class="bi bi-database text-primary"></i> Database Metrics
+        </h1>
+        <p class="lead text-muted">APM (Agent Project Manager) Database Schema Information and System Health</p>
+    </div>
+</div>
+
+<!-- Schema Summary -->
+<div class="row mb-4 g-4">
+    <div class="col-md-4">
+        <div class="card metric-card shadow-soft h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-table text-primary" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                <h3 class="schema-stat mt-3">{{ metrics.total_tables }}</h3>
+                <p class="metric-label">Total Tables</p>
+                <small class="text-muted">Core AIPM schema</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card metric-card shadow-soft h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-lightning text-warning" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                <h3 class="schema-stat mt-3">{{ metrics.total_indexes }}</h3>
+                <p class="metric-label">Performance Indexes</p>
+                <small class="text-muted">Query optimization</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card metric-card shadow-soft h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-gear text-info" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                <h3 class="schema-stat mt-3">{{ metrics.total_triggers }}</h3>
+                <p class="metric-label">Active Triggers</p>
+                <small class="text-muted">Automation rules</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Entity Counts with Chart.js (Phase 4) -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="card shadow-soft">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-bar-chart text-success"></i> Entity Counts
+                </h5>
+                <p class="text-muted">Current data in AIPM system</p>
+
+                <div class="chart-container" style="position: relative; height: 350px;">
+                    <canvas id="entityCountsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tables Detail -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="card shadow-soft">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-list-ul text-primary"></i> Table Details
+                </h5>
+                <p class="text-muted">Schema structure and data distribution</p>
+
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead class="table-header">
+                            <tr>
+                                <th><i class="bi bi-table"></i> Table Name</th>
+                                <th class="text-end"><i class="bi bi-hash"></i> Rows</th>
+                                <th class="text-end"><i class="bi bi-columns"></i> Columns</th>
+                                <th class="text-end"><i class="bi bi-lightning"></i> Indexes</th>
+                                <th class="text-end"><i class="bi bi-pie-chart"></i> Data %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% set total_rows = metrics.tables | sum(attribute='row_count') %}
+                            {% for table in metrics.tables %}
+                            <tr>
+                                <td>
+                                    <strong>{{ table.name }}</strong>
+                                    {% if table.row_count == 0 %}
+                                    <span class="badge badge-gray ms-2">empty</span>
+                                    {% elif table.row_count > 100 %}
+                                    <span class="badge badge-success ms-2">active</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <span class="badge badge-primary">{{ table.row_count }}</span>
+                                </td>
+                                <td class="text-end">{{ table.column_count }}</td>
+                                <td class="text-end">
+                                    {% if table.index_count > 0 %}
+                                    <span class="badge badge-warning">{{ table.index_count }}</span>
+                                    {% else %}
+                                    <span class="text-muted">0</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    {% if total_rows > 0 %}
+                                    {% set percentage = (table.row_count / total_rows * 100) | round(1) %}
+                                    <div class="progress" style="height: 20px; min-width: 60px;">
+                                        <div class="progress-bar" role="progressbar"
+                                             style="width: {{ percentage }}%"
+                                             aria-valuenow="{{ percentage }}"
+                                             aria-valuemin="0" aria-valuemax="100">
+                                            {{ percentage }}%
+                                        </div>
+                                    </div>
+                                    {% else %}
+                                    <span class="text-muted">0%</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <td><strong>TOTAL</strong></td>
+                                <td class="text-end">
+                                    <strong>{{ total_rows }}</strong>
+                                </td>
+                                <td class="text-end">
+                                    <strong>{{ metrics.tables | sum(attribute='column_count') }}</strong>
+                                </td>
+                                <td class="text-end">
+                                    <strong>{{ metrics.tables | sum(attribute='index_count') }}</strong>
+                                </td>
+                                <td class="text-end">
+                                    <strong>100%</strong>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Schema Information -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="card shadow-soft">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-diagram-3 text-info"></i> Schema Architecture
+                </h5>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6 class="text-primary">Core Tables</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-check-circle text-success"></i> <code>projects</code> - Project metadata</li>
+                            <li><i class="bi bi-check-circle text-success"></i> <code>work_items</code> - Work item tracking</li>
+                            <li><i class="bi bi-check-circle text-success"></i> <code>tasks</code> - Task management</li>
+                            <li><i class="bi bi-check-circle text-success"></i> <code>agents</code> - AI agent registry</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="text-warning">Relationships</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-link-45deg text-warning"></i> <code>task_dependencies</code> - Hard/soft deps</li>
+                            <li><i class="bi bi-link-45deg text-warning"></i> <code>task_blockers</code> - Blocker tracking</li>
+                            <li><i class="bi bi-link-45deg text-warning"></i> <code>work_item_dependencies</code> - WI deps</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="text-info">Intelligence</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-stars text-info"></i> <code>contexts</code> - 6W framework</li>
+                            <li><i class="bi bi-stars text-info"></i> <code>rules</code> - Governance rules</li>
+                            <li><i class="bi bi-stars text-info"></i> <code>work_item_summaries</code> - Session history</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="alert alert-info mt-3" role="alert">
+                    <i class="bi bi-info-circle-fill"></i>
+                    <strong>Three-Layer Pattern:</strong> Database uses Pydantic Models → Adapters → Methods pattern for type safety and maintainability.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Health -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-soft h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-heart-pulse text-danger"></i> System Health
+                </h5>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Schema Version
+                        <span class="badge badge-success">Latest</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Database Engine
+                        <span class="badge badge-info">SQLite 3</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Query Optimization
+                        <span class="badge badge-warning">{{ metrics.total_indexes }} indexes</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Data Integrity
+                        <span class="badge badge-success">Foreign keys enabled</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow-soft h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-speedometer text-primary"></i> Performance Metrics
+                </h5>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Index Coverage
+                        <span class="badge badge-success">
+                            {{ (metrics.total_indexes / metrics.total_tables) | round(1) }} per table
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Average Rows per Table
+                        {% set total_rows = metrics.tables | sum(attribute='row_count') %}
+                        <span class="badge badge-info">
+                            {{ (total_rows / metrics.total_tables) | round(0) | int }}
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Automation Level
+                        <span class="badge badge-warning">{{ metrics.total_triggers }} triggers</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Database Size
+                        <span class="badge badge-gray">~50KB per entity</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chartTheme = window.AIPM_CHART_THEME;
+    const palette = chartTheme?.palette || {};
+    const textColor = palette.textLight || '#e2e8f0';
+    const gridColor = palette.midnight || '#2d3748';
+    const tickColor = palette.slate || '#94a3b8';
+
+    // Entity Counts Chart (Horizontal Bar)
+    const entityCtx = document.getElementById('entityCountsChart').getContext('2d');
+    const entityLabels = {{ entity_labels | tojson }};
+    const entityData = {{ entity_data | tojson }};
+
+    const entityColors = chartTheme.entityColors;
+    const entityBorderColors = entityColors.map(color => chartTheme.withAlpha(color, 0.8));
+
+    new Chart(entityCtx, {
+        type: 'bar',
+        data: {
+            labels: entityLabels,
+            datasets: [{
+                label: 'Count',
+                data: entityData,
+                backgroundColor: entityColors,
+                borderColor: entityBorderColors,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',  // Horizontal bars
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: tickColor,
+                        stepSize: 1
+                    },
+                    grid: {
+                        color: gridColor
+                    }
+                },
+                y: {
+                    ticks: {
+                        color: textColor,
+                        font: {
+                            size: 14
+                        }
+                    },
+                    grid: {
+                        display: false
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Count: ' + context.parsed.x;
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

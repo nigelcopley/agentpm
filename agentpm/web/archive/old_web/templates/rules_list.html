@@ -1,0 +1,240 @@
+{% extends "layouts/modern_base.html" %}
+{% from 'macros/breadcrumb.html' import breadcrumb_with_icons %}
+{% from 'macros/skeleton.html' import skeleton_table %}
+{% from 'macros/quick_actions.html' import quick_actions_icon %}
+
+{% block title %}Rules - APM (Agent Project Manager){% endblock %}
+
+{% block content %}
+<!-- Breadcrumb Navigation -->
+{{ breadcrumb_with_icons([
+    {'label': 'Rules', 'url': None, 'icon': 'shield-check'}
+]) }}
+
+<!-- Summary Metrics -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+    <div class="card">
+        <div class="text-center">
+            <h3 class="text-4xl font-bold text-gray-900">{{ rules|length }}</h3>
+            <p class="text-sm text-gray-500 mt-2">Total Rules</p>
+        </div>
+    </div>
+    <div class="card">
+        <div class="text-center">
+            <h3 class="text-4xl font-bold text-success">{{ rules|selectattr('is_active')|list|length }}</h3>
+            <p class="text-sm text-gray-500 mt-2">Active Rules</p>
+        </div>
+    </div>
+    <div class="card">
+        <div class="text-center">
+            <h3 class="text-4xl font-bold text-primary">{{ rules|map(attribute='rule.category')|unique|list|length }}</h3>
+            <p class="text-sm text-gray-500 mt-2">Categories</p>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-6">
+    <div class="card-header">
+        <h5 class="card-title">Filters</h5>
+    </div>
+    <div class="card-body">
+        <!-- Enforcement Level Filters -->
+        <div class="mb-4">
+            <strong class="block text-sm font-medium text-gray-700 mb-2">Enforcement Level:</strong>
+            <div class="flex flex-wrap gap-2">
+                <button class="btn btn-sm btn-secondary" onclick="filterByEnforcement('all')" aria-label="Show all rules">All</button>
+                <button class="btn btn-sm bg-error text-white hover:bg-error/90" onclick="filterByEnforcement('BLOCK')" aria-label="Show BLOCK level rules">BLOCK</button>
+                <button class="btn btn-sm bg-warning text-white hover:bg-warning/90" onclick="filterByEnforcement('LIMIT')" aria-label="Show LIMIT level rules">LIMIT</button>
+                <button class="btn btn-sm bg-info text-white hover:bg-info/90" onclick="filterByEnforcement('GUIDE')" aria-label="Show GUIDE level rules">GUIDE</button>
+                <button class="btn btn-sm bg-success text-white hover:bg-success/90" onclick="filterByEnforcement('ENHANCE')" aria-label="Show ENHANCE level rules">ENHANCE</button>
+            </div>
+        </div>
+
+        <!-- Category Filters -->
+        <div>
+            <strong class="block text-sm font-medium text-gray-700 mb-2">Category:</strong>
+            <div class="flex flex-wrap gap-2">
+                <button class="btn btn-sm btn-secondary" onclick="filterByCategory('all')" aria-label="Show all categories">All</button>
+                {% for category in rules|map(attribute='rule.category')|unique %}
+                <button class="btn btn-sm btn-primary" onclick="filterByCategory('{{ category }}')" aria-label="Show {{ category }} rules">
+                    {{ category }}
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rules Table -->
+<div class="card mb-6">
+    <div class="card-header">
+        <h5 class="card-title">Rules ({{ rules|length }})</h5>
+
+        <!-- Quick Actions Menu -->
+        {{ quick_actions_icon([
+            {'label': 'Refresh Rules', 'url': '/rules', 'icon': 'arrow-clockwise'},
+            {'label': 'Export Rules', 'url': '/rules/export', 'icon': 'download'},
+            {'divider': True},
+            {'label': 'Documentation', 'url': '/docs/rules', 'icon': 'book'}
+        ], aria_label='Rules management actions') }}
+    </div>
+    <div class="card-body p-0">
+        {% if rules %}
+            <!-- Loading State (hidden by default, shown via JS) -->
+            <div id="loading-state" class="hidden" aria-busy="true" aria-label="Loading rules">
+                {{ skeleton_table(rows=5, columns=5, show_header=True) }}
+            </div>
+
+            <!-- Rules Table -->
+            <div id="rules-table-container" class="overflow-x-auto">
+                <table class="table table-hover" role="table" aria-label="Rules list">
+                    <thead>
+                        <tr>
+                            <th scope="col">Rule ID</th>
+                            <th scope="col">Category</th>
+                            <th scope="col">Title</th>
+                            <th scope="col">Enforcement</th>
+                            <th scope="col">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rules-list">
+                        {% for rule_info in rules %}
+                            {% include 'partials/rule_row.html' %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="px-6 py-12 text-center">
+                <div class="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
+                    <i class="bi bi-shield-check text-gray-400 text-5xl" aria-hidden="true"></i>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">No rules configured</h3>
+                <p class="text-gray-500 mb-6">No rules have been configured for this project yet.</p>
+                <a href="/docs/rules" class="btn btn-primary">
+                    <i class="bi bi-book mr-2"></i>
+                    View Documentation
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Legend -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title">Enforcement Level Legend</h5>
+    </div>
+    <div class="card-body">
+        <ul class="space-y-2 text-sm">
+            <li class="flex items-start gap-2">
+                <span class="badge badge-error flex-shrink-0">BLOCK</span>
+                <span class="text-gray-700">Prevents invalid workflow transitions (raises error)</span>
+            </li>
+            <li class="flex items-start gap-2">
+                <span class="badge bg-warning text-white flex-shrink-0">LIMIT</span>
+                <span class="text-gray-700">Shows warnings but allows transitions</span>
+            </li>
+            <li class="flex items-start gap-2">
+                <span class="badge bg-info text-white flex-shrink-0">GUIDE</span>
+                <span class="text-gray-700">Informational guidance only</span>
+            </li>
+            <li class="flex items-start gap-2">
+                <span class="badge badge-success flex-shrink-0">ENHANCE</span>
+                <span class="text-gray-700">Enriches AI context silently</span>
+            </li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    /**
+     * Filter rules by enforcement level
+     * @param {string} level - Enforcement level or 'all'
+     */
+    function filterByEnforcement(level) {
+        const rows = document.querySelectorAll('.rule-row');
+        rows.forEach(row => {
+            if (level === 'all' || row.dataset.enforcement === level) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        // Announce filter change to screen readers
+        announceToScreenReader(`Filtered to ${level === 'all' ? 'all rules' : level + ' enforcement level'}`);
+    }
+
+    /**
+     * Filter rules by category
+     * @param {string} category - Category name or 'all'
+     */
+    function filterByCategory(category) {
+        const rows = document.querySelectorAll('.rule-row');
+        rows.forEach(row => {
+            if (category === 'all' || row.dataset.category === category) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        // Announce filter change to screen readers
+        announceToScreenReader(`Filtered to ${category === 'all' ? 'all categories' : category + ' category'}`);
+    }
+
+    /**
+     * Toggle rule details expansion
+     * @param {string} id - Rule detail row ID
+     */
+    function toggleRuleDetails(id) {
+        const detailRow = document.getElementById(id);
+        const isExpanded = detailRow.style.display !== 'none';
+
+        if (isExpanded) {
+            detailRow.style.display = 'none';
+        } else {
+            detailRow.style.display = '';
+        }
+
+        // Update ARIA expanded state
+        const triggerRow = detailRow.previousElementSibling;
+        if (triggerRow) {
+            triggerRow.setAttribute('aria-expanded', !isExpanded);
+        }
+    }
+
+    /**
+     * Announce message to screen readers
+     * @param {string} message - Message to announce
+     */
+    function announceToScreenReader(message) {
+        const announcement = document.createElement('div');
+        announcement.setAttribute('role', 'status');
+        announcement.setAttribute('aria-live', 'polite');
+        announcement.className = 'sr-only';
+        announcement.textContent = message;
+        document.body.appendChild(announcement);
+
+        // Remove after announcement
+        setTimeout(() => announcement.remove(), 1000);
+    }
+
+    // Initialize: Hide loading state on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        const loadingState = document.getElementById('loading-state');
+        const tableContainer = document.getElementById('rules-table-container');
+
+        if (loadingState) {
+            loadingState.classList.add('hidden');
+        }
+        if (tableContainer) {
+            tableContainer.classList.remove('hidden');
+        }
+    });
+</script>
+{% endblock %}

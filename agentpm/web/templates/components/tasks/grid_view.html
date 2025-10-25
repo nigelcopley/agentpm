@@ -1,0 +1,122 @@
+<!-- Task Grid View Component -->
+<!-- Usage: Include this component in templates -->
+<!-- Variables: tasks, work_items (required) -->
+
+<div id="gridViewContainer" class="view-container hidden">
+    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        {% for task in tasks %}
+        <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden group">
+            <!-- Task Header -->
+            <div class="p-6 pb-4">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="p-2 rounded-lg
+                            {% if task.type.value == 'implementation' %}bg-blue-100 text-blue-600
+                            {% elif task.type.value == 'testing' %}bg-purple-100 text-purple-600
+                            {% elif task.type.value == 'design' %}bg-pink-100 text-pink-600
+                            {% elif task.type.value == 'bugfix' %}bg-red-100 text-red-600
+                            {% elif task.type.value == 'documentation' %}bg-yellow-100 text-yellow-600
+                            {% elif task.type.value == 'analysis' %}bg-indigo-100 text-indigo-600
+                            {% else %}bg-gray-100 text-gray-600{% endif %}">
+                            <i class="bi bi-list-task text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-900 group-hover:text-emerald-600 transition-colors">
+                                <a href="{{ url_for('tasks.task_detail', task_id=task.id) }}">
+                                    {{ task.name }}
+                                </a>
+                            </h3>
+                            <p class="text-sm text-gray-500">{{ task.type.value|title }}</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Status Badge -->
+                    {% include 'components/tasks/status_badge.html' %}
+                </div>
+                
+                <!-- Description -->
+                {% if task.description %}
+                <p class="text-sm text-gray-600 mb-4 line-clamp-2">
+                    {{ task.description[:120] }}{% if task.description|length > 120 %}...{% endif %}
+                </p>
+                {% endif %}
+            </div>
+            
+            <!-- Task Details -->
+            <div class="px-6 pb-4 space-y-3">
+                <!-- Work Item -->
+                {% set work_item = work_items|selectattr('id', 'equalto', task.work_item_id)|first %}
+                {% if work_item %}
+                <div class="flex items-center text-sm">
+                    <i class="bi bi-kanban text-gray-400 mr-2"></i>
+                    <a href="{{ url_for('work_items.work_item_detail', work_item_id=work_item.id) }}" class="text-gray-600 hover:text-emerald-600 transition-colors">
+                        {{ work_item.name }}
+                    </a>
+                </div>
+                {% endif %}
+                
+                <!-- Effort & Priority -->
+                <div class="flex items-center justify-between text-sm">
+                    <div class="flex items-center text-gray-600">
+                        <i class="bi bi-clock mr-2"></i>
+                        <span>
+                            {% if task.effort_hours %}
+                                {{ "%.1f"|format(task.effort_hours) }}h
+                            {% else %}
+                                Not estimated
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-gray-600 mr-2">Priority</span>
+                        <div class="flex space-x-1">
+                            {% for i in range(1, 6) %}
+                            <div class="w-2 h-2 rounded-full {% if i <= task.priority %}bg-red-500{% else %}bg-gray-200{% endif %}"></div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Assigned To -->
+                {% if task.assigned_to %}
+                <div class="flex items-center text-sm text-gray-600">
+                    <i class="bi bi-person mr-2"></i>
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                        {{ task.assigned_to }}
+                    </span>
+                </div>
+                {% endif %}
+                
+                <!-- Due Date -->
+                {% if task.due_date %}
+                <div class="flex items-center text-sm text-gray-600">
+                    <i class="bi bi-calendar mr-2"></i>
+                    <span>Due {{ task.due_date.strftime('%Y-%m-%d') }}</span>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Task Footer -->
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+                <div class="text-xs text-gray-500">
+                    {% if task.created_at %}
+                        Created {{ task.created_at.strftime('%Y-%m-%d') }}
+                    {% endif %}
+                </div>
+                <div class="flex items-center space-x-2">
+                    <a href="{{ url_for('tasks.task_detail', task_id=task.id) }}" 
+                       class="p-2 text-gray-400 hover:text-emerald-600 transition-colors" 
+                       title="View Details">
+                        <i class="bi bi-eye"></i>
+                    </a>
+                    <a href="{{ url_for('tasks.edit_task', task_id=task.id) }}" 
+                       class="p-2 text-gray-400 hover:text-blue-600 transition-colors" 
+                       title="Edit Task">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>

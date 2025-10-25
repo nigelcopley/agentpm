@@ -1,0 +1,41 @@
+{
+  "plugin_facts": {
+    "detected_technologies": {
+      "python": {
+        "confidence": 0.98,
+        "plugin_id": "language-python"
+      },
+      "pytest": {
+        "confidence": 0.91,
+        "plugin_id": "testing-pytest"
+      },
+      "htmx": {
+        "confidence": 0.76,
+        "plugin_id": "frontend-htmx"
+      }
+    },
+    "plugin_enrichment": {
+      "frontend-htmx": [
+        "Add HTMX capability agent",
+        "Enable HTML partial diffing insights"
+      ],
+      "testing-pytest": [
+        "Highlight missing pytest fixtures for async tests"
+      ]
+    },
+    "enrichment_metadata": {
+      "scan_time_ms": 1850,
+      "total_plugins": 7,
+      "enriched_at": "2025-01-15T10:32:45.123456"
+    }
+  },
+  "scoring_inputs": {
+    "freshness_days": 2,
+    "coverage": 0.86,
+    "confidence_sources": [
+      "questionnaire",
+      "repository_scan"
+    ]
+  },
+  "notes": "Store supporting evidence explaining how the confidence score was derived."
+}

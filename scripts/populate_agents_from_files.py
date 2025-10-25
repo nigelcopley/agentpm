@@ -1,0 +1,448 @@
+#!/usr/bin/env python3
+"""
+Populate agents table from existing .claude/agents/*.md files
+
+This script scans the .claude/agents directory for all agent files,
+extracts metadata from YAML frontmatter and SOP content, and populates
+the agents table with proper tier classification.
+
+Usage:
+    python scripts/populate_agents_from_files.py
+    python scripts/populate_agents_from_files.py --dry-run
+"""
+
+import sqlite3
+import re
+import sys
+from pathlib import Path
+from datetime import datetime
+from typing import Optional, Dict, List, Tuple
+import yaml
+
+
+# Project root (assumes script is in scripts/ directory)
+PROJECT_ROOT = Path(__file__).parent.parent
+AGENTS_DIR = PROJECT_ROOT / ".claude" / "agents"
+DB_PATH = PROJECT_ROOT / ".aipm" / "data" / "aipm.db"
+
+
+def extract_frontmatter(content: str) -> Tuple[Optional[Dict], str]:
+    """
+    Extract YAML frontmatter and remaining content from markdown file.
+
+    Args:
+        content: Full file content
+
+    Returns:
+        Tuple of (frontmatter_dict, remaining_content)
+    """
+    # Match YAML frontmatter between --- delimiters
+    pattern = r'^---\s*\n(.*?)\n---\s*\n(.*)$'
+    match = re.match(pattern, content, re.DOTALL)
+
+    if not match:
+        return None, content
+
+    frontmatter_text = match.group(1)
+    remaining_content = match.group(2)
+
+    try:
+        frontmatter = yaml.safe_load(frontmatter_text)
+        return frontmatter, remaining_content.strip()
+    except yaml.YAMLError as e:
+        print(f"Warning: Failed to parse YAML frontmatter: {e}")
+        return None, content
+
+
+def determine_tier(file_path: Path) -> int:
+    """
+    Determine agent tier from file path.
+
+    Tier 1: sub-agents (research, analysis, single-responsibility)
+    Tier 2: specialists (implementation, testing, review)
+    Tier 3: orchestrators (phase coordination)
+
+    Args:
+        file_path: Path to agent file
+
+    Returns:
+        Tier number (1, 2, or 3)
+    """
+    path_str = str(file_path)
+
+    if "sub-agents" in path_str:
+        return 1
+    elif "orchestrators" in path_str:
+        return 3
+    else:
+        # Root level agents are specialists (tier 2)
+        return 2
+
+
+def infer_agent_type(role: str) -> Optional[str]:
+    """
+    Infer agent type from role name.
+
+    Args:
+        role: Agent role (e.g., 'intent-triage', 'python-implementer')
+
+    Returns:
+        Agent type (e.g., 'triage', 'implementer', 'orchestrator')
+    """
+    role_lower = role.lower()
+
+    # Orchestrators
+    if "orch" in role_lower or "orchestrator" in role_lower:
+        return "orchestrator"
+
+    # Gate checkers
+    if "gate" in role_lower:
+        return "gate-checker"
+
+    # Common patterns
+    patterns = {
+        "triage": ["triage"],
+        "framer": ["framer"],
+        "articulator": ["articulator"],
+        "writer": ["writer"],
+        "notary": ["notary"],
+        "decomposer": ["decomposer"],
+        "estimator": ["estimator"],
+        "mapper": ["mapper"],
+        "planner": ["planner"],
+        "applier": ["applier"],
+        "implementer": ["implementer"],
+        "author": ["author"],
+        "toucher": ["toucher"],
+        "analyzer": ["analyzer"],
+        "runner": ["runner"],
+        "screener": ["screener"],
+        "verifier": ["verifier"],
+        "versioner": ["versioner"],
+        "curator": ["curator"],
+        "deployer": ["deploy"],
+        "scribe": ["scribe"],
+        "harvester": ["harvester"],
+        "synthesizer": ["synthesizer"],
+        "registrar": ["registrar"],
+        "proposer": ["proposer"],
+        "assembler": ["assembler"],
+        "gatekeeper": ["gatekeeper"],
+        "designer": ["designer"],
+        "tester": ["tester"],
+        "reviewer": ["reviewer"],
+        "specifier": ["specifier"],
+    }
+
+    for agent_type, keywords in patterns.items():
+        if any(keyword in role_lower for keyword in keywords):
+            return agent_type
+
+    return "specialist"
+
+
+def create_agent_record(
+    project_id: int,
+    role: str,
+    frontmatter: Optional[Dict],
+    sop_content: str,
+    tier: int,
+    file_path: Path,
+) -> Dict:
+    """
+    Create agent record dictionary for database insertion.
+
+    Args:
+        project_id: Project ID
+        role: Agent role
+        frontmatter: Parsed YAML frontmatter
+        sop_content: SOP content (markdown)
+        tier: Agent tier (1, 2, or 3)
+        file_path: Path to agent file
+
+    Returns:
+        Dictionary with agent record data
+    """
+    # Extract from frontmatter or use defaults
+    if frontmatter:
+        description = frontmatter.get("description", "")
+        tools = frontmatter.get("tools", [])
+        if isinstance(tools, str):
+            tools = [t.strip() for t in tools.split(",")]
+    else:
+        description = ""
+        tools = []
+
+    # Generate display name
+    display_name = role.replace("-", " ").replace("_", " ").title()
+
+    # Infer agent type
+    agent_type = infer_agent_type(role)
+
+    # Relative file path from project root
+    rel_path = file_path.relative_to(PROJECT_ROOT)
+
+    return {
+        "project_id": project_id,
+        "role": role,
+        "display_name": display_name,
+        "description": description,
+        "sop_content": sop_content,
+        "capabilities": tools,
+        "is_active": True,
+        "agent_type": agent_type,
+        "file_path": str(rel_path),
+        "generated_at": datetime.now(),
+        "tier": tier,
+    }
+
+
+def upsert_agent(conn: sqlite3.Connection, agent: Dict) -> Tuple[str, int]:
+    """
+    Insert or update agent record in database.
+
+    Args:
+        conn: Database connection
+        agent: Agent record dictionary
+
+    Returns:
+        Tuple of (action, agent_id) where action is "INSERT" or "UPDATE"
+    """
+    cursor = conn.cursor()
+
+    # Check if agent exists
+    cursor.execute(
+        "SELECT id FROM agents WHERE project_id = ? AND role = ?",
+        (agent["project_id"], agent["role"])
+    )
+    existing = cursor.fetchone()
+
+    if existing:
+        # Update existing agent
+        agent_id = existing[0]
+        cursor.execute(
+            """
+            UPDATE agents SET
+                display_name = ?,
+                description = ?,
+                sop_content = ?,
+                capabilities = ?,
+                is_active = ?,
+                agent_type = ?,
+                file_path = ?,
+                generated_at = ?,
+                tier = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            """,
+            (
+                agent["display_name"],
+                agent["description"],
+                agent["sop_content"],
+                str(agent["capabilities"]),  # JSON array as string
+                agent["is_active"],
+                agent["agent_type"],
+                agent["file_path"],
+                agent["generated_at"],
+                agent["tier"],
+                agent_id,
+            )
+        )
+        return "UPDATE", agent_id
+    else:
+        # Insert new agent
+        cursor.execute(
+            """
+            INSERT INTO agents (
+                project_id, role, display_name, description, sop_content,
+                capabilities, is_active, agent_type, file_path, generated_at, tier
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                agent["project_id"],
+                agent["role"],
+                agent["display_name"],
+                agent["description"],
+                agent["sop_content"],
+                str(agent["capabilities"]),
+                agent["is_active"],
+                agent["agent_type"],
+                agent["file_path"],
+                agent["generated_at"],
+                agent["tier"],
+            )
+        )
+        return "INSERT", cursor.lastrowid
+
+
+def scan_agent_files(agents_dir: Path) -> List[Path]:
+    """
+    Scan .claude/agents directory for all .md files.
+
+    Args:
+        agents_dir: Path to .claude/agents directory
+
+    Returns:
+        List of agent file paths
+    """
+    if not agents_dir.exists():
+        print(f"Error: Agents directory not found: {agents_dir}")
+        return []
+
+    # Find all .md files recursively
+    agent_files = list(agents_dir.rglob("*.md"))
+
+    # Filter out test project directories (but keep test-*.md agent files)
+    agent_files = [
+        f for f in agent_files
+        if not any(
+            part.startswith("test-") or part == "testing"
+            for part in f.parent.parts
+        )
+    ]
+
+    return sorted(agent_files)
+
+
+def get_project_id(conn: sqlite3.Connection) -> Optional[int]:
+    """
+    Get project ID from database (assumes single project).
+
+    Args:
+        conn: Database connection
+
+    Returns:
+        Project ID or None if no project found
+    """
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM projects LIMIT 1")
+    result = cursor.fetchone()
+
+    if result:
+        return result[0]
+
+    print("Warning: No project found in database")
+    return None
+
+
+def populate_agents(dry_run: bool = False) -> None:
+    """
+    Main function to populate agents from files.
+
+    Args:
+        dry_run: If True, only print what would be done without database changes
+    """
+    print(f"Scanning agent files in: {AGENTS_DIR}")
+    agent_files = scan_agent_files(AGENTS_DIR)
+
+    if not agent_files:
+        print("No agent files found!")
+        return
+
+    print(f"Found {len(agent_files)} agent files")
+
+    # Connect to database
+    if not DB_PATH.exists():
+        print(f"Error: Database not found: {DB_PATH}")
+        return
+
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+
+    try:
+        # Get project ID
+        project_id = get_project_id(conn)
+        if not project_id:
+            print("Error: No project found in database")
+            return
+
+        print(f"Using project_id: {project_id}")
+
+        # Process each agent file
+        stats = {"INSERT": 0, "UPDATE": 0, "ERROR": 0}
+        tier_counts = {1: 0, 2: 0, 3: 0}
+
+        for agent_file in agent_files:
+            try:
+                # Read file
+                content = agent_file.read_text()
+
+                # Extract frontmatter and SOP
+                frontmatter, sop_content = extract_frontmatter(content)
+
+                # Determine tier
+                tier = determine_tier(agent_file)
+                tier_counts[tier] += 1
+
+                # Get role from filename or frontmatter
+                if frontmatter and "name" in frontmatter:
+                    role = frontmatter["name"]
+                else:
+                    role = agent_file.stem  # filename without extension
+
+                # Create agent record
+                agent = create_agent_record(
+                    project_id=project_id,
+                    role=role,
+                    frontmatter=frontmatter,
+                    sop_content=sop_content,
+                    tier=tier,
+                    file_path=agent_file,
+                )
+
+                # Insert or update
+                if dry_run:
+                    print(f"[DRY-RUN] Would upsert: {role} (tier {tier})")
+                else:
+                    action, agent_id = upsert_agent(conn, agent)
+                    stats[action] += 1
+                    print(f"[{action}] {role} (id={agent_id}, tier={tier})")
+
+            except Exception as e:
+                stats["ERROR"] += 1
+                print(f"Error processing {agent_file.name}: {e}")
+
+        # Commit changes
+        if not dry_run:
+            conn.commit()
+            print("\nChanges committed to database")
+
+        # Print summary
+        print("\n" + "="*60)
+        print("SUMMARY")
+        print("="*60)
+        print(f"Total files processed: {len(agent_files)}")
+        print(f"Inserted: {stats['INSERT']}")
+        print(f"Updated: {stats['UPDATE']}")
+        print(f"Errors: {stats['ERROR']}")
+        print(f"\nTier Distribution:")
+        print(f"  Tier 1 (Sub-agents): {tier_counts[1]}")
+        print(f"  Tier 2 (Specialists): {tier_counts[2]}")
+        print(f"  Tier 3 (Orchestrators): {tier_counts[3]}")
+
+        # Verify database counts
+        if not dry_run:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT tier, COUNT(*) FROM agents WHERE project_id = ? GROUP BY tier",
+                (project_id,)
+            )
+            db_counts = dict(cursor.fetchall())
+
+            print(f"\nDatabase Verification:")
+            print(f"  Tier 1: {db_counts.get(1, 0)} records")
+            print(f"  Tier 2: {db_counts.get(2, 0)} records")
+            print(f"  Tier 3: {db_counts.get(3, 0)} records")
+            print(f"  Total: {sum(db_counts.values())} agents")
+
+    finally:
+        conn.close()
+
+
+if __name__ == "__main__":
+    dry_run = "--dry-run" in sys.argv
+
+    if dry_run:
+        print("DRY-RUN MODE: No database changes will be made\n")
+
+    populate_agents(dry_run=dry_run)

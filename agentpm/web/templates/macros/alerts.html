@@ -1,0 +1,259 @@
+{#
+  Alert/Flash Message Macros
+
+  Provides consistent, accessible alert components for user feedback.
+  Supports success, error, warning, and info message types.
+
+  Usage:
+    {% from 'macros/alerts.html' import alert, inline_error, form_field_error %}
+
+    {{ alert('success', 'Work item created successfully!') }}
+    {{ inline_error('Invalid date format', 'Use YYYY-MM-DD format') }}
+    {{ form_field_error('email', 'Please enter a valid email address') }}
+#}
+
+{#
+  Full Alert Component
+
+  Standard alert with icon, message, and optional dismiss button.
+  Used for page-level feedback (flash messages, form submissions).
+
+  Parameters:
+    - type (str): 'success', 'error', 'warning', or 'info'
+    - message (str): Primary message text
+    - details (str, optional): Additional details or guidance
+    - dismissible (bool): Show dismiss button - default: True
+#}
+{% macro alert(type, message, details=None, dismissible=True) %}
+{% set type_configs = {
+    'success': {
+        'bg': 'bg-success/10',
+        'border': 'border-success/20',
+        'text': 'text-success-700',
+        'icon': 'check-circle-fill'
+    },
+    'error': {
+        'bg': 'bg-error/10',
+        'border': 'border-error/20',
+        'text': 'text-error-700',
+        'icon': 'exclamation-triangle-fill'
+    },
+    'warning': {
+        'bg': 'bg-warning/10',
+        'border': 'border-warning/20',
+        'text': 'text-warning-700',
+        'icon': 'exclamation-circle-fill'
+    },
+    'info': {
+        'bg': 'bg-info/10',
+        'border': 'border-info/20',
+        'text': 'text-info-700',
+        'icon': 'info-circle-fill'
+    }
+} %}
+{% set config = type_configs.get(type, type_configs['info']) %}
+
+<div class="alert {{ config.bg }} {{ config.border }} border rounded-lg p-4 mb-4 {{ config.text }}"
+     role="alert"
+     aria-live="polite"
+     {% if dismissible %}x-data="{ show: true }" x-show="show" x-transition{% endif %}>
+    <div class="flex items-start gap-3">
+        <!-- Icon -->
+        <i class="bi bi-{{ config.icon }} text-lg flex-shrink-0 mt-0.5" aria-hidden="true"></i>
+
+        <!-- Content -->
+        <div class="flex-1 min-w-0">
+            <p class="font-medium">{{ message }}</p>
+            {% if details %}
+            <p class="mt-1 text-sm opacity-90">{{ details }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Dismiss Button -->
+        {% if dismissible %}
+        <button @click="show = false"
+                class="flex-shrink-0 ml-auto text-current opacity-50 hover:opacity-100 transition-opacity"
+                aria-label="Dismiss alert">
+            <i class="bi bi-x-lg"></i>
+        </button>
+        {% endif %}
+    </div>
+</div>
+{% endmacro %}
+
+
+{#
+  Inline Error Component
+
+  Compact error message for inline validation or contextual errors.
+  Used within forms, cards, or specific sections.
+
+  Parameters:
+    - message (str): Error message
+    - suggestion (str, optional): Helpful suggestion to fix the error
+#}
+{% macro inline_error(message, suggestion=None) %}
+<div class="inline-flex items-start gap-2 rounded-lg bg-error/10 border border-error/20 px-3 py-2 text-sm text-error-700"
+     role="alert">
+    <i class="bi bi-exclamation-circle-fill flex-shrink-0 mt-0.5" aria-hidden="true"></i>
+    <div>
+        <p class="font-medium">{{ message }}</p>
+        {% if suggestion %}
+        <p class="mt-1 text-xs opacity-80">{{ suggestion }}</p>
+        {% endif %}
+    </div>
+</div>
+{% endmacro %}
+
+
+{#
+  Form Field Error
+
+  Field-specific validation error displayed below form inputs.
+  Follows WCAG 2.1 AA guidelines for form validation.
+
+  Parameters:
+    - field_id (str): ID of the form field (for aria-describedby)
+    - message (str): Validation error message
+#}
+{% macro form_field_error(field_id, message) %}
+<p id="{{ field_id }}-error"
+   class="mt-1 text-sm text-error-600 flex items-center gap-1"
+   role="alert">
+    <i class="bi bi-exclamation-circle text-xs" aria-hidden="true"></i>
+    {{ message }}
+</p>
+{% endmacro %}
+
+
+{#
+  Help Text Component
+
+  Contextual help or guidance for forms and complex UIs.
+  Provides proactive assistance to prevent errors.
+
+  Parameters:
+    - text (str): Help text content
+    - icon (str, optional): Bootstrap icon name - default: 'question-circle'
+#}
+{% macro help_text(text, icon='question-circle') %}
+<p class="mt-1 text-sm text-gray-500 flex items-start gap-1.5">
+    <i class="bi bi-{{ icon }} flex-shrink-0 mt-0.5" aria-hidden="true"></i>
+    <span>{{ text }}</span>
+</p>
+{% endmacro %}
+
+
+{#
+  Validation Summary
+
+  Lists multiple validation errors at the top of a form.
+  Provides overview of all issues to fix.
+
+  Parameters:
+    - errors (list): List of error messages
+    - heading (str): Summary heading - default: 'Please fix the following errors'
+#}
+{% macro validation_summary(errors, heading='Please fix the following errors') %}
+{% if errors and errors|length > 0 %}
+<div class="alert bg-error/10 border-error/20 border rounded-lg p-4 mb-6 text-error-700"
+     role="alert"
+     aria-live="assertive">
+    <div class="flex items-start gap-3">
+        <i class="bi bi-exclamation-triangle-fill text-lg flex-shrink-0 mt-0.5" aria-hidden="true"></i>
+        <div class="flex-1">
+            <p class="font-semibold mb-2">{{ heading }}</p>
+            <ul class="list-disc list-inside space-y-1 text-sm">
+                {% for error in errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endmacro %}
+
+
+{#
+  Success Toast (Auto-dismiss)
+
+  Temporary success notification that auto-dismisses after 5 seconds.
+  Uses Alpine.js for auto-dismiss logic.
+
+  Parameters:
+    - message (str): Success message
+    - duration (int): Auto-dismiss duration in milliseconds - default: 5000
+#}
+{% macro success_toast(message, duration=5000) %}
+<div x-data="{ show: true }"
+     x-init="setTimeout(() => show = false, {{ duration }})"
+     x-show="show"
+     x-transition:enter="transition ease-out duration-300"
+     x-transition:enter-start="opacity-0 transform translate-y-2"
+     x-transition:enter-end="opacity-100 transform translate-y-0"
+     x-transition:leave="transition ease-in duration-200"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0"
+     class="fixed bottom-4 right-4 z-50 max-w-sm">
+    <div class="bg-success text-white rounded-lg shadow-lg p-4 flex items-center gap-3">
+        <i class="bi bi-check-circle-fill text-xl" aria-hidden="true"></i>
+        <p class="font-medium">{{ message }}</p>
+        <button @click="show = false"
+                class="ml-auto text-white/80 hover:text-white transition-colors"
+                aria-label="Dismiss notification">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+</div>
+{% endmacro %}
+
+
+{#
+  Contextual Hint
+
+  Inline hint or tip to guide users through complex workflows.
+  Visually distinct from errors - uses info styling.
+
+  Parameters:
+    - text (str): Hint text
+    - icon (str, optional): Bootstrap icon name - default: 'lightbulb'
+#}
+{% macro hint(text, icon='lightbulb') %}
+<div class="inline-flex items-start gap-2 rounded-lg bg-info/10 border border-info/20 px-3 py-2 text-sm text-info-700">
+    <i class="bi bi-{{ icon }}-fill flex-shrink-0 mt-0.5" aria-hidden="true"></i>
+    <p>{{ text }}</p>
+</div>
+{% endmacro %}
+
+
+{#
+  Warning Banner
+
+  Prominent warning for critical information or caution messages.
+  More attention-grabbing than standard alerts.
+
+  Parameters:
+    - heading (str): Warning heading
+    - message (str): Warning message
+    - action_text (str, optional): Call-to-action button text
+    - action_url (str, optional): Call-to-action button URL
+#}
+{% macro warning_banner(heading, message, action_text=None, action_url=None) %}
+<div class="bg-warning/10 border-l-4 border-warning rounded-r-lg p-4 mb-4" role="alert">
+    <div class="flex items-start gap-3">
+        <i class="bi bi-exclamation-triangle-fill text-warning text-xl flex-shrink-0 mt-0.5" aria-hidden="true"></i>
+        <div class="flex-1">
+            <h4 class="font-semibold text-warning-700 mb-1">{{ heading }}</h4>
+            <p class="text-sm text-warning-600">{{ message }}</p>
+            {% if action_text and action_url %}
+            <a href="{{ action_url }}"
+               class="mt-3 inline-flex items-center gap-2 text-sm font-medium text-warning-700 hover:text-warning-800 transition-colors">
+                {{ action_text }}
+                <i class="bi bi-arrow-right"></i>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endmacro %}

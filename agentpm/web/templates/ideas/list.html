@@ -1,0 +1,425 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Ideas - APM (Agent Project Manager){% endblock %}
+
+{% block content %}
+<!-- Main Header -->
+<div class="bg-gradient-to-br from-yellow-500 via-orange-500 to-red-500 text-white">
+    <div class="px-6 py-8">
+        <div class="flex justify-between items-start">
+            <div>
+                <h1 class="text-4xl font-bold mb-3">Ideas Management</h1>
+                <p class="text-white/90 text-lg">Capture, organise, and develop your project concepts</p>
+                <div class="mt-4 flex items-center space-x-6 text-sm">
+                    <div class="flex items-center">
+                        <i class="bi bi-lightbulb mr-2"></i>
+                        <span>{{ metrics.total_ideas or 0 }} Total Ideas</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="bi bi-check-circle mr-2"></i>
+                        <span>{{ metrics.converted_ideas or 0 }} Converted</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="bi bi-star mr-2"></i>
+                        <span>{{ metrics.proposed_ideas or 0 }} Proposed</span>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white/20 backdrop-blur-sm p-4 rounded-2xl">
+                <i class="bi bi-lightbulb text-4xl"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters Bar -->
+<div class="bg-white border-b border-gray-200 py-4">
+    <div class="px-6">
+        <form method="GET" class="flex flex-col lg:flex-row gap-4 items-start lg:items-center" id="filterForm">
+            <!-- Search Bar -->
+            <div class="relative flex-1 min-w-0">
+                <input type="text" name="search" placeholder="Search ideas..." 
+                       value="{{ current_filters.search }}"
+                       class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all"
+                       id="searchInput">
+                <i class="bi bi-search absolute left-3 top-2.5 text-gray-400"></i>
+                {% if current_filters.search %}
+                <button type="button" onclick="clearSearch()" class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 transition-colors" title="Clear search">
+                    <i class="bi bi-x-circle"></i>
+                </button>
+                {% endif %}
+            </div>
+            
+            <!-- Filter Controls -->
+            <div class="flex flex-wrap gap-3 items-center">
+                <!-- Status Filter -->
+                <select name="status" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all text-sm">
+                    <option value="">All Status</option>
+                    {% for status in filter_options.statuses %}
+                    <option value="{{ status.value }}" {% if current_filters.status == status.value %}selected{% endif %}>
+                        {{ status.label }}
+                    </option>
+                    {% endfor %}
+                </select>
+                
+                <!-- Vote Filter -->
+                <select name="votes" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all text-sm">
+                    <option value="">All Vote Levels</option>
+                    {% for vote_range in filter_options.vote_ranges %}
+                    <option value="{{ vote_range.value }}" {% if current_filters.votes == vote_range.value %}selected{% endif %}>
+                        {{ vote_range.label }}
+                    </option>
+                    {% endfor %}
+                </select>
+                
+                <!-- Sort -->
+                <select name="sort" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-all text-sm">
+                    {% for sort_option in filter_options.sort_options %}
+                    <option value="{{ sort_option.value }}" {% if current_filters.sort == sort_option.value %}selected{% endif %}>
+                        {{ sort_option.label }}
+                    </option>
+                    {% endfor %}
+                </select>
+                
+                <!-- View Toggle -->
+                <div class="flex items-center bg-gray-100 rounded-lg p-1">
+                    <button type="button" id="listView" class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors view-toggle active" onclick="setView('list')" title="List View">
+                        <i class="bi bi-list-ul"></i>
+                    </button>
+                    <button type="button" id="gridView" class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors view-toggle" onclick="setView('grid')" title="Grid View">
+                        <i class="bi bi-grid-3x3-gap"></i>
+                    </button>
+                    <button type="button" id="kanbanView" class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors view-toggle" onclick="setView('kanban')" title="Kanban View">
+                        <i class="bi bi-kanban"></i>
+                    </button>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex items-center space-x-2">
+                    <button type="submit" class="flex items-center px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors font-medium text-sm">
+                        <i class="bi bi-search mr-1"></i>Apply
+                    </button>
+                    <a href="{{ url_for('ideas.ideas_list') }}" class="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium text-sm">
+                        <i class="bi bi-x-circle mr-1"></i>Clear
+                    </a>
+                    <a href="#" class="flex items-center px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-all font-medium text-sm">
+                        <i class="bi bi-plus-circle mr-1"></i>Create
+                    </a>
+                </div>
+            </div>
+        </form>
+        
+        <!-- Active Filters Display -->
+        <div class="mt-4 pt-4 border-t border-gray-100 active-filters-section" 
+             {% if not (current_filters.search or current_filters.status or current_filters.votes) %}style="display: none;"{% endif %}>
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="text-sm font-medium text-gray-700">Active Filters</h3>
+                <span class="text-xs text-yellow-600 bg-yellow-100 px-2 py-1 rounded-full">
+                    {{ (current_filters.search|length > 0)|int + (current_filters.status|length > 0)|int + (current_filters.votes|length > 0)|int }} applied
+                </span>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                {% if current_filters.search %}
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                    <i class="bi bi-search mr-1"></i>Search: "{{ current_filters.search }}"
+                    <button type="button" onclick="clearFilter('search')" class="ml-1 text-yellow-600 hover:text-yellow-800">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </span>
+                {% endif %}
+                {% if current_filters.status %}
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <i class="bi bi-circle-fill mr-1"></i>Status: {{ current_filters.status|title }}
+                    <button type="button" onclick="clearFilter('status')" class="ml-1 text-green-600 hover:text-green-800">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </span>
+                {% endif %}
+                {% if current_filters.votes %}
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                    <i class="bi bi-heart mr-1"></i>Votes: {{ current_filters.votes|title }}
+                    <button type="button" onclick="clearFilter('votes')" class="ml-1 text-orange-600 hover:text-orange-800">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Layout -->
+<div class="flex flex-col lg:flex-row gap-8 mt-8">
+    <!-- Left Sidebar -->
+    <div class="order-2 lg:order-1 w-full lg:w-80 flex-shrink-0">
+        <div class="bg-white rounded-2xl shadow-lg p-6 sticky top-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-6">Ideas Statistics</h2>
+            
+            <!-- Quick Stats -->
+            <div class="space-y-4 mb-8">
+                <div class="flex items-center justify-between p-4 bg-yellow-50 rounded-lg">
+                    <div>
+                        <p class="text-sm font-medium text-yellow-600">New Ideas</p>
+                        <p class="text-2xl font-bold text-yellow-900">{{ metrics.idea_ideas or 0 }}</p>
+                    </div>
+                    <i class="bi bi-lightbulb text-yellow-500 text-2xl"></i>
+                </div>
+                
+                <div class="flex items-center justify-between p-4 bg-green-50 rounded-lg">
+                    <div>
+                        <p class="text-sm font-medium text-green-600">Converted</p>
+                        <p class="text-2xl font-bold text-green-900">{{ metrics.converted_ideas or 0 }}</p>
+                    </div>
+                    <i class="bi bi-check-circle text-green-500 text-2xl"></i>
+                </div>
+                
+                <div class="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+                    <div>
+                        <p class="text-sm font-medium text-blue-600">In Research</p>
+                        <p class="text-2xl font-bold text-blue-900">{{ metrics.research_ideas or 0 }}</p>
+                    </div>
+                    <i class="bi bi-search text-blue-500 text-2xl"></i>
+                </div>
+                
+                <div class="flex items-center justify-between p-4 bg-purple-50 rounded-lg">
+                    <div>
+                        <p class="text-sm font-medium text-purple-600">Proposed</p>
+                        <p class="text-2xl font-bold text-purple-900">{{ metrics.proposed_ideas or 0 }}</p>
+                    </div>
+                    <i class="bi bi-star text-purple-500 text-2xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content Area -->
+    <div class="order-1 lg:order-2 flex-1 min-w-0">
+        <!-- Results Summary -->
+        {% if ideas %}
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <span>Showing {{ ideas|length }} ideas</span>
+                    {% if current_filters.search or current_filters.status or current_filters.votes %}
+                    <span class="text-yellow-600">(filtered)</span>
+                    {% endif %}
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span>{{ metrics.total_ideas or 0 }} total ideas</span>
+                    <span>{{ metrics.converted_ideas or 0 }} converted</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Ideas Container -->
+        <div class="space-y-6">
+            <!-- List View -->
+            <div id="listViewContainer" class="view-container">
+                <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                    {% if ideas %}
+                    <div class="divide-y divide-gray-200">
+                        {% for idea in ideas %}
+                        <div class="p-6 hover:bg-gray-50 transition-colors">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-3 mb-2">
+                                        <a href="{{ url_for('ideas.idea_detail', idea_id=idea.id) }}" class="text-lg font-semibold text-gray-900 hover:text-yellow-600">{{ idea.title }}</a>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                            {% if idea.status and idea.status.value == 'idea' %}bg-gray-100 text-gray-800
+                                            {% elif idea.status and idea.status.value == 'research' %}bg-blue-100 text-blue-800
+                                            {% elif idea.status and idea.status.value == 'design' %}bg-purple-100 text-purple-800
+                                            {% elif idea.status and idea.status.value == 'accepted' %}bg-green-100 text-green-800
+                                            {% elif idea.status and idea.status.value == 'converted' %}bg-emerald-100 text-emerald-800
+                                            {% elif idea.status and idea.status.value == 'rejected' %}bg-red-100 text-red-800
+                                            {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                            <i class="bi bi-circle-fill mr-1 text-xs"></i>{{ idea.status.value|title if idea.status else 'Unknown' }}
+                                        </span>
+                                    </div>
+                                    <div class="text-gray-600 mb-3">
+                                        {% if idea.description %}
+                                            <p>{{ idea.description[:150] }}{% if idea.description|length > 150 %}...{% endif %}</p>
+                                        {% else %}
+                                            <p class="text-gray-500 italic">No description provided</p>
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex items-center space-x-6 text-sm text-gray-500">
+                                        <span>
+                                            <i class="bi bi-calendar mr-1"></i>{{ idea.created_at.strftime('%Y-%m-%d') if idea.created_at else 'N/A' }}
+                                        </span>
+                                        <span>
+                                            <i class="bi bi-person mr-1"></i>{{ idea.created_by or 'System' }}
+                                        </span>
+                                        {% if idea.votes %}
+                                        <span>
+                                            <i class="bi bi-heart mr-1"></i>{{ idea.votes }} votes
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2 ml-4">
+                                    <a href="{{ url_for('ideas.idea_detail', idea_id=idea.id) }}" 
+                                       class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-yellow-600 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors">
+                                        <i class="bi bi-eye mr-1"></i>View
+                                    </a>
+                                    <button class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                                        <i class="bi bi-three-dots"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="p-12 text-center">
+                        <div class="bg-yellow-50 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-4">
+                            <i class="bi bi-lightbulb text-4xl text-yellow-500"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-900 mb-2">No ideas yet</h3>
+                        <p class="text-gray-600 mb-6">Start by capturing your first project idea to get started.</p>
+                        <a href="#" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-all font-medium">
+                            <i class="bi bi-plus mr-2"></i>Create Your First Idea
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function setView(viewType) {
+    // Hide all view containers
+    document.querySelectorAll('.view-container').forEach(container => {
+        container.classList.add('hidden');
+    });
+    
+    // Remove active class from all view toggles
+    document.querySelectorAll('.view-toggle').forEach(toggle => {
+        toggle.classList.remove('active', 'bg-white', 'text-yellow-600', 'shadow-sm');
+        toggle.classList.add('text-gray-500');
+    });
+    
+    // Show selected view and activate toggle
+    const container = document.getElementById(viewType + 'ViewContainer');
+    const toggle = document.getElementById(viewType + 'View');
+    
+    if (container) {
+        container.classList.remove('hidden');
+    }
+    
+    if (toggle) {
+        toggle.classList.add('active', 'bg-white', 'text-yellow-600', 'shadow-sm');
+        toggle.classList.remove('text-gray-500');
+    }
+    
+    // Save preference to localStorage
+    localStorage.setItem('ideasView', viewType);
+}
+
+function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('filterForm').submit();
+}
+
+function clearFilter(filterName) {
+    const form = document.getElementById('filterForm');
+    const input = form.querySelector(`[name="${filterName}"]`);
+    if (input) {
+        input.value = '';
+        form.submit();
+    }
+}
+
+function updateFilterCount() {
+    const form = document.getElementById('filterForm');
+    if (!form) return; // Exit if form doesn't exist
+    
+    const searchInput = form.querySelector('[name="search"]');
+    const statusSelect = form.querySelector('[name="status"]');
+    const voteSelect = form.querySelector('[name="votes"]');
+    
+    if (!searchInput || !statusSelect || !voteSelect) return; // Exit if required elements don't exist
+    
+    const searchValue = searchInput.value.trim();
+    const statusValue = statusSelect.value;
+    const voteValue = voteSelect.value;
+    
+    let activeCount = 0;
+    if (searchValue) activeCount++;
+    if (statusValue) activeCount++;
+    if (voteValue) activeCount++;
+    
+    // Only update if the filter count element exists
+    const countElement = document.getElementById('filterCount');
+    if (countElement) {
+        if (activeCount > 0) {
+            countElement.textContent = activeCount;
+            countElement.style.display = 'inline-block';
+        } else {
+            countElement.style.display = 'none';
+        }
+    }
+    
+    // Update the active filters display section if it exists
+    const activeFiltersSection = document.querySelector('.active-filters-section');
+    if (activeFiltersSection) {
+        if (activeCount > 0) {
+            activeFiltersSection.style.display = 'block';
+        } else {
+            activeFiltersSection.style.display = 'none';
+        }
+    }
+}
+
+// Auto-submit form on filter change with debouncing
+let submitTimeout;
+function debouncedSubmit(form) {
+    clearTimeout(submitTimeout);
+    submitTimeout = setTimeout(() => {
+        form.submit();
+    }, 300);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Restore saved view preference
+    const savedView = localStorage.getItem('ideasView') || 'list';
+    setView(savedView);
+    
+    // Auto-submit on filter changes
+    const filterSelects = document.querySelectorAll('select[name="status"], select[name="votes"], select[name="sort"]');
+    filterSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            updateFilterCount();
+            debouncedSubmit(this.form);
+        });
+    });
+    
+    // Auto-submit on search with debouncing
+    const searchInput = document.getElementById('searchInput');
+    searchInput.addEventListener('input', function() {
+        updateFilterCount();
+        debouncedSubmit(this.form);
+    });
+    
+    // Update filter count on page load
+    updateFilterCount();
+    
+    // Show loading state on form submission
+    const form = document.getElementById('filterForm');
+    form.addEventListener('submit', function() {
+        const submitButton = this.querySelector('button[type="submit"]');
+        const originalText = submitButton.innerHTML;
+        submitButton.innerHTML = '<i class="bi bi-hourglass-split mr-1"></i>Applying...';
+        submitButton.disabled = true;
+        
+        // Re-enable after a delay (in case of errors)
+        setTimeout(() => {
+            submitButton.innerHTML = originalText;
+            submitButton.disabled = false;
+        }, 3000);
+    });
+});
+</script>
+{% endblock %}

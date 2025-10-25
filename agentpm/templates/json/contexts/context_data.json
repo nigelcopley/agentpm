@@ -1,0 +1,52 @@
+{
+  "six_w_data": {
+    "end_users": [
+      "enterprise-admins"
+    ],
+    "functional_requirements": [
+      "Support compound filters for catalog search."
+    ],
+    "business_value": "Improve enterprise retention by delivering advanced search."
+  },
+  "plugin_facts": [
+    {
+      "plugin_id": "language-python",
+      "description": "Detected Python project with pytest test suite.",
+      "confidence": 0.98
+    },
+    {
+      "plugin_id": "frontend-htmx",
+      "description": "HTMX fragments detected in templates directory.",
+      "confidence": 0.76
+    }
+  ],
+  "amalgamations": [
+    {
+      "type": "code",
+      "path": "services/search-service/filter_service.py",
+      "reason": "Matches python-backend capability"
+    },
+    {
+      "type": "documentation",
+      "path": "docs/architecture/search-filtering.md",
+      "reason": "Linked from work item metadata"
+    }
+  ],
+  "confidence_factors": {
+    "plugin_facts": {
+      "detected_technologies": {
+        "python": {
+          "confidence": 0.98,
+          "plugin_id": "language-python"
+        }
+      }
+    }
+  },
+  "insights": [
+    "Prioritize caching strategy before enabling beta customers."
+  ],
+  "next_steps": [
+    "Generate implementation task for caching strategy.",
+    "Schedule design review with architecture guild."
+  ]
+}

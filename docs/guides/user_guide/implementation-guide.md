@@ -1,0 +1,1465 @@
+# Agent System Implementation Guide
+
+**Version**: 2.0
+**Audience**: Developers
+**Last Updated**: 2025-10-19
+**Component**: Agent System
+
+---
+
+## Purpose
+
+This guide provides **step-by-step instructions** for implementing, customizing, and extending the APM (Agent Project Manager) agent system. It covers:
+- Creating new agents from scratch
+- Customizing existing agents
+- Adding framework-specific adapters
+- Implementing new provider generators
+- Testing agent implementations
+- Debugging common issues
+
+**Prerequisites**:
+- Understanding of APM (Agent Project Manager) architecture (see [Three-Tier Orchestration](../architecture/three-tier-orchestration.md))
+- Python 3.11+ development environment
+- SQLite database knowledge (basic)
+- Jinja2 templating (for provider generators)
+
+---
+
+## Table of Contents
+
+1. [Quick Start](#1-quick-start)
+2. [Creating Sub-Agents](#2-creating-sub-agents)
+3. [Creating Specialist Agents](#3-creating-specialist-agents)
+4. [Creating Phase Orchestrators](#4-creating-phase-orchestrators)
+5. [Adding Framework Adapters](#5-adding-framework-adapters)
+6. [Implementing Provider Generators](#6-implementing-provider-generators)
+7. [Testing Agents](#7-testing-agents)
+8. [Debugging & Troubleshooting](#8-debugging--troubleshooting)
+9. [Best Practices](#9-best-practices)
+10. [Advanced Topics](#10-advanced-topics)
+
+---
+
+## 1. Quick Start
+
+### 1.1 Environment Setup
+
+```bash
+# 1. Clone repository
+git clone https://github.com/your-org/aipm-v2.git
+cd aipm-v2
+
+# 2. Create virtual environment
+python3.11 -m venv venv
+source venv/bin/activate  # or `venv\Scripts\activate` on Windows
+
+# 3. Install dependencies
+pip install -e ".[dev]"
+
+# 4. Initialize database
+apm init
+
+# 5. Verify setup
+apm agents list
+```
+
+### 1.2 Project Structure
+
+```
+agentpm/
+├── core/
+│   ├── agents/
+│   │   ├── generator.py           # Agent generation logic
+│   │   ├── selection.py           # Intelligent selection
+│   │   ├── loader.py              # Database loading
+│   │   └── templates/             # Base agent templates
+│   │       ├── implementer.md
+│   │       ├── tester.md
+│   │       ├── planner.md
+│   │       └── ... (18 templates)
+│   ├── database/
+│   │   ├── models/agent.py        # Agent model
+│   │   └── methods/agents.py      # CRUD operations
+│   └── workflow/
+│       └── service.py             # Workflow coordination
+├── providers/
+│   ├── base.py                    # Provider interface
+│   └── generators/
+│       └── anthropic/
+│           └── claude_code_generator.py
+└── cli/
+    └── commands/
+        └── agents/                # Agent CLI commands
+            ├── generate.py
+            ├── list.py
+            └── validate.py
+```
+
+### 1.3 Hello World Agent
+
+Let's create a simple agent to understand the basics:
+
+```python
+# 1. Create database record
+from agentpm.core.database.models.agent import Agent
+from agentpm.core.database import get_database
+
+db = get_database()
+
+hello_agent = Agent(
+    role='hello-world',
+    display_name='Hello World Agent',
+    description='Simple example agent for demonstration',
+    agent_type='sub-agent',
+    tier=3,
+    capabilities=['greeting', 'example'],
+    sop_content="""
+# Hello World Agent
+
+You are a simple greeting agent.
+
+## Responsibilities
+- Say hello to users
+- Demonstrate basic agent structure
+
+## Output
+Always return: {"message": "Hello, World!"}
+    """,
+    is_active=True
+)
+
+# Save to database
+with db.connect() as conn:
+    db.agents.create_agent(conn, hello_agent)
+
+# 2. Generate agent file
+from agentpm.core.agents.generator import generate_agent_file
+
+generate_agent_file(hello_agent, output_dir=".claude/agents/sub-agents")
+
+# 3. Verify
+print(f"Agent created: {hello_agent.role}")
+print(f"File: .claude/agents/sub-agents/hello-world.md")
+```
+
+---
+
+## 2. Creating Sub-Agents
+
+Sub-agents are **single-purpose** agents that perform specific tasks. They are the building blocks of the system.
+
+### 2.1 Sub-Agent Template
+
+```python
+# Template for creating a new sub-agent
+
+from dataclasses import dataclass
+from typing import Dict, Any
+from agentpm.core.database.models.agent import Agent
+
+
+@dataclass
+class SubAgentSpec:
+    """Specification for a sub-agent"""
+    role: str  # Unique identifier (e.g., 'custom-analyzer')
+    display_name: str  # Human-readable name
+    description: str  # What the agent does
+    capabilities: list[str]  # Skills/domains
+    delegates_to: list[str]  # Sub-agents this agent calls (usually empty for sub-agents)
+    expected_input: str  # Input artifact type
+    expected_output: str  # Output artifact type
+    sop_content: str  # Standard operating procedures
+
+
+def create_sub_agent(spec: SubAgentSpec) -> Agent:
+    """Create a sub-agent from specification"""
+    return Agent(
+        role=spec.role,
+        display_name=spec.display_name,
+        description=spec.description,
+        agent_type='sub-agent',
+        tier=3,
+        capabilities=spec.capabilities,
+        sop_content=spec.sop_content,
+        is_active=True
+    )
+```
+
+### 2.2 Example: Creating a Custom Analyzer
+
+```python
+# File: scripts/create_custom_analyzer.py
+
+from agentpm.core.database.models.agent import Agent
+from agentpm.core.database import get_database
+from agentpm.core.agents.generator import generate_agent_file
+
+# Step 1: Define the agent
+custom_analyzer = Agent(
+    role='custom-analyzer',
+    display_name='Custom Code Analyzer',
+    description='Analyzes code for custom project-specific patterns',
+    agent_type='sub-agent',
+    tier=3,
+    capabilities=['code-analysis', 'pattern-detection', 'custom-rules'],
+    sop_content="""
+# Custom Code Analyzer
+
+You are a specialized code analyzer that checks for project-specific patterns.
+
+## Responsibilities
+
+1. **Pattern Detection**: Identify custom patterns defined in project rules
+2. **Violation Reporting**: Report any violations with location and severity
+3. **Recommendation Generation**: Suggest fixes for detected issues
+
+## Input
+
+Receives:
+- `code_path`: Path to code to analyze
+- `custom_patterns`: List of patterns to check
+- `project_rules`: Project-specific rules from database
+
+## Process
+
+1. **Load Patterns**: Read custom patterns from project configuration
+2. **Scan Code**: Analyze files for pattern violations
+3. **Aggregate Results**: Collect all violations
+4. **Generate Report**: Create structured report with findings
+
+## Output
+
+Returns:
+```json
+{
+  "violations": [
+    {
+      "pattern": "pattern-name",
+      "location": "file.py:42",
+      "severity": "HIGH",
+      "message": "Description of violation",
+      "recommendation": "Suggested fix"
+    }
+  ],
+  "summary": {
+    "files_analyzed": 15,
+    "violations_found": 3,
+    "critical": 0,
+    "high": 2,
+    "medium": 1
+  }
+}
+```
+
+## Quality Standards
+
+- **Coverage**: Analyze 100% of relevant files
+- **Performance**: Complete analysis in <5 seconds for typical project
+- **Accuracy**: Zero false positives (if pattern is correctly defined)
+
+## Error Handling
+
+- If pattern file missing: Log warning, skip pattern
+- If file unreadable: Skip file, log error
+- If syntax error in code: Report as violation with severity INFO
+
+## Examples
+
+### Example 1: Detect Hardcoded Secrets
+
+Pattern:
+```yaml
+pattern: hardcoded-secrets
+regex: (api_key|password|secret)\s*=\s*['\"](?!{{)[^'\"]+['\"]
+severity: CRITICAL
+message: Hardcoded secret detected
+recommendation: Use environment variables or secrets management
+```
+
+Detection:
+```python
+# ❌ Violation
+api_key = "sk-1234567890abcdef"
+
+# ✅ Correct
+api_key = os.getenv("API_KEY")
+```
+
+### Example 2: Enforce Naming Convention
+
+Pattern:
+```yaml
+pattern: function-naming
+regex: ^def [a-z_][a-z0-9_]*$
+severity: MEDIUM
+message: Function name must be snake_case
+recommendation: Rename function to follow snake_case convention
+```
+    """,
+    is_active=True
+)
+
+# Step 2: Save to database
+db = get_database()
+with db.connect() as conn:
+    agent_id = db.agents.create_agent(conn, custom_analyzer)
+    print(f"Created agent with ID: {agent_id}")
+
+# Step 3: Generate agent file
+output_path = generate_agent_file(
+    custom_analyzer,
+    output_dir=".claude/agents/sub-agents"
+)
+print(f"Generated: {output_path}")
+
+# Step 4: Verify
+assert output_path.exists(), "Agent file not created"
+assert custom_analyzer.role in output_path.read_text(), "Agent role not in file"
+print("✅ Custom analyzer created successfully")
+```
+
+**Usage**:
+```bash
+python scripts/create_custom_analyzer.py
+```
+
+---
+
+## 3. Creating Specialist Agents
+
+Specialist agents are **domain experts** with deep knowledge of specific technologies.
+
+### 3.1 Specialist Agent Structure
+
+```python
+# Template for specialist agent
+
+from agentpm.core.database.models.agent import Agent
+
+
+def create_specialist_agent(
+        role: str,
+        framework: str,
+        language: str,
+        specialization: str
+) -> Agent:
+    """Create a framework-specific specialist agent"""
+
+    return Agent(
+        role=role,
+        display_name=f"{framework} {specialization}",
+        description=f"{framework} specialist for {specialization.lower()}",
+        agent_type='specialist',
+        tier=3,
+        capabilities=[framework.lower(), language.lower(), specialization.lower()],
+        sop_content=generate_specialist_sop(framework, language, specialization),
+        is_active=True,
+        metadata={
+            "framework": framework,
+            "language": language,
+            "specialization": specialization,
+            "patterns": get_framework_patterns(framework)
+        }
+    )
+```
+
+### 3.2 Example: FastAPI Specialist
+
+```python
+# File: scripts/create_fastapi_specialist.py
+
+from agentpm.core.database.models.agent import Agent
+from agentpm.core.database import get_database
+
+fastapi_specialist = Agent(
+    role='fastapi-implementer',
+    display_name='FastAPI Implementation Specialist',
+    description='FastAPI backend development expert',
+    agent_type='specialist',
+    tier=3,
+    capabilities=['fastapi', 'python', 'async', 'api-development', 'pydantic'],
+    sop_content="""
+# FastAPI Implementation Specialist
+
+You are an expert in FastAPI framework development.
+
+## Core Expertise
+
+### 1. FastAPI Patterns
+- **Async Endpoints**: Use `async def` for I/O-bound operations
+- **Dependency Injection**: Use FastAPI's dependency system
+- **Pydantic Models**: Define request/response schemas
+- **Background Tasks**: Use `BackgroundTasks` for async operations
+- **Router Organization**: Group related endpoints with `APIRouter`
+
+### 2. Best Practices
+
+**Route Definition**:
+```python
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+
+router = APIRouter(prefix="/users", tags=["users"])
+
+class UserCreate(BaseModel):
+    email: str
+    name: str
+
+@router.post("/", response_model=UserResponse)
+async def create_user(
+    user: UserCreate,
+    db: Session = Depends(get_db)
+):
+    # Implementation
+    pass
+```
+
+**Dependency Injection**:
+```python
+async def get_current_user(
+    token: str = Depends(oauth2_scheme)
+) -> User:
+    # Validate token
+    return user
+
+@router.get("/me")
+async def read_current_user(
+    current_user: User = Depends(get_current_user)
+):
+    return current_user
+```
+
+**Error Handling**:
+```python
+from fastapi import HTTPException, status
+
+@router.get("/users/{user_id}")
+async def get_user(user_id: int):
+    user = await get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    return user
+```
+
+### 3. Common Patterns
+
+**CRUD Operations**:
+```python
+class UserService:
+    async def create(self, user: UserCreate) -> User:
+        # Create user
+        pass
+
+    async def get(self, user_id: int) -> Optional[User]:
+        # Get user
+        pass
+
+    async def update(self, user_id: int, user: UserUpdate) -> User:
+        # Update user
+        pass
+
+    async def delete(self, user_id: int) -> None:
+        # Delete user
+        pass
+```
+
+**Pagination**:
+```python
+from typing import List
+
+@router.get("/users", response_model=List[UserResponse])
+async def list_users(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db)
+):
+    return db.query(User).offset(skip).limit(limit).all()
+```
+
+### 4. Testing
+
+**Unit Tests**:
+```python
+from fastapi.testclient import TestClient
+
+client = TestClient(app)
+
+def test_create_user():
+    response = client.post(
+        "/users/",
+        json={"email": "test@example.com", "name": "Test User"}
+    )
+    assert response.status_code == 201
+    assert response.json()["email"] == "test@example.com"
+```
+
+**Async Tests**:
+```python
+import pytest
+from httpx import AsyncClient
+
+@pytest.mark.asyncio
+async def test_get_user():
+    async with AsyncClient(app=app, base_url="http://test") as ac:
+        response = await ac.get("/users/1")
+    assert response.status_code == 200
+```
+
+### 5. Quality Requirements
+
+- **All endpoints documented**: OpenAPI schema generated automatically
+- **Request validation**: Pydantic models for all inputs
+- **Error handling**: Proper HTTP status codes
+- **Async where appropriate**: I/O operations use `async`/`await`
+- **Testing**: Unit tests for all endpoints (coverage ≥90%)
+
+### 6. Anti-Patterns to Avoid
+
+❌ **Blocking I/O in async functions**:
+```python
+# BAD
+async def get_user(user_id: int):
+    user = blocking_database_call(user_id)  # Blocks event loop!
+    return user
+
+# GOOD
+async def get_user(user_id: int):
+    user = await async_database_call(user_id)
+    return user
+```
+
+❌ **No request validation**:
+```python
+# BAD
+@router.post("/users")
+async def create_user(data: dict):  # No validation!
+    pass
+
+# GOOD
+@router.post("/users")
+async def create_user(user: UserCreate):  # Validated by Pydantic
+    pass
+```
+
+## Implementation Checklist
+
+For each endpoint:
+- [ ] Pydantic models defined for request/response
+- [ ] Async used for I/O operations
+- [ ] Dependency injection for shared resources
+- [ ] Proper error handling with HTTP exceptions
+- [ ] Unit tests written (coverage ≥90%)
+- [ ] OpenAPI documentation generated
+    """,
+    is_active=True,
+    metadata={
+        "framework": "FastAPI",
+        "language": "Python",
+        "version": "0.100+",
+        "patterns": [
+            "async-endpoints",
+            "dependency-injection",
+            "pydantic-validation",
+            "router-organization"
+        ]
+    }
+)
+
+# Save to database
+db = get_database()
+with db.connect() as conn:
+    db.agents.create_agent(conn, fastapi_specialist)
+
+print("✅ FastAPI specialist created")
+```
+
+### 3.3 Specialist Registration
+
+Register the specialist in the selection algorithm:
+
+```python
+# File: agentpm/core/agents/selection.py
+
+# In AgentSelector.select_agents()
+
+# Add to framework detection
+frameworks = self._detect_frameworks(project_context['tech_stack'])
+
+if 'fastapi' in frameworks:
+    selected.extend([
+        {
+            'type': 'implementer',
+            'name': 'fastapi-implementer',
+            'specialization': 'FastAPI backend development',
+            'focus': 'FastAPI routes, Pydantic models, async endpoints, OpenAPI'
+        },
+        {
+            'type': 'tester',
+            'name': 'fastapi-tester',
+            'specialization': 'FastAPI testing',
+            'focus': 'TestClient, async tests, endpoint testing'
+        }
+    ])
+```
+
+---
+
+## 4. Creating Phase Orchestrators
+
+Phase orchestrators coordinate **workflows** for specific phases (D1, P1, I1, R1, O1, E1).
+
+### 4.1 Orchestrator Structure
+
+```python
+# Template for phase orchestrator
+
+from agentpm.core.database.models.agent import Agent
+
+
+def create_phase_orchestrator(
+        phase: str,
+        gate: str,
+        sub_agents: list[str]
+) -> Agent:
+    """Create a phase orchestrator"""
+
+    return Agent(
+        role=f'{phase.lower()}-orch',
+        display_name=f'{phase} Orchestrator',
+        description=f'Coordinates {phase} phase workflow',
+        agent_type='orchestrator',
+        tier=2,
+        capabilities=[phase.lower(), 'coordination', 'delegation'],
+        sop_content=generate_orchestrator_sop(phase, gate, sub_agents),
+        is_active=True,
+        metadata={
+            "phase": phase,
+            "gate": gate,
+            "sub_agents": sub_agents,
+            "orchestrator_type": "phase"
+        }
+    )
+```
+
+### 4.2 Example: Custom Validation Orchestrator
+
+```python
+# File: scripts/create_validation_orchestrator.py
+
+validation_orch = Agent(
+    role='validation-orch',
+    display_name='Validation Orchestrator',
+    description='Coordinates custom validation workflows',
+    agent_type='orchestrator',
+    tier=2,
+    capabilities=['validation', 'coordination', 'quality-assurance'],
+    sop_content="""
+# Validation Orchestrator
+
+You coordinate custom validation workflows for the project.
+
+## Responsibilities
+
+1. **Coordinate Validators**: Delegate to validation sub-agents
+2. **Aggregate Results**: Collect validation results
+3. **Check Gate**: Validate custom quality gate criteria
+4. **Return Artifact**: Create validation report
+
+## Sub-Agents Delegated To
+
+- `schema-validator` — Validate data schemas
+- `business-rule-validator` — Check business logic
+- `integration-validator` — Validate external integrations
+- `performance-validator` — Check performance metrics
+- `validation-gate-check` — Validate gate criteria
+
+## Workflow
+
+```python
+def execute_validation_phase(component):
+    # Step 1: Schema validation
+    schema_result = delegate_to("schema-validator", component)
+
+    # Step 2: Business rules
+    business_result = delegate_to("business-rule-validator", component)
+
+    # Step 3: Integration checks
+    integration_result = delegate_to("integration-validator", component)
+
+    # Step 4: Performance checks
+    perf_result = delegate_to("performance-validator", component)
+
+    # Step 5: Aggregate results
+    results = {
+        "schema": schema_result,
+        "business": business_result,
+        "integration": integration_result,
+        "performance": perf_result
+    }
+
+    # Step 6: Validate gate
+    gate_result = delegate_to("validation-gate-check", results)
+
+    # Step 7: Return artifact or escalate
+    if gate_result.passed:
+        return create_artifact("validation.approved", results)
+    else:
+        return escalate_missing_elements(gate_result.missing)
+```
+
+## Quality Gate: VALIDATION
+
+✅ **Pass Criteria**:
+- All schema validations pass
+- Business rules satisfied
+- Integration tests pass
+- Performance within acceptable range
+
+## Output Artifact
+
+`validation.approved`:
+```json
+{
+  "status": "VALIDATED",
+  "schema_valid": true,
+  "business_rules_passed": true,
+  "integrations_healthy": true,
+  "performance_acceptable": true,
+  "timestamp": "2025-10-19T10:30:00Z"
+}
+```
+    """,
+    is_active=True
+)
+
+db = get_database()
+with db.connect() as conn:
+    db.agents.create_agent(conn, validation_orch)
+
+print("✅ Validation orchestrator created")
+```
+
+---
+
+## 5. Adding Framework Adapters
+
+Framework adapters allow **principle-based agents** to understand framework-specific patterns.
+
+### 5.1 Adapter Interface
+
+```python
+# File: agentpm/agents/adapters/base.py
+
+from abc import ABC, abstractmethod
+from pathlib import Path
+from typing import List
+
+class FrameworkAdapter(ABC):
+    """Base class for framework adapters"""
+
+    def __init__(self, tech_stack, config):
+        self.tech_stack = tech_stack
+        self.config = config
+
+    @abstractmethod
+    def get_framework_name(self) -> str:
+        """Return framework name"""
+        pass
+
+    @abstractmethod
+    def get_supported_patterns(self) -> List[str]:
+        """Return framework-specific patterns"""
+        pass
+
+    # Helper methods
+    def find_python_files(self, code_path: Path) -> List[Path]:
+        """Find all Python files"""
+        return list(code_path.rglob("*.py"))
+```
+
+### 5.2 Example: Flask Adapter
+
+```python
+# File: agentpm/agents/adapters/flask.py
+
+import ast
+from pathlib import Path
+from typing import List
+from .base import FrameworkAdapter
+from agentpm.agents.base import PrincipleViolation, ViolationSeverity
+
+
+class FlaskSOLIDAdapter(FrameworkAdapter):
+    """SOLID principles adapted for Flask framework"""
+
+    def get_framework_name(self) -> str:
+        return "Flask"
+
+    def get_supported_patterns(self) -> List[str]:
+        return [
+            'fat_views',
+            'blueprint_organization',
+            'application_factory',
+            'circular_imports'
+        ]
+
+    def check_srp(self, code_path: Path) -> List[PrincipleViolation]:
+        """Check Single Responsibility for Flask"""
+        violations = []
+
+        for py_file in self.find_python_files(code_path):
+            # Check for fat route handlers
+            if self._is_route_file(py_file):
+                violations.extend(self._check_fat_routes(py_file))
+
+        return violations
+
+    def _is_route_file(self, file_path: Path) -> bool:
+        """Check if file contains Flask routes"""
+        content = file_path.read_text()
+        return '@app.route' in content or '@blueprint.route' in content
+
+    def _check_fat_routes(self, file_path: Path) -> List[PrincipleViolation]:
+        """Detect fat route handlers"""
+        violations = []
+
+        try:
+            tree = ast.parse(file_path.read_text())
+
+            for node in ast.walk(tree):
+                if isinstance(node, ast.FunctionDef):
+                    # Check for route decorator
+                    if self._has_route_decorator(node):
+                        # Check function complexity
+                        if self._is_fat_route(node):
+                            violations.append(PrincipleViolation(
+                                principle="Single Responsibility Principle",
+                                principle_code="SRP",
+                                location=f"{file_path}:{node.lineno}",
+                                issue=f"Route handler '{node.name}' contains business logic",
+                                recommendation="Extract business logic to service layer",
+                                severity=ViolationSeverity.HIGH,
+                                rule_ids=["CQ-031"],
+                                framework="Flask",
+                                framework_pattern="fat_views",
+                                explanation=self._srp_explanation(),
+                                before_code=self._fat_route_example_before(),
+                                after_code=self._fat_route_example_after()
+                            ))
+
+        except Exception as e:
+            pass  # Log but don't fail
+
+        return violations
+
+    def _has_route_decorator(self, func_node: ast.FunctionDef) -> bool:
+        """Check if function has route decorator"""
+        for dec in func_node.decorator_list:
+            if isinstance(dec, ast.Call):
+                if isinstance(dec.func, ast.Attribute):
+                    if dec.func.attr == 'route':
+                        return True
+        return False
+
+    def _is_fat_route(self, func_node: ast.FunctionDef) -> bool:
+        """Check if route handler is too complex"""
+        # Simple heuristic: >20 lines or >3 database queries
+        line_count = len(func_node.body)
+        return line_count > 20
+
+    def _srp_explanation(self) -> str:
+        return """
+        Flask route handlers should only handle HTTP layer.
+        Business logic, validation, and data access should be in service layer.
+        """
+
+    def _fat_route_example_before(self) -> str:
+        return """
+        # ❌ Fat Route
+        @app.route('/users/<int:user_id>')
+        def get_user(user_id):
+            # Business logic in route
+            user = User.query.get(user_id)
+            if not user:
+                abort(404)
+            if user.is_active:
+                posts = Post.query.filter_by(user_id=user.id).all()
+                return jsonify({
+                    'user': user.to_dict(),
+                    'posts': [p.to_dict() for p in posts]
+                })
+            abort(403)
+        """
+
+    def _fat_route_example_after(self) -> str:
+        return """
+        # ✅ Skinny Route + Service Layer
+        @app.route('/users/<int:user_id>')
+        def get_user(user_id):
+            user_data = UserService.get_with_posts(user_id)
+            return jsonify(user_data)
+
+        # services/user_service.py
+        class UserService:
+            @staticmethod
+            def get_with_posts(user_id):
+                user = User.query.get_or_404(user_id)
+                if not user.is_active:
+                    abort(403)
+                posts = Post.query.filter_by(user_id=user.id).all()
+                return {
+                    'user': user.to_dict(),
+                    'posts': [p.to_dict() for p in posts]
+                }
+        """
+```
+
+### 5.3 Register Adapter
+
+```python
+# File: agentpm/agents/adapters/__init__.py
+
+from .flask import FlaskSOLIDAdapter
+from .django import DjangoSOLIDAdapter
+
+# Adapter registry
+ADAPTER_REGISTRY = {
+    "Flask": FlaskSOLIDAdapter,
+    "Django": DjangoSOLIDAdapter,
+    # ... more adapters
+}
+```
+
+---
+
+## 6. Implementing Provider Generators
+
+Provider generators create **LLM-specific agent files** from database records.
+
+### 6.1 Provider Interface
+
+```python
+# File: agentpm/providers/base.py
+
+from abc import ABC, abstractmethod
+from pathlib import Path
+from typing import List
+from agentpm.core.database.models.agent import Agent
+
+
+class BaseProvider(ABC):
+    """Base interface for LLM providers"""
+
+    @property
+    @abstractmethod
+    def name(self) -> str:
+        """Provider name (e.g., 'anthropic', 'google')"""
+        pass
+
+    @abstractmethod
+    def generate_agent_files(
+            self,
+            agents: List[Agent],
+            output_dir: Path
+    ) -> None:
+        """Generate provider-specific agent files"""
+        pass
+```
+
+### 6.2 Example: Gemini Generator
+
+```python
+# File: agentpm/providers/generators/google/gemini_generator.py
+
+from pathlib import Path
+from typing import List
+from jinja2 import Environment, FileSystemLoader
+from agentpm.providers.base import BaseProvider
+from agentpm.core.database.models.agent import Agent
+
+
+class GeminiGenerator(BaseProvider):
+    """Generate Gemini-compatible agent XML files"""
+
+    @property
+    def name(self) -> str:
+        return "gemini"
+
+    def __init__(self, output_dir: Path = Path(".gemini/agents")):
+        self.output_dir = output_dir
+        self.template_dir = Path(__file__).parent / "templates"
+        self.jinja_env = Environment(
+            loader=FileSystemLoader(str(self.template_dir)),
+            trim_blocks=True,
+            lstrip_blocks=True
+        )
+
+    def generate_agent_files(
+            self,
+            agents: List[Agent],
+            output_dir: Path = None
+    ) -> None:
+        """Generate Gemini XML agent files"""
+        output = output_dir or self.output_dir
+
+        for agent in agents:
+            self._generate_single_agent(agent, output)
+
+    def _generate_single_agent(self, agent: Agent, output_dir: Path) -> Path:
+        """Generate single Gemini agent file"""
+
+        # Select template by tier
+        template_name = {
+            1: "master-orchestrator.xml.j2",
+            2: "orchestrator.xml.j2",
+            3: "agent.xml.j2"
+        }[agent.tier]
+
+        # Render template
+        template = self.jinja_env.get_template(template_name)
+        content = template.render(
+            id=agent.role,
+            name=agent.display_name,
+            description=agent.description,
+            tier=agent.tier,
+            capabilities=agent.capabilities,
+            instructions=agent.sop_content
+        )
+
+        # Write file
+        output_path = output_dir / f"{agent.role}.xml"
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(content)
+
+        return output_path
+```
+
+### 6.3 Gemini Template
+
+```xml
+<!-- File: agentpm/providers/generators/google/templates/agent.xml.j2 -->
+
+<?xml version="1.0" encoding="UTF-8"?>
+<agent id="{{ id }}" tier="{{ tier }}">
+  <name>{{ name }}</name>
+  <description>{{ description }}</description>
+
+  {% if capabilities %}
+  <capabilities>
+    {% for capability in capabilities %}
+    <capability>{{ capability }}</capability>
+    {% endfor %}
+  </capabilities>
+  {% endif %}
+
+  <instructions>
+    <![CDATA[
+{{ instructions }}
+    ]]>
+  </instructions>
+
+  <metadata>
+    <generated_at>{{ generated_at }}</generated_at>
+    <version>1.0</version>
+  </metadata>
+</agent>
+```
+
+### 6.4 Register Provider
+
+```python
+# File: agentpm/providers/generators/registry.py
+
+from .anthropic.claude_code_generator import ClaudeCodeGenerator
+from .google.gemini_generator import GeminiGenerator
+
+PROVIDER_REGISTRY = {
+    "claude-code": ClaudeCodeGenerator,
+    "gemini": GeminiGenerator,
+}
+
+def get_generator(provider_name: str):
+    """Get provider generator by name"""
+    generator_class = PROVIDER_REGISTRY.get(provider_name)
+    if not generator_class:
+        raise ValueError(f"Unknown provider: {provider_name}")
+    return generator_class()
+```
+
+---
+
+## 7. Testing Agents
+
+### 7.1 Unit Testing
+
+```python
+# File: tests/core/agents/test_custom_analyzer.py
+
+import pytest
+from agentpm.core.database.models.agent import Agent
+from agentpm.core.agents.generator import generate_agent_file
+from pathlib import Path
+
+
+def test_custom_analyzer_creation(tmp_path):
+    """Test creating custom analyzer agent"""
+
+    # Create agent
+    agent = Agent(
+        role='custom-analyzer',
+        display_name='Custom Analyzer',
+        description='Test analyzer',
+        agent_type='sub-agent',
+        tier=3,
+        capabilities=['analysis'],
+        sop_content='# Test SOP',
+        is_active=True
+    )
+
+    # Generate file
+    output_path = generate_agent_file(agent, output_dir=tmp_path)
+
+    # Verify
+    assert output_path.exists()
+    assert agent.role in output_path.read_text()
+    assert agent.display_name in output_path.read_text()
+
+
+def test_custom_analyzer_validation():
+    """Test agent validation"""
+    from agentpm.core.agents.validation import validate_agent
+
+    agent = Agent(
+        role='test-agent',
+        display_name='Test Agent',
+        agent_type='sub-agent',
+        tier=3,
+        capabilities=[],
+        is_active=True
+    )
+
+    result = validate_agent(agent)
+    assert result.is_valid
+    assert len(result.errors) == 0
+```
+
+### 7.2 Integration Testing
+
+```python
+# File: tests/integration/test_agent_workflow.py
+
+import pytest
+from agentpm.core.agents.generator import AgentGenerator
+from agentpm.core.database import get_database
+
+
+@pytest.mark.integration
+def test_full_agent_generation_workflow(tmp_path):
+    """Test complete agent generation workflow"""
+
+    # 1. Create project context
+    project_context = {
+        'tech_stack': ['Python', 'FastAPI'],
+        'app_type': 'Web API',
+        'frameworks': ['FastAPI']
+    }
+
+    # 2. Generate agents
+    generator = AgentGenerator(get_database())
+    agents = generator.generate_agents(
+        project_context,
+        output_dir=tmp_path
+    )
+
+    # 3. Verify FastAPI specialist generated
+    fastapi_agents = [a for a in agents if 'fastapi' in a.role]
+    assert len(fastapi_agents) > 0
+
+    # 4. Verify files created
+    for agent in fastapi_agents:
+        assert agent.file_path
+        assert Path(agent.file_path).exists()
+
+    # 5. Verify database records
+    db = get_database()
+    with db.connect() as conn:
+        db_agents = db.agents.list_all(conn)
+        assert len(db_agents) >= len(agents)
+```
+
+### 7.3 Performance Testing
+
+```python
+# File: tests/performance/test_agent_generation_speed.py
+
+import time
+import pytest
+from agentpm.core.agents.generator import AgentGenerator
+
+
+@pytest.mark.performance
+def test_generation_speed():
+    """Test agent generation completes within time budget"""
+
+    generator = AgentGenerator(get_database())
+
+    start = time.time()
+    agents = generator.generate_agents({
+        'tech_stack': ['Python', 'Django', 'React'],
+        'app_type': 'Web'
+    })
+    duration = time.time() - start
+
+    # Should generate 10-15 agents in <5 seconds
+    assert len(agents) >= 10
+    assert duration < 5.0, f"Generation took {duration}s (target: <5s)"
+```
+
+---
+
+## 8. Debugging & Troubleshooting
+
+### 8.1 Common Issues
+
+**Issue 1: Agent not generated**
+
+```bash
+# Debug steps
+apm agents list  # Check if agent in database
+apm agents validate --all  # Check for errors
+
+# Check database
+sqlite3 .aipm/data/aipm.db
+> SELECT * FROM agents WHERE role = 'your-agent-role';
+```
+
+**Issue 2: Generated file incomplete**
+
+```python
+# Check SOP content
+from agentpm.core.database import get_database
+
+db = get_database()
+with db.connect() as conn:
+    agent = db.agents.get_by_role(conn, 'your-agent-role')
+    print(agent.sop_content)  # Should not be empty
+```
+
+**Issue 3: Provider not detected**
+
+```bash
+# Check provider detection
+python -c "
+from agentpm.providers.generators.registry import detect_provider
+from pathlib import Path
+print(detect_provider(Path.cwd()))
+"
+```
+
+### 8.2 Logging
+
+```python
+# Enable debug logging
+import logging
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+logger = logging.getLogger('agentpm.agents')
+logger.setLevel(logging.DEBUG)
+```
+
+### 8.3 Validation Tools
+
+```bash
+# Validate all agents
+apm agents validate --all
+
+# Validate specific agent
+apm agents validate context-delivery
+
+# Check agent file syntax
+python -c "
+from pathlib import Path
+import yaml
+
+file = Path('.claude/agents/sub-agents/context-delivery.md')
+content = file.read_text()
+
+# Parse frontmatter
+if content.startswith('---'):
+    yaml_content = content.split('---')[1]
+    metadata = yaml.safe_load(yaml_content)
+    print(f'Valid frontmatter: {metadata}')
+"
+```
+
+---
+
+## 9. Best Practices
+
+### 9.1 Agent Design
+
+**DO**:
+- ✅ Single responsibility per agent
+- ✅ Clear input/output contracts
+- ✅ Comprehensive SOP documentation
+- ✅ Examples in SOP content
+- ✅ Error handling patterns
+
+**DON'T**:
+- ❌ Multi-purpose agents (violates SRP)
+- ❌ Vague descriptions
+- ❌ Missing examples
+- ❌ Hardcoded values
+- ❌ Ignoring errors
+
+### 9.2 SOP Writing
+
+**Structure**:
+```markdown
+# Agent Name
+
+Brief description
+
+## Responsibilities
+- Bullet points
+
+## Input
+What it receives
+
+## Process
+Step-by-step workflow
+
+## Output
+What it returns
+
+## Quality Standards
+Requirements
+
+## Examples
+Concrete examples
+
+## Error Handling
+Edge cases
+```
+
+### 9.3 Testing
+
+**Coverage Requirements**:
+- Unit tests: ≥90% coverage
+- Integration tests: All critical paths
+- Performance tests: All time-critical operations
+
+**Test Structure**:
+```python
+def test_agent_feature():
+    # Arrange
+    agent = create_test_agent()
+
+    # Act
+    result = agent.execute(test_input)
+
+    # Assert
+    assert result.status == "SUCCESS"
+    assert result.output is not None
+```
+
+---
+
+## 10. Advanced Topics
+
+### 10.1 Dynamic Agent Generation
+
+Generate agents on-the-fly based on runtime context:
+
+```python
+def generate_dynamic_agent(task_context):
+    """Generate agent dynamically for specific task"""
+
+    # Analyze task requirements
+    required_capabilities = analyze_task(task_context)
+
+    # Find matching template
+    template = find_best_template(required_capabilities)
+
+    # Customize for task
+    agent = customize_template(template, task_context)
+
+    # Register and generate
+    db.agents.create_agent(agent)
+    generate_agent_file(agent)
+
+    return agent
+```
+
+### 10.2 Agent Chaining
+
+Create complex workflows by chaining agents:
+
+```python
+def create_agent_chain(agents: List[Agent]):
+    """Create workflow from agent chain"""
+
+    def execute_chain(input_data):
+        result = input_data
+
+        for agent in agents:
+            result = delegate_to(agent.role, result)
+            if result.status == "FAILURE":
+                break
+
+        return result
+
+    return execute_chain
+```
+
+### 10.3 Hot Reloading
+
+Reload agents without restarting:
+
+```python
+def hot_reload_agent(agent_role: str):
+    """Reload agent from database"""
+
+    # 1. Load latest from database
+    agent = db.agents.get_by_role(agent_role)
+
+    # 2. Regenerate file
+    generate_agent_file(agent)
+
+    # 3. Clear cache (if using caching)
+    agent_cache.invalidate(agent_role)
+
+    return agent
+```
+
+---
+
+## Summary
+
+This implementation guide covered:
+- ✅ Creating sub-agents, specialists, and orchestrators
+- ✅ Adding framework adapters
+- ✅ Implementing provider generators
+- ✅ Testing agents comprehensively
+- ✅ Debugging common issues
+- ✅ Following best practices
+- ✅ Advanced implementation patterns
+
+**Next Steps**:
+1. Read [Three-Tier Orchestration](../architecture/three-tier-orchestration.md) for architecture details
+2. Review [Agent Format Specification](../specifications/agent-format-spec.md) for file structure
+3. Explore existing agents in `.claude/agents/` for examples
+4. Implement your first custom agent!
+
+---
+
+**Version**: 2.0
+**Maintained by**: AIPM Core Team
+**Contributions**: See `CONTRIBUTING.md`

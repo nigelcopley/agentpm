@@ -1,0 +1,138 @@
+"""
+apm commands - Manage AIPM slash commands for Claude Code
+"""
+
+import shutil
+from pathlib import Path
+
+import click
+from rich.console import Console
+
+
+@click.group(name='commands')
+def commands_group():
+    """Manage AIPM slash commands for Claude Code.
+
+    Install, update, and manage custom slash commands that extend
+    Claude Code with AIPM-specific workflows.
+
+    \b
+    Examples:
+      apm commands install           # Install all AIPM commands to ~/.claude/
+      apm commands list              # Show installed commands
+      apm commands update            # Update installed commands
+    """
+    pass
+
+
+@commands_group.command()
+@click.pass_context
+def install(ctx: click.Context):
+    """Install AIPM slash commands to ~/.claude/commands/aipm/
+
+    Copies all slash commands from agentpm/cli/commands/slash_commands/
+    to ~/.claude/commands/aipm/ for use in Claude Code.
+    """
+    console = Console()
+
+    # Source directory
+    package_root = Path(__file__).parent.parent.parent  # agentpm/
+    source_dir = package_root / "cli" / "commands" / "slash_commands"
+
+    # Destination directory
+    dest_dir = Path.home() / ".claude" / "commands" / "aipm"
+
+    if not source_dir.exists():
+        console.print(f"\n❌ [red]Source directory not found:[/red] {source_dir}\n")
+        raise click.Abort()
+
+    # Create destination
+    dest_dir.mkdir(parents=True, exist_ok=True)
+
+    # Find all .md files (skip README)
+    command_files = [f for f in source_dir.glob("*.md") if f.name != "README.md"]
+
+    if not command_files:
+        console.print(f"\n⚠️  [yellow]No command files found in {source_dir}[/yellow]\n")
+        raise click.Abort()
+
+    # Install each command
+    console.print(f"\n📦 Installing AIPM slash commands...\n")
+
+    installed = []
+    for cmd_file in command_files:
+        dest_file = dest_dir / cmd_file.name
+        shutil.copy2(cmd_file, dest_file)
+
+        cmd_name = cmd_file.stem  # filename without .md
+        console.print(f"  ✅ /aipm:{cmd_name}")
+        installed.append(cmd_name)
+
+    console.print(f"\n✅ [green]Installed {len(installed)} commands to:[/green]")
+    console.print(f"   {dest_dir}\n")
+
+    console.print("💡 [cyan]Usage in Claude Code:[/cyan]")
+    for cmd in installed:
+        console.print(f"   /aipm:{cmd}")
+    console.print()
+
+
+@commands_group.command()
+@click.pass_context
+def update(ctx: click.Context):
+    """Update installed AIPM slash commands.
+
+    Re-copies all commands from source to ~/.claude/commands/aipm/
+    to sync with latest versions.
+    """
+    # Just call install (overwrites existing)
+    ctx.invoke(install)
+
+
+@commands_group.command(name='list')
+@click.pass_context
+def list_commands(ctx: click.Context):
+    """List installed AIPM slash commands."""
+    console = Console()
+
+    dest_dir = Path.home() / ".claude" / "commands" / "aipm"
+
+    if not dest_dir.exists():
+        console.print("\n⚠️  [yellow]No AIPM commands installed[/yellow]\n")
+        console.print("💡 [cyan]Run: apm commands install[/cyan]\n")
+        raise click.Abort()
+
+    # Convert Path objects to list explicitly
+    command_files = [f for f in dest_dir.glob("*.md")]
+
+    if not command_files:
+        console.print(f"\n⚠️  [yellow]No commands found in {dest_dir}[/yellow]\n")
+        raise click.Abort()
+
+    console.print("\n📋 Installed AIPM Slash Commands:\n")
+
+    for cmd_file in sorted(command_files):
+        cmd_name = cmd_file.stem
+
+        # Try to read description from frontmatter
+        try:
+            content = cmd_file.read_text()
+            if content.startswith('---'):
+                lines = content.split('---', 2)
+                if len(lines) >= 2:
+                    frontmatter = lines[1]
+                    for line in frontmatter.split('\n'):
+                        if line.startswith('description:'):
+                            desc = line.split('description:', 1)[1].strip().strip('"')
+                            console.print(f"  • [bold]/aipm:{cmd_name}[/bold] - {desc}")
+                            break
+                    else:
+                        console.print(f"  • [bold]/aipm:{cmd_name}[/bold]")
+                else:
+                    console.print(f"  • [bold]/aipm:{cmd_name}[/bold]")
+            else:
+                console.print(f"  • [bold]/aipm:{cmd_name}[/bold]")
+        except Exception:
+            console.print(f"  • [bold]/aipm:{cmd_name}[/bold]")
+
+    console.print(f"\n📁 Location: {dest_dir}\n")

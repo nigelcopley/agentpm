@@ -1,0 +1,364 @@
+{% extends "layouts/modern_base.html" %}
+{% from 'macros/breadcrumb.html' import breadcrumb %}
+{% from 'macros/skeleton.html' import skeleton_card, skeleton_table %}
+{% from 'macros/quick_actions.html' import quick_actions %}
+
+{% block title %}Task #{{ detail.task.id }} - APM (Agent Project Manager){% endblock %}
+
+{% block content %}
+<div x-data="{ pageLoaded: true }">
+  {# Skeleton loader for initial page load #}
+  <div x-show="!pageLoaded" x-cloak>
+    <div class="mb-6">
+      {{ skeleton_card(show_avatar=False) }}
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      {{ skeleton_card(show_avatar=False) }}
+      {{ skeleton_card(show_avatar=False) }}
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {{ skeleton_table(rows=3, columns=3) }}
+      {{ skeleton_table(rows=3, columns=3) }}
+    </div>
+  </div>
+
+  {# Actual page content #}
+  <div x-show="pageLoaded">
+{# Enhanced breadcrumb navigation with 3 levels #}
+{% if detail.work_item %}
+{{ breadcrumb([
+    {'label': 'Tasks', 'url': '/tasks'},
+    {'label': 'Work Item #' + detail.work_item.id|string, 'url': '/work-items/' + detail.work_item.id|string},
+    {'label': detail.task.name, 'url': None}
+]) }}
+{% else %}
+{{ breadcrumb([
+    {'label': 'Tasks', 'url': '/tasks'},
+    {'label': detail.task.name, 'url': None}
+]) }}
+{% endif %}
+
+<!-- Task Overview with Quick Actions -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="card metric-card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="flex items-center justify-between mb-3">
+                            <h2 class="card-title mb-0">{{ detail.task.name }}</h2>
+                            {# Quick Actions Dropdown #}
+                            <div class="ml-auto">
+                                {% set task_actions = [] %}
+                                {% if detail.task.status.value in ['PROPOSED', 'VALIDATED', 'ACCEPTED'] %}
+                                    {% set task_actions = task_actions + [{'label': 'Start Task', 'url': '/tasks/' + detail.task.id|string + '/start', 'icon': 'play-fill'}] %}
+                                {% endif %}
+                                {% if detail.task.status.value == 'IN_PROGRESS' %}
+                                    {% set task_actions = task_actions + [{'label': 'Submit for Review', 'url': '/tasks/' + detail.task.id|string + '/submit-review', 'icon': 'check-circle'}] %}
+                                {% endif %}
+                                {% if detail.task.status.value == 'REVIEW' %}
+                                    {% set task_actions = task_actions + [{'label': 'Approve', 'url': '/tasks/' + detail.task.id|string + '/approve', 'icon': 'check-circle-fill'}] %}
+                                    {% set task_actions = task_actions + [{'label': 'Request Changes', 'url': '/tasks/' + detail.task.id|string + '/request-changes', 'icon': 'arrow-counterclockwise'}] %}
+                                {% endif %}
+                                {% set task_actions = task_actions + [
+                                    {'divider': True},
+                                    {'label': 'Edit', 'url': '/tasks/' + detail.task.id|string + '/edit', 'icon': 'pencil'},
+                                    {'label': 'Clone', 'url': '/tasks/' + detail.task.id|string + '/clone', 'icon': 'copy'}
+                                ] %}
+                                {% if detail.task.status.value not in ['COMPLETED', 'ARCHIVED', 'CANCELLED'] %}
+                                    {% set task_actions = task_actions + [
+                                        {'divider': True},
+                                        {'label': 'Archive', 'url': '/tasks/' + detail.task.id|string + '/archive', 'icon': 'archive', 'danger': True}
+                                    ] %}
+                                {% endif %}
+
+                                {{ quick_actions('Actions', task_actions, button_class='btn-secondary', align='right') }}
+                            </div>
+                        </div>
+
+                        <p class="card-text">
+                            <span class="badge badge-info status-badge">{{ detail.task.type.value }}</span>
+                            <span class="badge badge-primary status-badge">{{ detail.task.status.value }}</span>
+                            {% if detail.task.priority %}
+                            <span class="badge badge-warning status-badge">Priority: {{ detail.task.priority }}</span>
+                            {% endif %}
+                        </p>
+                        {% if detail.task.description %}
+                        <p class="text-muted">{{ detail.task.description }}</p>
+                        {% endif %}
+
+                        <!-- Due Date (Migration 0011) -->
+                        {% if detail.task.due_date %}
+                        <div class="mt-3 p-2 bg-dark bg-opacity-25 rounded">
+                            <strong><i class="bi bi-calendar-event"></i> Due:</strong>
+                            {{ detail.task.due_date.strftime('%Y-%m-%d %H:%M') if detail.task.due_date is not string else detail.task.due_date[:16] }}
+                        </div>
+                        {% endif %}
+
+                        <!-- Parent Links -->
+                        <div class="mt-3">
+                            {% if detail.work_item %}
+                            <small class="text-muted">
+                                Work Item: <a href="/work-items/{{ detail.work_item.id }}">{{ detail.work_item.name }}</a>
+                            </small>
+                            {% endif %}
+                            {% if detail.project %}
+                            <small class="text-muted ms-3">
+                                Project: <a href="/projects/{{ detail.project.id }}">{{ detail.project.name }}</a>
+                            </small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <small class="text-muted d-block">Created: {{ detail.task.created_at.strftime('%Y-%m-%d %H:%M') if detail.task.created_at else 'N/A' }}</small>
+                        <small class="text-muted d-block">Updated: {{ detail.task.updated_at.strftime('%Y-%m-%d %H:%M') if detail.task.updated_at else 'N/A' }}</small>
+                        {% if detail.task.assigned_agent %}
+                        <small class="text-muted d-block mt-2">Assigned: <span class="badge badge-gray">{{ detail.task.assigned_agent }}</span></small>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Effort and Time-Boxing -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card metric-card">
+            <div class="card-body">
+                <h5 class="card-title">Time-Boxing Status</h5>
+                {% if detail.task.effort_hours is not none %}
+                {% set has_limit = detail.time_box_limit is not none %}
+                <div class="row text-center mb-3">
+                    <div class="col">
+                        <h3>{{ detail.task.effort_hours }}h</h3>
+                        <small class="text-muted">Estimated Effort</small>
+                    </div>
+                    <div class="col">
+                        {% if has_limit %}
+                        <h3>{{ detail.time_box_limit }}h</h3>
+                        {% else %}
+                        <h3 class="text-muted">N/A</h3>
+                        {% endif %}
+                        <small class="text-muted">Type Limit</small>
+                    </div>
+                    <div class="col">
+                        {% if has_limit %}
+                        <h3 class="{% if detail.time_boxing_compliant %}compliance-good{% else %}compliance-danger{% endif %}">
+                            {% if detail.time_boxing_compliant %}✓{% else %}✗{% endif %}
+                        </h3>
+                        {% else %}
+                        <h3 class="text-muted">--</h3>
+                        {% endif %}
+                        <small class="text-muted">Compliant</small>
+                    </div>
+                </div>
+                {% if has_limit %}
+                <div class="progress" style="height: 30px;">
+                    <div class="progress-bar {% if not detail.time_boxing_compliant %}bg-danger{% endif %}"
+                         role="progressbar"
+                         style="width: {{ detail.time_box_usage_percent if detail.time_box_usage_percent is not none else 0 }}%"
+                         aria-valuenow="{{ detail.time_box_usage_percent if detail.time_box_usage_percent is not none else 0 }}"
+                         aria-valuemin="0" aria-valuemax="100">
+                        {{ detail.time_box_usage_percent if detail.time_box_usage_percent is not none else 0 }}% of limit
+                    </div>
+                </div>
+                {% if not detail.time_boxing_compliant %}
+                <div class="alert alert-danger mt-3" role="alert">
+                    <strong>⚠ Time-boxing violation!</strong>
+                    Task exceeds {{ detail.task.type.value }} limit of {{ detail.time_box_limit }}h
+                    {% if detail.time_box_overage_hours %}
+                    by {{ detail.time_box_overage_hours }}h
+                    {% endif %}
+                </div>
+                {% endif %}
+                {% else %}
+                <p class="text-muted mb-0">No time-box limit configured for this task type.</p>
+                {% endif %}
+                {% else %}
+                <p class="text-muted">No effort estimate set</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card metric-card">
+            <div class="card-body">
+                <h5 class="card-title">Quality Metadata</h5>
+                {% if detail.task.quality_metadata %}
+                    <pre class="text-muted small">{{ detail.task.quality_metadata | tojson(indent=2) }}</pre>
+                {% else %}
+                    <p class="text-muted">No quality metadata set</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dependencies with Enhanced Accessibility -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card metric-card">
+            <div class="card-body">
+                <h5 class="card-title" id="dependencies-heading">Dependencies ({{ detail.prerequisites|length }})</h5>
+                {% if detail.prerequisites %}
+                    <div class="table-responsive" role="region" aria-labelledby="dependencies-heading">
+                        <table class="table table-sm" aria-label="Task dependencies">
+                            <thead class="table-header">
+                                <tr>
+                                    <th scope="col">Task</th>
+                                    <th scope="col">Type</th>
+                                    <th scope="col">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for dep in detail.prerequisites %}
+                                <tr>
+                                    <td>
+                                        <a href="/tasks/{{ dep.depends_on_task_id }}"
+                                           aria-label="View prerequisite task {{ dep.depends_on_task_id }}">
+                                            #{{ dep.depends_on_task_id }}
+                                        </a>
+                                        {% if dep.notes %}
+                                        <br><small class="text-muted">{{ dep.notes }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if dep.dependency_type == 'hard' %}bg-danger{% else %}bg-warning{% endif %} dependency-badge"
+                                              aria-label="{{ dep.dependency_type }} dependency">
+                                            {{ dep.dependency_type }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-gray dependency-badge"
+                                              aria-label="Status: {{ dep.depends_on_status if dep.depends_on_status else 'Unknown' }}">
+                                            {% if dep.depends_on_status %}{{ dep.depends_on_status }}{% else %}Unknown{% endif %}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted" role="status">No dependencies</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card metric-card">
+            <div class="card-body">
+                <h5 class="card-title" id="dependents-heading">Dependents ({{ detail.dependents|length }})</h5>
+                {% if detail.dependents %}
+                    <div class="table-responsive" role="region" aria-labelledby="dependents-heading">
+                        <table class="table table-sm" aria-label="Tasks that depend on this task">
+                            <thead class="table-header">
+                                <tr>
+                                    <th scope="col">Task</th>
+                                    <th scope="col">Type</th>
+                                    <th scope="col">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for dep in detail.dependents %}
+                                <tr>
+                                    <td>
+                                        <a href="/tasks/{{ dep.task_id }}"
+                                           aria-label="View dependent task {{ dep.task_id }}">
+                                            #{{ dep.task_id }}
+                                        </a>
+                                        {% if dep.notes %}
+                                        <br><small class="text-muted">{{ dep.notes }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if dep.dependency_type == 'hard' %}bg-danger{% else %}bg-warning{% endif %} dependency-badge"
+                                              aria-label="{{ dep.dependency_type }} dependency">
+                                            {{ dep.dependency_type }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-gray dependency-badge"
+                                              aria-label="Status: {{ dep.task_status if dep.task_status else 'Unknown' }}">
+                                            {% if dep.task_status %}{{ dep.task_status }}{% else %}Unknown{% endif %}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted" role="status">No tasks depend on this</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Blockers -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="card metric-card">
+            <div class="card-body">
+                <h5 class="card-title">Blockers ({{ detail.active_blockers|length }})</h5>
+                {% if detail.active_blockers %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead class="table-header">
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Description</th>
+                                    <th>Reference</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for blocker in detail.active_blockers %}
+                                <tr>
+                                    <td>
+                                        <span class="badge {% if blocker.blocker_type == 'task' %}bg-info{% else %}bg-warning{% endif %}">
+                                            {{ blocker.blocker_type }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if blocker.blocker_type == 'task' %}
+                                            <a href="/tasks/{{ blocker.blocker_task_id }}">Task #{{ blocker.blocker_task_id }}</a>
+                                        {% else %}
+                                            {{ blocker.blocker_description }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if blocker.blocker_reference %}
+                                            <code>{{ blocker.blocker_reference }}</code>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if blocker.is_resolved %}bg-success{% else %}bg-danger{% endif %}">
+                                            {% if blocker.is_resolved %}Resolved{% else %}Active{% endif %}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-success" role="alert">
+                        ✓ No active blockers
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+  </div> {# End actual page content #}
+</div> {# End Alpine.js container #}
+{% endblock %}

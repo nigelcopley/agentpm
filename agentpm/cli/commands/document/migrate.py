@@ -1,0 +1,475 @@
+"""
+Document Migration Command
+
+Migrates documents to Universal Documentation System structure.
+Pattern: docs/{category}/{document_type}/{filename}
+"""
+
+import click
+import shutil
+import hashlib
+from pathlib import Path
+from rich.console import Console
+from rich.table import Table
+from rich.panel import Panel
+from typing import Dict, List, Tuple, Optional
+
+from agentpm.cli.utils.project import ensure_project_root
+from agentpm.cli.utils.services import get_database_service
+from agentpm.core.database.enums import DocumentType
+from agentpm.core.database.models import DocumentReference
+from agentpm.core.database.adapters import DocumentReferenceAdapter
+
+
+# Category inference mapping from DocumentType to category
+CATEGORY_MAPPING = {
+    # Planning & Analysis
+    DocumentType.IDEA: "planning",
+    DocumentType.REQUIREMENTS: "planning",
+    DocumentType.USER_STORY: "planning",
+    DocumentType.USE_CASE: "planning",
+    DocumentType.BUSINESS_PILLARS: "planning",
+    DocumentType.MARKET_RESEARCH: "planning",
+    DocumentType.COMPETITIVE_ANALYSIS: "planning",
+    DocumentType.STAKEHOLDER_ANALYSIS: "planning",
+
+    # Architecture & Design
+    DocumentType.ARCHITECTURE_DOC: "architecture",
+    DocumentType.DESIGN_DOC: "architecture",
+    DocumentType.SPECIFICATION: "reference",
+    DocumentType.TECHNICAL_SPEC: "architecture",
+    DocumentType.IMPLEMENTATION_PLAN: "architecture",
+    DocumentType.ADR: "architecture",
+
+    # Documentation & Guides
+    DocumentType.USER_GUIDE: "guides",
+    DocumentType.ADMIN_GUIDE: "guides",
+    DocumentType.API_DOC: "guides",
+    DocumentType.TROUBLESHOOTING: "guides",
+    DocumentType.MIGRATION_GUIDE: "guides",
+    DocumentType.RUNBOOK: "guides",
+    DocumentType.REFACTORING_GUIDE: "guides",
+
+    # Testing & Quality
+    DocumentType.TEST_PLAN: "testing",
+    DocumentType.QUALITY_GATES_SPEC: "testing",
+
+    # Communication (default fallback)
+    DocumentType.OTHER: "communication",
+}
+
+
+def calculate_checksum(file_path: Path) -> Optional[str]:
+    """Calculate SHA256 checksum of file."""
+    if not file_path.exists():
+        return None
+
+    sha256_hash = hashlib.sha256()
+    with open(file_path, "rb") as f:
+        for byte_block in iter(lambda: f.read(4096), b""):
+            sha256_hash.update(byte_block)
+    return sha256_hash.hexdigest()
+
+
+def infer_category(document_type: Optional[DocumentType], override: Optional[str] = None) -> str:
+    """
+    Infer category from document type.
+
+    Args:
+        document_type: DocumentType enum value
+        override: Manual category override
+
+    Returns:
+        Category string (planning, architecture, guides, testing, communication)
+    """
+    if override:
+        return override
+
+    if document_type and document_type in CATEGORY_MAPPING:
+        return CATEGORY_MAPPING[document_type]
+
+    # Default fallback
+    return "communication"
+
+
+def construct_target_path(
+    filename: str,
+    category: str,
+    document_type: Optional[DocumentType]
+) -> str:
+    """
+    Construct target path following docs/{category}/{document_type}/{filename} pattern.
+
+    Args:
+        filename: Original filename
+        category: Inferred or overridden category
+        document_type: Document type enum
+
+    Returns:
+        Target path string
+    """
+    # Use document_type value for directory, or 'other' if None
+    type_dir = document_type.value if document_type else "other"
+    return f"docs/{category}/{type_dir}/{filename}"
+
+
+def create_backup(source_path: Path, project_root: Path) -> Optional[Path]:
+    """
+    Create backup of file before migration.
+
+    Args:
+        source_path: Source file path
+        project_root: Project root directory
+
+    Returns:
+        Backup file path or None if source doesn't exist
+    """
+    if not source_path.exists():
+        return None
+
+    backup_dir = project_root / ".aipm" / "backups" / "document-migration"
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    # Create unique backup filename with timestamp
+    from datetime import datetime, timezone
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    backup_name = f"{source_path.stem}-{timestamp}{source_path.suffix}"
+    backup_path = backup_dir / backup_name
+
+    shutil.copy2(source_path, backup_path)
+    return backup_path
+
+
+def migrate_document_raw(
+    doc_data: dict,
+    doc_type: Optional[DocumentType],
+    inferred_category: str,
+    target_path: str,
+    project_root: Path,
+    db_service,
+    create_backups: bool,
+    console: Console
+) -> Tuple[bool, str]:
+    """
+    Migrate a single document to new structure (working with raw database data).
+
+    Args:
+        doc_data: Raw database row as dict
+        doc_type: Parsed DocumentType enum (or None)
+        inferred_category: Category for migration
+        target_path: Target file path
+        project_root: Project root directory
+        db_service: Database service instance
+        create_backups: Whether to create backups
+        console: Rich console for output
+
+    Returns:
+        Tuple of (success: bool, message: str)
+    """
+    source_file = project_root / doc_data['file_path']
+    target_file = project_root / target_path
+
+    # Check if target already exists
+    if target_file.exists():
+        return False, f"Target already exists: {target_path}"
+
+    # Create backup if requested and file exists
+    backup_path = None
+    if create_backups and source_file.exists():
+        backup_path = create_backup(source_file, project_root)
+        if backup_path:
+            console.print(f"  [dim]Backup created: {backup_path.relative_to(project_root)}[/dim]")
+
+    try:
+        # Calculate checksum before move (if file exists)
+        checksum_before = calculate_checksum(source_file) if source_file.exists() else None
+
+        # Create target directory structure
+        target_file.parent.mkdir(parents=True, exist_ok=True)
+
+        # Move physical file (if exists)
+        if source_file.exists():
+            shutil.move(str(source_file), str(target_file))
+
+            # Verify checksum after move
+            checksum_after = calculate_checksum(target_file)
+            if checksum_before and checksum_after and checksum_before != checksum_after:
+                # Rollback: restore from backup
+                if backup_path:
+                    shutil.copy2(backup_path, source_file)
+                    target_file.unlink()
+                return False, f"Checksum mismatch! Rolled back."
+        else:
+            checksum_after = None
+            console.print(f"  [yellow]Warning: Physical file not found, updating database only[/yellow]")
+
+        # Update database record directly (bypass model validation)
+        parsed = DocumentReference.parse_path(target_path)
+
+        update_query = """
+            UPDATE document_references
+            SET file_path = ?,
+                category = ?,
+                document_type_dir = ?,
+                content_hash = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        """
+        params = (
+            target_path,
+            parsed['category'],
+            parsed['document_type'],
+            checksum_after or doc_data.get('content_hash'),
+            doc_data['id']
+        )
+
+        with db_service.transaction() as conn:
+            conn.execute(update_query, params)
+
+        return True, f"Migrated: {doc_data['file_path']} → {target_path}"
+
+    except Exception as e:
+        # Rollback on error: restore from backup if available
+        if backup_path and backup_path.exists():
+            if not source_file.exists():
+                shutil.copy2(backup_path, source_file)
+            if target_file.exists():
+                target_file.unlink()
+        return False, f"Migration failed: {str(e)}"
+
+
+@click.command()
+@click.option('--dry-run', is_flag=True, default=False,
+              help='Show migration plan without executing')
+@click.option('--execute', is_flag=True, default=False,
+              help='Execute the migration (requires confirmation)')
+@click.option('--category', type=str, default=None,
+              help='Override category inference for all documents')
+@click.option('--backup/--no-backup', default=True,
+              help='Create backups before migration (default: enabled)')
+@click.pass_context
+def migrate_to_structure(
+    ctx: click.Context,
+    dry_run: bool,
+    execute: bool,
+    category: Optional[str],
+    backup: bool
+):
+    """
+    Migrate documents to Universal Documentation System structure.
+
+    This command migrates documents from root-level or legacy paths to the
+    standardized docs/{category}/{document_type}/{filename} structure.
+
+    \b
+    Migration Process:
+    1. Identify documents not following docs/ structure
+    2. Infer category from document_type (or use --category override)
+    3. Construct target path: docs/{category}/{document_type}/{filename}
+    4. Create backups (if --backup enabled)
+    5. Move physical files
+    6. Validate checksums (SHA-256)
+    7. Update database records atomically
+    8. On error: Rollback and restore backups
+
+    \b
+    Category Inference:
+      planning       - requirements, user stories, business analysis
+      architecture   - design, ADRs, technical specs
+      guides         - user guides, API docs, troubleshooting
+      testing        - test plans, quality gates
+      communication  - status reports, meeting notes (default)
+
+    \b
+    Examples:
+      # Preview migration plan
+      apm document migrate-to-structure --dry-run
+
+      # Execute migration with backups
+      apm document migrate-to-structure --execute --backup
+
+      # Override category for all documents
+      apm document migrate-to-structure --execute --category=archive
+
+      # Execute without backups (USE WITH CAUTION)
+      apm document migrate-to-structure --execute --no-backup
+
+    \b
+    Safety Features:
+      • Transaction safety (atomic database updates)
+      • Backup mode (copy files before move)
+      • Checksum validation (SHA-256)
+      • Dry-run mode (preview changes)
+      • Confirmation prompt (before --execute)
+      • Automatic rollback (on any error)
+    """
+    console = Console()
+
+    # Get project context
+    project_root = ensure_project_root(ctx)
+    db_service = get_database_service(project_root)
+
+    # Validate flags
+    if not dry_run and not execute:
+        console.print("[red]Error: Must specify either --dry-run or --execute[/red]")
+        console.print("Use --dry-run to preview changes, or --execute to perform migration.")
+        ctx.exit(1)
+
+    if dry_run and execute:
+        console.print("[yellow]Warning: Both --dry-run and --execute specified. Using --dry-run (safe mode).[/yellow]")
+        execute = False
+
+    # Get all documents directly from database (bypass model validation)
+    # This is necessary because legacy documents may not conform to current validation rules
+    import sqlite3
+    all_docs_raw = []
+    with db_service.connect() as conn:
+        conn.row_factory = sqlite3.Row
+        cursor = conn.execute("SELECT * FROM document_references")
+        all_docs_raw = [dict(row) for row in cursor.fetchall()]
+
+    # Filter documents needing migration
+    # Include both:
+    # 1. Documents not starting with 'docs/'
+    # 2. Documents in 'docs/' but not following 4-part structure
+    docs_to_migrate_raw = []
+    for doc_data in all_docs_raw:
+        file_path = doc_data['file_path']
+        parts = file_path.split('/')
+
+        # Needs migration if:
+        # - Not starting with 'docs/' OR
+        # - Has fewer than 4 parts (docs/category/type/filename)
+        if not file_path.startswith('docs/') or len(parts) < 4:
+            docs_to_migrate_raw.append(doc_data)
+
+    if not docs_to_migrate_raw:
+        console.print("[green]✓ No documents need migration. All documents follow docs/ structure.[/green]")
+        return
+
+    # Display analysis header
+    console.print()
+    console.print(Panel(
+        f"Document Migration Analysis\n\n"
+        f"Found {len(docs_to_migrate_raw)} document(s) requiring migration",
+        style="bold blue"
+    ))
+    console.print()
+
+    # Build migration plan
+    migration_plan: List[Tuple[dict, str, str, Optional[DocumentType]]] = []
+    category_counts: Dict[str, int] = {}
+    total_size = 0
+
+    for doc_data in docs_to_migrate_raw:
+        # Parse document_type enum from database
+        doc_type = None
+        if doc_data.get('document_type'):
+            try:
+                doc_type = DocumentType(doc_data['document_type'])
+            except ValueError:
+                pass  # Invalid enum value, use None
+
+        inferred_category = infer_category(doc_type, category)
+        filename = Path(doc_data['file_path']).name
+        target_path = construct_target_path(filename, inferred_category, doc_type)
+
+        migration_plan.append((doc_data, inferred_category, target_path, doc_type))
+
+        # Track statistics
+        category_counts[inferred_category] = category_counts.get(inferred_category, 0) + 1
+        if doc_data.get('file_size_bytes'):
+            total_size += doc_data['file_size_bytes']
+
+    # Display migration plan
+    table = Table(show_header=True, header_style="bold cyan", title="Migration Plan")
+    table.add_column("Status", style="yellow", width=3)
+    table.add_column("Current Path", style="white", no_wrap=False)
+    table.add_column("Target Path", style="green", no_wrap=False)
+    table.add_column("Category", style="cyan", width=20)
+
+    for doc_data, inferred_category, target_path, doc_type in migration_plan:
+        type_str = doc_type.value if doc_type else 'unknown'
+        table.add_row(
+            "→",
+            doc_data['file_path'],
+            target_path,
+            f"{inferred_category} (from {type_str})"
+        )
+
+    console.print(table)
+    console.print()
+
+    # Display summary
+    console.print(Panel(
+        f"[bold]Summary[/bold]\n\n"
+        f"Total documents: {len(docs_to_migrate_raw)}\n"
+        f"Categories: {', '.join(f'{cat} ({count})' for cat, count in sorted(category_counts.items()))}\n"
+        f"Estimated disk space: {total_size / (1024 * 1024):.2f} MB\n"
+        f"Backup mode: {'enabled' if backup else 'disabled'}",
+        style="dim"
+    ))
+    console.print()
+
+    # Dry-run mode: exit here
+    if dry_run:
+        console.print("[yellow]--dry-run mode: No changes made[/yellow]")
+        console.print("Use --execute to perform migration")
+        return
+
+    # Execute mode: confirm with user
+    if execute:
+        console.print("[bold yellow]⚠️  WARNING: This will move physical files and update database records.[/bold yellow]")
+        console.print()
+
+        if not click.confirm("Continue with migration?", default=False):
+            console.print("[yellow]Migration cancelled by user[/yellow]")
+            return
+
+        console.print()
+        console.print("[bold]Starting migration...[/bold]")
+        console.print()
+
+        # Execute migration
+        success_count = 0
+        failure_count = 0
+
+        for doc_data, inferred_category, target_path, doc_type in migration_plan:
+            console.print(f"[cyan]Migrating:[/cyan] {doc_data['file_path']}")
+
+            # Convert raw doc_data to DocumentReference for migration
+            # We need to bypass validation, so we'll work directly with the database
+            success, message = migrate_document_raw(
+                doc_data,
+                doc_type,
+                inferred_category,
+                target_path,
+                project_root,
+                db_service,
+                backup,
+                console
+            )
+
+            if success:
+                console.print(f"  [green]✓ {message}[/green]")
+                success_count += 1
+            else:
+                console.print(f"  [red]✗ {message}[/red]")
+                failure_count += 1
+
+            console.print()
+
+        # Final summary
+        console.print()
+        console.print(Panel(
+            f"[bold]Migration Complete[/bold]\n\n"
+            f"✓ Successful: {success_count}\n"
+            f"✗ Failed: {failure_count}\n"
+            f"Total processed: {len(migration_plan)}",
+            style="green" if failure_count == 0 else "yellow"
+        ))
+
+        if backup:
+            backup_dir = project_root / ".aipm" / "backups" / "document-migration"
+            console.print()
+            console.print(f"[dim]Backups stored in: {backup_dir.relative_to(project_root)}[/dim]")

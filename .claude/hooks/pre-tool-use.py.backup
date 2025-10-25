@@ -1,0 +1,267 @@
+#!/usr/bin/env python3
+"""
+Claude Code PreToolUse Hook - Python Version
+
+Called before each tool execution. Can inject warnings, validate state,
+or provide context-specific guidance.
+
+Hook Input (JSON):
+{
+    "tool_name": "Bash",
+    "parameters": {...},
+    "session_id": "uuid"
+}
+
+Hook Output (stdout): Injected into Claude's context before tool execution
+"""
+
+import json
+import sys
+from pathlib import Path
+from datetime import datetime
+
+# Add project to path
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+
+
+def read_hook_input() -> dict:
+    """Read JSON hook input from stdin."""
+    try:
+        return json.loads(sys.stdin.read())
+    except json.JSONDecodeError:
+        return {}
+
+
+def is_outside_project_root(command: str) -> bool:
+    """Detect if command targets paths outside project root."""
+    # Explicit dangerous patterns
+    dangerous_patterns = [
+        "/tmp/", "/tmp ", "/private/tmp", "/var/tmp",
+        "~/", "~\\",  # Home directory
+        "../..",  # Parent directory traversal
+    ]
+
+    # Check for absolute paths outside current project
+    # (any path starting with / that's not a flag/option)
+    import re
+    # Match paths like: cd /something, mkdir /other, but not flags like -/--
+    absolute_path_pattern = r'(?:^|\s)(/[a-zA-Z][^\s]*)'
+    matches = re.findall(absolute_path_pattern, command)
+
+    # Filter out common safe patterns (flags, options)
+    for match in matches:
+        if not match.startswith(('/-', '/dev/', '/proc/', '/sys/')):
+            # This looks like an absolute path outside project
+            return True
+
+    # Check explicit dangerous patterns
+    return any(pattern in command for pattern in dangerous_patterns)
+
+
+def check_active_work_items() -> bool:
+    """Check if there are any active work items in database."""
+    try:
+        from agentpm.core.database import DatabaseService
+        from agentpm.core.database.methods import work_items as wi_methods
+        from agentpm.core.database.enums import WorkItemStatus
+
+        db_path = PROJECT_ROOT / ".aipm" / "data" / "aipm.db"
+        if not db_path.exists():
+            return True  # No database = no enforcement
+
+        db = DatabaseService(str(db_path))
+        active = wi_methods.list_work_items(db, status=WorkItemStatus.IN_PROGRESS)
+        review = wi_methods.list_work_items(db, status=WorkItemStatus.REVIEW)
+
+        return len(active) > 0 or len(review) > 0
+    except Exception:
+        return True  # Assume OK if can't check
+
+
+def extract_commit_message(command: str) -> str:
+    """Extract commit message from git commit command."""
+    import re
+    # Match: git commit -m "message" or git commit -m 'message'
+    match = re.search(r'git commit.*-m\s+["\']([^"\']+)["\']', command)
+    if match:
+        return match.group(1)
+    # Try heredoc pattern: git commit -m "$(cat <<'EOF'
+    match = re.search(r'cat\s+<<["\']?EOF["\']?\s*\n(.+?)\n', command, re.DOTALL)
+    if match:
+        return match.group(1)
+    return ""
+
+
+def has_work_item_reference(message: str) -> bool:
+    """Check if commit message has WI-XXX reference."""
+    import re
+    # Match: (WI-27), (WI-0017), feat(WI-30), etc.
+    return bool(re.search(r'WI-\d+', message, re.IGNORECASE))
+
+
+def is_code_creation(command: str) -> bool:
+    """Detect if command creates code files/directories."""
+    # Directory creation in code paths
+    if 'mkdir' in command:
+        code_dirs = ['agentpm/', 'aipm_cli/', 'src/', 'lib/', 'app/']
+        if any(d in command for d in code_dirs):
+            return True
+
+    # File creation with code extensions
+    if any(cmd in command for cmd in ['touch', 'echo >', 'cat >']):
+        code_exts = ['.py', '.js', '.ts', '.java', '.go', '.rb', '.php']
+        if any(ext in command for ext in code_exts):
+            return True
+
+    return False
+
+
+def format_tool_guidance(tool_name: str, parameters: dict) -> tuple[str, int]:
+    """
+    Format guidance for specific tool usage.
+
+    Returns:
+        tuple[str, int]: (guidance_text, exit_code)
+            - exit_code 0: Silent (informational)
+            - exit_code 1: Warning (show but allow)
+            - exit_code 2: Error (show and block)
+    """
+    blocking_issues = []  # Exit 2 - block tool
+    warning_issues = []   # Exit 1 - warn but allow
+    info_messages = []    # Exit 0 - silent guidance
+
+    # Bash tool guidance
+    if tool_name == "Bash":
+        command = parameters.get("command", "")
+
+        # BLOCKING: Security boundary check - operations outside project root
+        if is_outside_project_root(command):
+            blocking_issues.append("\n🚨 **Security Boundary Violation (BLOCKING)**")
+            blocking_issues.append(f"Command targets path outside project root: `{command[:80]}`")
+            blocking_issues.append("")
+            blocking_issues.append("**AIPM Security Rule GR-007**: All operations stay within project root")
+            blocking_issues.append("- Testing: Use `testing/` directory (version controlled)")
+            blocking_issues.append("- Temporary files: Use `.aipm/temp/` (gitignored)")
+            blocking_issues.append("- Manual testing: Create test projects in `testing/test-*`")
+            blocking_issues.append("")
+            blocking_issues.append("**Why**: Operations outside project root:")
+            blocking_issues.append("- Not version controlled (lost on system events)")
+            blocking_issues.append("- Not reproducible (other developers can't run)")
+            blocking_issues.append("- Security risk (potential information leakage)")
+            blocking_issues.append("")
+            blocking_issues.append("**Fix**: Use project-relative paths instead")
+            blocking_issues.append("**This tool call will be BLOCKED**\n")
+
+        # BLOCKING: Code creation without work item
+        if is_code_creation(command):
+            if not check_active_work_items():
+                blocking_issues.append("\n🚨 **AIPM Workflow Violation (BLOCKING)**")
+                blocking_issues.append(f"Command: `{command[:80]}`")
+                blocking_issues.append("Issue: Creating code without active work item")
+                blocking_issues.append("")
+                blocking_issues.append("**AIPM Rule GR-001**: All development requires work item tracking")
+                blocking_issues.append("- Current state: No work items in_progress")
+                blocking_issues.append("- Required: Create work item → create task → start task")
+                blocking_issues.append("")
+                blocking_issues.append("**Fix**:")
+                blocking_issues.append("  apm work-item create \"Your feature\" --type=...")
+                blocking_issues.append("  apm task create \"Your task\" --work-item-id=XX --type=...")
+                blocking_issues.append("  apm task start XX")
+                blocking_issues.append("**This tool call will be BLOCKED**\n")
+
+        # WARNING: Git commit without WI reference
+        if 'git commit' in command:
+            commit_msg = extract_commit_message(command)
+            if commit_msg and not has_work_item_reference(commit_msg):
+                warning_issues.append("\n⚠️ **Commit Without Work Item Reference**")
+                warning_issues.append(f"Message: `{commit_msg[:80]}`")
+                warning_issues.append("Issue: Missing WI-XXX reference in commit message")
+                warning_issues.append("")
+                warning_issues.append("**AIPM Standard**: Commits must reference work items")
+                warning_issues.append("- Format: feat(WI-30): Your commit message")
+                warning_issues.append("- Enables traceability: commit → task → work item → goal")
+                warning_issues.append("")
+                warning_issues.append("**Fix**:")
+                warning_issues.append("  Update commit message to include (WI-XXX)")
+                warning_issues.append("  Example: feat(WI-30): Add hooks infrastructure")
+                warning_issues.append("**Proceeding with warning**\n")
+
+        # WARNING: Dangerous patterns
+        if any(pattern in command for pattern in ["rm -rf", "sudo", "DROP TABLE"]):
+            warning_issues.append("\n⚠️ **Safety Check**: Destructive command detected")
+            warning_issues.append(f"Command: `{command[:100]}`")
+            warning_issues.append("Please verify this is intentional.")
+            warning_issues.append("**Proceeding with warning**\n")
+
+        # INFO: AIPM workflow reminders
+        if "apm task" in command or "apm work-item" in command:
+            info_messages.append("\n💡 **AIPM Workflow Reminder**:")
+            info_messages.append("- Tasks must be validated → accepted → started")
+            info_messages.append("- Work items must be in_progress before tasks can start")
+            info_messages.append("- Use workflow commands (don't edit status manually)\n")
+
+    # Edit/Write tool guidance
+    elif tool_name in ["Edit", "Write"]:
+        file_path = parameters.get("file_path", "")
+
+        # INFO: Pattern reminders
+        if "agentpm/core/database" in file_path:
+            info_messages.append("\n💡 **Database Pattern Reminder**:")
+            info_messages.append("Follow three-layer pattern: Models → Adapters → Methods")
+            info_messages.append("No Dict[str, Any] in public APIs - use Pydantic models\n")
+
+        # INFO: Testing reminders
+        if "agentpm/core" in file_path and "test" not in file_path:
+            info_messages.append("\n💡 **Testing Reminder**:")
+            info_messages.append("Core modules require ≥90% test coverage (CI-004)")
+            info_messages.append("Write tests-BAK in tests-BAK/core/ before marking complete\n")
+
+    # Determine exit code and combine messages
+    if blocking_issues:
+        # Exit 2: Block tool call
+        return "\n".join(blocking_issues), 2
+    elif warning_issues:
+        # Exit 1: Show warning but allow
+        return "\n".join(warning_issues), 1
+    elif info_messages:
+        # Exit 0: Silent informational (not shown by Claude Code)
+        return "\n".join(info_messages), 0
+    else:
+        # Exit 0: No guidance needed
+        return "", 0
+
+
+def main():
+    """Main hook entry point."""
+    try:
+        # Read hook input
+        hook_data = read_hook_input()
+        tool_name = hook_data.get('tool_name', 'unknown')
+        parameters = hook_data.get('parameters', {})
+        session_id = hook_data.get('session_id', 'unknown')
+
+        # Log to stderr (not injected into context)
+        print(f"🪝 PreToolUse: tool={tool_name}, session={session_id}", file=sys.stderr)
+
+        # Generate contextual guidance (returns tuple: message, exit_code)
+        guidance, exit_code = format_tool_guidance(tool_name, parameters)
+
+        if guidance:
+            # Output guidance to stderr (so it's shown to model/user based on exit code)
+            print(guidance, file=sys.stderr)
+
+        # Exit with appropriate code:
+        # 0 = silent success (info messages not shown)
+        # 1 = warning (show stderr, allow tool)
+        # 2 = error (show stderr, BLOCK tool)
+        sys.exit(exit_code)
+
+    except Exception as e:
+        print(f"❌ PreToolUse hook error: {e}", file=sys.stderr)
+        # Exit 1 = show error but don't block (graceful degradation)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,79 @@
+# Django Project Cursor Provider Configuration
+#
+# Optimized settings for Django projects
+
+# Rules Configuration
+rules_enabled: true
+rules_to_install:
+  - aipm-master
+  - python-implementation
+  - testing-standards
+  - cli-development
+  - database-patterns
+  - documentation-quality
+
+# Tech Stack
+tech_stack:
+  - Python
+  - Django
+  - PostgreSQL
+
+# Memory Sync Configuration
+memory_sync_enabled: true
+memory_sync_direction: to_cursor
+memory_sync_interval_hours: 2
+
+# Custom Modes Configuration
+modes_enabled: true
+modes_to_install:
+  - aipm-discovery
+  - aipm-planning
+  - aipm-implementation
+  - aipm-review
+  - aipm-operations
+  - aipm-evolution
+
+# Indexing Configuration
+indexing_enabled: true
+exclude_patterns:
+  - ".aipm/"
+  - "htmlcov/"
+  - ".pytest_cache/"
+  - "**/__pycache__/"
+  - "*.pyc"
+  - ".git/"
+  - "node_modules/"
+  - "venv/"
+  - "staticfiles/"
+  - "media/"
+  - "*.db"
+  - "*.sqlite3"
+  - "migrations/"
+
+# Guardrails Configuration
+guardrails_enabled: true
+allowlists:
+  django_commands:
+    - pattern: "^python manage.py check$"
+      safety: safe_auto
+      auto_run: true
+      description: "Django system check"
+    - pattern: "^python manage.py migrate --plan$"
+      safety: safe_auto
+      auto_run: true
+      description: "Show migration plan"
+
+  apm_commands:
+    - pattern: "^apm (status|work-item list|task list).*$"
+      safety: safe_auto
+      auto_run: true
+      description: "Read-only commands"
+
+  testing:
+    - pattern: "^pytest.*$"
+      safety: safe_confirm
+      auto_run: false
+      description: "Run tests"
+
+# Hooks Configuration
+hooks_enabled: false

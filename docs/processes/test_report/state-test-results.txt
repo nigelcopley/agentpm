@@ -1,0 +1,388 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.3, pytest-8.3.5, pluggy-1.5.0 -- /Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12
+cachedir: .pytest_cache
+rootdir: /Users/nigelcopley/.project_manager/aipm-v2
+configfile: pyproject.toml
+plugins: asyncio-1.2.0, anyio-4.10.0, django-4.11.1, base-url-2.1.0, playwright-0.7.1, cov-7.0.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collecting ... collected 9 items
+
+tests/docs/test_state_machines.py::TestTaskStatusConsistency::test_task_status_states_match_enum FAILED [ 11%]
+tests/docs/test_state_machines.py::TestTaskStatusConsistency::test_task_status_has_all_required_states PASSED [ 22%]
+tests/docs/test_state_machines.py::TestTaskStatusConsistency::test_task_status_transitions_are_documented PASSED [ 33%]
+tests/docs/test_state_machines.py::TestWorkItemStatusConsistency::test_work_item_status_states_match_enum FAILED [ 44%]
+tests/docs/test_state_machines.py::TestWorkItemStatusConsistency::test_work_item_status_has_all_required_states PASSED [ 55%]
+tests/docs/test_state_machines.py::TestProjectStatusConsistency::test_project_status_states_match_enum PASSED [ 66%]
+tests/docs/test_state_machines.py::TestProjectStatusConsistency::test_project_status_has_simple_lifecycle PASSED [ 77%]
+tests/docs/test_state_machines.py::TestStateDiagramAccuracy::test_generated_diagrams_exist PASSED [ 88%]
+tests/docs/test_state_machines.py::TestStateDiagramAccuracy::test_generated_diagrams_match_enums FAILED [100%]/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/coverage/control.py:945: CoverageWarning: No data was collected. (no-data-collected)
+  self._warn("No data was collected.", slug="no-data-collected")
+
+
+=================================== FAILURES ===================================
+_________ TestTaskStatusConsistency.test_task_status_states_match_enum _________
+
+self = <test_state_machines.TestTaskStatusConsistency object at 0x101657d10>
+enum_file = PosixPath('/Users/nigelcopley/.project_manager/aipm-v2/agentpm/core/database/enums/status.py')
+markdown_files = [PosixPath('/Users/nigelcopley/.project_manager/aipm-v2/docs/DOCUMENTATION-CONFLICTS-AUDIT-2025-10-18.md'), PosixPath(...IST.md'), PosixPath('/Users/nigelcopley/.project_manager/aipm-v2/docs/DOCUMENTATION-FIXES-APPLIED-2025-10-18.md'), ...]
+
+    def test_task_status_states_match_enum(self, enum_file: Path, markdown_files: List[Path]):
+        """
+        Test that TaskStatus states in docs match enum definition.
+    
+        Args:
+            enum_file: Path to status.py
+            markdown_files: List of markdown files
+        """
+        # Extract states from enum
+        enum_states = extract_enum_states(enum_file, 'TaskStatus')
+        assert len(enum_states) > 0, "Failed to extract TaskStatus states from enum"
+    
+        # Check docs for invalid state references
+        errors = []
+        for md_file in markdown_files:
+            content = md_file.read_text()
+    
+            # Only check files that mention TaskStatus
+            if 'TaskStatus' not in content and 'task status' not in content.lower():
+                continue
+    
+            doc_states = extract_state_references_from_markdown(content, 'TaskStatus')
+    
+            # Find states mentioned in docs but not in enum
+            invalid_states = doc_states - enum_states
+            if invalid_states:
+                errors.append(
+                    f"{md_file.relative_to(md_file.parent.parent.parent)}: "
+                    f"References invalid TaskStatus states: {invalid_states}"
+                )
+    
+        if errors:
+>           pytest.fail(
+                "Found TaskStatus documentation drift:\n" +
+                "\n".join(errors) +
+                f"\n\nValid states: {sorted(enum_states)}"
+            )
+E           Failed: Found TaskStatus documentation drift:
+E           docs/specifications/6W-QUESTIONS-ANSWERED.md: References invalid TaskStatus states: {'completed'}
+E           docs/analysis/event-driven-architecture-analysis.md: References invalid TaskStatus states: {'completed'}
+E           docs/external-research/AIPM-V2-COMPLETE-SYSTEM-BREAKDOWN.md: References invalid TaskStatus states: {'initiated', 'on_hold', 'completed'}
+E           docs/adrs/ADR-010-dependency-management-and-scheduling.md: References invalid TaskStatus states: {'completed'}
+E           docs/adrs/ADR-009-event-system-and-integrations.md: References invalid TaskStatus states: {'completed'}
+E           docs/developer-guide/01-architecture-overview.md: References invalid TaskStatus states: {'completed'}
+E           docs/reports/MIGRATION-0018-REFACTOR-SUMMARY.md: References invalid TaskStatus states: {'initiated', 'on_hold', 'completed'}
+E           agents/generic/mini-orchestrator-delegation-audit.md: References invalid TaskStatus states: {'completed'}
+E           architecture/specification/wi-perpetual-reviewer.md: References invalid TaskStatus states: {'completed'}
+E           communication/status_report/wi-115-implementation-complete.md: References invalid TaskStatus states: {'initiated', 'completed'}
+E           
+E           Valid states: [', ".join(cls.choices())', 'active', 'archived', 'blocked', 'cancelled', 'done', 'draft', 'ready', 'review', '{']
+
+tests/docs/test_state_machines.py:187: Failed
+____ TestWorkItemStatusConsistency.test_work_item_status_states_match_enum _____
+
+self = <test_state_machines.TestWorkItemStatusConsistency object at 0x1030a71d0>
+enum_file = PosixPath('/Users/nigelcopley/.project_manager/aipm-v2/agentpm/core/database/enums/status.py')
+markdown_files = [PosixPath('/Users/nigelcopley/.project_manager/aipm-v2/docs/DOCUMENTATION-CONFLICTS-AUDIT-2025-10-18.md'), PosixPath(...IST.md'), PosixPath('/Users/nigelcopley/.project_manager/aipm-v2/docs/DOCUMENTATION-FIXES-APPLIED-2025-10-18.md'), ...]
+
+    def test_work_item_status_states_match_enum(self, enum_file: Path, markdown_files: List[Path]):
+        """
+        Test that WorkItemStatus states in docs match enum definition.
+    
+        Args:
+            enum_file: Path to status.py
+            markdown_files: List of markdown files
+        """
+        enum_states = extract_enum_states(enum_file, 'WorkItemStatus')
+        assert len(enum_states) > 0, "Failed to extract WorkItemStatus states from enum"
+    
+        errors = []
+        for md_file in markdown_files:
+            content = md_file.read_text()
+    
+            # Only check files that mention WorkItemStatus
+            if 'WorkItemStatus' not in content and 'work item status' not in content.lower():
+                continue
+    
+            doc_states = extract_state_references_from_markdown(content, 'WorkItemStatus')
+    
+            invalid_states = doc_states - enum_states
+            if invalid_states:
+                errors.append(
+                    f"{md_file.relative_to(md_file.parent.parent.parent)}: "
+                    f"References invalid WorkItemStatus states: {invalid_states}"
+                )
+    
+        if errors:
+>           pytest.fail(
+                "Found WorkItemStatus documentation drift:\n" +
+                "\n".join(errors) +
+                f"\n\nValid states: {sorted(enum_states)}"
+            )
+E           Failed: Found WorkItemStatus documentation drift:
+E           docs/design/testing-strategy.md: References invalid WorkItemStatus states: {'completed'}
+E           docs/analysis/work-item-lifecycle-tracking-analysis.md: References invalid WorkItemStatus states: {'completed'}
+E           docs/external-research/AIPM-V2-COMPLETE-SYSTEM-BREAKDOWN.md: References invalid WorkItemStatus states: {'initiated', 'on_hold', 'completed'}
+E           docs/developer-guide/01-architecture-overview.md: References invalid WorkItemStatus states: {'completed'}
+E           docs/developer-guide/02-three-layer-pattern.md: References invalid WorkItemStatus states: {'completed'}
+E           docs/developer-guide/03-contributing.md: References invalid WorkItemStatus states: {'completed'}
+E           docs/reports/MIGRATION-0018-REFACTOR-SUMMARY.md: References invalid WorkItemStatus states: {'initiated', 'on_hold', 'completed'}
+E           docs/reports/WORKFLOW-ANALYSIS.md: References invalid WorkItemStatus states: {'completed'}
+E           docs/reports/phase-status-coupling-analysis.md: References invalid WorkItemStatus states: {'completed'}
+E           analysis/system-review/WEEK-1-IMPLEMENTATION-PLAN.md: References invalid WorkItemStatus states: {'completed'}
+E           architecture/specification/TASK-263-265-354-COMPLETION-REPORT.md: References invalid WorkItemStatus states: {'completed'}
+E           architecture/specification/wi-perpetual-reviewer.md: References invalid WorkItemStatus states: {'completed'}
+E           communication/status_report/wi-115-implementation-complete.md: References invalid WorkItemStatus states: {'initiated', 'completed'}
+E           work-items/wi-77/task-context-delivery-design.md: References invalid WorkItemStatus states: {'completed'}
+E           
+E           Valid states: [', ".join(cls.choices())', 'active', 'archived', 'blocked', 'cancelled', 'done', 'draft', 'ready', 'review', '{']
+
+tests/docs/test_state_machines.py:260: Failed
+_________ TestStateDiagramAccuracy.test_generated_diagrams_match_enums _________
+
+self = <test_state_machines.TestStateDiagramAccuracy object at 0x103100740>
+project_root = PosixPath('/Users/nigelcopley/.project_manager/aipm-v2')
+enum_file = PosixPath('/Users/nigelcopley/.project_manager/aipm-v2/agentpm/core/database/enums/status.py')
+
+    def test_generated_diagrams_match_enums(self, project_root: Path, enum_file: Path):
+        """
+        Test that generated diagrams accurately reflect enum states.
+    
+        Args:
+            project_root: Project root directory
+            enum_file: Path to status.py
+        """
+        diagram_dir = project_root / "docs" / "reference" / "state-diagrams"
+    
+        test_cases = [
+            ("taskstatus-diagram.md", "TaskStatus"),
+            ("workitemstatus-diagram.md", "WorkItemStatus"),
+            ("projectstatus-diagram.md", "ProjectStatus"),
+        ]
+    
+        errors = []
+        for diagram_file, enum_name in test_cases:
+            diagram_path = diagram_dir / diagram_file
+    
+            if not diagram_path.exists():
+                continue
+    
+            # Extract enum states
+            enum_states = extract_enum_states(enum_file, enum_name)
+    
+            # Extract states from diagram
+            diagram_content = diagram_path.read_text()
+            diagram_states = extract_state_references_from_markdown(diagram_content, enum_name)
+    
+            # Check for missing states in diagram
+            missing = enum_states - diagram_states
+            if missing:
+                errors.append(
+                    f"{diagram_file}: Missing states from enum: {missing}"
+                )
+    
+            # Check for extra states in diagram
+            extra = diagram_states - enum_states
+            if extra:
+                errors.append(
+                    f"{diagram_file}: Contains invalid states: {extra}"
+                )
+    
+        if errors:
+>           pytest.fail(
+                "State diagram drift detected:\n" +
+                "\n".join(errors) +
+                "\n\nRun: python scripts/poc_state_diagrams.py to regenerate"
+            )
+E           Failed: State diagram drift detected:
+E           taskstatus-diagram.md: Missing states from enum: {'{', ', ".join(cls.choices())'}
+E           workitemstatus-diagram.md: Missing states from enum: {'{', ', ".join(cls.choices())'}
+E           projectstatus-diagram.md: Missing states from enum: {', ".join(cls.choices())'}
+E           
+E           Run: python scripts/poc_state_diagrams.py to regenerate
+
+tests/docs/test_state_machines.py:406: Failed
+================================ tests coverage ================================
+_______________ coverage: platform darwin, python 3.12.3-final-0 _______________
+
+Name                                                               Stmts   Miss  Cover   Missing
+------------------------------------------------------------------------------------------------
+agentpm/cli/__init__.py                                                4      4     0%   20-25
+agentpm/cli/commands/__init__.py                                       0      0   100%
+agentpm/cli/commands/agents/__init__.py                               18     18     0%   16-81
+agentpm/cli/commands/agents/generate.py                              124    124     0%   8-261
+agentpm/cli/commands/agents/list.py                                   72     72     0%   5-137
+agentpm/cli/commands/agents/load.py                                   87     87     0%   13-237
+agentpm/cli/commands/agents/roles.py                                  18     18     0%   5-53
+agentpm/cli/commands/agents/show.py                                   94     94     0%   5-150
+agentpm/cli/commands/agents/types.py                                  61     61     0%   7-167
+agentpm/cli/commands/agents/validate.py                              100    100     0%   5-174
+agentpm/cli/commands/claude_code.py                                  247    247     0%   9-493
+agentpm/cli/commands/commands.py                                      73     73     0%   5-138
+agentpm/cli/commands/context/__init__.py                              14     14     0%   13-52
+agentpm/cli/commands/context/refresh.py                               78     78     0%   5-200
+agentpm/cli/commands/context/rich.py                                 207    207     0%   5-503
+agentpm/cli/commands/context/show.py                                 269    269     0%   5-517
+agentpm/cli/commands/context/status.py                                 8      8     0%   5-32
+agentpm/cli/commands/context/wizard.py                               189    189     0%   10-603
+agentpm/cli/commands/dependencies/__init__.py                          6      6     0%   19-26
+agentpm/cli/commands/dependencies/add_blocker.py                      52     52     0%   5-113
+agentpm/cli/commands/dependencies/add_dependency.py                   44     44     0%   5-101
+agentpm/cli/commands/dependencies/list_blockers.py                    50     50     0%   5-112
+agentpm/cli/commands/dependencies/list_dependencies.py                50     50     0%   5-120
+agentpm/cli/commands/dependencies/resolve_blocker.py                  42     42     0%   5-84
+agentpm/cli/commands/document/__init__.py                             26     26     0%   8-101
+agentpm/cli/commands/document/add.py                                 172    172     0%   5-417
+agentpm/cli/commands/document/delete.py                               81     81     0%   5-154
+agentpm/cli/commands/document/list.py                                 88     88     0%   5-226
+agentpm/cli/commands/document/migrate.py                             172    172     0%   8-475
+agentpm/cli/commands/document/show.py                                 93     93     0%   5-186
+agentpm/cli/commands/document/types.py                               117    117     0%   7-442
+agentpm/cli/commands/document/update.py                              105    105     0%   5-206
+agentpm/cli/commands/hooks.py                                        160    160     0%   7-282
+agentpm/cli/commands/idea/__init__.py                                 24     24     0%   18-73
+agentpm/cli/commands/idea/context.py                                  76     76     0%   5-126
+agentpm/cli/commands/idea/convert.py                                  76     76     0%   5-181
+agentpm/cli/commands/idea/create.py                                   36     36     0%   5-114
+agentpm/cli/commands/idea/list.py                                     56     56     0%   5-156
+agentpm/cli/commands/idea/next.py                                     55     55     0%   8-110
+agentpm/cli/commands/idea/reject.py                                   27     27     0%   5-54
+agentpm/cli/commands/idea/show.py                                     86     86     0%   5-146
+agentpm/cli/commands/idea/transition.py                               47     47     0%   5-100
+agentpm/cli/commands/idea/update.py                                   66     66     0%   5-142
+agentpm/cli/commands/idea/vote.py                                     32     32     0%   5-75
+agentpm/cli/commands/init.py                                         209    209     0%   10-490
+agentpm/cli/commands/migrate.py                                       49     49     0%   5-86
+agentpm/cli/commands/migrate_v1.py                                   402    402     0%   20-1007
+agentpm/cli/commands/principle_check.py                              113    113     0%   7-243
+agentpm/cli/commands/principles.py                                   131    131     0%   7-248
+agentpm/cli/commands/rules/__init__.py                                 9      9     0%   10-25
+agentpm/cli/commands/rules/configure.py                              112    112     0%   5-232
+agentpm/cli/commands/rules/create.py                                 195    195     0%   5-454
+agentpm/cli/commands/rules/list.py                                    80     80     0%   5-153
+agentpm/cli/commands/rules/show.py                                    67     67     0%   5-127
+agentpm/cli/commands/search.py                                       171    171     0%   7-409
+agentpm/cli/commands/session/__init__.py                              20     20     0%   8-46
+agentpm/cli/commands/session/add_decision.py                          35     35     0%   5-71
+agentpm/cli/commands/session/add_next_step.py                         31     31     0%   5-59
+agentpm/cli/commands/session/end.py                                   56     56     0%   5-94
+agentpm/cli/commands/session/history.py                              107    107     0%   5-199
+agentpm/cli/commands/session/show.py                                  85     85     0%   5-137
+agentpm/cli/commands/session/start.py                                 68     68     0%   5-140
+agentpm/cli/commands/session/status.py                                54     54     0%   5-91
+agentpm/cli/commands/session/update.py                                50     50     0%   5-87
+agentpm/cli/commands/skills.py                                       190    190     0%   10-364
+agentpm/cli/commands/status.py                                       116    116     0%   13-221
+agentpm/cli/commands/summary.py                                       18     18     0%   7-59
+agentpm/cli/commands/summary/__init__.py                              19     19     0%   11-36
+agentpm/cli/commands/summary/create.py                                87     87     0%   7-245
+agentpm/cli/commands/summary/delete.py                                98     98     0%   7-211
+agentpm/cli/commands/summary/list.py                                  99     99     0%   7-244
+agentpm/cli/commands/summary/search.py                               114    114     0%   7-271
+agentpm/cli/commands/summary/show.py                                  86     86     0%   7-196
+agentpm/cli/commands/summary/stats.py                                149    149     0%   7-286
+agentpm/cli/commands/summary/types.py                                 69     69     0%   7-152
+agentpm/cli/commands/task/__init__.py                                 36     36     0%   17-89
+agentpm/cli/commands/task/accept.py                                   50     50     0%   5-90
+agentpm/cli/commands/task/approve.py                                  81     81     0%   5-130
+agentpm/cli/commands/task/complete.py                                 55     55     0%   5-90
+agentpm/cli/commands/task/create.py                                  107    107     0%   5-258
+agentpm/cli/commands/task/list.py                                     55     55     0%   5-130
+agentpm/cli/commands/task/next.py                                     48     48     0%   8-81
+agentpm/cli/commands/task/request_changes.py                          45     45     0%   5-80
+agentpm/cli/commands/task/show.py                                    277    277     0%   19-468
+agentpm/cli/commands/task/start.py                                    30     30     0%   5-53
+agentpm/cli/commands/task/submit_review.py                            91     91     0%   5-145
+agentpm/cli/commands/task/types.py                                   102    102     0%   7-288
+agentpm/cli/commands/task/update.py                                   93     93     0%   5-137
+agentpm/cli/commands/task/validate.py                                 78     78     0%   5-134
+agentpm/cli/commands/template.py                                      59     59     0%   5-128
+agentpm/cli/commands/testing.py                                      208    208     0%   7-368
+agentpm/cli/commands/work_item/__init__.py                            39     39     0%   13-92
+agentpm/cli/commands/work_item/accept.py                              57     57     0%   5-97
+agentpm/cli/commands/work_item/approve.py                             51     51     0%   5-86
+agentpm/cli/commands/work_item/create.py                             175    175     0%   5-363
+agentpm/cli/commands/work_item/list.py                                45     45     0%   5-107
+agentpm/cli/commands/work_item/next.py                               153    153     0%   19-347
+agentpm/cli/commands/work_item/phase_status.py                        71     71     0%   5-124
+agentpm/cli/commands/work_item/phase_validate.py                      49     49     0%   5-92
+agentpm/cli/commands/work_item/request_changes.py                     41     41     0%   5-71
+agentpm/cli/commands/work_item/show.py                                59     59     0%   5-94
+agentpm/cli/commands/work_item/start.py                               38     38     0%   5-65
+agentpm/cli/commands/work_item/submit_review.py                       50     50     0%   5-85
+agentpm/cli/commands/work_item/summaries/__init__.py                   3      3     0%   7-10
+agentpm/cli/commands/work_item/summaries/add_summary.py               57     57     0%   5-129
+agentpm/cli/commands/work_item/summaries/show_history.py              66     66     0%   5-140
+agentpm/cli/commands/work_item/types.py                              144    144     0%   7-379
+agentpm/cli/commands/work_item/update.py                             148    148     0%   5-214
+agentpm/cli/commands/work_item/validate.py                            76     76     0%   5-131
+agentpm/cli/commands/work_item_dependencies/__init__.py                4      4     0%   17-22
+agentpm/cli/commands/work_item_dependencies/add_dependency.py         44     44     0%   5-101
+agentpm/cli/commands/work_item_dependencies/list_dependencies.py      48     48     0%   5-111
+agentpm/cli/commands/work_item_dependencies/remove_dependency.py      40     40     0%   5-69
+agentpm/cli/formatters/__init__.py                                     4      4     0%   7-39
+agentpm/cli/formatters/errors.py                                      72     72     0%   7-284
+agentpm/cli/formatters/progress.py                                    63     63     0%   8-258
+agentpm/cli/formatters/tables.py                                      76     76     0%   8-243
+agentpm/cli/main.py                                                   41     41     0%   17-188
+agentpm/cli/utils/__init__.py                                          0      0   100%
+agentpm/cli/utils/project.py                                          41     41     0%   8-140
+agentpm/cli/utils/security.py                                         39     39     0%   7-148
+agentpm/cli/utils/services.py                                         20     20     0%   14-123
+agentpm/cli/utils/templates.py                                        72     72     0%   8-154
+agentpm/cli/utils/validation.py                                       74     74     0%   16-266
+agentpm/providers/__init__.py                                         15     15     0%   15-59
+agentpm/providers/anthropic/__init__.py                                7      7     0%   19-36
+agentpm/providers/anthropic/adapter.py                                15     15     0%   3-26
+agentpm/providers/anthropic/claude_code/__init__.py                    9      9     0%   24-33
+agentpm/providers/anthropic/claude_code/checkpointing.py             216    216     0%   10-904
+agentpm/providers/anthropic/claude_code/hooks.py                     140    140     0%   10-655
+agentpm/providers/anthropic/claude_code/memory_tool.py               282    282     0%   10-846
+agentpm/providers/anthropic/claude_code/models.py                    194    194     0%   10-380
+agentpm/providers/anthropic/claude_code/orchestrator.py              196    196     0%   11-519
+agentpm/providers/anthropic/claude_code/plugins.py                   160    160     0%   10-693
+agentpm/providers/anthropic/claude_code/settings.py                  101    101     0%   10-694
+agentpm/providers/anthropic/claude_code/slash_commands.py            188    188     0%   10-1517
+agentpm/providers/anthropic/claude_code/subagents.py                 154    154     0%   10-1074
+agentpm/providers/anthropic/formatter.py                             169    169     0%   3-248
+agentpm/providers/anthropic/skills/__init__.py                         5      5     0%   11-16
+agentpm/providers/anthropic/skills/generator.py                      120    120     0%   11-455
+agentpm/providers/anthropic/skills/models.py                          87     87     0%   10-294
+agentpm/providers/anthropic/skills/registry.py                        43     43     0%   10-145
+agentpm/providers/anthropic/skills/templates.py                        7      7     0%   10-41
+agentpm/providers/base.py                                             56     56     0%   7-157
+agentpm/providers/generators/__init__.py                               3      3     0%   8-16
+agentpm/providers/generators/anthropic/__init__.py                     2      2     0%   7-9
+agentpm/providers/generators/anthropic/claude_code_generator.py       49     49     0%   8-139
+agentpm/providers/generators/base.py                                  78     78     0%   8-254
+agentpm/providers/generators/registry.py                              27     27     0%   8-105
+agentpm/providers/google/__init__.py                                   5      5     0%   3-9
+agentpm/providers/google/adapter.py                                   15     15     0%   3-23
+agentpm/providers/google/formatter.py                                 10     10     0%   3-35
+agentpm/providers/openai/__init__.py                                   5      5     0%   3-9
+agentpm/providers/openai/adapter.py                                   15     15     0%   3-23
+agentpm/providers/openai/formatter.py                                 10     10     0%   3-35
+agentpm/templates/__init__.py                                          0      0   100%
+agentpm/templates/json/__init__.py                                     0      0   100%
+agentpm/utils/__init__.py                                              3      3     0%   7-10
+agentpm/utils/dependency_graph.py                                    145    145     0%   13-435
+agentpm/utils/ignore_patterns.py                                      76     76     0%   9-284
+agentpm/web/__init__.py                                                1      1     0%   8
+agentpm/web/app.py                                                   324    324     0%   33-667
+agentpm/web/routes/__init__.py                                        10     10     0%   15-25
+agentpm/web/routes/configuration.py                                  267    267     0%   10-786
+agentpm/web/routes/contexts.py                                       198    198     0%   11-500
+agentpm/web/routes/entities.py                                       337    337     0%   11-869
+agentpm/web/routes/ideas.py                                          119    119     0%   11-318
+agentpm/web/routes/main.py                                            98     98     0%   11-272
+agentpm/web/routes/projects.py                                       161    161     0%   11-467
+agentpm/web/routes/research.py                                       172    172     0%   10-410
+agentpm/web/routes/sessions.py                                       214    214     0%   10-467
+agentpm/web/routes/system.py                                         132    132     0%   11-371
+------------------------------------------------------------------------------------------------
+TOTAL                                                              14606  14606     0%
+Coverage HTML written to dir htmlcov
+=========================== short test summary info ============================
+FAILED tests/docs/test_state_machines.py::TestTaskStatusConsistency::test_task_status_states_match_enum
+FAILED tests/docs/test_state_machines.py::TestWorkItemStatusConsistency::test_work_item_status_states_match_enum
+FAILED tests/docs/test_state_machines.py::TestStateDiagramAccuracy::test_generated_diagrams_match_enums
+========================= 3 failed, 6 passed in 1.33s ==========================

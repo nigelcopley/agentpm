@@ -1,0 +1,388 @@
+{% extends "layouts/modern_base.html" %}
+{% from 'macros/breadcrumb.html' import breadcrumb %}
+{% from 'macros/skeleton.html' import skeleton_card %}
+{% from 'macros/quick_actions.html' import quick_actions_icon %}
+{% from 'macros/empty_state.html' import render as empty_state %}
+
+{% block title %}Projects - APM (Agent Project Manager) Dashboard{% endblock %}
+
+{% block content %}
+{# Enhanced breadcrumb with Dashboard → Projects path #}
+{{ breadcrumb([
+    {'label': 'Projects', 'url': None}
+], show_home=True) }}
+<!-- Page Header -->
+<div class="mb-8">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Projects</h1>
+            <p class="mt-2 text-lg text-gray-600">Manage and track your projects and their work items</p>
+        </div>
+        <div class="flex items-center space-x-3">
+            <button class="btn btn-secondary" onclick="exportProjects()">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Export
+            </button>
+            <a href="/projects/create" class="btn btn-primary">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                New Project
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Metrics Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="card">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h12a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1V8z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Total Projects</p>
+                <p class="text-2xl font-bold text-gray-900">{{ metrics.total_projects or 0 }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <div class="w-8 h-8 bg-warning rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Active Projects</p>
+                <p class="text-2xl font-bold text-gray-900">{{ metrics.active_projects or 0 }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <div class="w-8 h-8 bg-success rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Completed</p>
+                <p class="text-2xl font-bold text-gray-900">{{ metrics.completed_projects or 0 }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="flex items-center">
+            <div class="flex-shrink-0">
+                <div class="w-8 h-8 bg-info rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h12a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1V8z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">Total Work Items</p>
+                <p class="text-2xl font-bold text-gray-900">{{ metrics.total_work_items or 0 }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search with Loading State -->
+<div class="card mb-6" id="search-container">
+    <div class="flex items-center justify-between">
+        <div class="flex-1 max-w-md">
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </div>
+                <input
+                    type="text"
+                    class="form-input pl-10"
+                    placeholder="Search projects..."
+                    id="projects-search"
+                    aria-label="Search projects"
+                >
+                {# Loading spinner for search #}
+                <div class="absolute inset-y-0 right-0 pr-3 items-center hidden" id="search-spinner" aria-hidden="true">
+                    <svg class="animate-spin h-5 w-5 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+        <button class="btn btn-sm btn-secondary" onclick="clearSearch()" aria-label="Clear search">
+            Clear
+        </button>
+    </div>
+</div>
+
+{# Skeleton Loading State #}
+<div id="projects-skeleton" class="hidden" aria-busy="true" aria-label="Loading projects">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {{ skeleton_card(count=6, show_avatar=False) }}
+    </div>
+</div>
+
+<!-- Projects Grid -->
+{% if projects %}
+<div id="projects-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for item in projects %}
+    {% set project = item.project %}
+    <div class="project-row card" data-project-id="{{ project.id }}">
+        <div class="card-header">
+            <div class="flex items-center justify-between">
+                <div class="flex-1 min-w-0">
+                    <h3 class="card-title truncate">
+                        <a href="/projects/{{ project.id }}" class="hover:text-primary" aria-label="View {{ project.name }}">
+                            {{ project.name }}
+                        </a>
+                    </h3>
+                    <p class="card-subtitle">#{{ project.id }}</p>
+                </div>
+                <div class="flex items-center space-x-2 flex-shrink-0">
+                    <span class="badge badge-{{ project.status.value|lower|replace('_', '-') }}">
+                        {{ project.status.value.replace('_', ' ').title() }}
+                    </span>
+                    {# Quick Actions Dropdown #}
+                    {{ quick_actions_icon(
+                        actions=[
+                            {'label': 'View Details', 'url': '/projects/' ~ project.id, 'icon': 'eye'},
+                            {'label': 'Edit Project', 'url': '/projects/' ~ project.id ~ '/edit', 'icon': 'pencil'},
+                            {'divider': True},
+                            {'label': 'Export', 'url': '/projects/' ~ project.id ~ '/export', 'icon': 'download'},
+                            {'label': 'Archive', 'url': '/projects/' ~ project.id ~ '/archive', 'icon': 'archive'}
+                        ],
+                        aria_label='Project actions for ' ~ project.name,
+                        align='right'
+                    ) }}
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body">
+            {% if project.description %}
+            <p class="text-sm text-gray-700 mb-4">
+                {{ project.description[:100] }}{% if project.description|length > 100 %}...{% endif %}
+            </p>
+            {% endif %}
+            <!-- Project Stats -->
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="text-center">
+                    <div class="text-lg font-semibold text-primary">{{ item.total_work_items }}</div>
+                    <div class="text-xs text-gray-500">Work Items</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-lg font-semibold text-warning">{{ item.total_tasks }}</div>
+                    <div class="text-xs text-gray-500">Tasks</div>
+                </div>
+            </div>
+
+
+            <!-- Metadata -->
+            <div class="flex flex-wrap gap-2 text-xs text-gray-500">
+                {% if project.created_at %}
+                <span>Created {{ project.created_at.strftime('%Y-%m-%d') }}</span>
+                {% endif %}
+                {% if project.updated_at %}
+                <span>Updated {{ project.updated_at.strftime('%Y-%m-%d') }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card-footer">
+            <div class="flex justify-between items-center">
+                <div class="flex gap-2">
+                    <a href="/projects/{{ project.id }}" class="btn btn-sm btn-secondary">
+                        View Details
+                    </a>
+                    <a href="/projects/{{ project.id }}/work-items" class="btn btn-sm btn-primary">
+                        Work Items
+                    </a>
+                </div>
+                
+                <div class="flex gap-1">
+                    <button class="btn btn-sm btn-secondary" onclick="editProject({{ project.id }})" title="Edit">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
+                    </button>
+                    <button class="btn btn-sm btn-secondary" onclick="duplicateProject({{ project.id }})" title="Duplicate">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+<div class="mt-8 flex items-center justify-between">
+    <div class="text-sm text-gray-700">
+        Showing <span class="visible-count">{{ projects|length }}</span> of {{ metrics.total_projects or 0 }} projects
+    </div>
+    
+    <div class="flex items-center space-x-2">
+        <button class="btn btn-sm btn-secondary" disabled>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            Previous
+        </button>
+        
+        <span class="px-3 py-1 text-sm text-gray-700">Page 1 of 1</span>
+        
+        <button class="btn btn-sm btn-secondary" disabled>
+            Next
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+        </button>
+    </div>
+</div>
+
+{% else %}
+<!-- Empty State -->
+{{ empty_state(
+    icon='folder',
+    heading='No projects found',
+    description='Projects organize work items, tasks, and team members. Create one to structure your development workflow.',
+    cta_text='Create Project',
+    cta_url='/projects/create'
+) }}
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Projects List JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize search
+    const searchInput = document.getElementById('projects-search');
+    const searchSpinner = document.getElementById('search-spinner');
+    const projectsGrid = document.getElementById('projects-grid');
+    const projectsSkeleton = document.getElementById('projects-skeleton');
+
+    // Show skeleton on initial page load (simulate loading)
+    if (projectsSkeleton && projectsGrid) {
+        // Show skeleton briefly on page load for demonstration
+        // In production, this would be controlled by actual data loading state
+        projectsSkeleton.classList.remove('hidden');
+        projectsGrid.style.display = 'none';
+
+        setTimeout(() => {
+            projectsSkeleton.classList.add('hidden');
+            projectsGrid.style.display = '';
+        }, 300); // Brief loading state
+    }
+
+    if (searchInput) {
+        const debouncedSearch = AIPM.utils.debounce((query) => {
+            // Show loading spinner during search
+            if (searchSpinner) {
+                searchSpinner.classList.remove('hidden');
+                searchSpinner.classList.add('flex');
+            }
+
+            // Simulate search delay, then filter
+            setTimeout(() => {
+                filterProjects();
+
+                // Hide loading spinner
+                if (searchSpinner) {
+                    searchSpinner.classList.add('hidden');
+                    searchSpinner.classList.remove('flex');
+                }
+            }, 200);
+        }, 300);
+
+        searchInput.addEventListener('input', (e) => {
+            debouncedSearch(e.target.value);
+        });
+    }
+
+    function filterProjects() {
+        const searchQuery = searchInput ? searchInput.value.toLowerCase() : '';
+
+        const rows = document.querySelectorAll('.project-row');
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            let visible = true;
+
+            // Search filter
+            if (searchQuery) {
+                const text = row.textContent.toLowerCase();
+                if (!text.includes(searchQuery)) {
+                    visible = false;
+                }
+            }
+
+            row.style.display = visible ? '' : 'none';
+            if (visible) visibleCount++;
+        });
+
+        // Update visible count
+        const countElements = document.querySelectorAll('.visible-count');
+        countElements.forEach(el => {
+            el.textContent = visibleCount;
+        });
+    }
+});
+
+function clearSearch() {
+    const searchInput = document.getElementById('projects-search');
+    if (searchInput) {
+        searchInput.value = '';
+    }
+    
+    // Show all rows
+    const rows = document.querySelectorAll('.project-row');
+    rows.forEach(row => {
+        row.style.display = '';
+    });
+    
+    // Update count
+    const countElements = document.querySelectorAll('.visible-count');
+    countElements.forEach(el => {
+        el.textContent = rows.length;
+    });
+}
+
+function editProject(projectId) {
+    window.location.href = `/project/${projectId}/edit`;
+}
+
+function duplicateProject(projectId) {
+    AIPM.utils.showToast('Duplicating project...', 'info');
+    // TODO: Implement API call
+    console.log('Duplicating project:', projectId);
+}
+
+function exportProjects() {
+    AIPM.utils.showToast('Exporting projects...', 'info');
+    // TODO: Implement export functionality
+    console.log('Exporting projects');
+}
+</script>
+{% endblock %}

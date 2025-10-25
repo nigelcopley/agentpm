@@ -1,0 +1,569 @@
+# API Endpoint Inventory - Complete Reference
+
+**Total Endpoints**: 77+  
+**Last Updated**: October 21, 2025  
+**Status**: Production Ready (Read Operations)
+
+---
+
+## Route Categories & Endpoints
+
+### 1. Main Blueprint Routes (6 endpoints)
+
+```
+GET    /                               Dashboard landing page
+GET    /project/<id>                   Project detail view
+GET    /project/<id>/context           6W framework context view
+GET    /test-toasts                    Toast notification demo (dev)
+POST   /test-toast/<type>              HTMX toast trigger (dev)
+GET    /test/interactions              Enhanced interactions demo (dev)
+```
+
+### 2. Projects Blueprint Routes (4 endpoints)
+
+```
+GET    /project/<id>                   Complete project detail (enhanced)
+GET    /project/<id>/settings          Project configuration page
+GET    /project/<id>/analytics         Analytics dashboard
+POST   /project/<id>/update            Update project metadata
+```
+
+### 3. Entities Blueprint Routes (15+ endpoints)
+
+```
+GET    /projects                       List all projects
+GET    /work-items-debug               Debug work items listing
+GET    /work-items                     Work items list (paginated)
+GET    /work-item/<id>                 Work item detail view
+GET    /work-item/<id>/summary         Work item summaries timeline
+GET    /work-item/<id>/dependencies    Work item dependency graph
+GET    /work-item/<id>/context         Work item hierarchical context
+POST   /work-item/<id>/context-refresh Refresh work item context
+GET    /tasks                          Tasks list (filterable)
+GET    /task/<id>                      Task detail view
+GET    /task/<id>/dependencies         Task dependencies
+GET    /task/<id>/blockers             Task blockers list
+POST   /task/<id>/blocker-resolve      Resolve blocker
+```
+
+### 4. Configuration Blueprint Routes (12+ endpoints)
+
+```
+GET    /rules                          Rules list view
+POST   /rules/<id>/toggle              Toggle rule enforcement
+GET    /agents                         Agents dashboard
+POST   /agents/generate                Generate agent definitions
+GET    /agents/<id>                    Agent detail view
+POST   /agents/<id>/toggle             Toggle agent state
+GET    /agents/<id>/tasks              Agent assigned tasks
+POST   /project/<id>/settings          Project settings update
+GET    /project/<id>/settings          Project settings view
+POST   /project/<id>/name-edit         Inline edit project name
+POST   /project/<id>/description-edit  Inline edit description
+POST   /project/<id>/tech-stack-edit   Inline edit tech stack
+```
+
+### 5. System Blueprint Routes (8+ endpoints)
+
+```
+GET    /health                         Health check endpoint
+GET    /system/database                Database metrics dashboard
+GET    /system/workflow                Workflow state machine visualization
+GET    /system/context-files           Context file browser
+GET    /system/context-files/<name>    File preview
+POST   /system/context-files/upload    Upload context file (future)
+POST   /system/export                  Export project data
+GET    /system/export-history          Export history view
+```
+
+### 6. Research Blueprint Routes (9+ endpoints)
+
+```
+GET    /evidence                       Evidence sources list
+GET    /evidence/<id>                  Evidence detail view
+GET    /evidence/<id>/source           Original source link
+GET    /events                         Events timeline view
+GET    /events/<id>                    Event detail view
+GET    /events/search                  Event search
+GET    /documents                      Document references list
+GET    /documents/<id>                 Document detail view
+GET    /documents/<id>/preview         Document preview
+```
+
+### 7. Sessions Blueprint Routes (8+ endpoints)
+
+```
+GET    /sessions                       Sessions list view
+GET    /sessions/<id>                  Session detail view
+GET    /sessions/timeline              Timeline visualization
+POST   /sessions/<id>/export           Export session data
+GET    /sessions/<id>/metadata         Session metadata
+GET    /sessions/<id>/decisions        Session decisions
+GET    /sessions/<id>/git-commits      Git commits during session
+GET    /sessions/<id>/work-items       Work items touched
+```
+
+### 8. Contexts Blueprint Routes (10+ endpoints)
+
+```
+GET    /contexts                       Contexts list view
+GET    /contexts/<id>                  Context detail view
+GET    /contexts/<id>/six-w            6W framework data
+GET    /contexts/<id>/confidence       Confidence scoring
+GET    /work-item/<id>/context         Hierarchical context view
+POST   /contexts/<id>/refresh          Refresh context
+GET    /contexts/<id>/quality          Quality indicators
+GET    /contexts/<id>/freshness        Freshness analysis
+GET    /contexts/search                Search contexts
+POST   /contexts/<id>/update           Update context metadata
+```
+
+### 9. Ideas Blueprint Routes (5+ endpoints)
+
+```
+GET    /ideas                          Ideas list view
+GET    /ideas/<id>                     Idea detail view
+GET    /ideas/<id>/context             Idea context analysis
+POST   /ideas/<id>/convert             Convert idea to work item
+POST   /ideas/<id>/vote                Vote on idea
+```
+
+---
+
+## HTTP Method Distribution
+
+| Method | Count | Purpose |
+|--------|-------|---------|
+| GET | 65+ | Read operations, views |
+| POST | 12+ | Form submissions, HTMX updates |
+| **Total** | **77+** | |
+
+---
+
+## Response Formats
+
+### HTML Responses (Primary)
+- Full page templates (50+)
+- Partial templates for HTMX (15+)
+- JSON for health/metrics endpoints (5+)
+
+### Status Codes
+- `200 OK` - Successful request
+- `204 No Content` - Successful HTMX update (no content needed)
+- `302 Found` - Redirect responses
+- `400 Bad Request` - Validation errors
+- `404 Not Found` - Resource not found
+- `500 Internal Server Error` - Server errors
+
+### Toast Headers (HTMX Integration)
+```
+X-Toast-Message:  <message text>
+X-Toast-Type:     success|error|warning|info
+X-Toast-Duration: <milliseconds>
+```
+
+---
+
+## Query Parameters & Filters
+
+### Pagination
+```
+?page=1          # Page number (default: 1)
+?limit=20        # Items per page (default: 20)
+?sort=created    # Sort field
+?order=desc      # Sort order (asc|desc)
+```
+
+### Filtering
+```
+?status=ACTIVE          # Filter by status
+?type=feature           # Filter by type
+?project_id=1           # Filter by project
+?date_range=30d         # Date range filter
+?search=query           # Search text
+?confidence_min=0.7     # Minimum confidence
+```
+
+### Specific Filters
+```
+# Rules page
+?enforcement=BLOCK      # Filter by enforcement level
+?category=DP            # Filter by category (DP, TES, SEC, WF)
+
+# Tasks page
+?effort_max=4           # Filter by effort hours
+?priority_min=1         # Filter by priority
+
+# Sessions page
+?provider=claude        # Filter by provider
+?date_from=2025-01-01   # Date range start
+?date_to=2025-12-31     # Date range end
+
+# Evidence page
+?source_type=URL        # Filter by source type
+?confidence_min=0.8     # Filter by confidence
+```
+
+---
+
+## Data Models Returned
+
+### Project Views
+```python
+ProjectListItem
+├── project: Project model
+├── total_work_items: int
+├── total_tasks: int
+├── total_agents: int
+└── total_rules: int
+
+ProjectDetailView
+├── project: Project model
+├── work_items: List[WorkItem]
+├── tasks: List[Task]
+├── agents: List[Agent]
+├── rules: List[Rule]
+├── recent_sessions: List[Session]
+├── work_item_status_dist: List[StatusDistribution]
+├── task_status_dist: List[StatusDistribution]
+└── time_boxing_metrics: TimeBoxingMetrics
+```
+
+### Work Item Views
+```python
+WorkItemListItem
+├── work_item: WorkItem model
+├── project_name: str
+├── tasks_count: int
+├── completed_tasks: int
+├── in_progress_tasks: int
+├── blocked_tasks: int
+├── total_effort_hours: float
+├── progress_percent: float
+└── time_boxing: TimeBoxingMetrics
+
+WorkItemDetail
+├── work_item: WorkItem model
+├── project_name: str
+├── tasks: List[TaskSummary]
+├── task_status_dist: List[StatusDistribution]
+├── progress_percent: float
+├── completed_tasks: int
+├── in_progress_tasks: int
+├── blocked_tasks: int
+├── overdue_tasks: int
+├── total_effort_hours: float
+├── time_boxing_compliant: bool
+├── work_item_dependencies: List[WorkItemDependencyInfo]
+├── work_item_dependents: List[WorkItemDependencyInfo]
+└── child_work_items: List[WorkItem]
+```
+
+### Task Views
+```python
+TaskListItem
+├── task: Task model
+├── work_item_name: str
+├── project_name: str
+├── time_boxing_compliant: bool
+
+TaskDetail
+├── task: Task model
+├── work_item_name: str
+├── project_name: str
+├── dependencies: List[DependencyInfo]
+├── dependents: List[DependencyInfo]
+├── blockers: List[BlockerInfo]
+├── time_boxing_compliant: bool
+├── time_box_limit: Optional[float]
+├── time_box_usage_percent: Optional[int]
+└── time_box_overage_hours: Optional[float]
+```
+
+### Context Views
+```python
+ContextView
+├── id: int
+├── entity_type: str
+├── entity_id: int
+├── entity_name: Optional[str]
+├── context_type: str
+├── confidence_score: float
+├── confidence_band: str
+├── freshness_days: int
+├── six_w_completeness: float
+├── plugin_facts_count: int
+└── amalgamations_count: int
+
+ContextDetailView
+├── context: Context model
+├── entity: Optional[Entity]
+├── six_w_data: Dict[str, Any]
+├── confidence_factors: Dict[str, Any]
+├── plugin_facts: List[Dict[str, Any]]
+├── amalgamations: List[Dict[str, Any]]
+├── freshness_info: Dict[str, Any]
+└── quality_indicators: Dict[str, Any]
+```
+
+### Session Views
+```python
+SessionView
+├── id: int
+├── session_id: str
+├── tool_name: str
+├── llm_model: Optional[str]
+├── start_time: datetime
+├── end_time: Optional[datetime]
+├── duration_minutes: Optional[int]
+├── work_items_touched: int
+├── tasks_completed: int
+├── decisions_made: int
+├── git_commits: int
+├── developer_name: Optional[str]
+├── status: str
+├── project_id: Optional[int]
+└── project_name: Optional[str]
+```
+
+### Agent Views
+```python
+AgentInfo
+├── id: int
+├── name: str
+├── role: str
+├── description: Optional[str]
+├── capabilities: Optional[List[str]]
+├── is_active: bool
+├── assigned_task_count: int
+├── active_task_count: int
+├── created_at: Optional[datetime]
+└── updated_at: Optional[datetime]
+
+AgentsDashboard
+├── total_agents: int
+├── active_agents: int
+├── total_assigned_tasks: int
+├── total_active_tasks: int
+├── role_distribution: Dict[str, int]
+└── agents_list: List[AgentInfo]
+```
+
+### Metrics Views
+```python
+TimeBoxingMetrics
+├── total_tasks: int
+├── compliant_tasks: int
+├── non_compliant_tasks: int
+├── compliance_rate: float
+└── violations: List[Dict]
+
+DatabaseMetrics
+├── total_tables: int
+├── total_indexes: int
+├── total_triggers: int
+├── total_projects: int
+├── total_work_items: int
+├── total_tasks: int
+├── total_agents: int
+├── total_rules: int
+├── total_contexts: int
+└── tables: List[TableInfo]
+```
+
+---
+
+## Error Responses
+
+### Not Found (404)
+```json
+{
+  "error": "Project 999 not found",
+  "status_code": 404
+}
+```
+
+### Validation Error (400)
+```json
+{
+  "error": "Invalid status value",
+  "details": "Must be one of: DRAFT, ACTIVE, BLOCKED, DONE"
+}
+```
+
+### Server Error (500)
+```json
+{
+  "error": "Database connection failed",
+  "status_code": 500
+}
+```
+
+---
+
+## Rate Limiting
+
+**Current Status**: None (localhost only)
+
+**Production Recommendation**:
+```python
+# Add to app.py
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"]
+)
+```
+
+---
+
+## CORS Configuration
+
+**Current Status**: Not configured (not needed for localhost)
+
+**Production Recommendation** (if separate frontend):
+```python
+from flask_cors import CORS
+
+CORS(app, resources={
+    r"/api/*": {"origins": ["https://yourdomain.com"]},
+    r"/health": {"origins": "*"}
+})
+```
+
+---
+
+## Versioning Strategy
+
+**Current Status**: No versioning
+
+**Future Approach** (if needed):
+```
+Option 1: URL Path Versioning
+GET /api/v1/projects
+GET /api/v2/projects
+
+Option 2: Accept Header
+GET /projects
+Accept: application/vnd.aipm.v2+json
+
+Option 3: Media Type Parameter
+GET /projects?version=2
+```
+
+---
+
+## Cache Strategies
+
+**Current Status**: No caching (all real-time)
+
+**Production Optimization**:
+```python
+from flask_caching import Cache
+
+cache = Cache(app, config={'CACHE_TYPE': 'simple'})
+
+@app.route('/projects')
+@cache.cached(timeout=300)  # 5 minutes
+def projects_list():
+    ...
+```
+
+**Recommended Cache Times**:
+- Projects list: 5 minutes
+- Work items: 2 minutes
+- Tasks: 1 minute
+- Context: 30 minutes
+- System metrics: 5 minutes
+
+---
+
+## WebSocket/Real-time Updates
+
+**Current Status**: Not implemented
+
+**Future Enhancement** (for live dashboard):
+```python
+from flask_socketio import SocketIO
+
+socketio = SocketIO(app)
+
+@socketio.on('subscribe_project')
+def on_subscribe(data):
+    # Subscribe to project updates
+    join_room(f"project_{data['id']}")
+```
+
+---
+
+## Monitoring & Observability
+
+### Logging Endpoints
+```
+POST /api/logs              # Send client-side logs
+GET  /system/logs           # View application logs
+POST /system/logs/export    # Export logs
+```
+
+### Performance Endpoints
+```
+GET  /metrics               # Prometheus-compatible metrics
+GET  /performance           # Performance statistics
+GET  /database/stats        # Database statistics
+```
+
+### Health Endpoints
+```
+GET  /health                # Basic health check
+GET  /health/deep           # Deep health check
+GET  /health/dependencies   # Check dependencies
+```
+
+---
+
+## Security Considerations
+
+### CSRF Protection
+- Status: Implemented but disabled (line 383, app.py)
+- Recommendation: Enable for production
+
+### Authentication
+- Status: None (localhost only)
+- Recommendation: Add for external deployment
+
+### Authorization
+- Status: None (all data readable)
+- Recommendation: Add role-based access control
+
+### Input Validation
+- Status: Via Pydantic models ✅
+- All inputs validated before database queries
+
+### SQL Injection Protection
+- Status: Parameterized queries ✅
+- Uses database methods, not raw SQL
+
+---
+
+## API Documentation
+
+### Auto-Generated Docs (Future)
+```
+GET /docs          # Swagger UI
+GET /redoc         # ReDoc documentation
+GET /openapi.json  # OpenAPI specification
+```
+
+### Current Documentation
+- README.md (web/)
+- Docstrings in route handlers
+- This inventory document
+
+---
+
+**Last Updated**: October 21, 2025  
+**Maintained By**: Web Interface Readiness Assessment  
+**Status**: Comprehensive - Ready for Production Review

@@ -1,0 +1,214 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Documents - APM (Agent Project Manager){% endblock %}
+
+{% block content %}
+<!-- Main Header -->
+<div class="bg-gradient-to-br from-slate-500 via-gray-500 to-zinc-500 text-white">
+    <div class="px-6 py-8">
+        <div class="flex justify-between items-start">
+            <div>
+                <h1 class="text-4xl font-bold mb-3">Document Management</h1>
+                <p class="text-white/90 text-lg">Organise, track, and manage your project documents and files</p>
+                <div class="mt-4 flex items-center space-x-6 text-sm">
+                    <div class="flex items-center">
+                        <i class="bi bi-file-earmark-text mr-2"></i>
+                        <span>{{ total_documents }} Total Documents</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="bi bi-clock mr-2"></i>
+                        <span>{{ recent_documents }} Recent (7 days)</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="bi bi-tags mr-2"></i>
+                        <span>{{ doc_types|length }} Types</span>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white/20 backdrop-blur-sm p-4 rounded-2xl">
+                <i class="bi bi-file-earmark-text text-4xl"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters Bar -->
+<div class="bg-white border-b border-gray-200 py-4">
+    <div class="px-6">
+        <form method="GET" class="flex flex-col lg:flex-row gap-4 items-start lg:items-center" id="filterForm">
+            <!-- Search Bar -->
+            <div class="relative flex-1 min-w-0">
+                <input type="text" name="search" placeholder="Search documents..." 
+                       value="{{ search_query or '' }}"
+                       class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all"
+                       id="searchInput">
+                <i class="bi bi-search absolute left-3 top-2.5 text-gray-400"></i>
+                {% if search_query %}
+                <button type="button" onclick="clearSearch()" class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 transition-colors" title="Clear search">
+                    <i class="bi bi-x-circle"></i>
+                </button>
+                {% endif %}
+            </div>
+
+            <!-- Project Filter -->
+            <div class="min-w-48">
+                <select name="project_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all">
+                    <option value="">All Projects</option>
+                    {% for project in projects %}
+                    <option value="{{ project.id }}" {% if current_project_id == project.id %}selected{% endif %}>
+                        {{ project.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Document Type Filter -->
+            <div class="min-w-48">
+                <select name="document_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all">
+                    <option value="">All Types</option>
+                    {% for doc_type, count in doc_types.items() %}
+                    <option value="{{ doc_type }}" {% if current_document_type == doc_type %}selected{% endif %}>
+                        {{ doc_type|title }} ({{ count }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Sort -->
+            <div class="min-w-48">
+                <select name="sort" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-all">
+                    <option value="created_desc" {% if current_sort == 'created_desc' %}selected{% endif %}>Newest First</option>
+                    <option value="created_asc" {% if current_sort == 'created_asc' %}selected{% endif %}>Oldest First</option>
+                    <option value="title_asc" {% if current_sort == 'title_asc' %}selected{% endif %}>Title A-Z</option>
+                    <option value="title_desc" {% if current_sort == 'title_desc' %}selected{% endif %}>Title Z-A</option>
+                    <option value="type_asc" {% if current_sort == 'type_asc' %}selected{% endif %}>Type A-Z</option>
+                    <option value="type_desc" {% if current_sort == 'type_desc' %}selected{% endif %}>Type Z-A</option>
+                </select>
+            </div>
+
+            <!-- Filter Actions -->
+            <div class="flex items-center gap-2">
+                <button type="submit" class="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
+                    <i class="bi bi-funnel mr-2"></i>Filter
+                </button>
+                <a href="{{ url_for('documents.documents_list') }}" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors">
+                    <i class="bi bi-arrow-clockwise mr-2"></i>Reset
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="px-6 py-6">
+    <!-- Action Bar -->
+    <div class="flex justify-between items-center mb-6">
+        <div class="flex items-center space-x-4">
+            <h2 class="text-xl font-semibold text-gray-900">Documents</h2>
+            <span class="text-sm text-gray-500">{{ documents|length }} document(s)</span>
+        </div>
+        <div class="flex items-center space-x-3">
+            <a href="{{ url_for('documents.document_search') }}" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                <i class="bi bi-search mr-2"></i>Advanced Search
+            </a>
+            <a href="{{ url_for('documents.document_create') }}" class="px-4 py-2 text-sm font-medium text-white bg-slate-600 rounded-lg hover:bg-slate-700 transition-colors">
+                <i class="bi bi-plus mr-2"></i>Add Document
+            </a>
+        </div>
+    </div>
+
+    <!-- Documents List -->
+    <div class="bg-white rounded-lg shadow-sm border">
+
+        {% if documents %}
+        <div class="divide-y divide-gray-200">
+            {% for document in documents %}
+            <div class="p-6 hover:bg-gray-50 transition-colors">
+                <div class="flex items-start justify-between">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="flex-shrink-0">
+                                <div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
+                                    <i class="bi bi-file-earmark-text text-slate-600 text-lg"></i>
+                                </div>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-1">
+                                    <a href="{{ url_for('documents.document_detail', document_id=document.id) }}" class="hover:text-slate-600 transition-colors">
+                                        {{ document.title or 'Untitled Document' }}
+                                    </a>
+                                </h3>
+                                <div class="flex items-center gap-2">
+                                    {% if document.document_type %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
+                                        {{ document.document_type|title }}
+                                    </span>
+                                    {% endif %}
+                                    <span class="text-sm text-gray-500">ID: {{ document.id }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if document.description %}
+                        <p class="text-gray-600 mb-3 line-clamp-2">{{ document.description }}</p>
+                        {% endif %}
+                        
+                        <div class="flex items-center gap-6 text-sm text-gray-500">
+                            {% if document.file_path %}
+                            <div class="flex items-center">
+                                <i class="bi bi-file-earmark mr-2"></i>
+                                <span class="truncate max-w-xs">{{ document.file_path }}</span>
+                            </div>
+                            {% endif %}
+                            {% if document.created_at %}
+                            <div class="flex items-center">
+                                <i class="bi bi-calendar mr-2"></i>
+                                <span>{{ document.created_at.strftime('%d %b %Y') }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-2 ml-4">
+                        <a href="{{ url_for('documents.document_edit', document_id=document.id) }}" 
+                           class="p-2 text-gray-400 hover:text-slate-600 transition-colors" 
+                           title="Edit Document">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <form method="POST" action="{{ url_for('documents.document_delete', document_id=document.id) }}" 
+                              class="inline" 
+                              onsubmit="return confirm('Are you sure you want to delete this document?')">
+                            <button type="submit" 
+                                    class="p-2 text-gray-400 hover:text-red-600 transition-colors" 
+                                    title="Delete Document">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="p-12 text-center">
+            <div class="text-gray-400 mb-6">
+                <i class="bi bi-file-earmark-text text-6xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">No documents found</h3>
+            <p class="text-gray-500 mb-6">Get started by adding your first document to the system.</p>
+            <a href="{{ url_for('documents.document_create') }}" class="px-6 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 transition-colors">
+                <i class="bi bi-plus mr-2"></i>Add Document
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+</div>
+
+<script>
+function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('filterForm').submit();
+}
+</script>
+{% endblock %}

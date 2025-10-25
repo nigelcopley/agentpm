@@ -1,0 +1,487 @@
+---
+description: Documentation Standards rules for this project
+globs: ['docs/**/*.md', '**/*.md']
+priority: 80
+---
+
+# Documentation Standards
+
+## Database-Driven Documentation System
+
+APM (Agent Project Manager) uses a **database-driven documentation system** with type-based structure and 3-layer path validation.
+
+### Query Current Rules
+
+```bash
+apm rules list --category="Documentation Standards"
+```
+
+---
+
+## 1. Type-Based Document Structure
+
+### Required Path Structure
+
+**All documents MUST follow this structure:**
+
+```
+docs/{category}/{document_type}/{filename}
+```
+
+### 8 Core Categories
+
+| Category | Purpose | Example Document Types | Example Path |
+|----------|---------|------------------------|--------------|
+| `planning` | Requirements, user stories, business analysis | `requirements`, `user_story`, `use_case`, `business_pillars` | `docs/planning/requirements/wi-118-requirements.md` |
+| `architecture` | System design, patterns, technical decisions | `architecture_doc`, `design_doc`, `adr`, `technical_spec` | `docs/architecture/architecture_doc/database-schema.md` |
+| `guides` | User and developer documentation | `user_guide`, `admin_guide`, `developer_guide`, `troubleshooting` | `docs/guides/user_guide/getting-started.md` |
+| `reference` | API docs, specifications, technical reference | `api_doc`, `specification`, `faq` | `docs/reference/api_doc/cli-commands.md` |
+| `processes` | Workflows, procedures, testing | `test_plan`, `test_report`, `validation_report` | `docs/processes/test_plan/integration-tests.md` |
+| `governance` | Policies, standards, quality gates | `quality_gates_spec` | `docs/governance/quality_gates_spec/ci-standards.md` |
+| `operations` | Runbooks, deployment, monitoring | `runbook`, `deployment_guide`, `monitoring_guide`, `incident_report` | `docs/operations/runbook/deployment-checklist.md` |
+| `communication` | Reports, analysis, summaries | `status_report`, `business_pillars`, `market_research`, `stakeholder_analysis` | `docs/communication/status_report/sprint-summary.md` |
+
+### 46 Document Types
+
+```python
+class DocumentType(str, Enum):
+    # Planning documents
+    IDEA = "idea"
+    REQUIREMENTS = "requirements"
+    USER_STORY = "user_story"
+    USE_CASE = "use_case"
+
+    # Architecture documents
+    ARCHITECTURE_DOC = "architecture_doc"
+    DESIGN_DOC = "design_doc"
+    ADR = "adr"
+    TECHNICAL_SPEC = "technical_spec"
+    
+    # Backward compatibility (deprecated)
+    ARCHITECTURE = "architecture"          # DEPRECATED: Use ARCHITECTURE_DOC
+    DESIGN = "design"                      # DEPRECATED: Use DESIGN_DOC
+    TECHNICAL_SPECIFICATION = "technical_specification"  # DEPRECATED: Use TECHNICAL_SPEC
+
+    # Implementation documents
+    IMPLEMENTATION_PLAN = "implementation_plan"
+    REFACTORING_GUIDE = "refactoring_guide"
+    MIGRATION_GUIDE = "migration_guide"
+    INTEGRATION_GUIDE = "integration_guide"
+
+    # Testing documents
+    TEST_PLAN = "test_plan"
+    TEST_REPORT = "test_report"
+    COVERAGE_REPORT = "coverage_report"
+    VALIDATION_REPORT = "validation_report"
+
+    # Operations documents
+    RUNBOOK = "runbook"
+    DEPLOYMENT_GUIDE = "deployment_guide"
+    MONITORING_GUIDE = "monitoring_guide"
+    INCIDENT_REPORT = "incident_report"
+
+    # User-facing documentation
+    USER_GUIDE = "user_guide"
+    ADMIN_GUIDE = "admin_guide"
+    API_DOC = "api_doc"
+    DEVELOPER_GUIDE = "developer_guide"
+    TROUBLESHOOTING = "troubleshooting"
+    FAQ = "faq"
+
+    # Analysis & Research documents
+    RESEARCH_REPORT = "research_report"
+    ANALYSIS_REPORT = "analysis_report"
+    INVESTIGATION_REPORT = "investigation_report"
+    ASSESSMENT_REPORT = "assessment_report"
+    FEASIBILITY_STUDY = "feasibility_study"
+    COMPETITIVE_ANALYSIS = "competitive_analysis"
+
+    # Summary documents
+    SESSION_SUMMARY = "session_summary"
+    STATUS_REPORT = "status_report"
+    PROGRESS_REPORT = "progress_report"
+    MILESTONE_REPORT = "milestone_report"
+    RETROSPECTIVE_REPORT = "retrospective_report"
+
+    # Business documents
+    BUSINESS_PILLARS = "business_pillars"
+    MARKET_RESEARCH = "market_research"
+    STAKEHOLDER_ANALYSIS = "stakeholder_analysis"
+    QUALITY_GATES_SPEC = "quality_gates_spec"
+
+    # General
+    SPECIFICATION = "specification"
+    OTHER = "other"
+```
+
+---
+
+## 2. Database-Driven Architecture
+
+### Document Reference Model
+
+```python
+class DocumentReference(BaseModel):
+    # Entity linkage
+    entity_type: EntityType
+    entity_id: int
+    
+    # Type-based structure
+    category: DocumentCategory  # planning, architecture, guides, reference, processes, governance, operations, communication
+    document_type: DocumentType  # One of 46 document types
+    
+    # File metadata
+    file_path: str  # docs/{category}/{document_type}/{filename}
+    title: Optional[str]
+    description: Optional[str]
+    
+    # Rich metadata
+    segment_type: Optional[str]
+    component: Optional[str]
+    domain: Optional[str]
+    audience: Optional[str]
+    maturity: Optional[str]
+    priority: Optional[str]
+    tags: List[str]
+    
+    # Workflow integration
+    phase: Optional[str]  # D1, P1, I1, R1, O1, E1
+    work_item_id: Optional[int]
+    
+    # Lifecycle
+    created_by: Optional[str]
+    created_at: datetime
+    updated_at: datetime
+```
+
+### 3-Layer Path Validation
+
+1. **Pydantic Model Validation**: Validates path structure and consistency
+2. **CLI Interactive Guidance**: Suggests correct paths with auto-correction
+3. **Database CHECK Constraint**: Final enforcement at SQL level
+
+---
+
+## 3. Quality Gates
+
+### CI-007: Type-Based Document Placement
+
+**Enforcement**: BLOCK
+
+Documents must be in correct location based on category and document type:
+
+```python
+def validate_document_placement(document: DocumentReference) -> ValidationResult:
+    expected_path = get_document_path(
+        document.category, 
+        document.document_type, 
+        document.title or "untitled"
+    )
+    
+    if document.file_path != expected_path:
+        return ValidationResult(
+            valid=False,
+            error=f"Document should be at {expected_path}, not {document.file_path}"
+        )
+```
+
+### CI-008: Category-Type Consistency
+
+**Enforcement**: BLOCK
+
+Document category and type must be consistent with path structure:
+
+```python
+def validate_category_type_consistency(document: DocumentReference) -> ValidationResult:
+    # Extract category and type from path
+    path_parts = document.file_path.split('/')
+    if len(path_parts) >= 3:
+        path_category = path_parts[1]
+        path_type = path_parts[2]
+        
+        if path_category != document.category.value:
+            return ValidationResult(
+                valid=False,
+                error=f"Path category '{path_category}' doesn't match document category '{document.category.value}'"
+            )
+        
+        if path_type != document.document_type.value:
+            return ValidationResult(
+                valid=False,
+                error=f"Path type '{path_type}' doesn't match document type '{document.document_type.value}'"
+            )
+    
+    return ValidationResult(valid=True)
+```
+
+---
+
+## 4. CLI Commands
+
+### Document Management
+
+```bash
+# Create document with type and category
+apm document create --type=architecture_doc --category=architecture --title="Database Schema Design"
+# → Creates: docs/architecture/architecture_doc/database-schema-design.md
+
+apm document create --type=user_guide --category=guides --title="Getting Started Guide"
+# → Creates: docs/guides/user_guide/getting-started-guide.md
+
+apm document create --type=adr --category=architecture --title="Database Migration Strategy"
+# → Creates: docs/architecture/adr/database-migration-strategy.md
+
+# Category and type-aware document listing
+apm document list --category=architecture
+apm document list --type=user_guide
+apm document list --category=architecture --type=adr
+
+# Phase-aware queries (via database)
+apm document list --created-in-phase=d1-discovery
+apm document list --relevant-phases=i1-implementation
+```
+
+### Path Migration
+
+```bash
+# Migrate non-compliant paths to standard structure
+apm document migrate-to-structure --dry-run
+apm document migrate-to-structure
+```
+
+---
+
+## 5. Code Documentation Standards
+
+### DOC-001: doc-module-docstring
+
+**Enforcement**: GUIDE
+
+Every module has docstring
+
+---
+
+### DOC-002: doc-class-docstring
+
+**Enforcement**: GUIDE
+
+Every public class has docstring
+
+---
+
+### DOC-003: doc-function-docstring
+
+**Enforcement**: GUIDE
+
+Every public function has docstring
+
+---
+
+### DOC-004: doc-parameter-description
+
+**Enforcement**: GUIDE
+
+Document all parameters
+
+---
+
+### DOC-005: doc-return-description
+
+**Enforcement**: GUIDE
+
+Document return values
+
+---
+
+### DOC-006: doc-exception-documentation
+
+**Enforcement**: GUIDE
+
+Document raised exceptions
+
+---
+
+### DOC-007: doc-example-in-docstring
+
+**Enforcement**: GUIDE
+
+Include usage examples
+
+---
+
+### DOC-008: doc-google-style
+
+**Enforcement**: ENHANCE
+
+Use Google-style docstrings (Python)
+
+---
+
+### DOC-009: doc-jsdoc-style
+
+**Enforcement**: ENHANCE
+
+Use JSDoc (JavaScript/TypeScript)
+
+---
+
+### DOC-010: doc-complexity-explanation
+
+**Enforcement**: GUIDE
+
+Complex code needs explanation
+
+---
+
+## 6. Project Documentation Standards
+
+### DOC-011: doc-readme-required
+
+**Enforcement**: LIMIT
+
+README.md at project root
+
+---
+
+### DOC-012: doc-setup-instructions
+
+**Enforcement**: GUIDE
+
+Setup instructions in README
+
+---
+
+### DOC-013: doc-api-documentation
+
+**Enforcement**: GUIDE
+
+API endpoints documented
+
+---
+
+### DOC-014: doc-architecture-overview
+
+**Enforcement**: GUIDE
+
+Architecture documented
+
+---
+
+### DOC-015: doc-changelog-maintained
+
+**Enforcement**: GUIDE
+
+CHANGELOG.md updated
+
+---
+
+### DOC-016: doc-contributing-guide
+
+**Enforcement**: GUIDE
+
+CONTRIBUTING.md for open source
+
+---
+
+### DOC-017: doc-decision-records
+
+**Enforcement**: GUIDE
+
+ADRs for significant decisions
+
+---
+
+### DOC-018: doc-deployment-guide
+
+**Enforcement**: GUIDE
+
+Deployment instructions
+
+---
+
+### DOC-019: doc-troubleshooting
+
+**Enforcement**: GUIDE
+
+Common issues documented
+
+---
+
+## 7. Content Standards
+
+### Document Structure
+
+```markdown
+# Document Title (H1 - only one per document)
+
+**Purpose**: Brief description of document purpose  
+**Audience**: Target audience (developers, users, admins)  
+**Scope**: What this document covers  
+**Last Updated**: Date of last update  
+
+---
+
+## Major Section (H2)
+
+### Subsection (H3)
+
+#### Detail Section (H4)
+```
+
+### Required Metadata
+
+Every document must include:
+- **Purpose**: Clear statement of document purpose
+- **Audience**: Target audience (developers, users, admins)
+- **Scope**: What the document covers
+- **Last Updated**: Date of last update
+
+### Content Quality
+
+- Use UK English throughout
+- Include code examples where appropriate
+- Provide clear, actionable guidance
+- Link to related documents
+- Keep content up-to-date
+
+---
+
+## 8. Migration and Compliance
+
+### Path Validation
+
+The system enforces path compliance at 3 layers:
+
+1. **Pydantic validation**: Model-level path structure validation
+2. **CLI guidance**: Interactive path correction with suggestions
+3. **Database constraint**: SQL-level enforcement with exceptions
+
+### Exception Patterns
+
+The following paths are allowed outside the standard structure:
+- `README.md` - Repository root documentation
+- `CHANGELOG.md` - Version history at root
+- `LICENSE` - Legal files at root
+- `CONTRIBUTING.md` - Contribution guidelines at root
+- `.claude/agents/*.md` - Agent definition files
+- `_RULES/*.md` - Rules system files
+
+### Compliance Monitoring
+
+```bash
+# Check document compliance
+apm document validate
+
+# List non-compliant documents
+apm document list --non-compliant
+
+# Get compliance report
+apm document compliance-report
+```
+
+---
+
+**Version**: 2.0.0  
+**Last Updated**: 2025-01-27  
+**Related**: ADR-000 (Documentation System Architecture), WI-113 (Document Path Validation)
+

@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en" class="theme-light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APM (Agent Project Manager) Theme System Demo</title>
+    
+    <!-- Theme System CSS -->
+    <link rel="stylesheet" href="/static/css/theme-system.css">
+    <link rel="stylesheet" href="/static/css/components.css">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="bg-surface-primary text-text-primary min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-surface-elevated border-b border-border-primary shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <h1 class="text-xl font-bold text-primary-500">APM (Agent Project Manager)</h1>
+                    <span class="ml-2 text-sm text-text-secondary">Theme System Demo</span>
+                </div>
+                
+                <!-- Theme Switcher -->
+                <div class="flex items-center space-x-4">
+                    <div class="theme-toggles">
+                        <button data-theme-toggle data-theme="light" class="theme-toggle">Light</button>
+                        <button data-theme-toggle data-theme="dark" class="theme-toggle">Dark</button>
+                        <button data-theme-toggle data-theme="royal" class="theme-toggle">Royal</button>
+                        <button data-theme-toggle data-theme="modern" class="theme-toggle">Modern</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Hero Section -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-text-primary mb-4">
+                APM (Agent Project Manager) Theme System
+            </h1>
+            <p class="text-xl text-text-secondary max-w-3xl mx-auto">
+                A comprehensive theme system built with Tailwind CSS v4 patterns, 
+                featuring multiple theme variants, consistent design tokens, and seamless theme switching.
+            </p>
+        </div>
+
+        <!-- Theme Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <div class="card card-elevated">
+                <div class="card-body text-center">
+                    <div class="w-12 h-12 bg-primary-500 rounded-lg mx-auto mb-4"></div>
+                    <h3 class="card-title">Light Theme</h3>
+                    <p class="card-description">Clean, professional design with high contrast.</p>
+                    <button data-theme-toggle data-theme="light" class="btn btn-primary btn-sm mt-4">
+                        Apply Theme
+                    </button>
+                </div>
+            </div>
+
+            <div class="card card-elevated">
+                <div class="card-body text-center">
+                    <div class="w-12 h-12 bg-neutral-800 rounded-lg mx-auto mb-4"></div>
+                    <h3 class="card-title">Dark Theme</h3>
+                    <p class="card-description">Modern dark interface for low-light environments.</p>
+                    <button data-theme-toggle data-theme="dark" class="btn btn-primary btn-sm mt-4">
+                        Apply Theme
+                    </button>
+                </div>
+            </div>
+
+            <div class="card card-elevated">
+                <div class="card-body text-center">
+                    <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg mx-auto mb-4"></div>
+                    <h3 class="card-title">Royal Theme</h3>
+                    <p class="card-description">Premium design with royal purple and gold accents.</p>
+                    <button data-theme-toggle data-theme="royal" class="btn btn-primary btn-sm mt-4">
+                        Apply Theme
+                    </button>
+                </div>
+            </div>
+
+            <div class="card card-elevated">
+                <div class="card-body text-center">
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-500 rounded-lg mx-auto mb-4"></div>
+                    <h3 class="card-title">Modern Theme</h3>
+                    <p class="card-description">Contemporary design with blue and teal accents.</p>
+                    <button data-theme-toggle data-theme="modern" class="btn btn-primary btn-sm mt-4">
+                        Apply Theme
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Component Showcase -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            <!-- Buttons -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Buttons</h3>
+                </div>
+                <div class="card-body">
+                    <div class="space-y-4">
+                        <div class="flex flex-wrap gap-3">
+                            <button class="btn btn-primary">Primary</button>
+                            <button class="btn btn-secondary">Secondary</button>
+                            <button class="btn btn-outline-primary">Outline</button>
+                            <button class="btn btn-ghost">Ghost</button>
+                        </div>
+                        <div class="flex flex-wrap gap-3">
+                            <button class="btn btn-primary btn-sm">Small</button>
+                            <button class="btn btn-primary">Default</button>
+                            <button class="btn btn-primary btn-lg">Large</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Badges -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Badges & Status</h3>
+                </div>
+                <div class="card-body">
+                    <div class="space-y-4">
+                        <div class="flex flex-wrap gap-2">
+                            <span class="badge badge-primary">Primary</span>
+                            <span class="badge badge-success">Success</span>
+                            <span class="badge badge-warning">Warning</span>
+                            <span class="badge badge-error">Error</span>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="phase-badge phase-badge-d1">Discovery</span>
+                            <span class="phase-badge phase-badge-p1">Planning</span>
+                            <span class="phase-badge phase-badge-i1">Implementation</span>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="confidence-indicator confidence-high">High</span>
+                            <span class="confidence-indicator confidence-medium">Medium</span>
+                            <span class="confidence-indicator confidence-low">Low</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Forms -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Form Elements</h3>
+                </div>
+                <div class="card-body">
+                    <div class="space-y-4">
+                        <div class="form-group">
+                            <label class="form-label" for="email">Email Address</label>
+                            <input type="email" id="email" class="form-input" placeholder="Enter your email">
+                            <div class="form-help">We'll never share your email.</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="password">Password</label>
+                            <input type="password" id="password" class="form-input form-input-error">
+                            <div class="form-error">Password is required.</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Enable notifications</label>
+                            <div class="form-switch">
+                                <input type="checkbox" class="sr-only">
+                                <div class="form-switch-thumb"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alerts -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Alerts</h3>
+                </div>
+                <div class="card-body">
+                    <div class="space-y-4">
+                        <div class="alert alert-success">
+                            <div class="alert-title">Success!</div>
+                            <div class="alert-description">Your changes have been saved.</div>
+                        </div>
+                        <div class="alert alert-warning">
+                            <div class="alert-title">Warning</div>
+                            <div class="alert-description">Please review your input.</div>
+                        </div>
+                        <div class="alert alert-error">
+                            <div class="alert-title">Error</div>
+                            <div class="alert-description">Something went wrong.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress & Loading -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Progress Bars</h3>
+                </div>
+                <div class="card-body">
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between text-sm mb-2">
+                                <span>Primary Progress</span>
+                                <span>75%</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-primary" style="width: 75%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-sm mb-2">
+                                <span>Success Progress</span>
+                                <span>60%</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-success" style="width: 60%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-sm mb-2">
+                                <span>Warning Progress</span>
+                                <span>40%</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-warning" style="width: 40%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Loading States</h3>
+                </div>
+                <div class="card-body">
+                    <div class="space-y-4">
+                        <div class="flex items-center space-x-4">
+                            <div class="loading-spinner"></div>
+                            <span>Loading...</span>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <div class="loading-spinner loading-spinner-lg"></div>
+                            <span>Large spinner</span>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <div class="loading-dots">
+                                <div class="loading-dot"></div>
+                                <div class="loading-dot"></div>
+                                <div class="loading-dot"></div>
+                            </div>
+                            <span>Loading dots</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metrics -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <div class="metric-card">
+                <div class="card-body text-center">
+                    <div class="metric-value">1,234</div>
+                    <div class="metric-label">Total Projects</div>
+                    <div class="metric-change metric-change-positive">+12% from last month</div>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="card-body text-center">
+                    <div class="metric-value">89%</div>
+                    <div class="metric-label">Success Rate</div>
+                    <div class="metric-change metric-change-positive">+5% from last month</div>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="card-body text-center">
+                    <div class="metric-value">42</div>
+                    <div class="metric-label">Active Agents</div>
+                    <div class="metric-change metric-change-neutral">No change</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Demo -->
+        <div class="card mb-12">
+            <div class="card-header">
+                <h3 class="card-title">Navigation</h3>
+            </div>
+            <div class="card-body">
+                <nav class="nav">
+                    <div class="nav-item">
+                        <a href="#" class="nav-link nav-link-active">Dashboard</a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="#" class="nav-link">Projects</a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="#" class="nav-link">Agents</a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="#" class="nav-link">Settings</a>
+                    </div>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Theme Information -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Current Theme Information</h3>
+            </div>
+            <div class="card-body">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="font-semibold mb-2">Theme Details</h4>
+                        <ul class="space-y-1 text-sm">
+                            <li><strong>Current Theme:</strong> <span data-theme-indicator class="theme-indicator">light</span></li>
+                            <li><strong>System Preference:</strong> <span id="system-preference">Auto-detected</span></li>
+                            <li><strong>Storage:</strong> <span id="theme-storage">localStorage</span></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-2">Keyboard Shortcuts</h4>
+                        <ul class="space-y-1 text-sm">
+                            <li><kbd class="px-2 py-1 bg-surface-secondary rounded text-xs">Ctrl/Cmd + Shift + T</kbd> Cycle themes</li>
+                            <li><kbd class="px-2 py-1 bg-surface-secondary rounded text-xs">Ctrl/Cmd + Shift + D</kbd> Toggle dark mode</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-surface-secondary border-t border-border-primary mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="text-center text-text-secondary">
+                <p>&copy; 2024 APM (Agent Project Manager). Built with Tailwind CSS v4 theme system.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Theme Switcher JavaScript -->
+    <script src="/static/js/theme-switcher.js"></script>
+    
+    <!-- Demo Script -->
+    <script>
+        // Update theme information
+        function updateThemeInfo() {
+            const currentTheme = window.themeSwitcher.getCurrentTheme();
+            const systemPreference = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'Dark' : 'Light';
+            const storage = localStorage.getItem('aipm-theme') ? 'localStorage' : 'System default';
+            
+            document.getElementById('system-preference').textContent = systemPreference;
+            document.getElementById('theme-storage').textContent = storage;
+        }
+
+        // Update on load and theme change
+        document.addEventListener('DOMContentLoaded', updateThemeInfo);
+        
+        // Listen for theme changes
+        document.addEventListener('themeChanged', updateThemeInfo);
+        
+        // Add theme change event
+        const originalSwitchTheme = window.themeSwitcher.switchTheme;
+        window.themeSwitcher.switchTheme = function(theme) {
+            originalSwitchTheme.call(this, theme);
+            document.dispatchEvent(new CustomEvent('themeChanged'));
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,229 @@
+{% extends "layouts/modern_base.html" %}
+
+{% block title %}Sessions - APM (Agent Project Manager){% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Sessions</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<!-- Sessions Overview -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="card metric-card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h2 class="card-title">
+                            <i class="bi bi-clock-history"></i> Sessions
+                        </h2>
+                        <p class="card-text text-muted">
+                            AI agent sessions with provider tracking, duration, and work item progress
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="metric-value">{{ view.total_sessions }}</div>
+                        <div class="metric-label">Total Sessions</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Filters</h5>
+                <form method="GET" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="provider" class="form-label">Provider</label>
+                        <select name="provider" id="provider" class="form-select">
+                            <option value="">All Providers</option>
+                            <option value="claude" {% if view.provider_filter == 'claude' %}selected{% endif %}>Claude</option>
+                            <option value="cursor" {% if view.provider_filter == 'cursor' %}selected{% endif %}>Cursor</option>
+                            <option value="aider" {% if view.provider_filter == 'aider' %}selected{% endif %}>Aider</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select name="status" id="status" class="form-select">
+                            <option value="">All Statuses</option>
+                            <option value="active" {% if view.status_filter == 'active' %}selected{% endif %}>Active</option>
+                            <option value="completed" {% if view.status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                            <option value="cancelled" {% if view.status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="date_range" class="form-label">Date Range</label>
+                        <select name="date_range" id="date_range" class="form-select">
+                            <option value="today" {% if view.date_range_filter == 'today' %}selected{% endif %}>Today</option>
+                            <option value="week" {% if view.date_range_filter == 'week' %}selected{% endif %}>Last Week</option>
+                            <option value="month" {% if view.date_range_filter == 'month' %}selected{% endif %}>Last Month</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-funnel"></i> Apply Filters
+                            </button>
+                            <a href="/sessions" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Clear
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Provider Statistics -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Provider Activity</h5>
+                <div class="row">
+                    {% for provider, count in view.provider_counts.items() %}
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h4 text-primary">{{ count }}</div>
+                            <div class="text-muted">{{ provider.title() }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sessions List -->
+<div class="row">
+    <div class="col">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-list-ul"></i> Sessions List
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if view.sessions_list %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Session ID</th>
+                                <th>Provider</th>
+                                <th>Start Time</th>
+                                <th>Duration</th>
+                                <th>Work Items</th>
+                                <th>Tasks</th>
+                                <th>Decisions</th>
+                                <th>Commits</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for session in view.sessions_list %}
+                            <tr>
+                                <td>
+                                    <code>{{ session.session_id[:8] }}...</code>
+                                </td>
+                                <td>
+                                    <span class="badge badge-info">{{ session.tool_name }}</span>
+                                </td>
+                                <td>
+                                    {% if session.start_time %}
+                                        {{ session.start_time.strftime('%Y-%m-%d %H:%M') }}
+                                    {% else %}
+                                        <span class="text-muted">Unknown</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if session.duration_minutes %}
+                                        {{ session.duration_minutes }}m
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge badge-gray">{{ session.work_items_touched }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge badge-success">{{ session.tasks_completed }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge badge-warning">{{ session.decisions_made }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge badge-primary">{{ session.git_commits }}</span>
+                                </td>
+                                <td>
+                                    {% if session.status == 'completed' %}
+                                        <span class="badge badge-success">Completed</span>
+                                    {% elif session.status == 'active' %}
+                                        <span class="badge badge-primary">Active</span>
+                                    {% elif session.status == 'cancelled' %}
+                                        <span class="badge badge-error">Cancelled</span>
+                                    {% else %}
+                                        <span class="badge badge-gray">{{ session.status.title() }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="/session/{{ session.session_id }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-clock-history display-1 text-muted"></i>
+                    <h4 class="text-muted mt-3">No Sessions Found</h4>
+                    <p class="text-muted">No sessions match your current filters.</p>
+                    <a href="/sessions" class="btn btn-primary">
+                        <i class="bi bi-arrow-clockwise"></i> Clear Filters
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Quick Actions</h5>
+                <div class="btn-group" role="group">
+                    <a href="/sessions/timeline" class="btn btn-outline-primary">
+                        <i class="bi bi-graph-up"></i> Timeline View
+                    </a>
+                    <a href="/contexts" class="btn btn-secondary">
+                        <i class="bi bi-diagram-3"></i> Contexts
+                    </a>
+                    <a href="/events" class="btn btn-outline-info">
+                        <i class="bi bi-journal-text"></i> Events
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

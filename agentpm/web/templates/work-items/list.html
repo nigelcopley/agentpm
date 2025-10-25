@@ -1,0 +1,788 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Work Items - APM (Agent Project Manager){% endblock %}
+
+{% block content %}
+<!-- Main Header -->
+<div class="bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 text-white">
+    <div class="px-6 py-8">
+        <div class="flex justify-between items-start">
+            <div>
+                <h1 class="text-4xl font-bold mb-3">Work Items Management</h1>
+                <p class="text-white/90 text-lg">Track and manage your project work items and tasks</p>
+                <div class="mt-4 flex items-center space-x-6 text-sm">
+                    <div class="flex items-center">
+                        <i class="bi bi-kanban mr-2"></i>
+                        <span>{{ metrics.total_work_items }} Total Work Items</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="bi bi-list-task mr-2"></i>
+                        <span>{{ metrics.total_tasks }} Tasks</span>
+                    </div>
+                    <div class="flex items-center">
+                        <i class="bi bi-check-circle mr-2"></i>
+                        <span>{{ metrics.done_work_items }} Completed</span>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white/20 backdrop-blur-sm p-4 rounded-2xl">
+                <i class="bi bi-kanban text-4xl"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters Bar -->
+<div class="bg-white border-b border-gray-200 py-4">
+    <div class="px-6">
+        <form method="GET" class="flex flex-col lg:flex-row gap-4 items-start lg:items-center" id="filterForm" hx-get="/work-items/" hx-target="#work-items-content" hx-trigger="submit, input delay:300ms from:input[name='search'], change delay:100ms from:select">
+            <!-- Search Bar -->
+            <div class="relative flex-1 min-w-0">
+                <input type="text" name="search" placeholder="Search work items..." 
+                       value="{{ current_filters.search }}"
+                       class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                       id="searchInput">
+                <i class="bi bi-search absolute left-3 top-2.5 text-gray-400"></i>
+                {% if current_filters.search %}
+                <button type="button" onclick="clearSearch()" class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 transition-colors" title="Clear search">
+                    <i class="bi bi-x-circle"></i>
+                </button>
+                {% endif %}
+            </div>
+            
+            <!-- Filter Controls -->
+            <div class="flex flex-wrap gap-3 items-center">
+                <!-- Status Filter -->
+                <select name="status" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm">
+                    <option value="">All Status</option>
+                    {% for status in filter_options.statuses %}
+                    <option value="{{ status.value }}" {% if current_filters.status == status.value %}selected{% endif %}>
+                        {{ status.label }}
+                    </option>
+                    {% endfor %}
+                </select>
+                
+                <!-- Type Filter -->
+                <select name="type" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm">
+                    <option value="">All Types</option>
+                    {% for type in filter_options.types %}
+                    <option value="{{ type.value }}" {% if current_filters.type == type.value %}selected{% endif %}>
+                        {{ type.label }}
+                    </option>
+                    {% endfor %}
+                </select>
+                
+                <!-- Priority Filter -->
+                <select name="priority" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm">
+                    <option value="">All Priorities</option>
+                    {% for priority in filter_options.priorities %}
+                    <option value="{{ priority.value }}" {% if current_filters.priority == priority.value %}selected{% endif %}>
+                        {{ priority.label }}
+                    </option>
+                    {% endfor %}
+                </select>
+                
+                <!-- Sort -->
+                <select name="sort" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm">
+                    {% for sort_option in filter_options.sort_options %}
+                    <option value="{{ sort_option.value }}" {% if current_filters.sort == sort_option.value %}selected{% endif %}>
+                        {{ sort_option.label }}
+                    </option>
+                    {% endfor %}
+                </select>
+                
+                <!-- View Toggle -->
+                <div class="flex items-center bg-gray-100 rounded-lg p-1">
+                    <button type="button" id="listView" class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors view-toggle active" onclick="setView('list')" title="List View">
+                        <i class="bi bi-list-ul"></i>
+                    </button>
+                    <button type="button" id="gridView" class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors view-toggle" onclick="setView('grid')" title="Grid View">
+                        <i class="bi bi-grid-3x3-gap"></i>
+                    </button>
+                    <button type="button" id="kanbanView" class="flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors view-toggle" onclick="setView('kanban')" title="Kanban View">
+                        <i class="bi bi-kanban"></i>
+                    </button>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex items-center space-x-2">
+                    <button type="submit" class="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm">
+                        <i class="bi bi-search mr-1"></i>Apply
+                    </button>
+                    <a href="{{ url_for('work_items.work_items_list') }}" class="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium text-sm">
+                        <i class="bi bi-x-circle mr-1"></i>Clear
+                    </a>
+                    <a href="{{ url_for('work_items.create_work_item') }}" class="flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg hover:from-blue-600 hover:to-indigo-600 transition-all font-medium text-sm">
+                        <i class="bi bi-plus-circle mr-1"></i>Create
+                    </a>
+                </div>
+            </div>
+        </form>
+        
+        <!-- Active Filters Display -->
+        {% if current_filters.search or current_filters.status or current_filters.type or current_filters.priority %}
+        <div class="mt-4 pt-4 border-t border-gray-100">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="text-sm font-medium text-gray-700">Active Filters</h3>
+                <span class="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
+                    {{ (current_filters.search|length > 0)|int + (current_filters.status|length > 0)|int + (current_filters.type|length > 0)|int + (current_filters.priority|length > 0)|int }} applied
+                </span>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                {% if current_filters.search %}
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    <i class="bi bi-search mr-1"></i>Search: "{{ current_filters.search }}"
+                    <button type="button" onclick="clearFilter('search')" class="ml-1 text-blue-600 hover:text-blue-800">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </span>
+                {% endif %}
+                {% if current_filters.status %}
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <i class="bi bi-circle-fill mr-1"></i>Status: {{ current_filters.status|title }}
+                    <button type="button" onclick="clearFilter('status')" class="ml-1 text-green-600 hover:text-green-800">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </span>
+                {% endif %}
+                {% if current_filters.type %}
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                    <i class="bi bi-tag mr-1"></i>Type: {{ current_filters.type|title }}
+                    <button type="button" onclick="clearFilter('type')" class="ml-1 text-purple-600 hover:text-purple-800">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </span>
+                {% endif %}
+                {% if current_filters.priority %}
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                    <i class="bi bi-flag mr-1"></i>Priority: {{ current_filters.priority|title }}
+                    <button type="button" onclick="clearFilter('priority')" class="ml-1 text-orange-600 hover:text-orange-800">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Layout -->
+<div class="flex flex-col lg:flex-row gap-8 mt-8">
+    <!-- Left Sidebar -->
+    <div class="w-full lg:w-80 flex-shrink-0 order-2 lg:order-1">
+        <div class="bg-white rounded-2xl shadow-lg p-6 sticky top-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-6">Work Item Statistics</h2>
+            
+            <!-- Quick Stats -->
+            <div class="space-y-4 mb-8">
+                <div class="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+                    <div>
+                        <p class="text-sm font-medium text-blue-600">Active Items</p>
+                        <p class="text-2xl font-bold text-blue-900">{{ metrics.active_work_items }}</p>
+                    </div>
+                    <i class="bi bi-play-circle text-blue-500 text-2xl"></i>
+                </div>
+                
+                <div class="flex items-center justify-between p-4 bg-green-50 rounded-lg">
+                    <div>
+                        <p class="text-sm font-medium text-green-600">Completed</p>
+                        <p class="text-2xl font-bold text-green-900">{{ metrics.done_work_items }}</p>
+                    </div>
+                    <i class="bi bi-check-circle text-green-500 text-2xl"></i>
+                </div>
+                
+                <div class="flex items-center justify-between p-4 bg-red-50 rounded-lg">
+                    <div>
+                        <p class="text-sm font-medium text-red-600">Blocked</p>
+                        <p class="text-2xl font-bold text-red-900">{{ metrics.blocked_work_items }}</p>
+                    </div>
+                    <i class="bi bi-exclamation-triangle text-red-500 text-2xl"></i>
+                </div>
+                
+                <div class="flex items-center justify-between p-4 bg-purple-50 rounded-lg">
+                    <div>
+                        <p class="text-sm font-medium text-purple-600">In Review</p>
+                        <p class="text-2xl font-bold text-purple-900">{{ metrics.review_work_items }}</p>
+                    </div>
+                    <i class="bi bi-eye text-purple-500 text-2xl"></i>
+                </div>
+            </div>
+            
+            <!-- Work Item Types Breakdown -->
+            <div class="mb-8">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Work Item Types</h3>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">Feature</span>
+                        <span class="text-sm font-medium text-gray-900">{{ metrics.feature_work_items }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">Bugfix</span>
+                        <span class="text-sm font-medium text-gray-900">{{ metrics.bugfix_work_items }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">Enhancement</span>
+                        <span class="text-sm font-medium text-gray-900">{{ metrics.enhancement_work_items }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-gray-600">Research</span>
+                        <span class="text-sm font-medium text-gray-900">{{ metrics.research_work_items }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Priority Distribution -->
+            <div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Priority Distribution</h3>
+                <div class="space-y-3">
+                    {% for priority in range(1, 6) %}
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                            <span class="text-sm text-gray-600">Priority {{ priority }}</span>
+                        </div>
+                        <span class="text-sm font-medium text-gray-900">
+                            {{ metrics['priority_' + priority|string + '_work_items'] }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="flex-1 min-w-0 order-1 lg:order-2">
+        <div class="space-y-6">
+
+        <!-- Work Items Container -->
+        <div id="work-items-content">
+        {% if work_items %}
+            <!-- List View -->
+            <div id="listViewContainer" class="view-container">
+                <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Work Item</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Effort</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                {% for work_item in work_items %}
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 h-10 w-10">
+                                                <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                                    <i class="bi bi-kanban text-blue-600"></i>
+                                                </div>
+                                            </div>
+                                            <div class="ml-4">
+                                                <div class="text-sm font-medium text-gray-900">
+                                                    <a href="{{ url_for('work_items.work_item_detail', work_item_id=work_item.id) }}" class="hover:text-blue-600">
+                                                        {{ work_item.name }}
+                                                    </a>
+                                                </div>
+                                                {% if work_item.description %}
+                                                <div class="text-sm text-gray-500 truncate max-w-xs">
+                                                    {{ work_item.description[:60] }}{% if work_item.description|length > 60 %}...{% endif %}
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                            {% if work_item.type and work_item.type.value == 'feature' %}bg-blue-100 text-blue-800
+                                            {% elif work_item.type and work_item.type.value == 'bugfix' %}bg-red-100 text-red-800
+                                            {% elif work_item.type and work_item.type.value == 'enhancement' %}bg-purple-100 text-purple-800
+                                            {% elif work_item.type and work_item.type.value == 'research' %}bg-yellow-100 text-yellow-800
+                                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                            {{ work_item.type.value|title if work_item.type else 'General' }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                            {% if work_item.status and work_item.status.value == 'draft' %}bg-gray-100 text-gray-800
+                                            {% elif work_item.status and work_item.status.value == 'ready' %}bg-yellow-100 text-yellow-800
+                                            {% elif work_item.status and work_item.status.value == 'active' %}bg-blue-100 text-blue-800
+                                            {% elif work_item.status and work_item.status.value == 'in_progress' %}bg-blue-100 text-blue-800
+                                            {% elif work_item.status and work_item.status.value == 'review' %}bg-purple-100 text-purple-800
+                                            {% elif work_item.status and work_item.status.value == 'blocked' %}bg-red-100 text-red-800
+                                            {% elif work_item.status and work_item.status.value == 'done' %}bg-green-100 text-green-800
+                                            {% elif work_item.status and work_item.status.value == 'cancelled' %}bg-gray-100 text-gray-800
+                                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                            {{ work_item.status.value|replace('_', ' ')|title if work_item.status else 'Unknown' }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <span class="text-sm text-gray-900 mr-2">{{ work_item.priority or '-' }}</span>
+                                            {% if work_item.priority %}
+                                            <div class="flex space-x-1">
+                                                {% for i in range(1, 6) %}
+                                                <div class="w-2 h-2 rounded-full {% if i <= work_item.priority %}bg-red-500{% else %}bg-gray-200{% endif %}"></div>
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {% if work_item.effort_estimate_hours %}
+                                            {{ work_item.effort_estimate_hours }}h
+                                        {% else %}
+                                            <span class="text-gray-400">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {{ work_item.created_at.strftime('%Y-%m-%d') if work_item.created_at else 'N/A' }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <div class="flex items-center justify-end space-x-2">
+                                            <a href="{{ url_for('work_items.work_item_detail', work_item_id=work_item.id) }}" class="text-blue-600 hover:text-blue-900">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{{ url_for('work_items.edit_work_item', work_item_id=work_item.id) }}" class="text-blue-600 hover:text-blue-900">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grid View -->
+            <div id="gridViewContainer" class="view-container hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {% for work_item in work_items %}
+                    <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden group">
+                        <!-- Work Item Header -->
+                        <div class="p-6 pb-4">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex items-center space-x-3">
+                                    <div class="p-2 rounded-lg bg-blue-100 text-blue-600">
+                                        <i class="bi bi-kanban text-lg"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                                            <a href="{{ url_for('work_items.work_item_detail', work_item_id=work_item.id) }}">
+                                                {{ work_item.name }}
+                                            </a>
+                                        </h3>
+                                        <p class="text-sm text-gray-500">{{ work_item.type.value|title if work_item.type else 'General' }}</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Status Badge -->
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                    {% if work_item.status and work_item.status.value == 'draft' %}bg-gray-100 text-gray-800
+                                    {% elif work_item.status and work_item.status.value == 'ready' %}bg-yellow-100 text-yellow-800
+                                    {% elif work_item.status and work_item.status.value == 'active' %}bg-blue-100 text-blue-800
+                                    {% elif work_item.status and work_item.status.value == 'in_progress' %}bg-blue-100 text-blue-800
+                                    {% elif work_item.status and work_item.status.value == 'review' %}bg-purple-100 text-purple-800
+                                    {% elif work_item.status and work_item.status.value == 'blocked' %}bg-red-100 text-red-800
+                                    {% elif work_item.status and work_item.status.value == 'done' %}bg-green-100 text-green-800
+                                    {% elif work_item.status and work_item.status.value == 'cancelled' %}bg-gray-100 text-gray-800
+                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {{ work_item.status.value|replace('_', ' ')|title if work_item.status else 'Unknown' }}
+                                </span>
+                            </div>
+                            
+                            <!-- Description -->
+                            {% if work_item.description %}
+                            <p class="text-sm text-gray-600 mb-4 line-clamp-2">
+                                {{ work_item.description[:120] }}{% if work_item.description|length > 120 %}...{% endif %}
+                            </p>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Work Item Details -->
+                        <div class="px-6 pb-4 space-y-3">
+                            <!-- Priority & Effort -->
+                            <div class="flex items-center justify-between text-sm">
+                                <div class="flex items-center text-gray-600">
+                                    <i class="bi bi-flag mr-2"></i>
+                                    <span>
+                                        {% if work_item.priority %}
+                                            Priority {{ work_item.priority }}
+                                        {% else %}
+                                            No priority
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="flex items-center text-gray-600">
+                                    <i class="bi bi-clock mr-2"></i>
+                                    <span>
+                                        {% if work_item.effort_estimate_hours %}
+                                            {{ work_item.effort_estimate_hours }}h
+                                        {% else %}
+                                            Not estimated
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <!-- Created Date -->
+                            {% if work_item.created_at %}
+                            <div class="flex items-center text-sm text-gray-600">
+                                <i class="bi bi-calendar mr-2"></i>
+                                <span>Created {{ work_item.created_at.strftime('%Y-%m-%d') }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Work Item Footer -->
+                        <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+                            <div class="text-xs text-gray-500">
+                                {% if work_item.created_at %}
+                                    Created {{ work_item.created_at.strftime('%Y-%m-%d') }}
+                                {% endif %}
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <a href="{{ url_for('work_items.work_item_detail', work_item_id=work_item.id) }}" 
+                                   class="p-2 text-gray-400 hover:text-blue-600 transition-colors" 
+                                   title="View Details">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ url_for('work_items.edit_work_item', work_item_id=work_item.id) }}" 
+                                   class="p-2 text-gray-400 hover:text-blue-600 transition-colors" 
+                                   title="Edit Work Item">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Kanban View -->
+            <div id="kanbanViewContainer" class="view-container hidden">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                    <!-- Draft Column -->
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-semibold text-gray-700">Draft</h3>
+                            <span class="bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded-full">{{ work_items|selectattr('status.value', 'equalto', 'draft')|list|length }}</span>
+                        </div>
+                        <div class="space-y-3">
+                            {% for work_item in work_items %}
+                            {% if work_item.status and work_item.status.value == 'draft' %}
+                            <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                                <h4 class="font-medium text-gray-900 text-sm mb-2">
+                                    <a href="{{ url_for('work_items.work_item_detail', work_item_id=work_item.id) }}" class="hover:text-blue-600">
+                                        {{ work_item.name }}
+                                    </a>
+                                </h4>
+                                <div class="flex items-center justify-between text-xs text-gray-500">
+                                    <span>{{ work_item.type.value|title if work_item.type else 'General' }}</span>
+                                    {% if work_item.effort_estimate_hours %}
+                                    <span>{{ work_item.effort_estimate_hours }}h</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Ready Column -->
+                    <div class="bg-yellow-50 rounded-xl p-4">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-semibold text-yellow-700">Ready</h3>
+                            <span class="bg-yellow-200 text-yellow-700 text-xs px-2 py-1 rounded-full">{{ work_items|selectattr('status.value', 'equalto', 'ready')|list|length }}</span>
+                        </div>
+                        <div class="space-y-3">
+                            {% for work_item in work_items %}
+                            {% if work_item.status and work_item.status.value == 'ready' %}
+                            <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                                <h4 class="font-medium text-gray-900 text-sm mb-2">
+                                    <a href="{{ url_for('work_items.work_item_detail', work_item_id=work_item.id) }}" class="hover:text-blue-600">
+                                        {{ work_item.name }}
+                                    </a>
+                                </h4>
+                                <div class="flex items-center justify-between text-xs text-gray-500">
+                                    <span>{{ work_item.type.value|title if work_item.type else 'General' }}</span>
+                                    {% if work_item.effort_estimate_hours %}
+                                    <span>{{ work_item.effort_estimate_hours }}h</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Active/In Progress Column -->
+                    <div class="bg-blue-50 rounded-xl p-4">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-semibold text-blue-700">Active</h3>
+                            <span class="bg-blue-200 text-blue-700 text-xs px-2 py-1 rounded-full">{{ (work_items|selectattr('status.value', 'equalto', 'active')|list|length) + (work_items|selectattr('status.value', 'equalto', 'in_progress')|list|length) }}</span>
+                        </div>
+                        <div class="space-y-3">
+                            {% for work_item in work_items %}
+                            {% if work_item.status and work_item.status.value in ['active', 'in_progress'] %}
+                            <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                                <h4 class="font-medium text-gray-900 text-sm mb-2">
+                                    <a href="{{ url_for('work_items.work_item_detail', work_item_id=work_item.id) }}" class="hover:text-blue-600">
+                                        {{ work_item.name }}
+                                    </a>
+                                </h4>
+                                <div class="flex items-center justify-between text-xs text-gray-500">
+                                    <span>{{ work_item.type.value|title if work_item.type else 'General' }}</span>
+                                    {% if work_item.effort_estimate_hours %}
+                                    <span>{{ work_item.effort_estimate_hours }}h</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Review Column -->
+                    <div class="bg-purple-50 rounded-xl p-4">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-semibold text-purple-700">Review</h3>
+                            <span class="bg-purple-200 text-purple-700 text-xs px-2 py-1 rounded-full">{{ work_items|selectattr('status.value', 'equalto', 'review')|list|length }}</span>
+                        </div>
+                        <div class="space-y-3">
+                            {% for work_item in work_items %}
+                            {% if work_item.status and work_item.status.value == 'review' %}
+                            <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                                <h4 class="font-medium text-gray-900 text-sm mb-2">
+                                    <a href="{{ url_for('work_items.work_item_detail', work_item_id=work_item.id) }}" class="hover:text-blue-600">
+                                        {{ work_item.name }}
+                                    </a>
+                                </h4>
+                                <div class="flex items-center justify-between text-xs text-gray-500">
+                                    <span>{{ work_item.type.value|title if work_item.type else 'General' }}</span>
+                                    {% if work_item.effort_estimate_hours %}
+                                    <span>{{ work_item.effort_estimate_hours }}h</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Done Column -->
+                    <div class="bg-green-50 rounded-xl p-4">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-semibold text-green-700">Done</h3>
+                            <span class="bg-green-200 text-green-700 text-xs px-2 py-1 rounded-full">{{ work_items|selectattr('status.value', 'equalto', 'done')|list|length }}</span>
+                        </div>
+                        <div class="space-y-3">
+                            {% for work_item in work_items %}
+                            {% if work_item.status and work_item.status.value == 'done' %}
+                            <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                                <h4 class="font-medium text-gray-900 text-sm mb-2">
+                                    <a href="{{ url_for('work_items.work_item_detail', work_item_id=work_item.id) }}" class="hover:text-blue-600">
+                                        {{ work_item.name }}
+                                    </a>
+                                </h4>
+                                <div class="flex items-center justify-between text-xs text-gray-500">
+                                    <span>{{ work_item.type.value|title if work_item.type else 'General' }}</span>
+                                    {% if work_item.effort_estimate_hours %}
+                                    <span>{{ work_item.effort_estimate_hours }}h</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <!-- Empty State -->
+            <div class="bg-white rounded-2xl shadow-lg p-12 text-center">
+                <div class="mx-auto h-24 w-24 text-gray-300 mb-6">
+                    <i class="bi bi-kanban text-6xl"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">No work items found</h3>
+                <p class="text-gray-500 mb-8 max-w-md mx-auto">
+                    {% if current_filters.search or current_filters.status or current_filters.type or current_filters.priority %}
+                        Try adjusting your filters or search terms to find what you're looking for.
+                    {% else %}
+                        Get started by creating your first work item to begin tracking your project work.
+                    {% endif %}
+                </p>
+                <div class="space-y-3">
+                    <a href="{{ url_for('work_items.create_work_item') }}" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg hover:from-blue-600 hover:to-indigo-600 transition-all font-medium shadow-lg">
+                        <i class="bi bi-plus-circle mr-2"></i>Create Your First Work Item
+                    </a>
+                    {% if current_filters.search or current_filters.status or current_filters.type or current_filters.priority %}
+                    <div>
+                        <a href="{{ url_for('work_items.work_items_list') }}" class="text-sm text-gray-500 hover:text-gray-700">
+                            <i class="bi bi-x-circle mr-1"></i>Clear all filters
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+        </div>
+
+        <!-- Results Summary -->
+        {% if work_items %}
+        <div class="bg-gray-50 rounded-lg p-4">
+            <div class="flex items-center justify-between text-sm text-gray-600">
+                <div class="flex items-center space-x-4">
+                    <span>Showing {{ work_items|length }} work items</span>
+                    {% if current_filters.search or current_filters.status or current_filters.type or current_filters.priority %}
+                    <span class="text-blue-600">(filtered)</span>
+                    {% endif %}
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span>{{ metrics.total_tasks }} total tasks</span>
+                    <span>{{ metrics.done_work_items }} completed</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function setView(viewType) {
+    // Hide all view containers
+    document.querySelectorAll('.view-container').forEach(container => {
+        container.classList.add('hidden');
+    });
+    
+    // Remove active class from all view toggles
+    document.querySelectorAll('.view-toggle').forEach(toggle => {
+        toggle.classList.remove('active', 'bg-white', 'text-blue-600', 'shadow-sm');
+        toggle.classList.add('text-gray-500');
+    });
+    
+    // Show selected view and activate toggle
+    const container = document.getElementById(viewType + 'ViewContainer');
+    const toggle = document.getElementById(viewType + 'View');
+    
+    if (container) {
+        container.classList.remove('hidden');
+    }
+    
+    if (toggle) {
+        toggle.classList.add('active', 'bg-white', 'text-blue-600', 'shadow-sm');
+        toggle.classList.remove('text-gray-500');
+    }
+    
+    // Save preference to localStorage
+    localStorage.setItem('workItemsView', viewType);
+}
+
+function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('filterForm').submit();
+}
+
+function clearFilter(filterName) {
+    const form = document.getElementById('filterForm');
+    const input = form.querySelector(`[name="${filterName}"]`);
+    if (input) {
+        input.value = '';
+        form.submit();
+    }
+}
+
+function updateFilterCount() {
+    const form = document.getElementById('filterForm');
+    if (!form) return;
+    
+    const searchInput = form.querySelector('[name="search"]');
+    const statusSelect = form.querySelector('[name="status"]');
+    const typeSelect = form.querySelector('[name="type"]');
+    const prioritySelect = form.querySelector('[name="priority"]');
+    
+    const searchValue = searchInput ? searchInput.value.trim() : '';
+    const statusValue = statusSelect ? statusSelect.value : '';
+    const typeValue = typeSelect ? typeSelect.value : '';
+    const priorityValue = prioritySelect ? prioritySelect.value : '';
+    
+    let activeCount = 0;
+    if (searchValue) activeCount++;
+    if (statusValue) activeCount++;
+    if (typeValue) activeCount++;
+    if (priorityValue) activeCount++;
+    
+    const countElement = document.getElementById('filterCount');
+    if (countElement) {
+        if (activeCount > 0) {
+            countElement.textContent = activeCount;
+            countElement.style.display = 'inline-block';
+        } else {
+            countElement.style.display = 'none';
+        }
+    }
+}
+
+// Auto-submit form on filter change with debouncing
+let submitTimeout;
+function debouncedSubmit(form) {
+    clearTimeout(submitTimeout);
+    submitTimeout = setTimeout(() => {
+        form.submit();
+    }, 300);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Restore saved view preference
+    const savedView = localStorage.getItem('workItemsView') || 'list';
+    setView(savedView);
+    
+    // Auto-submit on filter changes
+    const filterSelects = document.querySelectorAll('select[name="status"], select[name="type"], select[name="priority"], select[name="sort"]');
+    filterSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            updateFilterCount();
+            debouncedSubmit(this.form);
+        });
+    });
+    
+    // Auto-submit on search with debouncing
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            updateFilterCount();
+            debouncedSubmit(this.form);
+        });
+    }
+    
+    // Update filter count on page load
+    updateFilterCount();
+    
+    // Show loading state on form submission
+    const form = document.getElementById('filterForm');
+    form.addEventListener('submit', function() {
+        const submitButton = this.querySelector('button[type="submit"]');
+        const originalText = submitButton.innerHTML;
+        submitButton.innerHTML = '<i class="bi bi-hourglass-split mr-1"></i>Applying...';
+        submitButton.disabled = true;
+        
+        // Re-enable after a delay (in case of errors)
+        setTimeout(() => {
+            submitButton.innerHTML = originalText;
+            submitButton.disabled = false;
+        }, 3000);
+    });
+});
+</script>
+{% endblock %}

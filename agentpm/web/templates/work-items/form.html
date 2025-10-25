@@ -1,0 +1,326 @@
+{% extends "layouts/modern_base.html" %}
+
+{% block title %}{{ 'Edit' if work_item else 'Create' }} Work Item - APM (Agent Project Manager) Dashboard{% endblock %}
+
+{% block content %}
+<!-- Breadcrumbs -->
+<nav class="mb-6">
+    <ol class="flex items-center space-x-2 text-sm text-gray-500">
+        <li><a href="/" class="hover:text-primary">Dashboard</a></li>
+        <li class="flex items-center">
+            <svg class="w-4 h-4 mx-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+            </svg>
+            <a href="/work-items" class="hover:text-primary">Work Items</a>
+        </li>
+        <li class="flex items-center">
+            <svg class="w-4 h-4 mx-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+            </svg>
+            <span class="text-gray-900">{{ 'Edit' if work_item else 'Create' }} Work Item</span>
+        </li>
+    </ol>
+</nav>
+
+<!-- Page Header -->
+<div class="mb-8">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">{{ 'Edit' if work_item else 'Create' }} Work Item</h1>
+            <p class="mt-2 text-lg text-gray-600">{{ 'Update work item details' if work_item else 'Create a new work item to track project progress' }}</p>
+        </div>
+        <div class="flex items-center space-x-3">
+            <a href="/work-items" class="btn btn-secondary">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+                Cancel
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Form -->
+<div class="max-w-4xl">
+    <form method="POST" data-validate data-autosave>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Main Form -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Basic Information -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Basic Information</h3>
+                    </div>
+                    <div class="card-body space-y-4">
+                        <div class="form-group">
+                            <label for="name" class="form-label">Work Item Name *</label>
+                            <input 
+                                type="text" 
+                                id="name" 
+                                name="name" 
+                                class="form-input" 
+                                placeholder="Enter work item name"
+                                value="{{ work_item.name if work_item else '' }}"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="description" class="form-label">Description *</label>
+                            <textarea 
+                                id="description" 
+                                name="description" 
+                                class="form-input" 
+                                rows="4" 
+                                placeholder="Describe the work item in detail..."
+                                required
+                            >{{ work_item.description if work_item else '' }}</textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="business_context" class="form-label">Business Context</label>
+                            <textarea 
+                                id="business_context" 
+                                name="business_context" 
+                                class="form-input" 
+                                rows="3" 
+                                placeholder="Explain the business value and context..."
+                            >{{ work_item.business_context if work_item else '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Classification -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Classification</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <label for="type" class="form-label">Type *</label>
+                                <select id="type" name="type" class="form-select" required>
+                                    <option value="">Select type</option>
+                                    <option value="feature" {{ 'selected' if work_item and work_item.type.value == 'feature' else '' }}>Feature</option>
+                                    <option value="enhancement" {{ 'selected' if work_item and work_item.type.value == 'enhancement' else '' }}>Enhancement</option>
+                                    <option value="bugfix" {{ 'selected' if work_item and work_item.type.value == 'bugfix' else '' }}>Bug Fix</option>
+                                    <option value="research" {{ 'selected' if work_item and work_item.type.value == 'research' else '' }}>Research</option>
+                                    <option value="documentation" {{ 'selected' if work_item and work_item.type.value == 'documentation' else '' }}>Documentation</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="priority" class="form-label">Priority</label>
+                                <select id="priority" name="priority" class="form-select">
+                                    <option value="">Select priority</option>
+                                    <option value="1" {{ 'selected' if work_item and work_item.priority == 1 else '' }}>Critical (P1)</option>
+                                    <option value="2" {{ 'selected' if work_item and work_item.priority == 2 else '' }}>High (P2)</option>
+                                    <option value="3" {{ 'selected' if work_item and work_item.priority == 3 else '' }}>Medium (P3)</option>
+                                    <option value="4" {{ 'selected' if work_item and work_item.priority == 4 else '' }}>Low (P4)</option>
+                                    <option value="5" {{ 'selected' if work_item and work_item.priority == 5 else '' }}>Very Low (P5)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project Assignment -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Project Assignment</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="project_id" class="form-label">Project</label>
+                            <select id="project_id" name="project_id" class="form-select">
+                                <option value="">No project assigned</option>
+                                {% for project in projects %}
+                                <option value="{{ project.id }}" {{ 'selected' if work_item and work_item.project_id == project.id else '' }}>
+                                    {{ project.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="space-y-6">
+                <!-- Status -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Status</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="status" class="form-label">Current Status</label>
+                            <select id="status" name="status" class="form-select">
+                                <option value="proposed" {{ 'selected' if work_item and work_item.status.value == 'proposed' else '' }}>Proposed</option>
+                                <option value="validated" {{ 'selected' if work_item and work_item.status.value == 'validated' else '' }}>Validated</option>
+                                <option value="accepted" {{ 'selected' if work_item and work_item.status.value == 'accepted' else '' }}>Accepted</option>
+                                <option value="in_progress" {{ 'selected' if work_item and work_item.status.value == 'in_progress' else '' }}>In Progress</option>
+                                <option value="review" {{ 'selected' if work_item and work_item.status.value == 'review' else '' }}>Review</option>
+                                <option value="completed" {{ 'selected' if work_item and work_item.status.value == 'completed' else '' }}>Completed</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Phase -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Phase</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="phase" class="form-label">Current Phase</label>
+                            <select id="phase" name="phase" class="form-select">
+                                <option value="">Select phase</option>
+                                <option value="D1" {{ 'selected' if work_item and work_item.phase == 'D1' else '' }}>D1 - Design</option>
+                                <option value="P1" {{ 'selected' if work_item and work_item.phase == 'P1' else '' }}>P1 - Planning</option>
+                                <option value="I1" {{ 'selected' if work_item and work_item.phase == 'I1' else '' }}>I1 - Implementation</option>
+                                <option value="R1" {{ 'selected' if work_item and work_item.phase == 'R1' else '' }}>R1 - Review</option>
+                                <option value="O1" {{ 'selected' if work_item and work_item.phase == 'O1' else '' }}>O1 - Operations</option>
+                                <option value="E1" {{ 'selected' if work_item and work_item.phase == 'E1' else '' }}>E1 - Evaluation</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Actions</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="space-y-3">
+                            <button type="submit" class="btn btn-primary w-full" data-loading>
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                {{ 'Update' if work_item else 'Create' }} Work Item
+                            </button>
+                            
+                            <a href="/work-items" class="btn btn-secondary w-full">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                                Cancel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Help -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Help</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-sm text-gray-600 space-y-2">
+                            <p><strong>Feature:</strong> New functionality or capability</p>
+                            <p><strong>Enhancement:</strong> Improvement to existing functionality</p>
+                            <p><strong>Bug Fix:</strong> Correction of existing issues</p>
+                            <p><strong>Research:</strong> Investigation or analysis work</p>
+                            <p><strong>Documentation:</strong> Writing or updating documentation</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Form JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-save functionality
+    const form = document.querySelector('form[data-autosave]');
+    if (form) {
+        const inputs = form.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            const debouncedSave = AIPM.utils.debounce(() => {
+                saveDraft();
+            }, 2000);
+            
+            input.addEventListener('input', debouncedSave);
+        });
+    }
+    
+    // Form validation
+    const formElement = document.querySelector('form[data-validate]');
+    if (formElement) {
+        formElement.addEventListener('submit', function(e) {
+            if (!validateForm()) {
+                e.preventDefault();
+            }
+        });
+    }
+});
+
+function validateForm() {
+    let isValid = true;
+    
+    // Required fields
+    const requiredFields = ['name', 'description', 'type'];
+    requiredFields.forEach(fieldName => {
+        const field = document.getElementById(fieldName);
+        if (field && !field.value.trim()) {
+            AIPM.forms.showFieldError(field, 'This field is required');
+            isValid = false;
+        } else if (field) {
+            AIPM.forms.clearFieldError(field);
+        }
+    });
+    
+    // Description length check
+    const description = document.getElementById('description');
+    if (description && description.value.trim().length < 50) {
+        AIPM.forms.showFieldError(description, 'Description must be at least 50 characters');
+        isValid = false;
+    }
+    
+    if (!isValid) {
+        AIPM.utils.showToast('Please fix the errors above', 'error');
+    }
+    
+    return isValid;
+}
+
+function saveDraft() {
+    const formData = new FormData(document.querySelector('form'));
+    const data = Object.fromEntries(formData);
+    
+    // Save to localStorage as draft
+    localStorage.setItem('work-item-draft', JSON.stringify(data));
+    AIPM.utils.showToast('Draft saved', 'info', 2000);
+}
+
+function loadDraft() {
+    const draft = localStorage.getItem('work-item-draft');
+    if (draft) {
+        const data = JSON.parse(draft);
+        
+        // Populate form fields
+        Object.keys(data).forEach(key => {
+            const field = document.getElementById(key);
+            if (field) {
+                field.value = data[key];
+            }
+        });
+        
+        AIPM.utils.showToast('Draft loaded', 'info', 2000);
+    }
+}
+
+// Load draft on page load if creating new work item
+{% if not work_item %}
+document.addEventListener('DOMContentLoaded', function() {
+    loadDraft();
+});
+{% endif %}
+</script>
+{% endblock %}

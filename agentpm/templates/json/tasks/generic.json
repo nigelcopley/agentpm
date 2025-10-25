@@ -1,0 +1,13 @@
+{
+  "summary": "High-level description of the task objective and deliverable.",
+  "constraints": [
+    "Note key constraints the assignee should respect."
+  ],
+  "references": [
+    {
+      "label": "Related document or ticket",
+      "url": "https://tracker.example.com/task/123"
+    }
+  ],
+  "notes": "Capture clarifications, assumptions, or follow-up actions."
+}

@@ -1,0 +1,30 @@
+"""
+Database Core Module
+
+Provides database service with connection management, transaction handling,
+and CRUD operations for all APM (Agent Project Manager) entities.
+
+Usage:
+    from agentpm.core.database import DatabaseService
+
+    service = DatabaseService("~/.aipm/aipm.db")
+
+    with service.connect() as conn:
+        result = conn.execute("SELECT * FROM projects").fetchall()
+"""
+
+from .service import (
+    DatabaseService,
+    DatabaseError,
+    ConnectionError,
+    TransactionError,
+    ValidationError,
+)
+
+__all__ = [
+    "DatabaseService",
+    "DatabaseError",
+    "ConnectionError",
+    "TransactionError",
+    "ValidationError",
+]

@@ -1,0 +1,22 @@
+{
+  "test_plan": "[TODO: Define comprehensive test plan including test types and coverage strategy]",
+  "test_types": [
+    "unit",
+    "integration"
+  ],
+  "environments": [
+    "ci"
+  ],
+  "tests_passing": false,
+  "coverage_percent": 0,
+  "coverage_targets": [
+    {
+      "module": "[TODO: Specify module name]",
+      "target": 90
+    }
+  ],
+  "evidence": [
+    "[TODO: Path to coverage report or test results]"
+  ],
+  "notes": "[TODO: Document test strategy decisions, known limitations, or links to CI dashboards]"
+}

@@ -1,0 +1,292 @@
+{% extends "layouts/base.html" %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('taskDetail', () => ({
+        statusUpdateLoading: false,
+        
+        async updateStatus(newStatus) {
+            this.statusUpdateLoading = true;
+            try {
+                const response = await fetch(`/tasks/{{ task.id }}/update-status`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    showToast(result.message, 'success');
+                    // Reload the page to show updated status
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    throw new Error('Failed to update status');
+                }
+            } catch (error) {
+                showToast('Failed to update status', 'error');
+            } finally {
+                this.statusUpdateLoading = false;
+            }
+        }
+    }));
+});
+</script>
+{% endblock %}
+
+{% block title %}{{ task.name }} - Task #{{ task.id }} - APM (Agent Project Manager){% endblock %}
+
+{% block content %}
+<div class="space-y-6" x-data="taskDetail()">
+    <!-- Page Header -->
+    <div class="bg-gradient-to-r from-green-500 to-blue-500 rounded-lg p-6 text-white">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold mb-2">{{ task.name }}</h1>
+                <p class="text-green-100">Task Details & Progress</p>
+            </div>
+            <div class="bg-white/20 p-3 rounded-full">
+                <i class="bi bi-list-task text-3xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Breadcrumb -->
+    <nav class="flex" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-1 md:space-x-3">
+            <li class="inline-flex items-center">
+                <a href="{{ url_for('tasks.tasks_list') }}" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-green-600">
+                    <i class="bi bi-list-task mr-2"></i>Tasks
+                </a>
+            </li>
+            <li>
+                <div class="flex items-center">
+                    <i class="bi bi-chevron-right text-gray-400"></i>
+                    <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">{{ task.name }}</span>
+                </div>
+            </li>
+        </ol>
+    </nav>
+
+    <!-- Action Bar -->
+    <div class="bg-white rounded-lg shadow-lg p-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <a href="{{ url_for('tasks.tasks_list') }}" class="text-gray-600 hover:text-gray-800">
+                    <i class="bi bi-arrow-left mr-2"></i>Back to Tasks
+                </a>
+                {% if work_item %}
+                <div class="h-6 w-px bg-gray-300"></div>
+                <a href="{{ url_for('work_items.work_item_detail', work_item_id=work_item.id) }}" class="text-gray-600 hover:text-gray-800">
+                    <i class="bi bi-kanban mr-2"></i>{{ work_item.name }}
+                </a>
+                {% endif %}
+                <div class="h-6 w-px bg-gray-300"></div>
+                <span class="text-sm text-gray-500">Task ID: {{ task.id }}</span>
+            </div>
+            <div class="flex items-center space-x-3">
+                <a href="{{ url_for('tasks.edit_task', task_id=task.id) }}" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                    <i class="bi bi-pencil mr-2"></i>Edit
+                </a>
+                {% if task.status.value not in ['done', 'cancelled'] %}
+                <button class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">
+                    <i class="bi bi-check mr-2"></i>Complete
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Main Content -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Description -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold text-gray-900">Description</h2>
+                    <button class="text-blue-600 hover:text-blue-800">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                </div>
+                <div class="prose max-w-none">
+                    {% if task.description %}
+                        <div class="text-gray-700 leading-relaxed">{{ task.description|markdown }}</div>
+                    {% else %}
+                        <p class="text-gray-500 italic">No description provided.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quality Metadata -->
+            {% if task.quality_metadata %}
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Quality Metadata</h2>
+                <div class="prose max-w-none">
+                    <pre class="bg-gray-50 p-4 rounded-lg text-sm overflow-x-auto">{{ task.quality_metadata|tojson(indent=2) }}</pre>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-6">
+            <!-- Status & Actions -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Status & Actions</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Current Status</label>
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                            {% if task.status.value == 'draft' %}bg-gray-100 text-gray-800
+                            {% elif task.status.value == 'ready' %}bg-yellow-100 text-yellow-800
+                            {% elif task.status.value == 'active' %}bg-green-100 text-green-800
+                            {% elif task.status.value == 'in_progress' %}bg-blue-100 text-blue-800
+                            {% elif task.status.value == 'review' %}bg-purple-100 text-purple-800
+                            {% elif task.status.value == 'blocked' %}bg-red-100 text-red-800
+                            {% elif task.status.value == 'done' %}bg-green-100 text-green-800
+                            {% elif task.status.value == 'cancelled' %}bg-gray-100 text-gray-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            <i class="bi bi-circle-fill mr-2 text-xs"></i>{{ task.status.value|replace('_', ' ')|title }}
+                        </span>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                            {% if task.type.value == 'implementation' %}bg-blue-100 text-blue-800
+                            {% elif task.type.value == 'testing' %}bg-purple-100 text-purple-800
+                            {% elif task.type.value == 'design' %}bg-pink-100 text-pink-800
+                            {% elif task.type.value == 'bugfix' %}bg-red-100 text-red-800
+                            {% elif task.type.value == 'documentation' %}bg-yellow-100 text-yellow-800
+                            {% elif task.type.value == 'analysis' %}bg-indigo-100 text-indigo-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ task.type.value|title }}
+                        </span>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Effort</label>
+                        <span class="text-sm text-gray-900">
+                            {% if task.effort_hours %}
+                                {{ "%.1f"|format(task.effort_hours) }}h
+                            {% else %}
+                                <span class="text-gray-400">Not estimated</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+                        <div class="flex items-center">
+                            <span class="text-sm text-gray-900 mr-2">{{ task.priority }}</span>
+                            <div class="flex space-x-1">
+                                {% for i in range(1, 6) %}
+                                <div class="w-2 h-2 rounded-full {% if i <= task.priority %}bg-red-500{% else %}bg-gray-200{% endif %}"></div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Work Item Info -->
+            {% if work_item %}
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Work Item</h3>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500">Name</label>
+                        <p class="text-sm text-gray-900">{{ work_item.name }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500">Status</label>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                            {% if work_item.status.value == 'draft' %}bg-gray-100 text-gray-800
+                            {% elif work_item.status.value == 'ready' %}bg-yellow-100 text-yellow-800
+                            {% elif work_item.status.value == 'active' %}bg-green-100 text-green-800
+                            {% elif work_item.status.value == 'review' %}bg-purple-100 text-purple-800
+                            {% elif work_item.status.value == 'blocked' %}bg-red-100 text-red-800
+                            {% elif work_item.status.value == 'done' %}bg-green-100 text-green-800
+                            {% elif work_item.status.value == 'cancelled' %}bg-gray-100 text-gray-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ work_item.status.value|replace('_', ' ')|title }}
+                        </span>
+                    </div>
+                    <div>
+                        <a href="{{ url_for('work_items.work_item_detail', work_item_id=work_item.id) }}" class="text-blue-600 hover:text-blue-800 text-sm">
+                            <i class="bi bi-arrow-right mr-1"></i>View Work Item
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Metadata -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Details</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500">Created</label>
+                        <p class="text-sm text-gray-900">{{ task.created_at.strftime('%Y-%m-%d %H:%M') if task.created_at else 'N/A' }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500">Last Updated</label>
+                        <p class="text-sm text-gray-900">{{ task.updated_at.strftime('%Y-%m-%d %H:%M') if task.updated_at else 'N/A' }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500">Assigned To</label>
+                        <p class="text-sm text-gray-900">{{ task.assigned_to or 'Unassigned' }}</p>
+                    </div>
+                    {% if task.due_date %}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500">Due Date</label>
+                        <p class="text-sm text-gray-900">{{ task.due_date.strftime('%Y-%m-%d %H:%M') }}</p>
+                    </div>
+                    {% endif %}
+                    {% if task.started_at %}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500">Started</label>
+                        <p class="text-sm text-gray-900">{{ task.started_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    </div>
+                    {% endif %}
+                    {% if task.completed_at %}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500">Completed</label>
+                        <p class="text-sm text-gray-900">{{ task.completed_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    </div>
+                    {% endif %}
+                    {% if task.blocked_reason %}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500">Blocked Reason</label>
+                        <p class="text-sm text-red-600">{{ task.blocked_reason }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+                <div class="space-y-3">
+                    <a href="{{ url_for('tasks.edit_task', task_id=task.id) }}" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors block">
+                        <i class="bi bi-pencil mr-2"></i>Edit Task
+                    </a>
+                    {% if task.status.value not in ['done', 'cancelled'] %}
+                    <button class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">
+                        <i class="bi bi-check mr-2"></i>Mark Complete
+                    </button>
+                    {% endif %}
+                    <button class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">
+                        <i class="bi bi-flag mr-2"></i>Add Note
+                    </button>
+                    <form method="POST" action="{{ url_for('tasks.delete_task', task_id=task.id) }}" class="inline" onsubmit="return confirm('Are you sure you want to delete this task?')">
+                        <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                            <i class="bi bi-trash mr-2"></i>Delete Task
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

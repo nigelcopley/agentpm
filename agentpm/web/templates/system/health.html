@@ -1,0 +1,243 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}System Health - APM (Agent Project Manager){% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Page Header -->
+    <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg p-6 text-white">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold mb-2">System Health Monitor</h1>
+                <p class="text-green-100">Monitor system status, performance, and health metrics</p>
+            </div>
+            <div class="bg-white/20 p-3 rounded-full">
+                <i class="bi bi-heart-pulse text-3xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Status Overview -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <div class="flex items-center">
+                <div class="bg-green-50 rounded-full p-3 mr-4">
+                    <i class="bi bi-database text-2xl text-green-500"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Database</p>
+                    <p class="text-2xl font-semibold text-green-600">Healthy</p>
+                    <p class="text-xs text-gray-400">Last check: {{ system.last_db_check or 'N/A' }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <div class="flex items-center">
+                <div class="bg-blue-50 rounded-full p-3 mr-4">
+                    <i class="bi bi-cpu text-2xl text-blue-500"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-500">System</p>
+                    <p class="text-2xl font-semibold text-blue-600">Running</p>
+                    <p class="text-xs text-gray-400">Uptime: {{ system.uptime or 'N/A' }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <div class="flex items-center">
+                <div class="bg-purple-50 rounded-full p-3 mr-4">
+                    <i class="bi bi-robot text-2xl text-purple-500"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Agents</p>
+                    <p class="text-2xl font-semibold text-purple-600">{{ system.active_agents or 0 }}</p>
+                    <p class="text-xs text-gray-400">Active agents</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <div class="flex items-center">
+                <div class="bg-orange-50 rounded-full p-3 mr-4">
+                    <i class="bi bi-shield-check text-2xl text-orange-500"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Security</p>
+                    <p class="text-2xl font-semibold text-orange-600">Secure</p>
+                    <p class="text-xs text-gray-400">Last scan: {{ system.last_security_scan or 'N/A' }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Metrics -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- System Performance -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">System Performance</h2>
+            <div class="space-y-4">
+                <div>
+                    <div class="flex justify-between text-sm mb-1">
+                        <span class="text-gray-500">CPU Usage</span>
+                        <span class="text-gray-900">{{ system.cpu_usage or 'N/A' }}%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-blue-500 h-2 rounded-full" style="width: {{ system.cpu_usage or 0 }}%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between text-sm mb-1">
+                        <span class="text-gray-500">Memory Usage</span>
+                        <span class="text-gray-900">{{ system.memory_usage or 'N/A' }}%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-green-500 h-2 rounded-full" style="width: {{ system.memory_usage or 0 }}%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between text-sm mb-1">
+                        <span class="text-gray-500">Disk Usage</span>
+                        <span class="text-gray-900">{{ system.disk_usage or 'N/A' }}%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-purple-500 h-2 rounded-full" style="width: {{ system.disk_usage or 0 }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Database Health -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Database Health</h2>
+            <div class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-500">Connection Status</span>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <i class="bi bi-check-circle mr-1"></i>Connected
+                    </span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-500">Database Size</span>
+                    <span class="text-sm text-gray-900">{{ system.db_size or 'N/A' }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-500">Tables Count</span>
+                    <span class="text-sm text-gray-900">{{ system.tables_count or 'N/A' }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-500">Last Backup</span>
+                    <span class="text-sm text-gray-900">{{ system.last_backup or 'N/A' }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Information -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">System Information</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+                <h3 class="font-medium text-gray-900 mb-3">Application</h3>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Version</span>
+                        <span class="text-gray-900">{{ system.app_version or 'APM (Agent Project Manager)' }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Environment</span>
+                        <span class="text-gray-900">{{ system.environment or 'Development' }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Status</span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Running
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <h3 class="font-medium text-gray-900 mb-3">Database</h3>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Type</span>
+                        <span class="text-gray-900">{{ system.db_type or 'SQLite' }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Version</span>
+                        <span class="text-gray-900">{{ system.db_version or 'N/A' }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Status</span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Connected
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <h3 class="font-medium text-gray-900 mb-3">Runtime</h3>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Python</span>
+                        <span class="text-gray-900">{{ system.python_version or 'N/A' }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Flask</span>
+                        <span class="text-gray-900">{{ system.flask_version or 'N/A' }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">Start Time</span>
+                        <span class="text-gray-900">{{ system.start_time or 'N/A' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Recent System Activity</h2>
+        <div class="space-y-3">
+            {% if system.recent_activity %}
+                {% for activity in system.recent_activity %}
+                <div class="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                    <div class="flex-shrink-0">
+                        <i class="bi bi-circle-fill text-green-500 text-xs"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm text-gray-900">{{ activity.description }}</p>
+                        <p class="text-xs text-gray-500">{{ activity.timestamp if activity.timestamp else 'N/A' }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-center py-8">
+                    <i class="bi bi-activity text-4xl text-gray-300 mb-2"></i>
+                    <p class="text-gray-500">No recent activity</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <button class="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                <i class="bi bi-arrow-clockwise mr-2"></i>
+                Refresh Status
+            </button>
+            <button class="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                <i class="bi bi-download mr-2"></i>
+                Export Logs
+            </button>
+            <button class="flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                <i class="bi bi-gear mr-2"></i>
+                System Settings
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}

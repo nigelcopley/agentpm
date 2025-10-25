@@ -1,0 +1,199 @@
+"""
+Migration 0027: Add metadata column to agents table
+
+Fixes schema mismatch where migration 0020 recreated agents table
+but omitted the metadata column. This column is required by
+migration 0029 for storing agent behavioral rules and configuration.
+
+Schema Change:
+- Adds agents.metadata TEXT column with DEFAULT '{}'
+- Column is nullable for backward compatibility
+- Idempotent: Checks if column exists before adding
+
+Root Cause Analysis:
+- Migration 0020 (lines 307-326) recreated agents table to fix tier column type
+  (from TEXT to INTEGER)
+- Original agents table had metadata column (added in earlier migration)
+- Migration 0020's agents_new table schema did NOT include metadata column
+- Migration 0020 copied data but could not preserve non-existent column
+- Result: metadata column lost during table recreation
+- Impact: Migration 0029 fails with "table agents has no column named metadata"
+
+Dependencies:
+- Must run AFTER migration 0020 (agents table exists with tier as INTEGER)
+- Must run BEFORE migration 0029 (inserts data into metadata column)
+
+Migration Strategy:
+- Uses ALTER TABLE ADD COLUMN (SQLite 3.2.0+)
+- Sets DEFAULT '{}' to ensure valid JSON for all rows
+- Checks for column existence first (idempotent)
+- No data migration needed (new column, no existing data)
+
+Rollback Strategy:
+- SQLite doesn't support DROP COLUMN directly (before v3.35.0)
+- Requires table recreation pattern
+- Preserves all data except metadata column
+- Recreates indexes and triggers
+- See downgrade() for implementation details
+
+Verification:
+After applying migration:
+1. Run: sqlite3 .aipm/data/aipm.db "PRAGMA table_info(agents)"
+2. Verify: Column 14 shows "metadata|TEXT|0|'{}'|0"
+3. Test: apm agents list (should not error)
+4. Test: Migration 0029 should run without errors
+
+Performance Impact:
+- ALTER TABLE on agents table (typically <100 rows)
+- Execution time: <100ms
+- No data migration overhead
+- Immediate schema change (no rebuild required)
+
+Security Considerations:
+- metadata column stores JSON configuration
+- No sensitive data stored (behavioral rules only)
+- Column is NOT indexed (performance vs security trade-off)
+
+Related Migrations:
+- Migration 0020: Recreated agents table (lost metadata)
+- Migration 0029: Uses metadata column for utility agents
+- See: docs/migrations/SCHEMA-MIGRATION-ANALYSIS.md
+
+Author: WI-108 (Migration 0027 Schema Fix)
+Date: 2025-10-17
+"""
+
+import sqlite3
+
+
+def upgrade(conn: sqlite3.Connection) -> None:
+    """
+    Add metadata column to agents table.
+
+    Idempotent: Checks if column exists before adding.
+
+    Schema Change:
+        ALTER TABLE agents ADD COLUMN metadata TEXT DEFAULT '{}'
+
+    Verification:
+        PRAGMA table_info(agents) should show metadata as column 14
+
+    Args:
+        conn: Database connection (transaction managed by MigrationManager)
+
+    Raises:
+        sqlite3.Error: If ALTER TABLE fails
+    """
+    print("🔧 Migration 0027: Adding metadata column to agents table")
+
+    # Check if column already exists (idempotency)
+    cursor = conn.execute("PRAGMA table_info(agents)")
+    columns = {row[1] for row in cursor.fetchall()}
+
+    if 'metadata' in columns:
+        print("  ✅ metadata column already exists, skipping")
+        return
+
+    # Add metadata column
+    conn.execute("""
+        ALTER TABLE agents
+        ADD COLUMN metadata TEXT DEFAULT '{}'
+    """)
+
+    print("  ✅ Added metadata column to agents table")
+    # Note: No conn.commit() - MigrationManager handles transaction
+
+
+def downgrade(conn: sqlite3.Connection) -> None:
+    """
+    Remove metadata column from agents table.
+
+    WARNING: This will DELETE all data stored in the metadata column.
+             Backup database before rolling back.
+
+    Strategy:
+        SQLite doesn't support DROP COLUMN (before v3.35.0)
+        Uses table recreation pattern:
+        1. Create new table without metadata column
+        2. Copy data (excluding metadata)
+        3. Drop old table
+        4. Rename new table
+        5. Recreate indexes and triggers
+
+    Verification:
+        PRAGMA table_info(agents) should NOT show metadata column
+
+    Args:
+        conn: Database connection (transaction managed by MigrationManager)
+
+    Raises:
+        sqlite3.Error: If table recreation fails
+    """
+    print("🔧 Migration 0027 downgrade: Removing metadata column")
+
+    # SQLite doesn't support DROP COLUMN directly (before version 3.35.0)
+    # Need to recreate table without metadata column
+    print("  ⚠️  SQLite downgrade requires table recreation")
+    print("  → Recreating agents table without metadata column")
+
+    conn.execute("PRAGMA foreign_keys = OFF")
+
+    # Create agents table without metadata (same as migration 0020 created)
+    conn.execute("""
+        CREATE TABLE agents_downgrade (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id INTEGER NOT NULL,
+            role TEXT NOT NULL,
+            display_name TEXT NOT NULL,
+            description TEXT,
+            sop_content TEXT,
+            capabilities TEXT DEFAULT '[]',
+            is_active INTEGER DEFAULT 1,
+            agent_type TEXT DEFAULT NULL,
+            file_path TEXT DEFAULT NULL,
+            generated_at TIMESTAMP DEFAULT NULL,
+            tier INTEGER CHECK(tier IN (1, 2, 3)),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+            UNIQUE(project_id, role)
+        )
+    """)
+
+    # Copy data (exclude metadata column)
+    conn.execute("""
+        INSERT INTO agents_downgrade (
+            id, project_id, role, display_name, description,
+            sop_content, capabilities, is_active, agent_type, file_path,
+            generated_at, tier, created_at, updated_at
+        )
+        SELECT
+            id, project_id, role, display_name, description,
+            sop_content, capabilities, is_active, agent_type, file_path,
+            generated_at, tier, created_at, updated_at
+        FROM agents
+    """)
+
+    # Replace table
+    conn.execute("DROP TABLE agents")
+    conn.execute("ALTER TABLE agents_downgrade RENAME TO agents")
+
+    # Recreate indexes
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_agents_project ON agents(project_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_agents_role ON agents(project_id, role)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_agents_active ON agents(is_active)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_agents_type ON agents(agent_type)")
+
+    # Recreate trigger
+    conn.execute("""
+        CREATE TRIGGER IF NOT EXISTS agents_updated_at
+        AFTER UPDATE ON agents
+        FOR EACH ROW
+        BEGIN
+            UPDATE agents SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+        END
+    """)
+
+    conn.execute("PRAGMA foreign_keys = ON")
+    print("  ✅ Agents table recreated without metadata column")
+    # Note: No conn.commit() - MigrationManager handles transaction

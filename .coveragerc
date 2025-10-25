@@ -1,0 +1,71 @@
+# Coverage.py configuration for APM (Agent Project Manager)
+# This configuration focuses on measuring coverage of actively tested modules
+# while excluding untested infrastructure code (CLI, web, providers)
+
+[run]
+source = agentpm
+omit =
+    # CLI commands (not currently tested)
+    agentpm/cli/*
+    # Web application (not currently tested)
+    agentpm/web/*
+    # Provider integrations (not currently tested)
+    agentpm/providers/anthropic/*
+    agentpm/providers/openai/*
+    agentpm/providers/cursor/*
+    agentpm/providers/generators/*
+    # Services with external dependencies (not currently tested)
+    agentpm/services/claude_integration/*
+    agentpm/services/memory/*
+    # Core modules with low/no test coverage
+    agentpm/core/context/*
+    agentpm/core/detection/*
+    agentpm/core/plugins/*
+    agentpm/core/rules/*
+    agentpm/core/testing/*
+    agentpm/core/workflow/*
+    agentpm/utils/*
+    # Migration files (data, not logic)
+    agentpm/core/database/migrations/*
+    # Template files
+    agentpm/templates/*
+    # Test files themselves
+    */tests/*
+    */test_*.py
+    *_test.py
+
+[report]
+# Show missing lines in reports
+show_missing = True
+# Skip files with no executable code
+skip_empty = True
+# Precision for coverage percentage
+precision = 2
+
+# Set failure threshold (optional - fails if coverage below this)
+# fail_under = 50.0
+
+# Exclude lines from coverage
+exclude_lines =
+    # Standard pragma
+    pragma: no cover
+    # Don't complain about missing debug code
+    def __repr__
+    # Don't complain if tests don't hit defensive assertion code
+    raise AssertionError
+    raise NotImplementedError
+    # Don't complain if non-runnable code isn't run
+    if __name__ == .__main__.:
+    # Type checking blocks
+    if TYPE_CHECKING:
+    # Abstract methods
+    @abstractmethod
+    # Pass statements
+    pass
+
+[html]
+directory = htmlcov
+title = APM (Agent Project Manager) Test Coverage Report
+
+[xml]
+output = coverage.xml

@@ -1,0 +1,377 @@
+"""
+Indicator Service - Fast Pattern Matching for Plugin Candidates
+
+Phase 1 of two-phase detection architecture (ADR-001).
+
+Scans project against 200+ patterns in single directory walk to identify
+candidate plugins. Performance: <100ms regardless of pattern count.
+
+Pattern: Service class using ProjectIndicators pattern library
+"""
+
+from pathlib import Path
+from typing import Set, Optional
+import time
+
+from .indicators import ProjectIndicators
+from ...utils import IgnorePatternMatcher
+
+
+class IndicatorService:
+    """
+    Fast pattern matching to identify plugin candidates.
+
+    Phase 1 of two-phase detection:
+    - Scans project files once (single directory walk)
+    - Matches against 200+ patterns (config files, extensions, directories)
+    - Returns candidate plugin IDs for Phase 2 deep detection
+
+    Performance: O(files in project), typically <100ms
+
+    Example:
+        service = IndicatorService()
+        candidates = service.scan_for_candidates(project_path)
+        # Returns: {'python', 'django', 'pytest', 'docker'}
+        # 4 candidates from 200+ possible plugins
+    """
+
+    def __init__(self):
+        """Initialize indicator service with ProjectIndicators patterns."""
+        self.indicators = ProjectIndicators
+        self._ignore_matcher: Optional[IgnorePatternMatcher] = None
+
+    def scan_for_candidates(self, project_path: Path) -> Set[str]:
+        """
+        Scan project for technology indicators and return candidate plugins.
+
+        Single directory walk matches against all patterns simultaneously.
+        Uses smart filtering (language hints) to check relevant frameworks only.
+
+        Args:
+            project_path: Path to project directory
+
+        Returns:
+            Set of candidate plugin IDs (technology names)
+            Example: {'python', 'django', 'pytest', 'docker'}
+
+        Performance:
+            Target: <100ms for typical project (1,000-5,000 files)
+            Scales: O(files) not O(plugins)
+
+        Example:
+            >>> service = IndicatorService()
+            >>> candidates = service.scan_for_candidates(Path('/my/django/project'))
+            >>> print(candidates)
+            {'python', 'django', 'pytest', 'docker'}
+        """
+        start_time = time.time()
+        candidates: Set[str] = set()
+
+        # Initialize ignore matcher for this project (lazy initialization)
+        if self._ignore_matcher is None:
+            self._ignore_matcher = IgnorePatternMatcher(project_path)
+
+        # Collect files and directories once
+        try:
+            # Use rglob for recursive search with performance limits
+            all_files = set()
+            all_dirs = set()
+            file_count = 0
+            MAX_FILES_TO_SCAN = 5000  # Prevent excessive scanning on huge projects
+
+            for item in project_path.rglob("*"):
+                # Skip ignored paths (respects .gitignore, .aipmignore, defaults)
+                if self._ignore_matcher.should_ignore(item):
+                    continue
+
+                if item.is_file():
+                    all_files.add(item.name)
+                    all_files.add(str(item.relative_to(project_path)))
+                    file_count += 1
+
+                    # Early termination for massive projects
+                    if file_count >= MAX_FILES_TO_SCAN:
+                        break
+                elif item.is_dir():
+                    all_dirs.add(item.name)
+                    all_dirs.add(str(item.relative_to(project_path)))
+
+        except Exception as e:
+            # If scanning fails, return empty set (graceful degradation)
+            return candidates
+
+        # PHASE 0: Parse requirements.txt FIRST (highest confidence signal)
+        high_confidence_techs = self._parse_requirements(project_path)
+        candidates.update(high_confidence_techs)
+
+        # Match languages by config files
+        candidates.update(self._match_config_files(all_files))
+
+        # Match languages by extensions
+        candidates.update(self._match_extensions(all_files))
+
+        # Match frameworks (with smart filtering based on detected languages)
+        detected_languages = candidates & {
+            'python', 'javascript', 'typescript', 'java', 'go', 'rust',
+            'php', 'ruby', 'kotlin', 'swift'
+        }
+        candidates.update(self._match_frameworks(all_files, all_dirs, detected_languages))
+
+        # Match testing frameworks (with language hints)
+        candidates.update(self._match_testing_frameworks(all_files, detected_languages))
+
+        # Match databases (with language hints)
+        candidates.update(self._match_databases(all_files, detected_languages))
+
+        # Match infrastructure
+        candidates.update(self._match_infrastructure(all_files))
+
+        # Apply mutual exclusion rules (frameworks, databases)
+        candidates = self._apply_mutual_exclusion(candidates, high_confidence_techs)
+
+        # Performance tracking (for validation)
+        elapsed_ms = (time.time() - start_time) * 1000
+
+        # Log if over budget (monitoring for optimization)
+        if elapsed_ms > 100:
+            # TODO: Add proper logging when logging system available
+            pass
+
+        return candidates
+
+    # ========== Pattern Matching Methods ==========
+
+    def _parse_requirements(self, project_path: Path) -> Set[str]:
+        """
+        Parse requirements.txt for definitive technology detection.
+
+        Highest confidence signal - if it's in requirements, it's definitely used.
+        """
+        candidates = set()
+
+        # Common requirement file locations
+        req_files = [
+            'requirements.txt',
+            'requirements/base.txt',
+            'requirements/prod.txt',
+            'requirements/dev.txt',
+            'pyproject.toml'
+        ]
+
+        for req_file in req_files:
+            req_path = project_path / req_file
+            if not req_path.exists():
+                continue
+
+            try:
+                content = req_path.read_text().lower()
+
+                # Frameworks (check first to apply mutual exclusion)
+                if 'django' in content and 'django==' in content:
+                    candidates.add('django')
+                    # Mutual exclusion: Django project won't use Flask/FastAPI
+                    # Skip Flask/FastAPI detection later
+                elif 'flask' in content and 'flask==' in content:
+                    candidates.add('flask')
+                elif 'fastapi' in content:
+                    candidates.add('fastapi')
+
+                # CLI frameworks
+                if 'click' in content and ('click==' in content or 'click>=' in content or 'click<' in content or '"click"' in content):
+                    candidates.add('click')
+
+                # Databases
+                if 'psycopg' in content or 'postgresql' in content:
+                    candidates.add('postgresql')
+                if 'redis' in content and 'redis==' in content:
+                    candidates.add('redis')
+                if 'pymongo' in content or 'motor' in content:
+                    candidates.add('mongodb')
+                if 'mysqlclient' in content or 'pymysql' in content:
+                    candidates.add('mysql')
+
+                # Testing
+                if 'pytest' in content:
+                    candidates.add('pytest')
+                if 'unittest' in content:
+                    candidates.add('unittest')
+
+                # Task queues
+                if 'celery' in content:
+                    candidates.add('celery')
+
+                # Web servers
+                if 'gunicorn' in content:
+                    candidates.add('gunicorn')
+                if 'uvicorn' in content:
+                    candidates.add('uvicorn')
+
+            except Exception:
+                continue
+
+        return candidates
+
+    def _apply_mutual_exclusion(self, candidates: Set[str], high_confidence: Set[str]) -> Set[str]:
+        """
+        Apply mutual exclusion rules to remove incompatible technologies.
+
+        Uses high-confidence detections (from requirements.txt) to exclude
+        unlikely alternatives.
+        """
+        filtered = candidates.copy()
+
+        # Framework mutual exclusion
+        if 'django' in high_confidence:
+            # Django project won't use Flask or FastAPI
+            filtered.discard('flask')
+            filtered.discard('fastapi')
+
+        if 'flask' in high_confidence:
+            # Flask project won't use Django or FastAPI
+            filtered.discard('django')
+            filtered.discard('fastapi')
+
+        if 'fastapi' in high_confidence:
+            # FastAPI project won't use Django or Flask
+            filtered.discard('django')
+            filtered.discard('flask')
+
+        # Database mutual exclusion (if PostgreSQL/MySQL detected, unlikely to also use SQLite in production)
+        if 'postgresql' in high_confidence or 'mysql' in high_confidence:
+            filtered.discard('sqlite')  # Remove SQLite (likely just Django default, not used)
+
+        # Language mutual exclusion (if Python detected via requirements, unlikely to be Rust/C project)
+        if 'python' in candidates and 'django' in high_confidence:
+            # Pure Python/Django project, not systems language
+            filtered.discard('rust')
+            filtered.discard('c')
+            filtered.discard('cpp')
+            filtered.discard('go')
+
+        return filtered
+
+    def _match_config_files(self, files: Set[str]) -> Set[str]:
+        """Match languages by config files."""
+        matches = set()
+
+        for lang, patterns in self.indicators.CONFIG_FILES.items():
+            if any(pattern in files for pattern in patterns):
+                matches.add(lang)
+
+        return matches
+
+    def _match_extensions(self, files: Set[str]) -> Set[str]:
+        """Match languages by file extensions."""
+        matches = set()
+
+        for lang, extensions in self.indicators.LANGUAGE_EXTENSIONS.items():
+            # Check if any file has this extension
+            if any(any(f.endswith(ext) for ext in extensions) for f in files):
+                matches.add(lang)
+
+        return matches
+
+    def _match_frameworks(
+        self,
+        files: Set[str],
+        dirs: Set[str],
+        detected_languages: Set[str]
+    ) -> Set[str]:
+        """
+        Match frameworks using smart language hints.
+
+        Only checks frameworks relevant to detected languages
+        (don't check Django if no Python detected).
+        """
+        matches = set()
+
+        # Get relevant frameworks based on detected languages
+        relevant_frameworks = set()
+        for lang in detected_languages:
+            if lang in self.indicators.FRAMEWORK_HINTS:
+                relevant_frameworks.update(self.indicators.FRAMEWORK_HINTS[lang])
+
+        # If no languages detected yet, check all frameworks (fallback)
+        if not relevant_frameworks:
+            relevant_frameworks = set(self.indicators.FRAMEWORK_INDICATORS.keys())
+
+        # Match framework indicators
+        for framework in relevant_frameworks:
+            if framework in self.indicators.FRAMEWORK_INDICATORS:
+                indicators = self.indicators.FRAMEWORK_INDICATORS[framework]
+                if any(indicator in files or indicator in dirs for indicator in indicators):
+                    matches.add(framework)
+
+        return matches
+
+    def _match_testing_frameworks(
+        self,
+        files: Set[str],
+        detected_languages: Set[str]
+    ) -> Set[str]:
+        """Match testing frameworks with language hints."""
+        matches = set()
+
+        # Get relevant testing frameworks for detected languages
+        relevant_tests = set()
+        for lang in detected_languages:
+            if lang in self.indicators.LANGUAGE_TESTING_HINTS:
+                relevant_tests.update(self.indicators.LANGUAGE_TESTING_HINTS[lang])
+
+        # Simple pattern matching for testing frameworks
+        test_patterns = {
+            'pytest': ['pytest.ini', 'conftest.py'],
+            'jest': ['jest.config.js', 'jest.config.ts'],
+            'mocha': ['mocha.opts', '.mocharc.json'],
+            'junit': ['pom.xml', 'build.gradle'],  # Java testing
+        }
+
+        for test_fw in relevant_tests:
+            if test_fw in test_patterns:
+                if any(pattern in files for pattern in test_patterns[test_fw]):
+                    matches.add(test_fw)
+
+        return matches
+
+    def _match_databases(
+        self,
+        files: Set[str],
+        detected_languages: Set[str]
+    ) -> Set[str]:
+        """Match databases with language hints."""
+        matches = set()
+
+        # Database indicator patterns
+        db_patterns = {
+            'postgresql': ['postgresql', 'postgres', 'psycopg'],
+            'mysql': ['mysql', 'pymysql', 'mysqlclient'],
+            'mongodb': ['mongodb', 'mongo', 'pymongo'],
+            'redis': ['redis', 'redis.conf'],
+            'sqlite': ['sqlite', '*.db', '*.sqlite', '*.sqlite3'],
+        }
+
+        # Check files for database indicators
+        for db, patterns in db_patterns.items():
+            for pattern in patterns:
+                if any(pattern.lower() in f.lower() for f in files):
+                    matches.add(db)
+                    break
+
+        return matches
+
+    def _match_infrastructure(self, files: Set[str]) -> Set[str]:
+        """Match infrastructure tools."""
+        matches = set()
+
+        infra_patterns = {
+            'docker': ['Dockerfile', 'docker-compose.yml', 'docker-compose.yaml', '.dockerignore'],
+            'kubernetes': ['deployment.yml', 'service.yml', 'k8s.yml', 'kustomization.yaml'],
+            'terraform': ['main.tf', '*.tf', 'terraform.tfvars'],
+        }
+
+        for tool, patterns in infra_patterns.items():
+            if any(pattern in files for pattern in patterns):
+                matches.add(tool)
+
+        return matches
+

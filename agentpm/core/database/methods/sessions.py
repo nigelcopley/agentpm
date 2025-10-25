@@ -1,0 +1,735 @@
+"""Session tracking methods for CRUD and analytics operations.
+
+This module provides database operations for Session entities.
+Part of the three-layer pattern:
+- Layer 1: Pydantic models (validation)
+- Layer 2: Adapters (conversion)
+- Layer 3: Methods (CRUD operations) ← THIS FILE
+
+Methods:
+- CRUD: create_session, end_session, get_session, update_session, delete_session
+- Queries: list_sessions, get_sessions_by_date_range, get_sessions_by_work_item, get_sessions_by_developer
+- Analytics: search_decisions, get_session_stats, get_active_sessions
+- Current Session: get_current_session, set_current_session, update_current_session, clear_current_session
+"""
+
+import json
+from datetime import datetime, timedelta
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+from agentpm.core.database.adapters.session import SessionAdapter
+from agentpm.core.database.models.session import Session, SessionMetadata, SessionStatus
+
+
+def create_session(db: 'DatabaseService', session: Session) -> Session:
+    """Create a new session record.
+
+    Args:
+        db: DatabaseService instance
+        session: Session model (id will be auto-assigned)
+
+    Returns:
+        Session with id populated
+
+    Example:
+        >>> session = Session(session_id="uuid", project_id=1, ...)
+        >>> created = create_session(db, session)
+        >>> print(created.id)  # 1
+    """
+    with db.connect() as conn:
+        data = SessionAdapter.to_db(session)
+
+        # Remove id if present (auto-increment)
+        data.pop('id', None)
+
+        cursor = conn.execute('''
+            INSERT INTO sessions (
+                session_id, project_id, tool_name, llm_model, tool_version,
+                start_time, end_time, duration_minutes, session_type, exit_reason,
+                developer_name, developer_email, metadata
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            data['session_id'], data['project_id'], data['tool_name'],
+            data['llm_model'], data['tool_version'], data['start_time'],
+            data['end_time'], data['duration_minutes'], data['session_type'],
+            data['exit_reason'], data['developer_name'], data['developer_email'],
+            data['metadata']
+        ))
+        conn.commit()  # Commit transaction
+
+        session.id = cursor.lastrowid
+        return session
+
+
+def end_session(
+    db: 'DatabaseService',
+    session_id: str,
+    metadata: Optional[SessionMetadata] = None,
+    exit_reason: Optional[str] = None
+) -> Session:
+    """End an active session.
+
+    Updates end_time, calculates duration, and optionally updates metadata.
+
+    Args:
+        db: DatabaseService instance
+        session_id: UUID of session to end
+        metadata: Updated session metadata (optional)
+        exit_reason: Reason for ending session (optional)
+
+    Returns:
+        Updated Session model
+
+    Raises:
+        ValueError: If session not found or already ended
+
+    Example:
+        >>> metadata = SessionMetadata(tasks_completed=[100])
+        >>> session = end_session(db, "uuid", metadata, "Complete")
+    """
+    # Get current session
+    session = get_session(db, session_id)
+    if not session:
+        raise ValueError(f"Session {session_id} not found")
+
+    if not session.is_active:
+        raise ValueError(f"Session {session_id} already ended")
+
+    # Calculate duration
+    end_time = datetime.now()
+    duration_minutes = int((end_time - session.start_time).total_seconds() / 60)
+
+    # Build updates
+    updates = {
+        'end_time': end_time,
+        'duration_minutes': duration_minutes,
+        'status': SessionStatus.DONE
+    }
+
+    if metadata:
+        updates['metadata'] = metadata
+
+    if exit_reason:
+        updates['exit_reason'] = exit_reason
+
+    # Convert to database format
+    db_updates = SessionAdapter.to_db_partial(updates)
+
+    with db.connect() as conn:
+        # Build SET clause dynamically
+        set_clause = ', '.join(f"{k} = ?" for k in db_updates.keys())
+        values = list(db_updates.values()) + [session_id]
+
+        conn.execute(f'''
+            UPDATE sessions
+            SET {set_clause}
+            WHERE session_id = ?
+        ''', values)
+        conn.commit()  # Commit transaction
+
+    # Return updated session
+    return get_session(db, session_id)
+
+
+def get_session(db: 'DatabaseService', session_id: str) -> Optional[Session]:
+    """Get session by UUID.
+
+    Args:
+        db: DatabaseService instance
+        session_id: UUID of session
+
+    Returns:
+        Session model or None if not found
+
+    Example:
+        >>> session = get_session(db, "uuid-123")
+        >>> if session:
+        >>>     print(session.tool_name)
+    """
+    with db.connect() as conn:
+        cursor = conn.execute('''
+            SELECT * FROM sessions WHERE session_id = ?
+        ''', (session_id,))
+
+        row = cursor.fetchone()
+        if not row:
+            return None
+
+        return SessionAdapter.from_db(dict(row))
+
+
+def update_session(db: 'DatabaseService', session: Session) -> Session:
+    """Update session fields.
+
+    Args:
+        db: DatabaseService instance
+        session: Session model with updated fields
+
+    Returns:
+        Updated Session model
+
+    Raises:
+        ValueError: If session not found
+
+    Example:
+        >>> session = get_session(db, "uuid")
+        >>> session.developer_name = "Jane Doe"
+        >>> updated = update_session(db, session)
+    """
+    if not get_session(db, session.session_id):
+        raise ValueError(f"Session {session.session_id} not found")
+
+    with db.connect() as conn:
+        data = SessionAdapter.to_db(session)
+
+        conn.execute('''
+            UPDATE sessions SET
+                tool_name = ?, llm_model = ?, tool_version = ?,
+                start_time = ?, end_time = ?, duration_minutes = ?,
+                session_type = ?, exit_reason = ?,
+                developer_name = ?, developer_email = ?, metadata = ?
+            WHERE session_id = ?
+        ''', (
+            data['tool_name'], data['llm_model'], data['tool_version'],
+            data['start_time'], data['end_time'], data['duration_minutes'],
+            data['session_type'], data['exit_reason'],
+            data['developer_name'], data['developer_email'], data['metadata'],
+            session.session_id
+        ))
+        conn.commit()  # Commit transaction
+
+    return session
+
+
+def delete_session(db: 'DatabaseService', session_id: str) -> bool:
+    """Delete session (hard delete).
+
+    Prefer soft delete (update end_time) in most cases.
+
+    Args:
+        db: DatabaseService instance
+        session_id: UUID of session to delete
+
+    Returns:
+        True if deleted, False if not found
+
+    Example:
+        >>> deleted = delete_session(db, "uuid")
+    """
+    with db.connect() as conn:
+        cursor = conn.execute('''
+            DELETE FROM sessions WHERE session_id = ?
+        ''', (session_id,))
+        conn.commit()  # Commit transaction
+
+        return cursor.rowcount > 0
+
+
+def list_sessions(
+    db: 'DatabaseService',
+    project_id: int,
+    limit: int = 50,
+    active_only: bool = False
+) -> List[Session]:
+    """List sessions for a project.
+
+    Args:
+        db: DatabaseService instance
+        project_id: Project ID to filter by
+        limit: Max sessions to return (default 50)
+        active_only: Only return active sessions (default False)
+
+    Returns:
+        List of Session models, newest first
+
+    Example:
+        >>> active = list_sessions(db, project_id=1, active_only=True)
+        >>> all_recent = list_sessions(db, project_id=1, limit=10)
+    """
+    with db.connect() as conn:
+        if active_only:
+            query = '''
+                SELECT * FROM sessions
+                WHERE project_id = ? AND end_time IS NULL
+                ORDER BY start_time DESC
+                LIMIT ?
+            '''
+        else:
+            query = '''
+                SELECT * FROM sessions
+                WHERE project_id = ?
+                ORDER BY start_time DESC
+                LIMIT ?
+            '''
+
+        cursor = conn.execute(query, (project_id, limit))
+        rows = cursor.fetchall()
+
+        return [SessionAdapter.from_db(dict(row)) for row in rows]
+
+
+def get_sessions_by_date_range(
+    db: 'DatabaseService',
+    project_id: int,
+    start: datetime,
+    end: datetime
+) -> List[Session]:
+    """Get sessions within date range.
+
+    Args:
+        db: DatabaseService instance
+        project_id: Project ID
+        start: Start datetime (inclusive)
+        end: End datetime (inclusive)
+
+    Returns:
+        List of Session models in range
+
+    Example:
+        >>> from datetime import datetime, timedelta
+        >>> today = datetime.now()
+        >>> week_ago = today - timedelta(days=7)
+        >>> sessions = get_sessions_by_date_range(db, 1, week_ago, today)
+    """
+    with db.connect() as conn:
+        cursor = conn.execute('''
+            SELECT * FROM sessions
+            WHERE project_id = ?
+              AND start_time >= ?
+              AND start_time <= ?
+            ORDER BY start_time DESC
+        ''', (project_id, start.isoformat(), end.isoformat()))
+
+        rows = cursor.fetchall()
+        return [SessionAdapter.from_db(dict(row)) for row in rows]
+
+
+def get_sessions_by_work_item(
+    db: 'DatabaseService',
+    work_item_id: int
+) -> List[Session]:
+    """Get sessions that touched a work item.
+
+    Queries metadata.work_items_touched JSON field.
+
+    Args:
+        db: DatabaseService instance
+        work_item_id: Work item ID
+
+    Returns:
+        List of Session models that touched this work item
+
+    Example:
+        >>> sessions = get_sessions_by_work_item(db, work_item_id=35)
+        >>> print(f"Work item 35 touched in {len(sessions)} sessions")
+    """
+    with db.connect() as conn:
+        # SQLite JSON query: json_each extracts array elements
+        cursor = conn.execute('''
+            SELECT s.* FROM sessions s
+            WHERE EXISTS (
+                SELECT 1 FROM json_each(json_extract(s.metadata, '$.work_items_touched'))
+                WHERE value = ?
+            )
+            ORDER BY s.start_time DESC
+        ''', (work_item_id,))
+
+        rows = cursor.fetchall()
+        return [SessionAdapter.from_db(dict(row)) for row in rows]
+
+
+def get_sessions_by_developer(
+    db: 'DatabaseService',
+    project_id: int,
+    developer: str
+) -> List[Session]:
+    """Get sessions by developer name or email.
+
+    Args:
+        db: DatabaseService instance
+        project_id: Project ID
+        developer: Developer name or email (partial match)
+
+    Returns:
+        List of Session models by developer
+
+    Example:
+        >>> sessions = get_sessions_by_developer(db, 1, "jane")
+    """
+    with db.connect() as conn:
+        cursor = conn.execute('''
+            SELECT * FROM sessions
+            WHERE project_id = ?
+              AND (developer_name LIKE ? OR developer_email LIKE ?)
+            ORDER BY start_time DESC
+        ''', (project_id, f'%{developer}%', f'%{developer}%'))
+
+        rows = cursor.fetchall()
+        return [SessionAdapter.from_db(dict(row)) for row in rows]
+
+
+def search_decisions(
+    db: 'DatabaseService',
+    project_id: int,
+    query: str
+) -> List[Dict[str, Any]]:
+    """Search decisions across all sessions.
+
+    Full-text search in metadata.decisions_made JSON field.
+
+    Args:
+        db: DatabaseService instance
+        project_id: Project ID
+        query: Search text (case-insensitive)
+
+    Returns:
+        List of decision dicts with session context
+
+    Example:
+        >>> decisions = search_decisions(db, 1, "pydantic")
+        >>> for d in decisions:
+        >>>     print(f"{d['session_id']}: {d['decision']}")
+    """
+    with db.connect() as conn:
+        cursor = conn.execute('''
+            SELECT session_id, metadata FROM sessions
+            WHERE project_id = ?
+            ORDER BY start_time DESC
+        ''', (project_id,))
+
+        rows = cursor.fetchall()
+        results = []
+
+        for row in rows:
+            metadata_json = row['metadata']
+            if metadata_json:
+                metadata = json.loads(metadata_json)
+                for decision in metadata.get('decisions_made', []):
+                    # Case-insensitive search in decision and rationale
+                    text = f"{decision.get('decision', '')} {decision.get('rationale', '')}".lower()
+                    if query.lower() in text:
+                        results.append({
+                            'session_id': row['session_id'],
+                            **decision
+                        })
+
+        return results
+
+
+def get_session_stats(
+    db: 'DatabaseService',
+    project_id: int,
+    days: int = 30
+) -> Dict[str, Any]:
+    """Get session statistics for project.
+
+    Args:
+        db: DatabaseService instance
+        project_id: Project ID
+        days: Number of days to analyze (default 30)
+
+    Returns:
+        Dict with statistics:
+        - total_sessions: Total session count
+        - active_sessions: Currently active sessions
+        - avg_duration: Average duration in minutes
+        - total_duration: Total duration in minutes
+        - sessions_per_day: Average sessions per day
+        - tool_distribution: Dict of tool usage counts
+        - session_type_distribution: Dict of session type counts
+
+    Example:
+        >>> stats = get_session_stats(db, project_id=1, days=7)
+        >>> print(f"Avg duration: {stats['avg_duration']:.1f} minutes")
+    """
+    cutoff = datetime.now() - timedelta(days=days)
+
+    with db.connect() as conn:
+        # Get all sessions in date range
+        cursor = conn.execute('''
+            SELECT * FROM sessions
+            WHERE project_id = ? AND start_time >= ?
+            ORDER BY start_time DESC
+        ''', (project_id, cutoff.isoformat()))
+
+        rows = cursor.fetchall()
+        sessions = [SessionAdapter.from_db(dict(row)) for row in rows]
+
+        # Calculate stats
+        total_sessions = len(sessions)
+        active_sessions = sum(1 for s in sessions if s.is_active)
+
+        durations = [s.duration_minutes for s in sessions if s.duration_minutes]
+        avg_duration = sum(durations) / len(durations) if durations else 0
+        total_duration = sum(durations)
+
+        sessions_per_day = total_sessions / days if days > 0 else 0
+
+        # Tool distribution
+        tool_dist = {}
+        for s in sessions:
+            tool = s.tool_name.value
+            tool_dist[tool] = tool_dist.get(tool, 0) + 1
+
+        # Session type distribution
+        type_dist = {}
+        for s in sessions:
+            stype = s.session_type.value
+            type_dist[stype] = type_dist.get(stype, 0) + 1
+
+        return {
+            'total_sessions': total_sessions,
+            'active_sessions': active_sessions,
+            'avg_duration': round(avg_duration, 1),
+            'total_duration': total_duration,
+            'sessions_per_day': round(sessions_per_day, 2),
+            'tool_distribution': tool_dist,
+            'session_type_distribution': type_dist
+        }
+
+
+def get_active_sessions(db: 'DatabaseService', project_id: int) -> List[Session]:
+    """Get all active sessions (end_time IS NULL).
+
+    Args:
+        db: DatabaseService instance
+        project_id: Project ID
+
+    Returns:
+        List of active Session models
+
+    Example:
+        >>> active = get_active_sessions(db, project_id=1)
+        >>> for session in active:
+        >>>     print(f"{session.tool_name}: {session.start_time}")
+    """
+    with db.connect() as conn:
+        cursor = conn.execute('''
+            SELECT * FROM sessions
+            WHERE project_id = ? AND end_time IS NULL
+            ORDER BY start_time DESC
+        ''', (project_id,))
+
+        rows = cursor.fetchall()
+        return [SessionAdapter.from_db(dict(row)) for row in rows]
+
+
+# ============================================================================
+# CURRENT SESSION TRACKING (for agent integration)
+# ============================================================================
+
+def _get_current_session_file(db: 'DatabaseService') -> Path:
+    """Get path to current session ID file.
+
+    Returns:
+        Path to .aipm/data/current_session.txt
+    """
+    # Get path directly from database path
+    # db.db_path = /path/to/project/.aipm/data/aipm.db
+    # current_session.txt goes in same directory
+    db_path = Path(db.db_path)
+    return db_path.parent / 'current_session.txt'  # .aipm/data/current_session.txt
+
+
+def set_current_session(db: 'DatabaseService', session_id: str) -> None:
+    """Set the current active session ID.
+
+    Writes session ID to .aipm/data/current_session.txt for agent access.
+
+    Args:
+        db: DatabaseService instance
+        session_id: UUID of current session
+
+    Example:
+        >>> set_current_session(db, "abc-123-def-456")
+    """
+    session_file = _get_current_session_file(db)
+    session_file.parent.mkdir(parents=True, exist_ok=True)
+    session_file.write_text(session_id)
+
+
+def get_current_session_id(db: 'DatabaseService') -> Optional[str]:
+    """Get the current active session ID.
+
+    Reads from .aipm/data/current_session.txt.
+
+    Args:
+        db: DatabaseService instance
+
+    Returns:
+        Session ID string or None if no active session
+
+    Example:
+        >>> session_id = get_current_session_id(db)
+        >>> if session_id:
+        >>>     print(f"Current session: {session_id}")
+    """
+    session_file = _get_current_session_file(db)
+
+    if not session_file.exists():
+        return None
+
+    session_id = session_file.read_text().strip()
+    return session_id if session_id else None
+
+
+def get_current_session(db: 'DatabaseService') -> Optional[Session]:
+    """Get the current active session.
+
+    Reads session ID from file and fetches full record from database.
+
+    Args:
+        db: DatabaseService instance
+
+    Returns:
+        Current Session or None if no active session
+
+    Example:
+        >>> session = get_current_session(db)
+        >>> if session:
+        >>>     print(f"Working on: {session.metadata.work_items_touched}")
+    """
+    session_id = get_current_session_id(db)
+
+    if not session_id:
+        return None
+
+    return get_session(db, session_id)
+
+
+def clear_current_session(db: 'DatabaseService') -> None:
+    """Clear the current session ID.
+
+    Removes .aipm/data/current_session.txt.
+
+    Args:
+        db: DatabaseService instance
+
+    Example:
+        >>> clear_current_session(db)
+    """
+    session_file = _get_current_session_file(db)
+
+    if session_file.exists():
+        session_file.unlink()
+
+
+def update_current_session(
+    db: 'DatabaseService',
+    work_item_touched: Optional[int] = None,
+    task_completed: Optional[int] = None,
+    git_commit: Optional[str] = None,
+    decision: Optional[Dict[str, str]] = None,
+    blocker_resolved: Optional[int] = None,
+    command_executed: bool = False,
+    **tool_specific
+) -> Session:
+    """Update the current active session metadata.
+
+    Used by agents and workflow to automatically track work.
+    Updates are incremental - adds to existing metadata.
+
+    Args:
+        db: DatabaseService instance
+        work_item_touched: Work item ID that was touched
+        task_completed: Task ID that was completed
+        git_commit: Git commit SHA to record
+        decision: Decision dict with 'decision', 'rationale', 'timestamp'
+        blocker_resolved: Blocker ID that was resolved
+        command_executed: Increment command counter
+        **tool_specific: Tool-specific metadata to merge
+
+    Returns:
+        Updated Session
+
+    Raises:
+        ValueError: If no active session
+
+    Example:
+        >>> # Task completion
+        >>> update_current_session(db, task_completed=166)
+
+        >>> # Decision made
+        >>> update_current_session(db,
+        ...     decision={
+        ...         "decision": "Use Pydantic for models",
+        ...         "rationale": "Type safety and validation",
+        ...         "timestamp": datetime.now().isoformat()
+        ...     }
+        ... )
+
+        >>> # Work item touched
+        >>> update_current_session(db, work_item_touched=35)
+    """
+    session = get_current_session(db)
+
+    if not session:
+        raise ValueError("No active session. Start a session first.")
+
+    # Update metadata incrementally
+    if work_item_touched is not None:
+        if work_item_touched not in session.metadata.work_items_touched:
+            session.metadata.work_items_touched.append(work_item_touched)
+
+    if task_completed is not None:
+        if task_completed not in session.metadata.tasks_completed:
+            session.metadata.tasks_completed.append(task_completed)
+
+    if git_commit is not None:
+        if git_commit not in session.metadata.git_commits:
+            session.metadata.git_commits.append(git_commit)
+
+    if decision is not None:
+        session.metadata.decisions_made.append(decision)
+
+    if blocker_resolved is not None:
+        if blocker_resolved not in session.metadata.blockers_resolved:
+            session.metadata.blockers_resolved.append(blocker_resolved)
+
+    if command_executed:
+        session.metadata.commands_executed += 1
+
+    if tool_specific:
+        session.metadata.tool_specific.update(tool_specific)
+
+    # Save to database
+    return update_session(db, session)
+
+
+def validate_session_completeness(session: Session) -> tuple[bool, List[str]]:
+    """Validate session has sufficient metadata before ending.
+
+    Checks for minimum required context for session history.
+
+    Args:
+        session: Session to validate
+
+    Returns:
+        (is_complete, list_of_missing_items)
+
+    Example:
+        >>> session = get_current_session(db)
+        >>> is_complete, missing = validate_session_completeness(session)
+        >>> if not is_complete:
+        >>>     for item in missing:
+        >>>         print(f"⚠️ {item}")
+    """
+    missing = []
+
+    # Require at least one meaningful activity
+    has_activity = (
+        session.metadata.work_items_touched or
+        session.metadata.tasks_completed or
+        session.metadata.decisions_made or
+        session.metadata.git_commits
+    )
+
+    if not has_activity:
+        missing.append("No activity recorded - add work items, tasks, or decisions")
+
+    # Warn about missing summary (but don't require)
+    if not session.metadata.tool_specific.get('session_summary'):
+        missing.append("Session summary recommended (optional)")
+
+    return (len(missing) == 0, missing)

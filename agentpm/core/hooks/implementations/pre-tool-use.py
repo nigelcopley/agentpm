@@ -1,0 +1,478 @@
+#!/usr/bin/env python3
+"""
+Claude Code PreToolUse Hook - Python Version (Severity-Based Exit Codes)
+
+Called before each tool execution. Can inject warnings, validate state,
+or provide context-specific guidance.
+
+Hook Input (JSON):
+{
+    "tool_name": "Bash",
+    "parameters": {...},
+    "session_id": "uuid"
+}
+
+Hook Output (stderr): Injected based on exit code
+Exit Codes:
+  0 = Silent success (informational, not shown)
+  1 = Warning (show stderr, allow tool)
+  2 = Error (show stderr, BLOCK tool)
+"""
+
+import json
+import sys
+from pathlib import Path
+from datetime import datetime
+
+# Add project to path
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+
+
+def read_hook_input() -> dict:
+    """Read JSON hook input from stdin."""
+    try:
+        return json.loads(sys.stdin.read())
+    except json.JSONDecodeError:
+        return {}
+
+
+def is_outside_project_root(command: str) -> bool:
+    """Detect if command targets paths outside project root."""
+    # Explicit dangerous patterns
+    dangerous_patterns = [
+        "/tmp/", "/tmp ", "/private/tmp", "/var/tmp",
+        "~/", "~\\",  # Home directory
+        "../..",  # Parent directory traversal
+    ]
+
+    # Check for absolute paths outside current project
+    # (any path starting with / that's not a flag/option)
+    import re
+    # Match paths like: cd /something, mkdir /other, but not flags like -/--
+    absolute_path_pattern = r'(?:^|\s)(/[a-zA-Z][^\s]*)'
+    matches = re.findall(absolute_path_pattern, command)
+
+    # Filter out common safe patterns (flags, options)
+    for match in matches:
+        if not match.startswith(('/-', '/dev/', '/proc/', '/sys/')):
+            # This looks like an absolute path outside project
+            return True
+
+    # Check explicit dangerous patterns
+    return any(pattern in command for pattern in dangerous_patterns)
+
+
+def check_active_work_items() -> bool:
+    """Check if there are any active work items in database."""
+    try:
+        from agentpm.core.database import DatabaseService
+        from agentpm.core.database.methods import work_items as wi_methods
+        from agentpm.core.database.enums import WorkItemStatus
+
+        db_path = PROJECT_ROOT / ".aipm" / "data" / "aipm.db"
+        if not db_path.exists():
+            return True  # No database = no enforcement
+
+        db = DatabaseService(str(db_path))
+        active = wi_methods.list_work_items(db, status=WorkItemStatus.ACTIVE)
+        review = wi_methods.list_work_items(db, status=WorkItemStatus.REVIEW)
+
+        return len(active) > 0 or len(review) > 0
+    except Exception:
+        return True  # Assume OK if can't check
+
+
+def extract_commit_message(command: str) -> str:
+    """Extract commit message from git commit command."""
+    import re
+    # Match: git commit -m "message" or git commit -m 'message'
+    match = re.search(r'git commit.*-m\s+["\']([^"\']+)["\']', command)
+    if match:
+        return match.group(1)
+    # Try heredoc pattern: git commit -m "$(cat <<'EOF'
+    match = re.search(r'cat\s+<<["\']?EOF["\']?\s*\n(.+?)\n', command, re.DOTALL)
+    if match:
+        return match.group(1)
+    return ""
+
+
+def has_work_item_reference(message: str) -> bool:
+    """Check if commit message has WI-XXX reference."""
+    import re
+    # Match: (WI-27), (WI-0017), feat(WI-30), etc.
+    return bool(re.search(r'WI-\d+', message, re.IGNORECASE))
+
+
+def is_code_creation(command: str) -> bool:
+    """Detect if command creates code files/directories."""
+    # Directory creation in code paths
+    if 'mkdir' in command:
+        code_dirs = ['agentpm/', 'aipm_cli/', 'src/', 'lib/', 'app/']
+        if any(d in command for d in code_dirs):
+            return True
+
+    # File creation with code extensions
+    if any(cmd in command for cmd in ['touch', 'echo >', 'cat >']):
+        code_exts = ['.py', '.js', '.ts', '.java', '.go', '.rb', '.php']
+        if any(ext in command for ext in code_exts):
+            return True
+
+    return False
+
+
+def format_tool_guidance(tool_name: str, parameters: dict) -> tuple:
+    """
+    Format guidance for specific tool usage.
+
+    Returns:
+        tuple: (guidance_text, exit_code)
+            - exit_code 0: Silent (informational)
+            - exit_code 1: Warning (show but allow)
+            - exit_code 2: Error (show and block)
+    """
+    blocking_issues = []  # Exit 2 - block tool
+    warning_issues = []   # Exit 1 - warn but allow
+    info_messages = []    # Exit 0 - silent guidance
+
+    # Bash tool guidance
+    if tool_name == "Bash":
+        command = parameters.get("command", "")
+
+        # BLOCKING: Security boundary check - operations outside project root
+        if is_outside_project_root(command):
+            blocking_issues.append("\n🚨 **Security Boundary Violation (BLOCKING)**")
+            blocking_issues.append(f"Command targets path outside project root: `{command[:80]}`")
+            blocking_issues.append("")
+            blocking_issues.append("**AIPM Security Rule GR-007**: All operations stay within project root")
+            blocking_issues.append("- Testing: Use `testing/` directory (version controlled)")
+            blocking_issues.append("- Temporary files: Use `.aipm/temp/` (gitignored)")
+            blocking_issues.append("- Manual testing: Create test projects in `testing/test-*`")
+            blocking_issues.append("")
+            blocking_issues.append("**Why**: Operations outside project root:")
+            blocking_issues.append("- Not version controlled (lost on system events)")
+            blocking_issues.append("- Not reproducible (other developers can't run)")
+            blocking_issues.append("- Security risk (potential information leakage)")
+            blocking_issues.append("")
+            blocking_issues.append("**Fix**: Use project-relative paths instead")
+            blocking_issues.append("**This tool call will be BLOCKED**\n")
+
+        # BLOCKING: Code creation without work item
+        if is_code_creation(command):
+            if not check_active_work_items():
+                blocking_issues.append("\n🚨 **AIPM Workflow Violation (BLOCKING)**")
+                blocking_issues.append(f"Command: `{command[:80]}`")
+                blocking_issues.append("Issue: Creating code without active work item")
+                blocking_issues.append("")
+                blocking_issues.append("**AIPM Rule GR-001**: All development requires work item tracking")
+                blocking_issues.append("- Current state: No work items in_progress")
+                blocking_issues.append("- Required: Create work item → create task → start task")
+                blocking_issues.append("")
+                blocking_issues.append("**Fix**:")
+                blocking_issues.append("  apm work-item create \"Your feature\" --type=...")
+                blocking_issues.append("  apm task create \"Your task\" --work-item-id=XX --type=...")
+                blocking_issues.append("  apm task start XX")
+                blocking_issues.append("**This tool call will be BLOCKED**\n")
+
+        # WARNING: Git commit without WI reference
+        if 'git commit' in command:
+            commit_msg = extract_commit_message(command)
+            if commit_msg and not has_work_item_reference(commit_msg):
+                warning_issues.append("\n⚠️ **Commit Without Work Item Reference**")
+                warning_issues.append(f"Message: `{commit_msg[:80]}`")
+                warning_issues.append("Issue: Missing WI-XXX reference in commit message")
+                warning_issues.append("")
+                warning_issues.append("**AIPM Standard**: Commits must reference work items")
+                warning_issues.append("- Format: feat(WI-30): Your commit message")
+                warning_issues.append("- Enables traceability: commit → task → work item → goal")
+                warning_issues.append("")
+                warning_issues.append("**Fix**:")
+                warning_issues.append("  Update commit message to include (WI-XXX)")
+                warning_issues.append("  Example: feat(WI-30): Add hooks infrastructure")
+                warning_issues.append("**Proceeding with warning**\n")
+
+        # WARNING: Dangerous patterns
+        if any(pattern in command for pattern in ["rm -rf", "sudo", "DROP TABLE"]):
+            warning_issues.append("\n⚠️ **Safety Check**: Destructive command detected")
+            warning_issues.append(f"Command: `{command[:100]}`")
+            warning_issues.append("Please verify this is intentional.")
+            warning_issues.append("**Proceeding with warning**\n")
+
+        # INFO: AIPM workflow reminders
+        if "apm task" in command or "apm work-item" in command:
+            info_messages.append("\n💡 **AIPM Workflow Reminder**:")
+            info_messages.append("- Tasks must be validated → accepted → started")
+            info_messages.append("- Work items must be in_progress before tasks can start")
+            info_messages.append("- Use workflow commands (don't edit status manually)\n")
+
+    # Edit/Write tool guidance
+    elif tool_name in ["Edit", "Write"]:
+        file_path = parameters.get("file_path", "")
+        contents = parameters.get("contents", "")
+
+        # BLOCK: Document creation should use apm commands
+        if file_path.startswith("docs/") and contents:
+            blocking_issues.append("\n🚫 **Document Creation Blocked - Use APM Commands Instead**")
+            blocking_issues.append("APM (Agent Project Manager) uses database-first document management.")
+            blocking_issues.append("Direct file creation bypasses the workflow system.\n")
+            
+            # Get current work item context for better guidance
+            try:
+                from agentpm.core.database import DatabaseService
+                from agentpm.core.database.methods import work_items as wi_methods
+                from agentpm.core.database.enums import WorkItemStatus
+                
+                db_path = PROJECT_ROOT / ".aipm" / "data" / "aipm.db"
+                if db_path.exists():
+                    db = DatabaseService(str(db_path))
+                    active_work_items = wi_methods.list_work_items(db, status=WorkItemStatus.ACTIVE)
+                    if active_work_items:
+                        current_wi = active_work_items[0]
+                        wi_id = current_wi.id
+                        wi_title = current_wi.title
+                        blocking_issues.append(f"**Current Active Work Item:** WI-{wi_id}: {wi_title}")
+                    else:
+                        blocking_issues.append("**No Active Work Item:** Create one first with `apm work-item create`")
+                else:
+                    blocking_issues.append("**Database Not Found:** Run `apm init` to initialise AIPM")
+            except Exception:
+                blocking_issues.append("**Work Item Context:** Unable to determine current work item")
+            
+            blocking_issues.append("")
+            
+            # Provide specific guidance based on file path
+            if "architecture/" in file_path:
+                blocking_issues.append("**For Architecture Documents:**")
+                blocking_issues.append("```bash")
+                blocking_issues.append("# Step 1: Ensure you have an active work item")
+                blocking_issues.append("apm work-item list  # Check current work items")
+                blocking_issues.append("")
+                blocking_issues.append("# Step 2: Create architecture document")
+                blocking_issues.append("apm document add \\")
+                blocking_issues.append("  --entity-type=work-item --entity-id=<work-item-id> \\")
+                blocking_issues.append(f"  --file-path=\"{file_path}\" \\")
+                blocking_issues.append("  --category=architecture --type=design_doc \\")
+                blocking_issues.append("  --title=\"Architecture Document Title\" \\")
+                blocking_issues.append("  --content=\"$(cat <<'EOF'")
+                blocking_issues.append("# Architecture Document")
+                blocking_issues.append("")
+                blocking_issues.append("## Overview")
+                blocking_issues.append("Your architecture content here...")
+                blocking_issues.append("EOF")
+                blocking_issues.append(")\"")
+                blocking_issues.append("```\n")
+                
+            elif "guides/" in file_path:
+                blocking_issues.append("**For User Guides:**")
+                blocking_issues.append("```bash")
+                blocking_issues.append("# Step 1: Ensure you have an active work item")
+                blocking_issues.append("apm work-item list  # Check current work items")
+                blocking_issues.append("")
+                blocking_issues.append("# Step 2: Create user guide")
+                blocking_issues.append("apm document add \\")
+                blocking_issues.append("  --entity-type=work-item --entity-id=<work-item-id> \\")
+                blocking_issues.append(f"  --file-path=\"{file_path}\" \\")
+                blocking_issues.append("  --category=user_guide --type=user_guide \\")
+                blocking_issues.append("  --title=\"User Guide Title\" \\")
+                blocking_issues.append("  --content=\"$(cat <<'EOF'")
+                blocking_issues.append("# User Guide")
+                blocking_issues.append("")
+                blocking_issues.append("## Getting Started")
+                blocking_issues.append("Your guide content here...")
+                blocking_issues.append("EOF")
+                blocking_issues.append(")\"")
+                blocking_issues.append("```\n")
+                
+            elif "api/" in file_path or "specification" in file_path:
+                blocking_issues.append("**For API Documentation:**")
+                blocking_issues.append("```bash")
+                blocking_issues.append("# Step 1: Ensure you have an active work item")
+                blocking_issues.append("apm work-item list  # Check current work items")
+                blocking_issues.append("")
+                blocking_issues.append("# Step 2: Create API documentation")
+                blocking_issues.append("apm document add \\")
+                blocking_issues.append("  --entity-type=work-item --entity-id=<work-item-id> \\")
+                blocking_issues.append(f"  --file-path=\"{file_path}\" \\")
+                blocking_issues.append("  --category=api_docs --type=specification \\")
+                blocking_issues.append("  --title=\"API Specification\" \\")
+                blocking_issues.append("  --content=\"$(cat <<'EOF'")
+                blocking_issues.append("# API Specification")
+                blocking_issues.append("")
+                blocking_issues.append("## Endpoints")
+                blocking_issues.append("Your API documentation here...")
+                blocking_issues.append("EOF")
+                blocking_issues.append(")\"")
+                blocking_issues.append("```\n")
+                
+            elif "governance/" in file_path:
+                blocking_issues.append("**For Governance Documents:**")
+                blocking_issues.append("```bash")
+                blocking_issues.append("# Step 1: Ensure you have an active work item")
+                blocking_issues.append("apm work-item list  # Check current work items")
+                blocking_issues.append("")
+                blocking_issues.append("# Step 2: Create governance document")
+                blocking_issues.append("apm document add \\")
+                blocking_issues.append("  --entity-type=work-item --entity-id=<work-item-id> \\")
+                blocking_issues.append(f"  --file-path=\"{file_path}\" \\")
+                blocking_issues.append("  --category=governance --type=policy \\")
+                blocking_issues.append("  --title=\"Governance Policy\" \\")
+                blocking_issues.append("  --content=\"$(cat <<'EOF'")
+                blocking_issues.append("# Governance Policy")
+                blocking_issues.append("")
+                blocking_issues.append("## Policy Statement")
+                blocking_issues.append("Your governance content here...")
+                blocking_issues.append("EOF")
+                blocking_issues.append(")\"")
+                blocking_issues.append("```\n")
+                
+            else:
+                blocking_issues.append("**For Other Documents:**")
+                blocking_issues.append("```bash")
+                blocking_issues.append("# Step 1: Ensure you have an active work item")
+                blocking_issues.append("apm work-item list  # Check current work items")
+                blocking_issues.append("")
+                blocking_issues.append("# Step 2: Create document")
+                blocking_issues.append("apm document add \\")
+                blocking_issues.append("  --entity-type=work-item --entity-id=<work-item-id> \\")
+                blocking_issues.append(f"  --file-path=\"{file_path}\" \\")
+                blocking_issues.append("  --type=other --title=\"Document Title\" \\")
+                blocking_issues.append("  --content=\"$(cat <<'EOF'")
+                blocking_issues.append("# Document Title")
+                blocking_issues.append("")
+                blocking_issues.append("## Introduction")
+                blocking_issues.append("Your document content here...")
+                blocking_issues.append("EOF")
+                blocking_issues.append(")\"")
+                blocking_issues.append("```\n")
+            
+            blocking_issues.append("**Why Use APM Document Commands?**")
+            blocking_issues.append("• **Database-First**: Content stored with full-text search (FTS5)")
+            blocking_issues.append("• **Workflow Integration**: Links to work items and tasks")
+            blocking_issues.append("• **Automatic Sync**: Files created/updated in filesystem")
+            blocking_issues.append("• **Metadata Tracking**: Categories, types, and relationships")
+            blocking_issues.append("• **Version Control**: Change tracking and audit trail")
+            blocking_issues.append("• **Search & Discovery**: Content indexed for easy finding\n")
+            
+            blocking_issues.append("**Quick Reference - Document Categories:**")
+            blocking_issues.append("• `--category=architecture --type=design_doc` - Architecture docs")
+            blocking_issues.append("• `--category=user_guide --type=user_guide` - User guides")
+            blocking_issues.append("• `--category=api_docs --type=specification` - API documentation")
+            blocking_issues.append("• `--category=governance --type=policy` - Governance policies")
+            blocking_issues.append("• `--category=process --type=workflow` - Process documentation")
+            blocking_issues.append("• `--category=reference --type=manual` - Reference materials\n")
+            
+            blocking_issues.append("**Alternative: File-First Workflow**")
+            blocking_issues.append("If you must create the file first (e.g., for complex formatting):")
+            blocking_issues.append("```bash")
+            blocking_issues.append("# Step 1: Create file manually (outside docs/ directory)")
+            blocking_issues.append("mkdir -p temp_docs/")
+            blocking_issues.append("cat > temp_docs/your_doc.md <<'EOF'")
+            blocking_issues.append("# Your document content")
+            blocking_issues.append("EOF")
+            blocking_issues.append("")
+            blocking_issues.append("# Step 2: Import to database")
+            blocking_issues.append("apm document add \\")
+            blocking_issues.append("  --entity-type=work-item --entity-id=<work-item-id> \\")
+            blocking_issues.append(f"  --file-path=\"{file_path}\" \\")
+            blocking_issues.append("  --type=<document_type> --title=\"Document Title\" \\")
+            blocking_issues.append("  --content=\"$(cat temp_docs/your_doc.md)\"")
+            blocking_issues.append("")
+            blocking_issues.append("# Step 3: Clean up")
+            blocking_issues.append("rm -rf temp_docs/")
+            blocking_issues.append("```\n")
+            
+            blocking_issues.append("**This tool call will be BLOCKED**")
+            blocking_issues.append("Please use the APM document commands above instead.\n")
+
+        # WARNING: Editing existing docs should consider sync
+        elif file_path.startswith("docs/") and not contents:
+            warning_issues.append("\n⚠️ **Document Editing Warning**")
+            warning_issues.append("You're editing a document that may be managed by AIPM.")
+            warning_issues.append("Consider using `apm document update` for metadata changes.\n")
+            warning_issues.append("**Check document status:**")
+            warning_issues.append("```bash")
+            warning_issues.append("apm document list --entity-type=work-item --entity-id=<id>")
+            warning_issues.append("```\n")
+            
+        # WARNING: Creating README or other project docs
+        elif file_path.endswith(("README.md", "CHANGELOG.md", "CONTRIBUTING.md", "LICENSE")) and contents:
+            warning_issues.append("\n⚠️ **Project Document Creation Warning**")
+            warning_issues.append(f"Creating project document: `{file_path}`")
+            warning_issues.append("Consider using APM document commands for better tracking:\n")
+            warning_issues.append("**Recommended approach:**")
+            warning_issues.append("```bash")
+            warning_issues.append("# Create with APM for better integration")
+            warning_issues.append("apm document add \\")
+            warning_issues.append("  --entity-type=work-item --entity-id=<work-item-id> \\")
+            warning_issues.append(f"  --file-path=\"{file_path}\" \\")
+            warning_issues.append("  --category=project --type=readme \\")
+            warning_issues.append("  --title=\"Project README\" \\")
+            warning_issues.append("  --content=\"$(cat <<'EOF'")
+            warning_issues.append("# Project README")
+            warning_issues.append("Your content here...")
+            warning_issues.append("EOF")
+            warning_issues.append(")\"")
+            warning_issues.append("```\n")
+            warning_issues.append("**Benefits:** Database tracking, search indexing, workflow integration")
+            warning_issues.append("**Proceeding with direct file creation (allowed for project docs)**\n")
+
+        # INFO: Pattern reminders for code files
+        if "agentpm/core/database" in file_path:
+            info_messages.append("\n💡 **Database Pattern Reminder**:")
+            info_messages.append("Follow three-layer pattern: Models → Adapters → Methods")
+            info_messages.append("No Dict[str, Any] in public APIs - use Pydantic models\n")
+
+        # INFO: Testing reminders
+        if "agentpm/core" in file_path and "test" not in file_path:
+            info_messages.append("\n💡 **Testing Reminder**:")
+            info_messages.append("Core modules require ≥90% test coverage (CI-004)")
+            info_messages.append("Write tests in tests/core/ before marking complete\n")
+
+    # Determine exit code and combine messages
+    if blocking_issues:
+        # Exit 2: Block tool call
+        return "\n".join(blocking_issues), 2
+    elif warning_issues:
+        # Exit 1: Show warning but allow
+        return "\n".join(warning_issues), 1
+    elif info_messages:
+        # Exit 0: Silent informational (not shown by Claude Code)
+        return "\n".join(info_messages), 0
+    else:
+        # Exit 0: No guidance needed
+        return "", 0
+
+
+def main():
+    """Main hook entry point."""
+    try:
+        # Read hook input
+        hook_data = read_hook_input()
+        tool_name = hook_data.get('tool_name', 'unknown')
+        parameters = hook_data.get('parameters', {})
+        session_id = hook_data.get('session_id', 'unknown')
+
+        # Log to stderr (not injected into context)
+        print(f"🪝 PreToolUse: tool={tool_name}, session={session_id}", file=sys.stderr)
+
+        # Generate contextual guidance (returns tuple: message, exit_code)
+        guidance, exit_code = format_tool_guidance(tool_name, parameters)
+
+        if guidance:
+            # Output guidance to stderr (so it's shown to model/user based on exit code)
+            print(guidance, file=sys.stderr)
+
+        # Exit with appropriate code:
+        # 0 = silent success (info messages not shown)
+        # 1 = warning (show stderr, allow tool)
+        # 2 = error (show stderr, BLOCK tool)
+        sys.exit(exit_code)
+
+    except Exception as e:
+        print(f"❌ PreToolUse hook error: {e}", file=sys.stderr)
+        # Exit 1 = show error but don't block (graceful degradation)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,18 @@
+{
+  "acceptance_criteria": [
+    {
+      "criterion": "[TODO: Define specific, measurable acceptance criteria for this task]",
+      "met": false,
+      "evidence": null
+    }
+  ],
+  "technical_approach": "[TODO: Describe technical approach, core modules, data flow, and performance considerations]",
+  "test_plan": "[TODO: Define test strategy including unit tests, integration tests, and regression coverage]",
+  "risks": [
+    {
+      "description": "[TODO: Identify implementation risks]",
+      "mitigation": "[TODO: Define risk mitigation strategy]"
+    }
+  ],
+  "notes": "[TODO: Track implementation caveats, dependencies, or follow-up tasks discovered during development]"
+}

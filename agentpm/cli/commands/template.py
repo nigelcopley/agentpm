@@ -1,0 +1,128 @@
+"""
+apm template - Manage JSON scaffolding templates.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import click
+from rich.table import Table
+
+from agentpm.cli.utils.project import ensure_project_root
+from agentpm.cli.utils.templates import (
+    ensure_project_copy,
+    get_template_info,
+    list_templates,
+    load_template,
+)
+
+
+@click.group()
+@click.pass_context
+def template(ctx: click.Context):
+    """
+    Manage JSON templates used for workflow gating and agent instructions.
+
+    Templates live in `agentpm/templates/json` and can be copied into your
+    project under `.aipm/templates/json` for customization.
+    """
+    # no-op: group initializer ensures project detection later when needed
+
+
+@template.command("list")
+@click.option(
+    "--show-paths",
+    is_flag=True,
+    help="Display the path of each template (package vs project override).",
+)
+@click.pass_context
+def list_command(ctx: click.Context, show_paths: bool) -> None:
+    """
+    List available templates grouped by category.
+    """
+    console = ctx.obj["console"]
+    project_root = ctx.obj.get("project_root")
+
+    table = Table(title="Available Templates", show_lines=False)
+    table.add_column("Template ID", style="cyan")
+    table.add_column("Source", style="green")
+    if show_paths:
+        table.add_column("Path", style="dim")
+
+    for info in list_templates(project_root=project_root):
+        source = "project" if info.project_path else "package"
+        row = [info.template_id, source]
+        if show_paths:
+            row.append(str(info.source_path))
+        table.add_row(*row)
+
+    console.print(table)
+
+
+@template.command("show")
+@click.argument("template_id")
+@click.option(
+    "--package",
+    "prefer_project",
+    flag_value=False,
+    default=True,
+    help="Show the packaged template even if a project override exists.",
+)
+@click.pass_context
+def show_command(ctx: click.Context, template_id: str, prefer_project: bool) -> None:
+    """
+    Display a template as JSON.
+    """
+    console = ctx.obj["console"]
+    project_root = ctx.obj.get("project_root")
+    content = load_template(
+        template_id, project_root=project_root, prefer_project=prefer_project
+    )
+    console.print_json(data=content)
+
+
+@template.command("pull")
+@click.argument("template_id")
+@click.option(
+    "--dest",
+    type=click.Path(path_type=Path, dir_okay=False),
+    help="Override destination path relative to project root.",
+)
+@click.option(
+    "--overwrite", is_flag=True, help="Overwrite existing project template."
+)
+@click.pass_context
+def pull_command(
+    ctx: click.Context, template_id: str, dest: Path | None, overwrite: bool
+) -> None:
+    """
+    Copy a packaged template into the project for customization.
+    """
+    console = ctx.obj["console"]
+    project_root = ensure_project_root(ctx)
+
+    if dest:
+        target_path = Path(project_root) / dest
+        if target_path.exists() and not overwrite:
+            console.print(
+                f"[red]❌ Destination already exists:[/red] {target_path}\n"
+                "Use --overwrite to replace it."
+            )
+            raise click.Abort()
+
+        info = get_template_info(template_id, project_root=None)
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        target_path.write_text(info.package_path.read_text(encoding="utf-8"), encoding="utf-8")
+    else:
+        target_path = ensure_project_copy(template_id, Path(project_root))
+        if target_path.exists() and not overwrite:
+            # ensure_project_copy only creates if missing; respect overwrite flag
+            pass
+        elif overwrite:
+            content = get_template_info(template_id).package_path.read_text(
+                encoding="utf-8"
+            )
+            target_path.write_text(content, encoding="utf-8")
+
+    console.print(f"[green]✅ Template ready at:[/green] {target_path}")

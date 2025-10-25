@@ -1,0 +1,180 @@
+<!-- Work Item Card Component -->
+{% from "macros/quick_actions.html" import quick_actions_icon %}
+
+<div class="card work-item-card" data-work-item-id="{{ work_item.id }}">
+  <div class="card-header">
+    <div class="flex justify-between items-center">
+      <div>
+        <h4 class="card-title">
+          <a href="/work-items/{{ work_item.id }}" class="text-primary hover:text-primary-dark">
+            {{ work_item.name }}
+          </a>
+        </h4>
+        <p class="card-subtitle">
+          <span class="badge badge-{{ work_item.type.value|lower }}">{{ work_item.type.value.replace('_', ' ').title() }}</span>
+          <span class="text-gray-500 ml-2">#{{ work_item.id }}</span>
+        </p>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="badge badge-{{ work_item.status.value|lower|replace('_', '-') }}">
+          {{ work_item.status.value.replace('_', ' ').title() }}
+        </span>
+        {% if work_item.priority %}
+        <span class="badge badge-gray">P{{ work_item.priority }}</span>
+        {% endif %}
+
+        <!-- Quick Actions Dropdown -->
+        {% if show_actions %}
+        {{ quick_actions_icon([
+          {'label': 'View Details', 'url': '/work-items/' ~ work_item.id, 'icon': 'eye'},
+          {'label': 'Edit', 'url': '/work-items/' ~ work_item.id ~ '/edit', 'icon': 'pencil'},
+          {'label': 'Duplicate', 'url': '/work-items/' ~ work_item.id ~ '/duplicate', 'icon': 'copy'},
+          {'divider': True},
+          {'label': 'Archive', 'url': '/work-items/' ~ work_item.id ~ '/archive', 'icon': 'archive'}
+        ], aria_label='Work item ' ~ work_item.id ~ ' actions') }}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card-body">
+    {% if work_item.description %}
+    <p class="text-sm text-gray-700 mb-3">
+      {{ work_item.description[:150] }}{% if work_item.description|length > 150 %}...{% endif %}
+    </p>
+    {% endif %}
+
+    <!-- Progress Section -->
+    {% if tasks_count > 0 %}
+    <div class="mb-3">
+      <div class="flex justify-between items-center mb-1">
+        <span class="text-sm font-medium text-gray-700">Progress</span>
+        <span class="text-sm text-gray-500">{{ completed_tasks }}/{{ tasks_count }} tasks</span>
+      </div>
+      <div class="progress">
+        <div class="progress-bar" style="width: {{ progress_percent }}%"></div>
+      </div>
+      <div class="flex justify-between items-center mt-1">
+        <span class="text-xs text-gray-500">{{ progress_percent }}% complete</span>
+        {% if total_effort_hours %}
+        <span class="text-xs text-gray-500">{{ total_effort_hours }}h total</span>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Task Status Summary -->
+    {% if tasks_count > 0 %}
+    <div class="grid grid-cols-4 gap-2 mb-3">
+      <div class="text-center">
+        <div class="text-lg font-semibold text-primary">{{ completed_tasks }}</div>
+        <div class="text-xs text-gray-500">Completed</div>
+      </div>
+      <div class="text-center">
+        <div class="text-lg font-semibold text-warning">{{ in_progress_tasks }}</div>
+        <div class="text-xs text-gray-500">In Progress</div>
+      </div>
+      <div class="text-center">
+        <div class="text-lg font-semibold text-error">{{ blocked_tasks }}</div>
+        <div class="text-xs text-gray-500">Blocked</div>
+      </div>
+      <div class="text-center">
+        <div class="text-lg font-semibold text-gray-500">{{ tasks_count - completed_tasks - in_progress_tasks - blocked_tasks }}</div>
+        <div class="text-xs text-gray-500">Pending</div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Time Boxing Metrics -->
+    {% if time_boxing and time_boxing.violations|length > 0 %}
+    <div class="alert alert-warning mb-3">
+      <div class="flex items-center">
+        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+        </svg>
+        <span class="text-sm">{{ time_boxing.violations|length }} time-boxing violation{{ 's' if time_boxing.violations|length > 1 else '' }}</span>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Metadata -->
+    <div class="flex flex-wrap gap-2 text-xs text-gray-500">
+      {% if project_name %}
+      <span class="flex items-center">
+        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h12a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1V8z" clip-rule="evenodd"></path>
+        </svg>
+        {{ project_name }}
+      </span>
+      {% endif %}
+      
+      {% if documents_count > 0 %}
+      <span class="flex items-center">
+        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path>
+        </svg>
+        {{ documents_count }} doc{{ 's' if documents_count > 1 else '' }}
+      </span>
+      {% endif %}
+
+      {% if latest_activity_at %}
+      <span class="flex items-center">
+        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+        </svg>
+        {{ latest_activity_at.strftime('%Y-%m-%d') if latest_activity_at else 'No activity' }}
+      </span>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if show_actions %}
+  <div class="card-footer">
+    <div class="flex justify-between items-center">
+      <div class="flex gap-2">
+        <a href="/work-items/{{ work_item.id }}" class="btn btn-sm btn-secondary">
+          <i class="bi bi-eye mr-1"></i>
+          View Details
+        </a>
+        {% if work_item.status.value == 'proposed' %}
+        <button class="btn btn-sm btn-primary" onclick="startWorkItem({{ work_item.id }})" aria-label="Start work on item {{ work_item.id }}">
+          <i class="bi bi-play-fill mr-1"></i>
+          Start Work
+        </button>
+        {% elif work_item.status.value == 'in_progress' %}
+        <button class="btn btn-sm btn-warning" onclick="pauseWorkItem({{ work_item.id }})" aria-label="Pause work on item {{ work_item.id }}">
+          <i class="bi bi-pause-fill mr-1"></i>
+          Pause
+        </button>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<style>
+/* Work Item Card Specific Styles */
+.work-item-card {
+  transition: all 0.2s ease-in-out;
+}
+
+.work-item-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.badge-proposed { background-color: var(--color-gray-100); color: var(--color-gray-700); }
+.badge-validated { background-color: var(--color-info); color: var(--color-white); }
+.badge-accepted { background-color: var(--color-primary); color: var(--color-white); }
+.badge-in-progress { background-color: var(--color-warning); color: var(--color-white); }
+.badge-review { background-color: var(--color-info); color: var(--color-white); }
+.badge-completed { background-color: var(--color-success); color: var(--color-white); }
+.badge-cancelled { background-color: var(--color-gray-100); color: var(--color-gray-700); }
+
+.badge-feature { background-color: var(--color-primary); color: var(--color-white); }
+.badge-enhancement { background-color: var(--color-info); color: var(--color-white); }
+.badge-bugfix { background-color: var(--color-error); color: var(--color-white); }
+.badge-research { background-color: var(--color-warning); color: var(--color-white); }
+.badge-documentation { background-color: var(--color-success); color: var(--color-white); }
+</style>

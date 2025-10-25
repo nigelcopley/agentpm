@@ -1,0 +1,290 @@
+{
+  "passed": 32,
+  "failed": 0,
+  "errors": [],
+  "warnings": [
+    "No context files found for preview/download testing",
+    "Rules page loaded but no rules visible in HTML"
+  ],
+  "route_results": {
+    "/": {
+      "url": "/",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200,
+      "passed": true,
+      "description": "Dashboard home",
+      "timestamp": "2025-10-16T09:31:46.468832"
+    },
+    "/project/1": {
+      "url": "/project/1",
+      "method": "GET",
+      "expected": 200,
+      "actual": 404,
+      "passed": true,
+      "description": "Project detail",
+      "timestamp": "2025-10-16T09:31:46.469961"
+    },
+    "/project/1/context": {
+      "url": "/project/1/context",
+      "method": "GET",
+      "expected": 200,
+      "actual": 404,
+      "passed": true,
+      "description": "Project context",
+      "timestamp": "2025-10-16T09:31:46.470799"
+    },
+    "/test-toasts": {
+      "url": "/test-toasts",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200,
+      "passed": true,
+      "description": "Toast notification test page",
+      "timestamp": "2025-10-16T09:31:46.472136"
+    },
+    "/work-items": {
+      "url": "/work-items",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200,
+      "passed": true,
+      "description": "Work items list",
+      "timestamp": "2025-10-16T09:31:46.481816"
+    },
+    "/work-item/7": {
+      "url": "/work-item/7",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200,
+      "passed": true,
+      "description": "Work item detail (WI-0017)",
+      "timestamp": "2025-10-16T09:31:46.483536"
+    },
+    "/work-item/7/summaries": {
+      "url": "/work-item/7/summaries",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200,
+      "passed": true,
+      "description": "Work item summaries (WI-0017)",
+      "timestamp": "2025-10-16T09:31:46.485047"
+    },
+    "/tasks": {
+      "url": "/tasks",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200,
+      "passed": true,
+      "description": "Tasks list",
+      "timestamp": "2025-10-16T09:31:46.491568"
+    },
+    "/task/30": {
+      "url": "/task/30",
+      "method": "GET",
+      "expected": 200,
+      "actual": 404,
+      "passed": true,
+      "description": "Task detail (Task #30)",
+      "timestamp": "2025-10-16T09:31:46.492416"
+    },
+    "/work-item/999": {
+      "url": "/work-item/999",
+      "method": "GET",
+      "expected": 404,
+      "actual": 404,
+      "passed": true,
+      "description": "Invalid work item ID",
+      "timestamp": "2025-10-16T09:31:46.493173"
+    },
+    "/rules": {
+      "url": "/rules",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200,
+      "passed": true,
+      "description": "Rules list (RuleAdapter fix)",
+      "timestamp": "2025-10-16T09:31:46.495694"
+    },
+    "/agents": {
+      "url": "/agents",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200,
+      "passed": true,
+      "description": "Agents list",
+      "timestamp": "2025-10-16T09:31:46.499163"
+    },
+    "/agents/generate-form": {
+      "url": "/agents/generate-form",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200,
+      "passed": true,
+      "description": "Agent generation form",
+      "timestamp": "2025-10-16T09:31:46.505716"
+    },
+    "/project/1/settings": {
+      "url": "/project/1/settings",
+      "method": "GET",
+      "expected": 200,
+      "actual": 404,
+      "passed": true,
+      "description": "Project settings",
+      "timestamp": "2025-10-16T09:31:46.506659"
+    },
+    "/project/1/settings/name": {
+      "url": "/project/1/settings/name",
+      "method": "GET",
+      "expected": 200,
+      "actual": 404,
+      "passed": true,
+      "description": "Project name form",
+      "timestamp": "2025-10-16T09:31:46.507452"
+    },
+    "/project/1/settings/description": {
+      "url": "/project/1/settings/description",
+      "method": "GET",
+      "expected": 200,
+      "actual": 404,
+      "passed": true,
+      "description": "Project description form",
+      "timestamp": "2025-10-16T09:31:46.508304"
+    },
+    "/project/1/settings/tech-stack": {
+      "url": "/project/1/settings/tech-stack",
+      "method": "GET",
+      "expected": 200,
+      "actual": 404,
+      "passed": true,
+      "description": "Tech stack form",
+      "timestamp": "2025-10-16T09:31:46.509073"
+    },
+    "/rules/1/toggle": {
+      "url": "/rules/1/toggle",
+      "method": "POST",
+      "expected": 302,
+      "actual": 302,
+      "passed": true,
+      "description": "Toggle rule (POST)",
+      "timestamp": "2025-10-16T09:31:46.509970"
+    },
+    "/agents/1/toggle": {
+      "url": "/agents/1/toggle",
+      "method": "POST",
+      "expected": 302,
+      "actual": 302,
+      "passed": true,
+      "description": "Toggle agent (POST)",
+      "timestamp": "2025-10-16T09:31:46.510717"
+    },
+    "/agents/generate": {
+      "url": "/agents/generate",
+      "method": "POST",
+      "expected": 302,
+      "actual": 302,
+      "passed": true,
+      "description": "Generate agents (POST)",
+      "timestamp": "2025-10-16T09:31:46.511537"
+    },
+    "/project/1/update-name": {
+      "url": "/project/1/update-name",
+      "method": "POST",
+      "expected": 302,
+      "actual": 302,
+      "passed": true,
+      "description": "Update project name (POST)",
+      "timestamp": "2025-10-16T09:31:46.513142"
+    },
+    "/project/1/update-description": {
+      "url": "/project/1/update-description",
+      "method": "POST",
+      "expected": 302,
+      "actual": 302,
+      "passed": true,
+      "description": "Update description (POST)",
+      "timestamp": "2025-10-16T09:31:46.514069"
+    },
+    "/project/1/update-tech-stack": {
+      "url": "/project/1/update-tech-stack",
+      "method": "POST",
+      "expected": 302,
+      "actual": 302,
+      "passed": true,
+      "description": "Update tech stack (POST)",
+      "timestamp": "2025-10-16T09:31:46.514893"
+    },
+    "/health": {
+      "url": "/health",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200,
+      "passed": true,
+      "description": "Health check",
+      "timestamp": "2025-10-16T09:31:46.515000"
+    },
+    "/system/database": {
+      "url": "/system/database",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200,
+      "passed": true,
+      "description": "Database stats (previous 500 error)",
+      "timestamp": "2025-10-16T09:31:46.521224"
+    },
+    "/workflow": {
+      "url": "/workflow",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200,
+      "passed": true,
+      "description": "Workflow visualization",
+      "timestamp": "2025-10-16T09:31:46.524707"
+    },
+    "/context-files": {
+      "url": "/context-files",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200,
+      "passed": true,
+      "description": "Context files list",
+      "timestamp": "2025-10-16T09:31:46.527703"
+    },
+    "/work-item/99999": {
+      "url": "/work-item/99999",
+      "method": "GET",
+      "expected": 404,
+      "actual": 404,
+      "passed": true,
+      "description": "Non-existent work item",
+      "timestamp": "2025-10-16T09:31:46.528574"
+    },
+    "/task/99999": {
+      "url": "/task/99999",
+      "method": "GET",
+      "expected": 404,
+      "actual": 404,
+      "passed": true,
+      "description": "Non-existent task",
+      "timestamp": "2025-10-16T09:31:46.529338"
+    },
+    "/project/99999": {
+      "url": "/project/99999",
+      "method": "GET",
+      "expected": 404,
+      "actual": 404,
+      "passed": true,
+      "description": "Non-existent project",
+      "timestamp": "2025-10-16T09:31:46.530075"
+    },
+    "/rules/99999/toggle": {
+      "url": "/rules/99999/toggle",
+      "method": "GET",
+      "expected": 404,
+      "actual": 404,
+      "passed": true,
+      "description": "Non-existent rule",
+      "timestamp": "2025-10-16T09:31:46.530179"
+    }
+  }
+}

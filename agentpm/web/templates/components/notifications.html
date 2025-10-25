@@ -1,0 +1,59 @@
+<!-- APM (Agent Project Manager) Notification System -->
+<div x-data="{}" 
+     x-init="
+        $watch('$store.notifications.items', (items) => {
+            if (items.length > 0) {
+                // Auto-scroll to latest notification
+                setTimeout(() => {
+                    const latest = document.querySelector('[x-data] [x-for] .notification-item:last-child');
+                    if (latest) latest.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+            }
+        })
+     "
+     class="fixed top-4 right-4 z-50 space-y-2 max-w-sm w-full">
+    
+    <template x-for="notification in $store.notifications.items" :key="notification.id">
+        <div class="notification-item bg-white rounded-lg shadow-lg border-l-4 p-4 transform transition-all duration-300 ease-in-out"
+             :class="{
+                 'border-green-500': notification.type === 'success',
+                 'border-red-500': notification.type === 'error',
+                 'border-yellow-500': notification.type === 'warning',
+                 'border-blue-500': notification.type === 'info'
+             }"
+             x-show="true"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 transform translate-x-full"
+             x-transition:enter-end="opacity-100 transform translate-x-0"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 transform translate-x-0"
+             x-transition:leave-end="opacity-0 transform translate-x-full">
+            
+            <div class="flex items-start space-x-3">
+                <!-- Icon -->
+                <div class="flex-shrink-0">
+                    <i class="bi text-lg"
+                       :class="{
+                           'bi-check-circle-fill text-green-500': notification.type === 'success',
+                           'bi-x-circle-fill text-red-500': notification.type === 'error',
+                           'bi-exclamation-triangle-fill text-yellow-500': notification.type === 'warning',
+                           'bi-info-circle-fill text-blue-500': notification.type === 'info'
+                       }"></i>
+                </div>
+                
+                <!-- Content -->
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-900" x-text="notification.message"></p>
+                </div>
+                
+                <!-- Close Button -->
+                <div class="flex-shrink-0">
+                    <button @click="$store.notifications.remove(notification.id)"
+                            class="text-gray-400 hover:text-gray-600 transition-colors">
+                        <i class="bi bi-x text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+</div>

@@ -1,0 +1,122 @@
+{
+  "why_value": {
+    "problem": "Describe the core customer or system pain this work item resolves.",
+    "desired_outcome": "Describe the state after delivery and what success looks like.",
+    "business_impact": "Quantify the impact (e.g., revenue lift, risk reduction, cost savings).",
+    "target_metrics": [
+      "Reduce support tickets related to filtering by 30%",
+      "Increase search conversion rate to 4.5%"
+    ]
+  },
+  "ownership": {
+    "raci": {
+      "responsible": "engineering-lead",
+      "accountable": "product-manager",
+      "consulted": [
+        "qa-lead",
+        "security-reviewer"
+      ],
+      "informed": [
+        "cto",
+        "support-manager"
+      ]
+    },
+    "stakeholders": [
+      "payments",
+      "growth"
+    ],
+    "subject_matter_experts": [
+      "alice.garcia",
+      "bob.chen"
+    ]
+  },
+  "scope": {
+    "in_scope": [
+      "Implement API endpoints for facet filtering",
+      "Expose UI controls for at least five filter dimensions",
+      "Persist user-selected filters between sessions"
+    ],
+    "out_of_scope": [
+      "Reworking relevance scoring logic",
+      "Adding analytics dashboards"
+    ]
+  },
+  "artifacts": {
+    "code_paths": [
+      "src/search/filter_service.py",
+      "src/search/api.py",
+      "tests/test_filter_service.py"
+    ],
+    "design_docs": [
+      "docs/architecture/search-filtering.md"
+    ],
+    "runbooks": [
+      "docs/runbooks/search-filters.md"
+    ],
+    "links": [
+      {
+        "label": "Product brief",
+        "url": "https://prod-docs.example.com/feature/filtering"
+      },
+      {
+        "label": "Design review notes",
+        "url": "https://prod-docs.example.com/reviews/filtering-2025-01"
+      }
+    ]
+  },
+  "risks": {
+    "known_risks": [
+      {
+        "description": "Filter queries may add 20% load to the search database.",
+        "impact": "medium",
+        "mitigation": "Add composite indexes and run load test prior to release."
+      }
+    ],
+    "assumptions": [
+      "Search API v2 stays stable through Q1",
+      "Analytics service can consume filter events"
+    ]
+  },
+  "dependencies": {
+    "work_items": [
+      {
+        "id": 172,
+        "name": "Upgrade search indexer",
+        "relationship": "blocks",
+        "status": "in_progress"
+      }
+    ],
+    "external": [
+      {
+        "description": "Data warehouse exposes new filter fields.",
+        "owner": "data-engineering",
+        "status": "planned"
+      }
+    ]
+  },
+  "quality": {
+    "definition_of_done": [
+      "All acceptance criteria met and verified.",
+      "Filter response time p95 < 400ms under load.",
+      "Telemetry events emitted for filter usage."
+    ],
+    "open_questions": [
+      {
+        "question": "Do we need to cache filter combinations?",
+        "owner": "architecture",
+        "due": "2025-01-22"
+      }
+    ]
+  },
+  "gates": {
+    "definition": {
+      "status": "completed",
+      "completed_at": "2025-01-10T15:34:00Z"
+    },
+    "design": {
+      "status": "in_progress",
+      "completed_at": null
+    }
+  },
+  "notes": "Capture any additional context, trade-offs, or escalation paths relevant to this work item."
+}

@@ -1,0 +1,375 @@
+"""
+apm task - Task management commands with quality gates
+
+Provides CRUD operations for tasks with strict enforcement of:
+- Time-boxing (IMPLEMENTATION ≤4h, TESTING ≤6h, DESIGN ≤8h)
+- Agent validation (CI-001)
+- Quality metadata requirements
+- Workflow state machine
+
+Commands:
+- create: Create new task with time-box validation
+- list: List tasks with filters
+- show: Display complete task details
+- start: Transition task to in_progress
+"""
+
+import click
+from rich.table import Table
+from agentpm.core.database.models import Task
+from agentpm.core.database.enums import TaskType, TaskStatus
+from agentpm.core.database.methods import tasks as task_methods
+from agentpm.core.workflow import WorkflowService, WorkflowError
+from agentpm.cli.utils.project import ensure_project_root, get_current_project_id
+from agentpm.cli.utils.services import get_database_service, get_workflow_service
+from agentpm.cli.utils.validation import (
+    get_task_type_choices,
+    validate_effort_hours,
+    validate_work_item_exists
+)
+
+
+# Time-box limits from workflow specification
+TIME_BOX_LIMITS = {
+    'implementation': 4.0,
+    'testing': 6.0,
+    'design': 8.0,
+    'analysis': 6.0,
+    'documentation': 4.0,
+    'review': 2.0,
+    'deployment': 4.0,
+    'refactoring': 6.0,
+    'bugfix': 4.0,
+    'research': 8.0
+}
+
+
+@click.group()
+def task():
+    """
+    Manage tasks with quality gates.
+
+    Tasks are the atomic unit of work with strict time-boxing and
+    quality metadata requirements enforced by the workflow system.
+
+    \b
+    Task Types & Time Limits:
+      implementation - Code changes (≤4h STRICT)
+      testing        - Test coverage (≤6h)
+      design         - Architecture/design (≤8h)
+      documentation  - Docs/guides (≤4h)
+      bugfix         - Bug fixes (≤4h)
+
+    \b
+    Examples:
+      apm task create "Add auth model" --work-item-id=1 --type=implementation --effort=3
+      apm task list --work-item-id=1
+      apm task start 5
+    """
+    pass
+
+
+@task.command()
+@click.argument('name')
+@click.option(
+    '--work-item-id', 'work_item_id',
+    type=int,
+    required=True,
+    help='Work item ID this task belongs to'
+)
+@click.option(
+    '--type', 'task_type',
+    type=click.Choice(get_task_type_choices(), case_sensitive=False),
+    required=True,
+    help='Task type (implementation, testing, design, etc.)'
+)
+@click.option(
+    '--effort', 'effort_hours',
+    type=float,
+    callback=validate_effort_hours,
+    help='Estimated effort in hours (max 8h, IMPLEMENTATION max 4h)'
+)
+@click.option(
+    '--description', '-d',
+    default='',
+    help='Task description'
+)
+@click.option(
+    '--priority', '-p',
+    type=click.IntRange(1, 5),
+    default=3,
+    help='Priority (1=highest, 5=lowest)'
+)
+@click.pass_context
+def create(ctx: click.Context, name: str, work_item_id: int, task_type: str, effort_hours: float, description: str, priority: int):
+    """
+    Create new task with time-box validation.
+
+    \b
+    Time-Boxing (STRICT):
+      IMPLEMENTATION tasks: ≤4 hours (forces proper decomposition)
+      TESTING tasks: ≤6 hours
+      DESIGN tasks: ≤8 hours
+
+    Tasks exceeding limits will be REJECTED with guidance to break into smaller tasks.
+
+    \b
+    Examples:
+      apm task create "Design auth schema" --work-item-id=1 --type=design --effort=3
+      apm task create "Implement User model" --work-item-id=1 --type=implementation --effort=3.5
+      apm task create "Write auth tests" --work-item-id=1 --type=testing --effort=4
+    """
+    console = ctx.obj['console']
+    project_root = ensure_project_root(ctx)
+    db = get_database_service(project_root)
+
+    # Validate work item exists
+    validate_work_item_exists(db, work_item_id, ctx)
+
+    # Time-box validation (STRICT)
+    if effort_hours:
+        max_hours = TIME_BOX_LIMITS.get(task_type, 8.0)
+        if effort_hours > max_hours:
+            console.print(f"\n❌ [red]Time-box violation:[/red] {task_type.upper()} tasks limited to {max_hours}h\n")
+            console.print(f"   Your estimate: {effort_hours}h (exceeds limit by {effort_hours - max_hours}h)\n")
+            console.print("💡 [yellow]Solution: Break into smaller tasks:[/yellow]")
+            console.print(f"   1. Create first task: ≤{max_hours}h")
+            console.print(f"   2. Create additional task(s) for remaining work")
+            console.print(f"\n   This enforces proper decomposition and prevents over-engineering.\n")
+            raise click.Abort()
+
+    # Create task
+    task = Task(
+        name=name,
+        description=description,
+        type=TaskType(task_type),
+        status=TaskStatus.PROPOSED,
+        work_item_id=work_item_id,
+        effort_hours=effort_hours,
+        priority=priority
+    )
+
+    created_task = task_methods.create_task(db, task)
+
+    # Success message
+    console.print(f"\n✅ [green]Task created:[/green] {created_task.name}")
+    console.print(f"   ID: {created_task.id}")
+    console.print(f"   Type: {created_task.type.value}")
+    console.print(f"   Status: {created_task.status.value}")
+    if created_task.effort_hours:
+        console.print(f"   Effort: {created_task.effort_hours}h")
+    console.print(f"   Priority: {created_task.priority}\n")
+
+    # Show next steps
+    console.print("📚 [cyan]Next steps:[/cyan]")
+    console.print(f"   apm task list --work-item-id={work_item_id}  # View all tasks")
+    console.print(f"   apm task start {created_task.id}              # Start working on this task")
+    console.print(f"   apm work-item show {work_item_id}             # Check quality gates\n")
+
+
+@task.command()
+@click.option(
+    '--work-item-id', 'work_item_id',
+    type=int,
+    help='Filter by work item ID'
+)
+@click.option(
+    '--status',
+    type=click.Choice(['proposed', 'validated', 'accepted', 'in_progress', 'review', 'completed', 'blocked', 'cancelled', 'archived'], case_sensitive=False),
+    help='Filter by status'
+)
+@click.option(
+    '--type', 'task_type',
+    type=click.Choice(get_task_type_choices(), case_sensitive=False),
+    help='Filter by task type'
+)
+@click.option(
+    '--format',
+    type=click.Choice(['table', 'json'], case_sensitive=False),
+    default='table',
+    help='Output format'
+)
+@click.pass_context
+def list(ctx: click.Context, work_item_id: int, status: str, task_type: str, format: str):
+    """
+    List tasks with optional filters.
+
+    \b
+    Examples:
+      apm task list                           # All tasks in project
+      apm task list --work-item-id=1          # Tasks for specific work item
+      apm task list --status=in_progress      # Active tasks
+      apm task list --type=implementation     # Implementation tasks only
+      apm task list --format=json             # JSON output
+    """
+    console = ctx.obj['console']
+    project_root = ensure_project_root(ctx)
+    db = get_database_service(project_root)
+
+    # Get tasks
+    if work_item_id:
+        validate_work_item_exists(db, work_item_id, ctx)
+        tasks = task_methods.list_tasks(db, work_item_id=work_item_id)
+    else:
+        # Get all tasks for project (need to get all work items first)
+        project_id = get_current_project_id(ctx)
+        from agentpm.core.database.methods import work_items as wi_methods
+        work_items = wi_methods.list_work_items(db, project_id=project_id)
+
+        tasks = []
+        for wi in work_items:
+            tasks.extend(task_methods.list_tasks(db, work_item_id=wi.id))
+
+    # Apply filters
+    if status:
+        tasks = [t for t in tasks if t.status.value == status]
+    if task_type:
+        tasks = [t for t in tasks if t.type.value == task_type]
+
+    if not tasks:
+        console.print("\nℹ️  [yellow]No tasks found[/yellow]\n")
+        console.print("💡 [cyan]Create one with:[/cyan]")
+        console.print("   apm task create \"Task name\" --work-item-id=<id> --type=implementation --effort=3\n")
+        return
+
+    if format == 'json':
+        import json
+        output = [
+            {
+                'id': t.id,
+                'name': t.name,
+                'type': t.type.value,
+                'status': t.status.value,
+                'effort_hours': t.effort_hours,
+                'work_item_id': t.work_item_id
+            }
+            for t in tasks
+        ]
+        console.print(json.dumps(output, indent=2))
+    else:
+        # Rich table
+        table = Table(title=f"\n📋 Tasks ({len(tasks)})")
+        table.add_column("ID", style="cyan")
+        table.add_column("Name", style="bold")
+        table.add_column("Type", style="magenta")
+        table.add_column("Status", style="yellow")
+        table.add_column("Effort")
+        table.add_column("WI")
+
+        for t in tasks:
+            effort_str = f"{t.effort_hours}h" if t.effort_hours else "-"
+            table.add_row(
+                str(t.id),
+                t.name,
+                t.type.value,
+                t.status.value,
+                effort_str,
+                str(t.work_item_id)
+            )
+
+        console.print(table)
+        console.print()
+
+
+@task.command()
+@click.argument('task_id', type=int)
+@click.pass_context
+def show(ctx: click.Context, task_id: int):
+    """
+    Show complete task details.
+
+    \b
+    Example:
+      apm task show 5
+    """
+    console = ctx.obj['console']
+    project_root = ensure_project_root(ctx)
+    db = get_database_service(project_root)
+
+    # Get task
+    task = task_methods.get_task(db, task_id)
+
+    if not task:
+        console.print(f"\n❌ [red]Task not found:[/red] ID {task_id}\n")
+        console.print("💡 [yellow]List tasks with:[/yellow]")
+        console.print("   apm task list\n")
+        raise click.Abort()
+
+    # Display task details
+    console.print(f"\n📋 [bold cyan]Task #{task.id}[/bold cyan]\n")
+    console.print(f"[bold]Name:[/bold] {task.name}")
+    console.print(f"[bold]Type:[/bold] {task.type.value}")
+    console.print(f"[bold]Status:[/bold] {task.status.value}")
+    console.print(f"[bold]Work Item ID:[/bold] {task.work_item_id}")
+
+    if task.effort_hours:
+        max_hours = TIME_BOX_LIMITS.get(task.type.value, 8.0)
+        console.print(f"[bold]Effort:[/bold] {task.effort_hours}h / {max_hours}h max")
+
+    console.print(f"[bold]Priority:[/bold] {task.priority}")
+
+    if task.description:
+        console.print(f"\n[bold]Description:[/bold]\n{task.description}")
+
+    console.print()
+
+
+@task.command()
+@click.argument('task_id', type=int)
+@click.pass_context
+def start(ctx: click.Context, task_id: int):
+    """
+    Start working on a task (transition to in_progress).
+
+    Uses WorkflowService to enforce quality gates and state machine rules.
+
+    \b
+    Example:
+      apm task start 5
+    """
+    console = ctx.obj['console']
+    project_root = ensure_project_root(ctx)
+    workflow = get_workflow_service(project_root)
+    db = get_database_service(project_root)
+
+    # Get task
+    task = task_methods.get_task(db, task_id)
+
+    if not task:
+        console.print(f"\n❌ [red]Task not found:[/red] ID {task_id}\n")
+        raise click.Abort()
+
+    # Try to transition via WorkflowService (enforces quality gates)
+    try:
+        updated_task = workflow.transition_task(task_id, TaskStatus.IN_PROGRESS)
+
+        console.print(f"\n✅ [green]Task started:[/green] {updated_task.name}")
+        console.print(f"   Status: {task.status.value} → {updated_task.status.value}")
+        console.print(f"\n📚 [cyan]Next steps:[/cyan]")
+        console.print(f"   # Work on the task")
+        console.print(f"   apm task show {task_id}  # View details")
+        console.print(f"   # When done:")
+        console.print(f"   apm task complete {task_id}\n")
+
+    except WorkflowError as e:
+        console.print(f"\n❌ [red]Cannot start task:[/red] {e}\n")
+        console.print("💡 [yellow]Quality gate blocked this transition[/yellow]")
+        console.print(f"   Current status: {task.status.value}")
+        console.print(f"   Attempted: → in_progress\n")
+        raise click.Abort()
+
+# Import and add dependency management commands
+from agentpm.cli.commands.dependencies import (
+    add_dependency,
+    add_blocker,
+    list_dependencies,
+    list_blockers,
+    resolve_blocker
+)
+
+# Register dependency commands under task group
+task.add_command(add_dependency)
+task.add_command(add_blocker)
+task.add_command(list_dependencies)
+task.add_command(list_blockers)
+task.add_command(resolve_blocker)

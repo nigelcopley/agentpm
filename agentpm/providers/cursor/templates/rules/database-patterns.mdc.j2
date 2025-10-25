@@ -1,0 +1,523 @@
+---
+globs:
+  - "**/adapters/**/*.py"
+  - "**/methods/**/*.py"
+  - "**/database/**/*.py"
+  - "**/models/**/*.py"
+description: Database three-layer architecture patterns
+priority: 90
+---
+
+# Database Patterns
+
+## 1. Three-Layer Pattern (MANDATORY)
+
+APM (Agent Project Manager) enforces strict separation: **Models → Adapters → Methods**
+
+### Layer 1: Models (Pydantic)
+
+**Purpose**: Domain models with validation
+**Location**: `agentpm/models/`
+
+**Example**:
+```python
+from pydantic import BaseModel, Field
+from datetime import datetime
+from typing import Optional, List
+
+class WorkItem(BaseModel):
+    """Work item domain model"""
+    id: Optional[int] = None
+    name: str = Field(..., min_length=1, max_length=200)
+    type: str = Field(..., pattern="^(feature|bug|enhancement)$")
+    status: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        frozen = False
+        validate_assignment = True
+```
+
+### Layer 2: Adapters
+
+**Purpose**: Convert between models and database
+**Location**: `agentpm/{domain}/adapters/`
+
+**Example**:
+```python
+from agentpm.models.work_item import WorkItem
+from sqlite3 import Row
+from typing import Dict, Any
+from datetime import datetime
+
+class WorkItemAdapter:
+    """Adapt WorkItem between model and database"""
+
+    @staticmethod
+    def to_dict(work_item: WorkItem) -> Dict[str, Any]:
+        """Convert Pydantic model to database dict"""
+        return {
+            "id": work_item.id,
+            "name": work_item.name,
+            "type": work_item.type,
+            "status": work_item.status,
+            "created_at": work_item.created_at.isoformat(),
+            "updated_at": work_item.updated_at.isoformat() if work_item.updated_at else None
+        }
+
+    @staticmethod
+    def from_row(row: Row) -> WorkItem:
+        """Convert database row to Pydantic model"""
+        return WorkItem(
+            id=row["id"],
+            name=row["name"],
+            type=row["type"],
+            status=row["status"],
+            created_at=datetime.fromisoformat(row["created_at"]),
+            updated_at=datetime.fromisoformat(row["updated_at"]) if row["updated_at"] else None
+        )
+```
+
+### Layer 3: Methods
+
+**Purpose**: Business logic and database operations
+**Location**: `agentpm/{domain}/methods/`
+
+**Example**:
+```python
+from agentpm.models.work_item import WorkItem
+from agentpm.work_items.adapters.work_item_adapter import WorkItemAdapter
+from agentpm.core.database.service import DatabaseService
+from typing import List, Optional
+
+class WorkItemMethods:
+    """Business logic for work items"""
+
+    def __init__(self, db: DatabaseService):
+        self.db = db
+
+    def create_work_item(self, work_item: WorkItem) -> WorkItem:
+        """Create work item in database"""
+        # Convert model to dict
+        data = WorkItemAdapter.to_dict(work_item)
+
+        # Insert into database
+        cursor = self.db.execute(
+            """
+            INSERT INTO work_items (name, type, status, created_at, updated_at)
+            VALUES (:name, :type, :status, :created_at, :updated_at)
+            """,
+            data
+        )
+
+        # Return model with ID
+        work_item.id = cursor.lastrowid
+        return work_item
+
+    def get_work_item(self, work_item_id: int) -> Optional[WorkItem]:
+        """Get work item by ID"""
+        row = self.db.fetch_one(
+            "SELECT * FROM work_items WHERE id = ?",
+            (work_item_id,)
+        )
+
+        if row:
+            return WorkItemAdapter.from_row(row)
+        return None
+
+    def list_work_items(self, status: Optional[str] = None) -> List[WorkItem]:
+        """List work items with optional filter"""
+        if status:
+            rows = self.db.fetch_all(
+                "SELECT * FROM work_items WHERE status = ? ORDER BY created_at DESC",
+                (status,)
+            )
+        else:
+            rows = self.db.fetch_all(
+                "SELECT * FROM work_items ORDER BY created_at DESC"
+            )
+
+        return [WorkItemAdapter.from_row(row) for row in rows]
+```
+
+---
+
+## 2. Service Coordinator Pattern
+
+### ServiceResult for Operations
+
+**Use ServiceResult to wrap operation results:**
+
+```python
+from typing import Generic, TypeVar, Optional
+from pydantic import BaseModel
+
+T = TypeVar('T')
+
+class ServiceResult(BaseModel, Generic[T]):
+    """Result wrapper for service operations"""
+    success: bool
+    data: Optional[T] = None
+    error: Optional[str] = None
+    error_code: Optional[str] = None
+
+    class Config:
+        arbitrary_types_allowed = True
+
+# Usage in methods
+def create_work_item(self, work_item: WorkItem) -> ServiceResult[WorkItem]:
+    """Create work item with error handling"""
+    try:
+        created = self._create_internal(work_item)
+        return ServiceResult(success=True, data=created)
+    except ValidationError as e:
+        return ServiceResult(
+            success=False,
+            error=str(e),
+            error_code="VALIDATION_ERROR"
+        )
+    except Exception as e:
+        return ServiceResult(
+            success=False,
+            error=f"Failed to create work item: {str(e)}",
+            error_code="DATABASE_ERROR"
+        )
+```
+
+### Transaction Handling
+
+**Use context manager for transactions:**
+
+```python
+def update_work_item_with_tasks(
+    self,
+    work_item_id: int,
+    updates: Dict[str, Any],
+    new_tasks: List[Task]
+) -> ServiceResult[WorkItem]:
+    """Update work item and create tasks atomically"""
+    try:
+        with self.db.transaction():
+            # Update work item
+            self.db.execute(
+                """
+                UPDATE work_items
+                SET name = :name, status = :status, updated_at = :updated_at
+                WHERE id = :id
+                """,
+                {**updates, "id": work_item_id, "updated_at": datetime.utcnow().isoformat()}
+            )
+
+            # Create tasks
+            for task in new_tasks:
+                task_data = TaskAdapter.to_dict(task)
+                self.db.execute(
+                    """
+                    INSERT INTO tasks (name, work_item_id, effort_hours, status, created_at)
+                    VALUES (:name, :work_item_id, :effort_hours, :status, :created_at)
+                    """,
+                    task_data
+                )
+
+        # Fetch updated work item
+        work_item = self.get_work_item(work_item_id)
+        return ServiceResult(success=True, data=work_item)
+
+    except Exception as e:
+        return ServiceResult(
+            success=False,
+            error=f"Transaction failed: {str(e)}",
+            error_code="TRANSACTION_ERROR"
+        )
+```
+
+---
+
+## 3. Schema Patterns
+
+### Consistent Naming
+
+**Use snake_case for all database identifiers:**
+
+```sql
+-- ✅ CORRECT: snake_case
+CREATE TABLE work_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    business_context TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT
+);
+
+-- ❌ INCORRECT: camelCase or PascalCase
+CREATE TABLE WorkItems (
+    ID INTEGER PRIMARY KEY,
+    Name TEXT,
+    BusinessContext TEXT,
+    createdAt TEXT
+);
+```
+
+### JSON Columns for Complex Data
+
+**Use JSON for flexible data structures:**
+
+```sql
+CREATE TABLE work_items (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    metadata JSON,  -- Flexible metadata
+    context_6w JSON,  -- 6W context structure
+    quality_metadata JSON  -- Quality metrics
+);
+```
+
+**Accessing JSON in Python:**
+
+```python
+import json
+
+def get_work_item_context(self, work_item_id: int) -> Dict[str, Any]:
+    """Get 6W context from JSON column"""
+    row = self.db.fetch_one(
+        "SELECT context_6w FROM work_items WHERE id = ?",
+        (work_item_id,)
+    )
+
+    if row and row["context_6w"]:
+        return json.loads(row["context_6w"])
+    return {}
+
+def update_work_item_context(self, work_item_id: int, context: Dict[str, Any]):
+    """Update 6W context in JSON column"""
+    self.db.execute(
+        "UPDATE work_items SET context_6w = ? WHERE id = ?",
+        (json.dumps(context), work_item_id)
+    )
+```
+
+### Timestamps in ISO Format
+
+**Always use ISO 8601 format for timestamps:**
+
+```python
+from datetime import datetime
+
+# ✅ CORRECT: ISO format
+created_at = datetime.utcnow().isoformat()  # "2025-10-20T15:30:45.123456"
+
+# Store in database
+self.db.execute(
+    "INSERT INTO work_items (created_at) VALUES (?)",
+    (created_at,)
+)
+
+# Parse from database
+row = self.db.fetch_one("SELECT created_at FROM work_items WHERE id = ?", (1,))
+created_at = datetime.fromisoformat(row["created_at"])
+```
+
+### Indexes for Performance
+
+**Add indexes for frequently queried columns:**
+
+```sql
+-- Primary key automatically indexed
+CREATE TABLE work_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT
+);
+
+-- Index for status queries
+CREATE INDEX idx_work_items_status ON work_items(status);
+
+-- Index for type queries
+CREATE INDEX idx_work_items_type ON work_items(type);
+
+-- Composite index for common filter combinations
+CREATE INDEX idx_work_items_status_type ON work_items(status, type);
+
+-- Index for foreign keys
+CREATE INDEX idx_tasks_work_item_id ON tasks(work_item_id);
+```
+
+---
+
+## 4. Migration Patterns
+
+### Version-Based Migrations
+
+**Structure**:
+```
+agentpm/core/database/migrations/
+├── __init__.py
+├── migration_001_initial_schema.py
+├── migration_002_add_context_tables.py
+├── migration_003_add_quality_metadata.py
+└── migration_004_add_indexes.py
+```
+
+**Migration Template**:
+```python
+from agentpm.core.database.service import DatabaseService
+
+def migrate(db: DatabaseService) -> None:
+    """Migration 004: Add performance indexes"""
+    # Add indexes
+    db.execute("CREATE INDEX idx_work_items_status ON work_items(status)")
+    db.execute("CREATE INDEX idx_tasks_work_item_id ON tasks(work_item_id)")
+
+    # Update schema version
+    db.execute("PRAGMA user_version = 4")
+
+def rollback(db: DatabaseService) -> None:
+    """Rollback migration 004"""
+    # Drop indexes
+    db.execute("DROP INDEX IF EXISTS idx_work_items_status")
+    db.execute("DROP INDEX IF EXISTS idx_tasks_work_item_id")
+
+    # Revert schema version
+    db.execute("PRAGMA user_version = 3")
+```
+
+### Migration Execution
+
+```python
+class DatabaseMigrator:
+    """Execute database migrations"""
+
+    def __init__(self, db: DatabaseService):
+        self.db = db
+
+    def get_current_version(self) -> int:
+        """Get current schema version"""
+        row = self.db.fetch_one("PRAGMA user_version")
+        return row[0] if row else 0
+
+    def migrate_to_version(self, target_version: int) -> ServiceResult[int]:
+        """Migrate to target version"""
+        current = self.get_current_version()
+
+        if current == target_version:
+            return ServiceResult(success=True, data=current)
+
+        try:
+            with self.db.transaction():
+                for version in range(current + 1, target_version + 1):
+                    migration = self._load_migration(version)
+                    migration.migrate(self.db)
+
+            return ServiceResult(success=True, data=target_version)
+
+        except Exception as e:
+            return ServiceResult(
+                success=False,
+                error=f"Migration failed: {str(e)}",
+                error_code="MIGRATION_ERROR"
+            )
+```
+
+---
+
+## 5. Testing Database Code
+
+### Use In-Memory Database for Tests
+
+```python
+import pytest
+from agentpm.core.database.service import DatabaseService
+
+@pytest.fixture
+def temp_db():
+    """Provide in-memory database for tests"""
+    db = DatabaseService(":memory:")
+
+    # Initialize schema
+    db.execute("""
+        CREATE TABLE work_items (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            status TEXT NOT NULL
+        )
+    """)
+
+    yield db
+    # Cleanup automatic with in-memory DB
+```
+
+### Test CRUD Operations
+
+```python
+def test_create_work_item(temp_db):
+    """Test creating work item"""
+    # Arrange
+    methods = WorkItemMethods(temp_db)
+    work_item = WorkItem(name="Test", type="feature", status="draft")
+
+    # Act
+    result = methods.create_work_item(work_item)
+
+    # Assert
+    assert result.id is not None
+    assert result.name == "Test"
+
+    # Verify in database
+    row = temp_db.fetch_one("SELECT * FROM work_items WHERE id = ?", (result.id,))
+    assert row["name"] == "Test"
+```
+
+### Test Transactions
+
+```python
+def test_transaction_rollback_on_error(temp_db):
+    """Test transaction rolls back on error"""
+    # Arrange
+    methods = WorkItemMethods(temp_db)
+
+    # Act: Trigger error in transaction
+    with pytest.raises(Exception):
+        with temp_db.transaction():
+            temp_db.execute("INSERT INTO work_items (name, status) VALUES (?, ?)", ("Test", "draft"))
+            raise Exception("Simulated error")
+
+    # Assert: No data committed
+    rows = temp_db.fetch_all("SELECT * FROM work_items")
+    assert len(rows) == 0
+```
+
+---
+
+## 6. Query Database Rules
+
+```bash
+# Get database-specific rules
+apm rules list --category=database
+
+# Get specific database rules
+apm rules show DP-006  # Three-layer pattern
+apm rules show DP-007  # Service registry
+```
+
+---
+
+## 7. Quick Checklist
+
+Before committing database code, verify:
+
+- [ ] Three-layer architecture followed (Models → Adapters → Methods)
+- [ ] Pydantic models for all domain objects
+- [ ] Adapters for model/database conversion
+- [ ] DatabaseService used (no raw SQLite)
+- [ ] Type hints on all methods
+- [ ] ServiceResult for operations with error handling
+- [ ] Transactions for multi-step operations
+- [ ] JSON columns for complex data
+- [ ] ISO format for timestamps
+- [ ] Indexes on frequently queried columns
+- [ ] Tests using in-memory database
+
+---
+
+**Version**: 1.0.0
+**Last Updated**: 2025-10-20
+**Priority**: 90 (auto-attach for database-related files)

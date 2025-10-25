@@ -1,0 +1,231 @@
+{% extends "layouts/modern_base.html" %}
+{% from 'macros/breadcrumb.html' import breadcrumb %}
+
+{% block title %}Workflow Visualization - APM (Agent Project Manager) Dashboard{% endblock %}
+
+{% block content %}
+{{ breadcrumb([
+    {'label': 'System', 'url': '/system'},
+    {'label': 'Workflow Visualization', 'url': None}
+]) }}
+
+<!-- Page Header -->
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-5">
+            <i class="bi bi-diagram-3 text-primary"></i> Workflow Visualization
+        </h1>
+        <p class="lead text-muted">APM (Agent Project Manager) Workflow Phases and Distribution</p>
+    </div>
+</div>
+
+<!-- Workflow Phase Distribution -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="card shadow-soft">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-pie-chart text-info"></i> Work Item Phase Distribution
+                </h5>
+                <p class="text-muted">Current distribution of work items across workflow phases</p>
+                
+                {% if workflow_data and workflow_data.phase_counts %}
+                <div class="row">
+                    {% for phase in workflow_data.phases %}
+                    <div class="col-md-4 col-lg-2 mb-3">
+                        <div class="text-center">
+                            <div class="phase-badge mb-2">
+                                {% set phase_name = phase.replace('_', ' ').title() %}
+                                {% set count = workflow_data.phase_counts.get(phase, 0) %}
+                                <span class="badge badge-primary fs-6">{{ phase_name }}</span>
+                            </div>
+                            <div class="phase-count">
+                                <h3 class="text-primary mb-0">{{ count }}</h3>
+                                <small class="text-muted">work items</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Phase Flow Diagram -->
+                <div class="mt-4">
+                    <h6 class="mb-3">Workflow Phase Flow</h6>
+                    <div class="text-center p-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; color: white;">
+                        <div style="font-family: monospace; font-size: 0.9rem; line-height: 2;">
+                            <strong>D1 Discovery</strong>
+                            <span class="transition-arrow" style="color: white;">→</span>
+                            <strong>P1 Planning</strong>
+                            <span class="transition-arrow" style="color: white;">→</span>
+                            <strong>I1 Implementation</strong>
+                            <span class="transition-arrow" style="color: white;">→</span>
+                            <strong>R1 Review</strong>
+                            <span class="transition-arrow" style="color: white;">→</span>
+                            <strong>O1 Operations</strong>
+                            <span class="transition-arrow" style="color: white;">→</span>
+                            <strong>E1 Evolution</strong>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-info" role="alert">
+                    <i class="bi bi-info-circle-fill"></i>
+                    No workflow data available. Create some work items to see the phase distribution.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Phase Definitions -->
+<div class="row mb-4">
+    <div class="col">
+        <h3 class="mb-3">
+            <i class="bi bi-collection text-primary"></i> Phase Definitions
+        </h3>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow-soft h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <span class="badge badge-info">D1 Discovery</span>
+                </h5>
+                <p class="text-muted mb-3">Requirements gathering, context analysis, and feasibility assessment.</p>
+                <h6 class="mb-2">Key Activities:</h6>
+                <ul class="list-unstyled mb-0">
+                    <li><i class="bi bi-chevron-right text-primary"></i> Business context definition</li>
+                    <li><i class="bi bi-chevron-right text-primary"></i> Acceptance criteria</li>
+                    <li><i class="bi bi-chevron-right text-primary"></i> Risk assessment</li>
+                    <li><i class="bi bi-chevron-right text-primary"></i> 6W framework completion</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow-soft h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <span class="badge badge-warning">P1 Planning</span>
+                </h5>
+                <p class="text-muted mb-3">Task decomposition, estimation, and dependency mapping.</p>
+                <h6 class="mb-2">Key Activities:</h6>
+                <ul class="list-unstyled mb-0">
+                    <li><i class="bi bi-chevron-right text-primary"></i> Task breakdown</li>
+                    <li><i class="bi bi-chevron-right text-primary"></i> Effort estimation</li>
+                    <li><i class="bi bi-chevron-right text-primary"></i> Dependency mapping</li>
+                    <li><i class="bi bi-chevron-right text-primary"></i> Risk mitigation</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow-soft h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <span class="badge badge-success">I1 Implementation</span>
+                </h5>
+                <p class="text-muted mb-3">Feature development, testing, and documentation.</p>
+                <h6 class="mb-2">Key Activities:</h6>
+                <ul class="list-unstyled mb-0">
+                    <li><i class="bi bi-chevron-right text-primary"></i> Code implementation</li>
+                    <li><i class="bi bi-chevron-right text-primary"></i> Test writing</li>
+                    <li><i class="bi bi-chevron-right text-primary"></i> Documentation updates</li>
+                    <li><i class="bi bi-chevron-right text-primary"></i> Migration scripts</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow-soft h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <span class="badge badge-primary">R1 Review</span>
+                </h5>
+                <p class="text-muted mb-3">Quality validation, acceptance criteria verification, and code review.</p>
+                <h6 class="mb-2">Key Activities:</h6>
+                <ul class="list-unstyled mb-0">
+                    <li><i class="bi bi-chevron-right text-primary"></i> Acceptance criteria verification</li>
+                    <li><i class="bi bi-chevron-right text-primary"></i> Test coverage validation</li>
+                    <li><i class="bi bi-chevron-right text-primary"></i> Code review</li>
+                    <li><i class="bi bi-chevron-right text-primary"></i> Quality gate checks</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow-soft h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <span class="badge badge-secondary">O1 Operations</span>
+                </h5>
+                <p class="text-muted mb-3">Deployment, monitoring, and production readiness.</p>
+                <h6 class="mb-2">Key Activities:</h6>
+                <ul class="list-unstyled mb-0">
+                    <li><i class="bi bi-chevron-right text-primary"></i> Version management</li>
+                    <li><i class="bi bi-chevron-right text-primary"></i> Deployment</li>
+                    <li><i class="bi bi-chevron-right text-primary"></i> Health monitoring</li>
+                    <li><i class="bi bi-chevron-right text-primary"></i> Performance validation</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow-soft h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <span class="badge badge-dark">E1 Evolution</span>
+                </h5>
+                <p class="text-muted mb-3">Telemetry analysis, improvement identification, and feedback capture.</p>
+                <h6 class="mb-2">Key Activities:</h6>
+                <ul class="list-unstyled mb-0">
+                    <li><i class="bi bi-chevron-right text-primary"></i> Telemetry analysis</li>
+                    <li><i class="bi bi-chevron-right text-primary"></i> Improvement identification</li>
+                    <li><i class="bi bi-chevron-right text-primary"></i> Pattern documentation</li>
+                    <li><i class="bi bi-chevron-right text-primary"></i> Technical debt cataloging</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="card shadow-soft">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-lightning text-warning"></i> Quick Actions
+                </h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <a href="/work-items" class="btn btn-outline-primary btn-sm me-2 mb-2">
+                            <i class="bi bi-list-ul"></i> View Work Items
+                        </a>
+                        <a href="/tasks" class="btn btn-outline-success btn-sm me-2 mb-2">
+                            <i class="bi bi-check-square"></i> View Tasks
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="/system/health" class="btn btn-outline-info btn-sm me-2 mb-2">
+                            <i class="bi bi-heart-pulse"></i> System Health
+                        </a>
+                        <a href="/system/database" class="btn btn-outline-secondary btn-sm me-2 mb-2">
+                            <i class="bi bi-database"></i> Database Metrics
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

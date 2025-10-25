@@ -1,0 +1,328 @@
+"""
+Context Service - Hierarchical Context Delivery
+
+Assembles and delivers complete context to agents by combining:
+- Database entities (projects, work items, tasks)
+- Plugin-extracted facts (technical foundation)
+- Code amalgamations (searchable reference)
+- UnifiedSixW structure (comprehensive context)
+
+Pattern: Service coordinator following gold standard
+"""
+
+from pathlib import Path
+from typing import Dict, Any, Optional
+
+from ..database.service import DatabaseService
+from ..database.models import Project, WorkItem, Task, Context, UnifiedSixW
+from ..database.enums import EntityType, ContextType
+from ..plugins.registry import get_registry
+
+
+class ContextService:
+    """
+    Context service for hierarchical context assembly and delivery.
+
+    Provides complete context to agents by combining multiple sources:
+    - Database entities
+    - Plugin facts
+    - Code amalgamations
+    - Confidence scoring
+    """
+
+    def __init__(self, db_service: DatabaseService, project_path: Path):
+        """
+        Initialize context service.
+
+        Args:
+            db_service: Database service instance
+            project_path: Path to project root (for amalgamation access)
+        """
+        self.db = db_service
+        self.project_path = project_path
+        self.plugin_registry = get_registry()
+
+    def get_project_context(self, project_id: int) -> Dict[str, Any]:
+        """
+        Get complete project-level context.
+
+        Returns:
+            {
+                'project': {...},  # Project entity data
+                'facts': {...},    # Plugin-extracted facts
+                'six_w': {...},    # UnifiedSixW if exists
+                'amalgamations': {...},  # References to code files
+                'confidence': {...}  # Confidence score and band
+            }
+        """
+        # Import CRUD methods
+        from ..database.methods import projects, contexts
+
+        # Load project
+        project = projects.get_project(self.db, project_id)
+        if not project:
+            return {}
+
+        # Load project context (UnifiedSixW)
+        project_context = contexts.get_entity_context(
+            self.db,
+            EntityType.PROJECT,
+            project_id
+        )
+
+        # Get amalgamation references
+        amalgamations = self._get_amalgamation_references(project.tech_stack)
+
+        # Assemble context
+        context = {
+            'project': {
+                'id': project.id,
+                'name': project.name,
+                'path': project.path,
+                'tech_stack': project.tech_stack,
+                'detected_frameworks': project.detected_frameworks,
+                'status': project.status.value
+            },
+            'facts': self._extract_plugin_facts_from_context(project_context) if project_context else {},
+            'six_w': self._serialize_six_w(project_context.six_w) if project_context and project_context.six_w else None,
+            'amalgamations': amalgamations,
+            'confidence': {
+                'score': project_context.confidence_score if project_context else 0.5,
+                'band': project_context.confidence_band.value if project_context and project_context.confidence_band else 'YELLOW'
+            }
+        }
+
+        return context
+
+    def get_work_item_context(self, work_item_id: int) -> Dict[str, Any]:
+        """
+        Get complete work-item-level context (includes project context).
+
+        Returns hierarchical context with work item + project data.
+        """
+        from ..database.methods import work_items, contexts
+
+        # Load work item
+        work_item = work_items.get_work_item(self.db, work_item_id)
+        if not work_item:
+            return {}
+
+        # Get project context (inherited)
+        project_context = self.get_project_context(work_item.project_id)
+
+        # Load work item context
+        wi_context = contexts.get_entity_context(
+            self.db,
+            EntityType.WORK_ITEM,
+            work_item_id
+        )
+
+        # Assemble with inheritance
+        context = {
+            **project_context,  # Inherit all project context
+
+            'work_item': {
+                'id': work_item.id,
+                'name': work_item.name,
+                'description': work_item.description,
+                'type': work_item.type.value,
+                'business_context': work_item.business_context,
+                'effort_estimate_hours': work_item.effort_estimate_hours,
+                'priority': work_item.priority,
+                'status': work_item.status.value
+            },
+            'work_item_six_w': self._serialize_six_w(wi_context.six_w) if wi_context and wi_context.six_w else None,
+            'work_item_confidence': {
+                'score': wi_context.confidence_score if wi_context else 0.5,
+                'band': wi_context.confidence_band.value if wi_context and wi_context.confidence_band else 'YELLOW'
+            }
+        }
+
+        return context
+
+    def get_idea_context(self, idea_id: int) -> Dict[str, Any]:
+        """
+        Get complete idea-level context (includes project context).
+
+        Returns hierarchical context with idea + project data, including
+        phase alignment and conversion readiness information.
+
+        Args:
+            idea_id: Idea ID to get context for
+
+        Returns:
+            Dictionary with idea context including:
+            - idea: Basic idea data
+            - project: Project context (inherited)
+            - phase_alignment: How idea status maps to work item phases
+            - conversion_readiness: Whether idea is ready for conversion
+            - next_steps: Recommended actions based on current state
+        """
+        from ..database.methods import ideas, contexts
+        from ..database.enums import IdeaStatus
+
+        # Load idea
+        idea = ideas.get_idea(self.db, idea_id)
+        if not idea:
+            return {}
+
+        # Get project context (inherited)
+        project_context = self.get_project_context(idea.project_id)
+
+        # Load idea context (if exists)
+        idea_context = contexts.get_entity_context(
+            self.db,
+            EntityType.IDEA,
+            idea_id
+        )
+
+        # Get phase alignment information
+        aligned_phase = IdeaStatus.get_aligned_phase(idea.status)
+        conversion_readiness = IdeaStatus.get_conversion_readiness(idea.status)
+
+        # Assemble with inheritance
+        context = {
+            **project_context,  # Inherit all project context
+
+            'idea': {
+                'id': idea.id,
+                'title': idea.title,
+                'description': idea.description,
+                'source': idea.source.value,
+                'created_by': idea.created_by,
+                'votes': idea.votes,
+                'tags': idea.tags,
+                'status': idea.status.value,
+                'rejection_reason': idea.rejection_reason,
+                'converted_to_work_item_id': idea.converted_to_work_item_id,
+                'converted_at': idea.converted_at.isoformat() if idea.converted_at else None,
+                'created_at': idea.created_at.isoformat() if idea.created_at else None,
+                'updated_at': idea.updated_at.isoformat() if idea.updated_at else None
+            },
+            'idea_six_w': self._serialize_six_w(idea_context.six_w) if idea_context and idea_context.six_w else None,
+            'idea_confidence': {
+                'score': idea_context.confidence_score if idea_context else 0.5,
+                'band': idea_context.confidence_band.value if idea_context and idea_context.confidence_band else 'YELLOW'
+            },
+            'phase_alignment': {
+                'idea_status': idea.status.value,
+                'aligned_phase': aligned_phase,
+                'alignment_note': f"Idea {idea.status.value} → Work Item {aligned_phase}" if aligned_phase else f"Idea {idea.status.value} (no work item phase)"
+            },
+            'conversion_readiness': conversion_readiness,
+            'next_steps': conversion_readiness.get('next_steps', [])
+        }
+
+        return context
+
+    def get_task_context(self, task_id: int) -> Dict[str, Any]:
+        """
+        Get complete task-level context (includes work item + project context).
+
+        Returns full hierarchical context for task implementation.
+        """
+        from ..database.methods import tasks, contexts
+
+        # Load task
+        task = tasks.get_task(self.db, task_id)
+        if not task:
+            return {}
+
+        # Get work item context (includes project)
+        wi_context = self.get_work_item_context(task.work_item_id)
+
+        # Load task context
+        task_context = contexts.get_entity_context(
+            self.db,
+            EntityType.TASK,
+            task_id
+        )
+
+        # Assemble with full inheritance
+        context = {
+            **wi_context,  # Inherit work item + project context
+
+            'task': {
+                'id': task.id,
+                'name': task.name,
+                'description': task.description,
+                'effort_hours': task.effort_hours,
+                'priority': task.priority,
+                'assigned_to': task.assigned_to,
+                'status': task.status.value,
+                'blocked_reason': task.blocked_reason
+            },
+            'task_six_w': self._serialize_six_w(task_context.six_w) if task_context and task_context.six_w else None,
+            'task_confidence': {
+                'score': task_context.confidence_score if task_context else 0.5,
+                'band': task_context.confidence_band.value if task_context and task_context.confidence_band else 'YELLOW'
+            }
+        }
+
+        return context
+
+    # ========== Helper Methods ==========
+
+    def _get_amalgamation_references(self, tech_stack: list) -> Dict[str, str]:
+        """Get references to code amalgamation files"""
+        amalgamations = {}
+
+        for tech in tech_stack:
+            plugin = self.plugin_registry.get_plugin(tech)
+            if plugin:
+                # Build expected file paths
+                plugin_id = plugin.plugin_id.replace(':', '_')
+
+                # Common amalgamation types
+                for amg_type in ['classes', 'functions', 'imports', 'tests', 'models', 'views']:
+                    amg_file = self.project_path / '.aipm' / 'contexts' / f'{plugin_id}_{amg_type}.txt'
+                    if amg_file.exists():
+                        amalgamations[f'{tech}_{amg_type}'] = str(amg_file)
+
+        return amalgamations
+
+    def _extract_plugin_facts_from_context(self, context: Context) -> Dict[str, Any]:
+        """Extract plugin facts from context six_w"""
+        if not context or not context.six_w:
+            return {}
+
+        # Plugin facts stored in HOW dimension
+        if context.six_w.how and isinstance(context.six_w.how, dict):
+            return context.six_w.how.get('plugin_facts', {})
+
+        return {}
+
+    def _serialize_six_w(self, six_w: UnifiedSixW) -> Dict[str, Any]:
+        """Serialize UnifiedSixW to dictionary"""
+        if not six_w:
+            return {}
+
+        return {
+            'who': {
+                'end_users': six_w.end_users,
+                'implementers': six_w.implementers,
+                'reviewers': six_w.reviewers
+            },
+            'what': {
+                'functional_requirements': six_w.functional_requirements,
+                'technical_constraints': six_w.technical_constraints,
+                'acceptance_criteria': six_w.acceptance_criteria
+            },
+            'where': {
+                'affected_services': six_w.affected_services,
+                'repositories': six_w.repositories,
+                'deployment_targets': six_w.deployment_targets
+            },
+            'when': {
+                'deadline': six_w.deadline.isoformat() if six_w.deadline else None,
+                'dependencies_timeline': six_w.dependencies_timeline
+            },
+            'why': {
+                'business_value': six_w.business_value,
+                'risk_if_delayed': six_w.risk_if_delayed
+            },
+            'how': {
+                'suggested_approach': six_w.suggested_approach,
+                'existing_patterns': six_w.existing_patterns
+            }
+        }

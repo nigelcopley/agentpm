@@ -1,0 +1,267 @@
+{% extends "layouts/modern_base.html" %}
+{% from 'macros/breadcrumb.html' import breadcrumb %}
+
+{% block title %}{{ idea.title }} - Idea #{{ idea.id }}{% endblock %}
+
+{% block content %}
+{{ breadcrumb([
+    {'label': 'Ideas', 'url': '/ideas'},
+    {'label': idea.title, 'url': None}
+]) }}
+<!-- Idea Header -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="card metric-card shadow-royal card-lift">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <h2 class="card-title">
+                            <i class="bi bi-lightbulb-fill text-warning icon-pulse"></i>
+                            {{ idea.title }}
+                        </h2>
+                        <p class="text-muted mb-0">
+                            Idea #{{ idea.id }} • {{ project_name }}
+                        </p>
+                    </div>
+
+                    <div class="text-end">
+                        <!-- Status Badge -->
+                        {% if idea.status == 'converted' %}
+                        <span class="badge badge-success fs-5">{{ idea.status }}</span>
+                        {% elif idea.status == 'rejected' %}
+                        <span class="badge badge-error fs-5">{{ idea.status }}</span>
+                        {% elif idea.status == 'proposed' %}
+                        <span class="badge badge-primary fs-5">{{ idea.status }}</span>
+                        {% else %}
+                        <span class="badge badge-gray fs-5">{{ idea.status }}</span>
+                        {% endif %}
+
+                        <!-- Votes -->
+                        <div class="mt-2">
+                            <button class="btn btn-warning btn-sm" data-idea-vote data-idea-id="{{ idea.id }}" data-direction="up">
+                                <i class="bi bi-star-fill"></i> Upvote
+                            </button>
+                            <span class="badge badge-gray text-dark ms-2" data-votes-for="{{ idea.id }}">
+                                {{ idea.votes or 0 }} votes
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Description -->
+{% if idea.description %}
+<div class="row mb-4">
+    <div class="col">
+        <div class="card metric-card">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-file-text"></i> Description</h5>
+                <div class="description-text">{{ idea.description }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Tags -->
+{% if tags %}
+<div class="row mb-4">
+    <div class="col">
+        <div class="card metric-card">
+            <div class="card-body">
+                <h6 class="card-title"><i class="bi bi-tags"></i> Tags</h6>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for tag in tags %}
+                    <a href="/ideas?tags={{ tag }}" class="badge badge-info text-decoration-none">
+                        {{ tag }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Metadata -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card metric-card">
+            <div class="card-body">
+                <h6 class="card-title"><i class="bi bi-info-circle"></i> Metadata</h6>
+                <table class="table table-sm">
+                    <tr>
+                        <td><strong>Source:</strong></td>
+                        <td><span class="badge badge-gray">{{ idea.source.replace('_', ' ') }}</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Created By:</strong></td>
+                        <td>{{ idea.created_by or 'Unknown' }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Created:</strong></td>
+                        <td>{{ idea.created_at.strftime('%Y-%m-%d %H:%M') if idea.created_at else 'Unknown' }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Updated:</strong></td>
+                        <td>{{ idea.updated_at.strftime('%Y-%m-%d %H:%M') if idea.updated_at else 'Never' }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="col-md-6">
+        <div class="card metric-card">
+            <div class="card-body">
+                <h6 class="card-title"><i class="bi bi-lightning"></i> Actions</h6>
+
+                {% if idea.status == 'idea' %}
+                <!-- Transition to research -->
+                <button class="btn btn-info w-100 mb-2" data-idea-transition data-idea-id="{{ idea.id }}" data-new-status="research">
+                    <i class="bi bi-search"></i> Start Research
+                </button>
+                {% endif %}
+
+                {% if idea.status in ['idea', 'research'] %}
+                <!-- Transition to proposed -->
+                <button class="btn btn-primary w-100 mb-2" data-idea-transition data-idea-id="{{ idea.id }}" data-new-status="proposed">
+                    <i class="bi bi-check-circle"></i> Propose for Development
+                </button>
+                {% endif %}
+
+                {% if idea.status in ['idea', 'research', 'proposed'] %}
+                <!-- Convert to work item -->
+                <button class="btn btn-success w-100 mb-2"
+                        hx-get="/idea/{{ idea.id }}/convert-form"
+                        hx-target="#convert-modal-content"
+                        data-bs-toggle="modal"
+                        data-bs-target="#convertModal">
+                    <i class="bi bi-box-arrow-up-right"></i> Convert to Work Item
+                </button>
+
+                <!-- Reject -->
+                <button class="btn btn-danger w-100" data-idea-reject data-idea-id="{{ idea.id }}">
+                    <i class="bi bi-x-circle"></i> Reject Idea
+                </button>
+                {% endif %}
+
+                {% if idea.status == 'rejected' and idea.rejection_reason %}
+                <div class="alert alert-danger mt-3">
+                    <strong>Rejection Reason:</strong><br>
+                    {{ idea.rejection_reason }}
+                </div>
+                {% endif %}
+
+                {% if converted_work_item %}
+                <div class="alert alert-success mt-3">
+                    <strong>Converted to:</strong><br>
+                    <a href="/work-items/{{ converted_work_item.id }}" class="alert-link">
+                        Work Item #{{ converted_work_item.id }}: {{ converted_work_item.name }}
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Convert to Work Item Modal -->
+<div class="modal fade" id="convertModal" tabindex="-1" aria-labelledby="convertModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content" id="convert-modal-content">
+            <!-- Form loaded via HTMX -->
+            <div class="modal-body text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Idea transitions
+document.addEventListener('DOMContentLoaded', function() {
+    // Transition buttons
+    document.body.addEventListener('click', function(e) {
+        if (e.target.closest('[data-idea-transition]')) {
+            const btn = e.target.closest('[data-idea-transition]');
+            const ideaId = btn.dataset.ideaId;
+            const newStatus = btn.dataset.newStatus;
+
+            if (confirm(`Transition to ${newStatus}?`)) {
+                fetch(`/idea/${ideaId}/transition`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({new_status: newStatus})
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    }
+                });
+            }
+        }
+    });
+
+    // Reject button
+    document.body.addEventListener('click', function(e) {
+        if (e.target.closest('[data-idea-reject]')) {
+            const btn = e.target.closest('[data-idea-reject]');
+            const ideaId = btn.dataset.ideaId;
+            const reason = prompt('Rejection reason:');
+
+            if (reason) {
+                fetch(`/idea/${ideaId}/transition`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        new_status: 'rejected',
+                        reason: reason
+                    })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    }
+                });
+            }
+        }
+    });
+
+    // Vote buttons
+    document.body.addEventListener('click', function(e) {
+        if (e.target.closest('[data-idea-vote]')) {
+            const btn = e.target.closest('[data-idea-vote]');
+            const ideaId = btn.dataset.ideaId;
+            const direction = btn.dataset.direction;
+
+            fetch(`/idea/${ideaId}/vote`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({direction})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    const voteElement = document.querySelector(`[data-votes-for="${ideaId}"]`);
+                    if (voteElement) {
+                        voteElement.textContent = data.votes + ' votes';
+                    }
+                }
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,371 @@
+{% extends "layouts/modern_base.html" %}
+
+{% block title %}Session {{ view.session.session_id[:8] }}... - APM (Agent Project Manager){% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="/sessions">Sessions</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Session {{ view.session.session_id[:8] }}...</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<!-- Session Overview -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="card metric-card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h2 class="card-title">
+                            <i class="bi bi-clock-history"></i> Session {{ view.session.session_id[:8] }}...
+                        </h2>
+                        <p class="card-text">
+                            <span class="badge badge-info">{{ view.session.tool_name }}</span>
+                            {% if view.session.llm_model %}
+                                <span class="badge badge-gray">{{ view.session.llm_model }}</span>
+                            {% endif %}
+                            {% if view.session.developer_name %}
+                                <span class="badge badge-primary">{{ view.session.developer_name }}</span>
+                            {% endif %}
+                        </p>
+                        {% if view.project %}
+                        <p class="text-muted">
+                            <i class="bi bi-folder"></i> Project: <a href="/projects/{{ view.project.id }}">{{ view.project.name }}</a>
+                        </p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="metric-value">
+                            {% if view.session.start_time and view.session.end_time %}
+                                {% set duration = (view.session.end_time - view.session.start_time).total_seconds() / 60 %}
+                                {{ "%.0f"|format(duration) }}m
+                            {% else %}
+                                -
+                            {% endif %}
+                        </div>
+                        <div class="metric-label">Duration</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Session Details -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle"></i> Session Details
+                </h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">Session ID:</dt>
+                    <dd class="col-sm-8"><code>{{ view.session.session_id }}</code></dd>
+                    
+                    <dt class="col-sm-4">Provider:</dt>
+                    <dd class="col-sm-8">{{ view.session.tool_name }}</dd>
+                    
+                    {% if view.session.llm_model %}
+                    <dt class="col-sm-4">LLM Model:</dt>
+                    <dd class="col-sm-8">{{ view.session.llm_model }}</dd>
+                    {% endif %}
+                    
+                    <dt class="col-sm-4">Start Time:</dt>
+                    <dd class="col-sm-8">
+                        {% if view.session.start_time %}
+                            {{ view.session.start_time.strftime('%Y-%m-%d %H:%M:%S') }}
+                        {% else %}
+                            <span class="text-muted">Unknown</span>
+                        {% endif %}
+                    </dd>
+                    
+                    <dt class="col-sm-4">End Time:</dt>
+                    <dd class="col-sm-8">
+                        {% if view.session.end_time %}
+                            {{ view.session.end_time.strftime('%Y-%m-%d %H:%M:%S') }}
+                        {% else %}
+                            <span class="text-muted">Unknown</span>
+                        {% endif %}
+                    </dd>
+                    
+                    <dt class="col-sm-4">Status:</dt>
+                    <dd class="col-sm-8">
+                        {% if view.session.status %}
+                            {% if view.session.status.value == 'completed' %}
+                                <span class="badge badge-success">Completed</span>
+                            {% elif view.session.status.value == 'active' %}
+                                <span class="badge badge-primary">Active</span>
+                            {% elif view.session.status.value == 'cancelled' %}
+                                <span class="badge badge-error">Cancelled</span>
+                            {% else %}
+                                <span class="badge badge-gray">{{ view.session.status.value.title() }}</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="badge badge-gray">Unknown</span>
+                        {% endif %}
+                    </dd>
+                    
+                    {% if view.session.developer_name %}
+                    <dt class="col-sm-4">Developer:</dt>
+                    <dd class="col-sm-8">{{ view.session.developer_name }}</dd>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up"></i> Session Metrics
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="h4 text-primary">{{ view.work_items|length }}</div>
+                        <div class="text-muted">Work Items</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="h4 text-success">{{ view.tasks|length }}</div>
+                        <div class="text-muted">Tasks</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="h4 text-warning">{{ view.decisions|length }}</div>
+                        <div class="text-muted">Decisions</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="h4 text-info">{{ view.git_commits|length }}</div>
+                        <div class="text-muted">Git Commits</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Work Items and Tasks -->
+{% if view.work_items or view.tasks %}
+<div class="row mb-4">
+    {% if view.work_items %}
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-list-task"></i> Work Items Touched
+                </h5>
+            </div>
+            <div class="card-body">
+                {% for work_item in view.work_items %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        <a href="/work-items/{{ work_item.id }}" class="text-decoration-none">
+                            {{ work_item.name }}
+                        </a>
+                        <br>
+                        <small class="text-muted">
+                            <span class="badge badge-info">{{ work_item.type.value }}</span>
+                            <span class="badge badge-primary">{{ work_item.status.value }}</span>
+                        </small>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if view.tasks %}
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-check2-square"></i> Tasks Completed
+                </h5>
+            </div>
+            <div class="card-body">
+                {% for task in view.tasks %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        <a href="/tasks/{{ task.id }}" class="text-decoration-none">
+                            {{ task.name }}
+                        </a>
+                        <br>
+                        <small class="text-muted">
+                            <span class="badge badge-info">{{ task.type.value }}</span>
+                            <span class="badge badge-success">{{ task.status.value }}</span>
+                        </small>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Decisions Made -->
+{% if view.decisions %}
+<div class="row mb-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightbulb"></i> Decisions Made
+                </h5>
+            </div>
+            <div class="card-body">
+                {% for decision in view.decisions %}
+                <div class="alert alert-light">
+                    <h6 class="alert-heading">
+                        {% if decision.title %}
+                            {{ decision.title }}
+                        {% else %}
+                            Decision #{{ loop.index }}
+                        {% endif %}
+                    </h6>
+                    {% if decision.description %}
+                        <p class="mb-0">{{ decision.description }}</p>
+                    {% endif %}
+                    {% if decision.impact %}
+                        <small class="text-muted">Impact: {{ decision.impact }}</small>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Git Commits -->
+{% if view.git_commits %}
+<div class="row mb-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-git"></i> Git Commits
+                </h5>
+            </div>
+            <div class="card-body">
+                {% for commit in view.git_commits %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        <code>{{ commit.hash[:8] }}</code>
+                        <span class="ms-2">{{ commit.message }}</span>
+                    </div>
+                    <small class="text-muted">{{ commit.files_changed }} files</small>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Patterns Identified -->
+{% if view.patterns %}
+<div class="row mb-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-diagram-3"></i> Patterns Identified
+                </h5>
+            </div>
+            <div class="card-body">
+                {% for pattern in view.patterns %}
+                <div class="alert alert-info">
+                    <h6 class="alert-heading">
+                        {% if pattern.name %}
+                            {{ pattern.name }}
+                        {% else %}
+                            Pattern #{{ loop.index }}
+                        {% endif %}
+                    </h6>
+                    {% if pattern.description %}
+                        <p class="mb-0">{{ pattern.description }}</p>
+                    {% endif %}
+                    {% if pattern.files %}
+                        <small class="text-muted">Files: {{ pattern.files|join(', ') }}</small>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Next Session Context -->
+{% if view.next_session_context %}
+<div class="row mb-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-arrow-right-circle"></i> Next Session Context
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-light">
+                    {{ view.next_session_context|markdown }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Session Metadata -->
+{% if view.metadata %}
+<div class="row mb-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-gear"></i> Session Metadata
+                </h5>
+            </div>
+            <div class="card-body">
+                <pre class="bg-light p-3 rounded"><code>{{ view.metadata|tojson(indent=2) }}</code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Quick Actions</h5>
+                <div class="btn-group" role="group">
+                    <a href="/sessions" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-left"></i> Back to Sessions
+                    </a>
+                    <a href="/sessions/timeline" class="btn btn-secondary">
+                        <i class="bi bi-graph-up"></i> Timeline
+                    </a>
+                    {% if view.project %}
+                    <a href="/projects/{{ view.project.id }}" class="btn btn-outline-info">
+                        <i class="bi bi-folder"></i> Project
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

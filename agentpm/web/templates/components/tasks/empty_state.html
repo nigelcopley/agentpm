@@ -1,0 +1,29 @@
+<!-- Task Empty State Component -->
+<!-- Usage: Include this component in templates -->
+<!-- Variables: current_filters (required) -->
+
+<div class="bg-white rounded-2xl shadow-lg p-12 text-center">
+    <div class="mx-auto h-24 w-24 text-gray-300 mb-6">
+        <i class="bi bi-list-task text-6xl"></i>
+    </div>
+    <h3 class="text-xl font-semibold text-gray-900 mb-2">No tasks found</h3>
+    <p class="text-gray-500 mb-8 max-w-md mx-auto">
+        {% if current_filters.search or current_filters.status or current_filters.type or current_filters.work_item %}
+            Try adjusting your filters or search terms to find what you're looking for.
+        {% else %}
+            Get started by creating your first task to begin tracking your project work.
+        {% endif %}
+    </p>
+    <div class="space-y-3">
+        <a href="{{ url_for('tasks.create_task') }}" class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-lg hover:from-emerald-600 hover:to-teal-600 transition-all font-medium shadow-lg">
+            <i class="bi bi-plus-circle mr-2"></i>Create Your First Task
+        </a>
+        {% if current_filters.search or current_filters.status or current_filters.type or current_filters.work_item %}
+        <div>
+            <a href="{{ url_for('tasks.tasks_list') }}" class="text-sm text-gray-500 hover:text-gray-700">
+                <i class="bi bi-x-circle mr-1"></i>Clear all filters
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>

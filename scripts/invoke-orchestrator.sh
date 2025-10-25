@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+# APM (Agent Project Manager) - Orchestrator Profile Invocation Helper
+#
+# This script demonstrates the profile-swapping pattern for hierarchical orchestration.
+# It allows the main Claude instance to delegate to orchestrator agents that can
+# themselves use the Task tool to delegate to sub-agents.
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Orchestrator profiles
+ORCHESTRATORS=(
+    "definition-orch"
+    "planning-orch"
+    "implementation-orch"
+    "review-orch"
+    "release-ops-orch"
+    "evolution-orch"
+)
+
+usage() {
+    cat <<EOF
+Usage: $0 <orchestrator> <prompt>
+
+Invokes an orchestrator agent with full Task tool access.
+
+Orchestrators:
+$(printf "  - %s\n" "${ORCHESTRATORS[@]}")
+
+Examples:
+  # Invoke definition orchestrator
+  $0 definition-orch "Define requirements for user authentication feature"
+
+  # Invoke planning orchestrator
+  $0 planning-orch "Create implementation plan for WI-123"
+
+How it works:
+  1. Creates temporary workspace
+  2. Links orchestrator profile as CLAUDE.md
+  3. Invokes Claude in that workspace (orchestrator runs as "main" Claude)
+  4. Orchestrator has full Task tool access to delegate to sub-agents
+  5. Returns results to calling context
+EOF
+    exit 1
+}
+
+# Validate arguments
+if [ $# -lt 2 ]; then
+    usage
+fi
+
+ORCHESTRATOR="$1"
+PROMPT="$2"
+
+# Validate orchestrator exists
+PROFILE_FILE="$PROJECT_ROOT/.claude/agents/orchestrators/CLAUDE.$ORCHESTRATOR.md"
+if [ ! -f "$PROFILE_FILE" ]; then
+    echo "Error: Orchestrator profile not found: $PROFILE_FILE"
+    echo ""
+    echo "Available profiles:"
+    ls -1 "$PROJECT_ROOT"/.claude/agents/orchestrators/CLAUDE.*.md 2>/dev/null || echo "  (none found)"
+    exit 1
+fi
+
+# Create temporary workspace for orchestrator session
+SESSION_ID="$(date +%s)-$$"
+WORKSPACE="/tmp/aipm-orchestrator-$ORCHESTRATOR-$SESSION_ID"
+
+echo "🎯 Invoking $ORCHESTRATOR with profile-swapping pattern"
+echo "   Profile: $PROFILE_FILE"
+echo "   Workspace: $WORKSPACE"
+echo ""
+
+# Setup workspace
+mkdir -p "$WORKSPACE"
+cd "$WORKSPACE"
+
+# Link project files (orchestrator needs access to codebase)
+ln -s "$PROJECT_ROOT"/.claude .claude
+ln -s "$PROJECT_ROOT"/.aipm .aipm
+ln -s "$PROJECT_ROOT"/agentpm agentpm
+ln -s "$PROJECT_ROOT"/docs docs
+ln -s "$PROJECT_ROOT"/tests tests
+
+# Link orchestrator profile as CLAUDE.md (this makes it the "main" Claude instructions)
+ln -s "$PROFILE_FILE" CLAUDE.md
+
+echo "✅ Workspace configured"
+echo "   Orchestrator will run as main Claude instance with full Tool access"
+echo ""
+echo "📝 Prompt: $PROMPT"
+echo ""
+echo "🚀 Launching orchestrator..."
+echo "─────────────────────────────────────────────────────────────"
+echo ""
+
+# Invoke Claude with orchestrator profile
+# The orchestrator runs as "main" Claude, so it HAS the Task tool
+claude -p "$PROMPT" --output-format text
+
+EXIT_CODE=$?
+
+echo ""
+echo "─────────────────────────────────────────────────────────────"
+echo "✅ Orchestrator session complete (exit code: $EXIT_CODE)"
+echo "   Workspace preserved at: $WORKSPACE"
+echo ""
+
+# Cleanup option (commented out - keep workspace for debugging)
+# rm -rf "$WORKSPACE"
+
+exit $EXIT_CODE

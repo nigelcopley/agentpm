@@ -1,0 +1,11 @@
+{
+  "key": "key2",
+  "data": {
+    "content": "other data",
+    "category": "other"
+  },
+  "type": "persistent",
+  "category": "other",
+  "timestamp": "2025-10-24T15:55:52.897326",
+  "hash": "cc96cfd70179786f813ee5f389d9a620"
+}

@@ -1,0 +1,263 @@
+{% extends "layouts/modern_base.html" %}
+{% from "components/skeleton_loaders.html" import card_skeleton, metric_card_skeleton, work_item_card_skeleton, task_row_skeleton, list_skeleton, grid_skeleton, loading_button, spinner %}
+
+{% block title %}Loading States Test - APM (Agent Project Manager){% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-8">
+    <!-- Page Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Loading States Test Page</h1>
+        <p class="mt-2 text-lg text-gray-600">Test all loading state components and patterns</p>
+    </div>
+
+    <!-- 1. Global Loading Overlay Test -->
+    <section class="card">
+        <div class="card-header">
+            <h2 class="card-title">1. Global Loading Overlay</h2>
+        </div>
+        <div class="card-body">
+            <p class="mb-4">Triggers the global loading overlay for 2 seconds.</p>
+            <button class="btn btn-primary"
+                    @click="$store.loading.setGlobal(true); setTimeout(() => $store.loading.setGlobal(false), 2000)">
+                Test Global Loading
+            </button>
+        </div>
+    </section>
+
+    <!-- 2. Skeleton Loaders -->
+    <section class="card">
+        <div class="card-header">
+            <h2 class="card-title">2. Skeleton Loaders</h2>
+        </div>
+        <div class="card-body space-y-6">
+            <div x-data="{ showSkeleton: true }">
+                <div class="flex items-center space-x-4 mb-4">
+                    <button class="btn btn-secondary" @click="showSkeleton = !showSkeleton">
+                        Toggle Skeleton
+                    </button>
+                    <span class="text-sm text-gray-600" x-text="showSkeleton ? 'Showing skeleton' : 'Showing content'"></span>
+                </div>
+
+                <!-- Card Skeleton -->
+                <div x-show="showSkeleton">
+                    <h3 class="text-lg font-medium mb-3">Card Skeleton</h3>
+                    {{ card_skeleton() }}
+                </div>
+                <div x-show="!showSkeleton" x-transition>
+                    <div class="card">
+                        <h3 class="text-lg font-bold mb-2">Actual Content</h3>
+                        <p>This is the real content that appears after loading.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. Button Loading States -->
+    <section class="card">
+        <div class="card-header">
+            <h2 class="card-title">3. Button Loading States</h2>
+        </div>
+        <div class="card-body space-y-4">
+            <!-- Pattern 1: Manual Alpine.js -->
+            <div>
+                <h3 class="text-lg font-medium mb-3">Pattern 1: Manual Alpine.js</h3>
+                <button x-data="{ loading: false }"
+                        @click="loading = true; setTimeout(() => loading = false, 2000)"
+                        :disabled="loading"
+                        class="btn btn-primary">
+                    <span x-show="!loading">Submit</span>
+                    <span x-show="loading" class="flex items-center space-x-2">
+                        {{ spinner('sm') }}
+                        <span>Submitting...</span>
+                    </span>
+                </button>
+            </div>
+
+            <!-- Pattern 2: LoadingStates Utility -->
+            <div>
+                <h3 class="text-lg font-medium mb-3">Pattern 2: LoadingStates Utility</h3>
+                <button id="test-button" class="btn btn-secondary"
+                        onclick="testLoadingStates()">
+                    Click to Test LoadingStates.disableButton()
+                </button>
+            </div>
+
+            <!-- Pattern 3: Form Submit -->
+            <div>
+                <h3 class="text-lg font-medium mb-3">Pattern 3: Form Submit Button</h3>
+                <form x-data="{ loading: false }" @submit.prevent="loading = true; setTimeout(() => loading = false, 2000)">
+                    <button type="submit" :disabled="loading" class="btn btn-success">
+                        <span x-show="!loading">Submit Form</span>
+                        <span x-show="loading" class="flex items-center space-x-2">
+                            {{ spinner('sm') }}
+                            <span>Processing...</span>
+                        </span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. Form Loading States -->
+    <section class="card">
+        <div class="card-header">
+            <h2 class="card-title">4. Form Loading Overlay</h2>
+        </div>
+        <div class="card-body">
+            <form x-data="{ loading: false }"
+                  @submit.prevent="loading = true; setTimeout(() => loading = false, 2000)"
+                  class="relative space-y-4">
+                <!-- Form Loading Overlay -->
+                <div x-show="loading"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0"
+                     x-transition:enter-end="opacity-100"
+                     class="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10"
+                     style="display: none;">
+                    <div class="flex items-center space-x-3">
+                        {{ spinner('md') }}
+                        <span class="text-gray-700 font-medium">Submitting...</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                    <input type="text" class="form-input" placeholder="Enter name">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input type="email" class="form-input" placeholder="Enter email">
+                </div>
+                <button type="submit" class="btn btn-primary">Submit with Overlay</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- 5. List Skeleton -->
+    <section class="card">
+        <div class="card-header">
+            <h2 class="card-title">5. List Skeleton</h2>
+        </div>
+        <div class="card-body">
+            <div x-data="{ showSkeleton: true }">
+                <button class="btn btn-secondary mb-4" @click="showSkeleton = !showSkeleton">
+                    Toggle List Skeleton
+                </button>
+                <div x-show="showSkeleton">
+                    {{ list_skeleton(items=3) }}
+                </div>
+                <div x-show="!showSkeleton" x-transition>
+                    <div class="space-y-4">
+                        <div class="card">
+                            <p class="font-medium">Task 1: Implement loading states</p>
+                            <p class="text-sm text-gray-600">Status: Completed</p>
+                        </div>
+                        <div class="card">
+                            <p class="font-medium">Task 2: Test on all routes</p>
+                            <p class="text-sm text-gray-600">Status: In Progress</p>
+                        </div>
+                        <div class="card">
+                            <p class="font-medium">Task 3: Documentation</p>
+                            <p class="text-sm text-gray-600">Status: Pending</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. Grid Skeleton -->
+    <section class="card">
+        <div class="card-header">
+            <h2 class="card-title">6. Grid Skeleton</h2>
+        </div>
+        <div class="card-body">
+            <div x-data="{ showSkeleton: true }">
+                <button class="btn btn-secondary mb-4" @click="showSkeleton = !showSkeleton">
+                    Toggle Grid Skeleton
+                </button>
+                <div x-show="showSkeleton">
+                    {{ grid_skeleton(columns=3, rows=1) }}
+                </div>
+                <div x-show="!showSkeleton" x-transition>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="card">
+                            <div class="card-header">Work Item #1</div>
+                            <div class="card-body">
+                                <p>Description of work item</p>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">Work Item #2</div>
+                            <div class="card-body">
+                                <p>Description of work item</p>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">Work Item #3</div>
+                            <div class="card-body">
+                                <p>Description of work item</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 7. Spinner Sizes -->
+    <section class="card">
+        <div class="card-header">
+            <h2 class="card-title">7. Spinner Sizes</h2>
+        </div>
+        <div class="card-body">
+            <div class="flex items-center space-x-8">
+                <div class="text-center">
+                    {{ spinner('sm') }}
+                    <p class="text-xs mt-2">Small</p>
+                </div>
+                <div class="text-center">
+                    {{ spinner('md') }}
+                    <p class="text-xs mt-2">Medium</p>
+                </div>
+                <div class="text-center">
+                    {{ spinner('lg') }}
+                    <p class="text-xs mt-2">Large</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 8. HTMX Integration Test -->
+    <section class="card">
+        <div class="card-header">
+            <h2 class="card-title">8. HTMX Loading (if HTMX available)</h2>
+        </div>
+        <div class="card-body">
+            <p class="mb-4">This triggers the global loading overlay automatically via HTMX events.</p>
+            <button class="btn btn-primary"
+                    hx-get="/api/test-delay"
+                    hx-trigger="click"
+                    hx-swap="none">
+                Test HTMX Request (3s delay)
+            </button>
+        </div>
+    </section>
+</div>
+
+<script>
+function testLoadingStates() {
+    const button = document.getElementById('test-button');
+    LoadingStates.disableButton(button, 'Processing...');
+
+    setTimeout(() => {
+        LoadingStates.enableButton(button);
+        if (window.AIPM && window.AIPM.utils) {
+            window.AIPM.utils.showToast('Button re-enabled!', 'success');
+        }
+    }, 2000);
+}
+</script>
+{% endblock %}

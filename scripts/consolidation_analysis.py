@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+"""
+Comprehensive consolidation analysis for APM (Agent Project Manager) work items and tasks.
+"""
+
+import sqlite3
+import json
+from collections import defaultdict
+
+def analyze_consolidation_opportunities(db_path):
+    """Analyze work items and tasks for consolidation opportunities."""
+    
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        
+        # Get all work items with their tasks
+        work_items = conn.execute("""
+            SELECT w.*, 
+                   COUNT(t.id) as task_count,
+                   SUM(CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END) as completed_tasks,
+                   SUM(CASE WHEN t.status = 'proposed' THEN 1 ELSE 0 END) as proposed_tasks
+            FROM work_items w
+            LEFT JOIN tasks t ON w.id = t.work_item_id
+            GROUP BY w.id
+            ORDER BY w.priority, w.id
+        """).fetchall()
+        
+        # Get all tasks with details
+        tasks = conn.execute("""
+            SELECT t.*, w.name as work_item_name, w.type as work_item_type, w.status as work_item_status
+            FROM tasks t
+            JOIN work_items w ON t.work_item_id = w.id
+            ORDER BY t.work_item_id, t.id
+        """).fetchall()
+        
+        print("🔍 CONSOLIDATION ANALYSIS REPORT")
+        print("=" * 60)
+        
+        # 1. ACTIVE WORK ITEMS ANALYSIS
+        print("\n📋 ACTIVE WORK ITEMS (proposed, in_progress, review):")
+        active_work_items = [wi for wi in work_items if wi['status'] in ['proposed', 'in_progress', 'review']]
+        
+        for wi in active_work_items:
+            print(f"\n  WI-{wi['id']}: {wi['name']}")
+            print(f"    Type: {wi['type']} | Status: {wi['status']} | Priority: {wi['priority']}")
+            print(f"    Tasks: {wi['task_count']} total ({wi['completed_tasks']} completed, {wi['proposed_tasks']} proposed)")
+        
+        # 2. CONSOLIDATION OPPORTUNITIES
+        print("\n🔄 CONSOLIDATION OPPORTUNITIES:")
+        
+        # Group by similar themes
+        themes = defaultdict(list)
+        
+        for wi in work_items:
+            name = wi['name'].lower()
+            if 'context' in name:
+                themes['Context Management'].append(wi)
+            elif 'agent' in name:
+                themes['Agent System'].append(wi)
+            elif 'dashboard' in name or 'web' in name:
+                themes['Dashboard/Web Interface'].append(wi)
+            elif 'documentation' in name or 'doc' in name:
+                themes['Documentation'].append(wi)
+            elif 'migration' in name or 'database' in name:
+                themes['Database/Migration'].append(wi)
+            elif 'workflow' in name or 'rule' in name:
+                themes['Workflow/Rules'].append(wi)
+            elif 'hook' in name:
+                themes['Hooks System'].append(wi)
+            elif 'idea' in name:
+                themes['Ideas System'].append(wi)
+            elif 'session' in name:
+                themes['Session Management'].append(wi)
+            else:
+                themes['Other'].append(wi)
+        
+        for theme, wis in themes.items():
+            if len(wis) > 1:
+                print(f"\n  🎯 {theme} ({len(wis)} work items):")
+                for wi in wis:
+                    status_emoji = "🟢" if wi['status'] == 'completed' else "🟡" if wi['status'] in ['in_progress', 'review'] else "🔴" if wi['status'] == 'proposed' else "⚪"
+                    print(f"    {status_emoji} WI-{wi['id']}: {wi['name'][:50]}... ({wi['status']})")
+        
+        # 3. SPECIFIC CONSOLIDATION RECOMMENDATIONS
+        print("\n💡 SPECIFIC CONSOLIDATION RECOMMENDATIONS:")
+        
+        # Context-related consolidation
+        context_wis = [wi for wi in work_items if 'context' in wi['name'].lower()]
+        if len(context_wis) > 1:
+            print(f"\n  📝 Context Management Consolidation:")
+            print(f"    Found {len(context_wis)} context-related work items:")
+            for wi in context_wis:
+                print(f"      - WI-{wi['id']}: {wi['name']} ({wi['status']})")
+            print(f"    💡 RECOMMENDATION: Consider consolidating into a single 'Context Management System' work item")
+        
+        # Agent-related consolidation
+        agent_wis = [wi for wi in work_items if 'agent' in wi['name'].lower()]
+        if len(agent_wis) > 1:
+            print(f"\n  🤖 Agent System Consolidation:")
+            print(f"    Found {len(agent_wis)} agent-related work items:")
+            for wi in agent_wis:
+                print(f"      - WI-{wi['id']}: {wi['name']} ({wi['status']})")
+            print(f"    💡 RECOMMENDATION: Consider consolidating into a single 'Agent System' work item")
+        
+        # 4. ARCHIVED WORK ITEMS ANALYSIS
+        print(f"\n📁 ARCHIVED WORK ITEMS ANALYSIS:")
+        archived_wis = [wi for wi in work_items if wi['status'] == 'archived']
+        
+        # Group archived by completion status
+        completed_archived = [wi for wi in archived_wis if wi['completed_tasks'] > 0]
+        incomplete_archived = [wi for wi in archived_wis if wi['completed_tasks'] == 0 and wi['task_count'] > 0]
+        empty_archived = [wi for wi in archived_wis if wi['task_count'] == 0]
+        
+        print(f"    📊 Total archived: {len(archived_wis)}")
+        print(f"    ✅ Completed tasks: {len(completed_archived)}")
+        print(f"    ⏸️  Incomplete tasks: {len(incomplete_archived)}")
+        print(f"    🗑️  Empty work items: {len(empty_archived)}")
+        
+        if incomplete_archived:
+            print(f"\n    🔄 CANDIDATES FOR REACTIVATION:")
+            for wi in incomplete_archived[:5]:  # Show top 5
+                print(f"      - WI-{wi['id']}: {wi['name'][:50]}... ({wi['task_count']} tasks)")
+        
+        # 5. TASK CONSOLIDATION OPPORTUNITIES
+        print(f"\n🔧 TASK CONSOLIDATION OPPORTUNITIES:")
+        
+        # Find similar task names
+        task_groups = defaultdict(list)
+        for task in tasks:
+            name_key = task['name'].lower()
+            if 'test' in name_key:
+                task_groups['Testing'].append(task)
+            elif 'document' in name_key:
+                task_groups['Documentation'].append(task)
+            elif 'implement' in name_key:
+                task_groups['Implementation'].append(task)
+            elif 'design' in name_key:
+                task_groups['Design'].append(task)
+        
+        for group, group_tasks in task_groups.items():
+            if len(group_tasks) > 5:  # Only show groups with many tasks
+                print(f"\n    📋 {group} Tasks ({len(group_tasks)} total):")
+                # Group by work item
+                by_work_item = defaultdict(list)
+                for task in group_tasks:
+                    by_work_item[task['work_item_id']].append(task)
+                
+                for work_item_id, tasks_in_wi in by_work_item.items():
+                    if len(tasks_in_wi) > 1:
+                        wi_name = tasks_in_wi[0]['work_item_name']
+                        print(f"      WI-{work_item_id}: {wi_name} ({len(tasks_in_wi)} {group.lower()} tasks)")
+        
+        # 6. SUMMARY AND RECOMMENDATIONS
+        print(f"\n📊 CONSOLIDATION SUMMARY:")
+        print(f"    Total Work Items: {len(work_items)}")
+        print(f"    Active Work Items: {len(active_work_items)}")
+        print(f"    Archived Work Items: {len(archived_wis)}")
+        print(f"    Total Tasks: {len(tasks)}")
+        
+        print(f"\n🎯 TOP CONSOLIDATION RECOMMENDATIONS:")
+        print(f"    1. Merge context-related work items into unified context management")
+        print(f"    2. Consolidate agent system work items")
+        print(f"    3. Review archived work items for reactivation opportunities")
+        print(f"    4. Consider merging similar task types across work items")
+        print(f"    5. Archive or cancel work items with no tasks or all cancelled tasks")
+
+if __name__ == "__main__":
+    db_path = ".aipm/data/aipm.db"
+    analyze_consolidation_opportunities(db_path)

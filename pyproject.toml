@@ -1,0 +1,148 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agentpm"
+version = "0.1.0"
+description = "AgentPM - Quality-Gated AI Coding Agent Enablement System"
+readme = "README.md"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "AIPM Development Team"}
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Project Management",
+    "Topic :: Software Development :: Code Generators",
+]
+requires-python = ">=3.9"
+dependencies = [
+    "click>=8.1.7",
+    "rich>=13.7.0",
+    "pydantic>=2.5.0",
+    "pyyaml>=6.0.0",
+    "questionary>=2.0.0",
+    "jinja2>=3.1.0",
+    "networkx>=3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-asyncio>=0.21.1",
+    "black>=23.9.1",
+    "ruff>=0.1.0",
+    "mypy>=1.6.0",
+    "flask>=3.0.0",
+    "flask-wtf>=1.2.0",
+    "flask-socketio>=5.3.0",
+    "playwright>=1.40.0",
+    "pytest-playwright>=0.4.0",
+]
+performance = [
+    "aiofiles>=23.2.0",
+    "diskcache>=5.6.3",
+]
+
+[project.scripts]
+apm = "agentpm.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/nigelcopley/agentpm"
+Documentation = "https://agentpm.dev"
+Repository = "https://github.com/nigelcopley/agentpm"
+Issues = "https://github.com/nigelcopley/agentpm/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["agentpm*"]
+
+[tool.black]
+line-length = 88
+target-version = ['py39']
+
+[tool.ruff]
+line-length = 88
+target-version = "py39"
+select = ["E", "F", "W", "C90", "I", "N", "D", "UP", "S", "B", "A", "C4", "T20"]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "--cov=agentpm --cov-report=html --cov-report=term-missing --cov-config=.coveragerc"
+asyncio_default_fixture_loop_scope = "function"
+filterwarnings = [
+    "ignore::DeprecationWarning:pydantic.*",
+    "ignore::pytest.PytestUnhandledThreadExceptionWarning"
+]
+
+[tool.coverage.run]
+source = ["agentpm"]
+omit = [
+    # CLI commands (not currently tested)
+    "agentpm/cli/*",
+    # Web application (not currently tested)
+    "agentpm/web/*",
+    # Provider integrations (not currently tested)
+    "agentpm/providers/anthropic/*",
+    "agentpm/providers/openai/*",
+    "agentpm/providers/cursor/*",
+    "agentpm/providers/generators/*",
+    # Services with external dependencies (not currently tested)
+    "agentpm/services/claude_integration/*",
+    "agentpm/services/memory/*",
+    # Core modules with low/no test coverage
+    "agentpm/core/context/*",
+    "agentpm/core/detection/*",
+    "agentpm/core/plugins/*",
+    "agentpm/core/rules/*",
+    "agentpm/core/testing/*",
+    "agentpm/core/workflow/*",
+    "agentpm/utils/*",
+    # Migration files (data, not logic)
+    "agentpm/core/database/migrations/*",
+    # Template files
+    "agentpm/templates/*",
+    # Test files themselves
+    "*/tests/*",
+    "*/test_*.py",
+    "*_test.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
+precision = 2
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
+    "pass",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.coverage.xml]
+output = "coverage.xml"

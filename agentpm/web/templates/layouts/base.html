@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}APM (Agent Project Manager){% endblock %}</title>
+    
+    <!-- Theme System CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme-system.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <!-- Searchable Select Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/searchable-select.css') }}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body class="h-full bg-surface-primary text-text-primary" x-data="{ sidebarOpen: false }" x-cloak>
+    <!-- Header -->
+    {% include 'components/layout/header_comprehensive.html' %}
+    
+    <!-- Main Content -->
+    <main class="min-h-screen">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Notifications -->
+    {% include 'components/notifications.html' %}
+    
+    <!-- Searchable Select Script -->
+    <script src="{{ url_for('static', filename='js/searchable-select.js') }}"></script>
+    
+    <!-- Main JavaScript Bundle (Production) -->
+    {% if built_files.main_js %}
+    <script type="module" src="{{ url_for('static', filename='js/dist/' + built_files.main_js) }}"></script>
+    {% endif %}
+    {% if built_files.main_legacy_js %}
+    <script nomodule src="{{ url_for('static', filename='js/dist/' + built_files.main_legacy_js) }}"></script>
+    {% endif %}
+    
+    {% block extra_js %}{% endblock %}
+    
+    <!-- APM (Agent Project Manager) Modal System -->
+    <script src="{{ url_for('static', filename='js/modal-system.js') }}"></script>
+        <!--
+        // Header controller
+        function headerController() {
+            return {
+                searchQuery: '',
+                searchOpen: false,
+                mobileOpen: false,
+                
+                init() {
+                    console.log('Header controller initialized');
+                },
+                
+                submitSearch() {
+                    if (this.searchQuery.trim()) {
+                        window.location.href = `/search?q=${encodeURIComponent(this.searchQuery)}`;
+                    }
+                },
+                
+                showKeyboardShortcuts() {
+                    console.log('showKeyboardShortcuts called');
+                    window.ModalSystem.showKeyboardShortcuts();
+                },
+                
+                showNotifications() {
+                    // Placeholder for notifications
+                    console.log('Notifications clicked');
+                }
+            }
+        }
+        
+        // Register Alpine.js components immediately
+        if (window.Alpine) {
+            console.log('Alpine.js already loaded, registering components');
+            Alpine.data('headerController', headerController);
+            Alpine.data('sidebarController', sidebarController);
+        } else {
+            console.log('Alpine.js not loaded yet, waiting for alpine:init');
+            // Register when Alpine.js initializes
+            document.addEventListener('alpine:init', () => {
+                console.log('Alpine.js initialized, registering components');
+                Alpine.data('headerController', headerController);
+                Alpine.data('sidebarController', sidebarController);
+            });
+        }
+        
+        // Sidebar controller
+        function sidebarController() {
+            return {
+                sidebarOpen: false,
+                
+                toggleSidebar() {
+                    this.sidebarOpen = !this.sidebarOpen;
+                }
+            }
+        }
+        
+        // Filter button classes
+        function buttonClasses(filterGroup, filterValue) {
+            // This would need to be implemented based on your filtering logic
+            // For now, return a default class
+            return 'px-3 py-1 text-sm font-medium rounded-full border transition-colors';
+        }
+        
+        // Help modal
+        function helpModalOpen() {
+            return {
+                open: false,
+                
+                toggle() {
+                    this.open = !this.open;
+                }
+            }
+        }
+        
+        // Set filter function
+        function setFilter(filterGroup, filterValue, event) {
+            // This would need to be implemented based on your filtering logic
+            console.log(`Setting filter: ${filterGroup} = ${filterValue}`);
+        }
+        
+        // Show notifications
+        function showNotifications() {
+            console.log('Show notifications');
+        }
+        
+        // Show keyboard shortcuts
+        function showKeyboardShortcuts() {
+            window.ModalSystem.showKeyboardShortcuts();
+        }
+        -->
+    </script>
+    
+    <!-- Global Modal System -->
+    <div
+        id="global-modal"
+        x-show="$store.modal.open"
+        x-cloak
+        @keydown.escape.window="$store.modal.hide()"
+        class="fixed inset-0 z-[9999] flex items-center justify-center bg-gray-900/50 backdrop-blur-sm"
+    >
+        <div
+            @click.away="$store.modal.hide()"
+            class="relative mx-4 w-full max-w-2xl rounded-xl border border-gray-200 bg-white p-6 shadow-2xl"
+        >
+            <!-- Keyboard Shortcuts Modal -->
+            <template x-if="$store.modal.type === 'keyboard-shortcuts'">
+                <div>
+                    <!-- Header -->
+                    <div class="mb-6 flex items-center justify-between">
+                        <div>
+                            <h2 class="text-xl font-semibold text-gray-900">Keyboard Shortcuts</h2>
+                            <p class="text-sm text-gray-600">Quick access to common actions</p>
+                        </div>
+                        <button
+                            type="button"
+                            @click="$store.modal.hide()"
+                            class="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
+                        >
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+
+                    <!-- Shortcuts Grid -->
+                    <div class="space-y-6">
+                        <!-- Navigation -->
+                        <div>
+                            <h3 class="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500">Navigation</h3>
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3">
+                                    <span class="text-sm text-gray-700">Global search</span>
+                                    <kbd class="rounded border border-gray-300 bg-gray-50 px-2 py-1 font-mono text-xs">⌘K</kbd>
+                                </div>
+                                <div class="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3">
+                                    <span class="text-sm text-gray-700">Show keyboard shortcuts</span>
+                                    <kbd class="rounded border border-gray-300 bg-gray-50 px-2 py-1 font-mono text-xs">?</kbd>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Links -->
+                        <div>
+                            <h3 class="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500">Quick Links</h3>
+                            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                <a href="/ideas" class="flex items-center gap-3 rounded-lg border border-gray-200 px-4 py-3 transition hover:border-primary/30 hover:bg-primary/5">
+                                    <i class="bi bi-lightbulb text-primary"></i>
+                                    <span class="text-sm font-medium text-gray-700">Ideas</span>
+                                </a>
+                                <a href="/work-items" class="flex items-center gap-3 rounded-lg border border-gray-200 px-4 py-3 transition hover:border-primary/30 hover:bg-primary/5">
+                                    <i class="bi bi-list-task text-primary"></i>
+                                    <span class="text-sm font-medium text-gray-700">Work Items</span>
+                                </a>
+                                <a href="/context" class="flex items-center gap-3 rounded-lg border border-gray-200 px-4 py-3 transition hover:border-primary/30 hover:bg-primary/5">
+                                    <i class="bi bi-layers text-primary"></i>
+                                    <span class="text-sm font-medium text-gray-700">Context</span>
+                                </a>
+                                <a href="/agents" class="flex items-center gap-3 rounded-lg border border-gray-200 px-4 py-3 transition hover:border-primary/30 hover:bg-primary/5">
+                                    <i class="bi bi-robot text-primary"></i>
+                                    <span class="text-sm font-medium text-gray-700">Agents</span>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Tips -->
+                        <div class="rounded-lg bg-primary/5 p-4">
+                            <div class="flex items-start gap-3">
+                                <i class="bi bi-lightbulb text-primary"></i>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-900">Pro tip</p>
+                                    <p class="text-sm text-gray-600">Use the search bar (⌘K) to quickly find ideas, work items, tasks, agents, and more across the entire system.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="mt-6 flex justify-end">
+                        <button
+                            type="button"
+                            @click="hideModal()"
+                            class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90"
+                        >
+                            Got it
+                        </button>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+    
+    <!-- Theme Switcher JavaScript -->
+    <script src="{{ url_for('static', filename='js/theme-switcher.js') }}"></script>
+</body>
+</html>

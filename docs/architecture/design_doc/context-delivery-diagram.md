@@ -1,0 +1,246 @@
+# Context Delivery System - Visual Reference
+
+## System Architecture
+
+```mermaid
+graph TD
+    A[Agent Request] --> B[ContextAssemblyService]
+    B --> C[Entity Loading]
+    B --> D[6W Merging]
+    B --> E[Plugin Facts]
+    B --> F[Amalgamations]
+    B --> G[Confidence Scoring]
+    B --> H[Agent SOP]
+    B --> I[Temporal Context]
+    B --> J[Role Filtering]
+
+    C --> K[Database]
+    D --> K
+    E --> L[Plugin System]
+    F --> M[.aipm/contexts/]
+    H --> N[.claude/agents/]
+    I --> K
+
+    K --> O[ContextPayload]
+    L --> O
+    M --> O
+    N --> O
+    G --> O
+    J --> O
+
+    O --> P[Agent Execution]
+```
+
+## Hierarchical Context Flow
+
+```mermaid
+graph LR
+    A[Project Context] --> D[Merged Context]
+    B[Work Item Context] --> D
+    C[Task Context] --> D
+
+    D --> E[Plugin Facts]
+    D --> F[Amalgamations]
+    D --> G[Agent SOP]
+
+    E --> H[ContextPayload]
+    F --> H
+    G --> H
+
+    H --> I[Agent]
+```
+
+## Stage-Specific Context
+
+```mermaid
+graph TD
+    A[D1: Discovery] --> B[Idea Context]
+    B --> C[Business Pillars]
+    B --> D[Market Research]
+
+    E[P1: Planning] --> F[Work Item Context]
+    F --> G[Technical Context]
+    F --> H[Quality Gates]
+
+    I[I1: Implementation] --> J[Task Context]
+    J --> K[Code Amalgamations]
+    J --> L[Agent SOP]
+
+    M[R1: Review] --> N[Test Results]
+    N --> O[Coverage Reports]
+
+    P[O1/E1: Operations] --> Q[Deployment Context]
+    Q --> R[Monitoring Data]
+```
+
+## Performance Breakdown
+
+```
+Assembly Time: 120ms (target: <200ms)
+
+Entity Loading     ▓░░░░░░░░░  10ms (8%)
+6W Merging        ▓░░░░░░░░░   5ms (4%)
+Plugin Facts      ▓▓░░░░░░░░  20ms (17%) [cached]
+                  ▓▓▓▓▓▓▓▓▓▓ 100ms (83%) [fresh]
+Amalgamations     ▓░░░░░░░░░  10ms (8%)
+Confidence        ▓░░░░░░░░░  10ms (8%)
+Agent SOP         ▓▓░░░░░░░░  15ms (13%)
+Temporal          ▓░░░░░░░░░  10ms (8%)
+Role Filtering    ▓░░░░░░░░░   5ms (4%)
+Overhead          ▓▓▓░░░░░░░  35ms (29%)
+```
+
+## Confidence Calculation
+
+```
+Total Confidence = 0.85
+
+  6W Completeness (30%)     ▓▓▓▓▓▓▓▓▓░  0.90
+  Plugin Facts (25%)        ▓▓▓▓▓▓▓▓░░  0.80
+  Amalgamations (25%)       ▓▓▓▓▓▓▓▓▓▓  1.00
+  Freshness (20%)           ▓▓▓▓▓▓▓░░░  0.70
+
+  Confidence Band: GREEN (>0.8)
+```
+
+## Entity Hierarchy
+
+```
+Project (ID: 1)
+├── Tech Stack: Python, FastAPI, PostgreSQL
+├── Team: @engineering, @design
+└── Standards: PEP 8, Type hints required
+
+  Work Item (ID: 45): "User Authentication"
+  ├── Type: FEATURE
+  ├── Business Value: "Secure user access"
+  ├── Dependencies: [OAuth2 integration]
+  └── AC: ["SSO support", "RBAC", "Audit logs"]
+
+    Task (ID: 355): "Implement JWT tokens"
+    ├── Type: IMPLEMENTATION
+    ├── Assigned: python-implementer
+    ├── Effort: 3.5h
+    └── AC: ["Tokens expire 1h", "Refresh supported"]
+```
+
+## Role-Based Filtering
+
+```
+Original Context (unfiltered):
+├── Amalgamations (15 files)
+│   ├── Python: classes, functions, imports
+│   ├── React: components, hooks, routes
+│   └── Testing: fixtures, conftest
+└── Plugin Facts (8 frameworks)
+    ├── Python: FastAPI, Pydantic, SQLAlchemy
+    └── React: Zustand, React Router, Tailwind
+
+Filtered for "python-implementer":
+├── Amalgamations (7 files) ← 53% reduction
+│   ├── Python: classes, functions, imports
+│   └── Testing: pytest fixtures (Python-relevant)
+└── Plugin Facts (4 frameworks) ← 50% reduction
+    └── Python: FastAPI, Pydantic, SQLAlchemy
+```
+
+## Context Lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> Draft: Create Context
+    Draft --> Populated: Add 6W Data
+    Populated --> Fresh: Validate
+    Fresh --> Stale: 30 days pass
+    Stale --> Fresh: Refresh
+    Fresh --> Updated: Code Changes
+    Updated --> Fresh: Validate
+    Fresh --> [*]: Task Complete
+```
+
+## Multi-Agent Context Sharing
+
+```
+Work Item: "API Development"
+├── Task 1: Backend (python-implementer)
+│   └── Context: Python facts + backend amalgamations
+├── Task 2: Frontend (react-developer)
+│   └── Context: React facts + frontend amalgamations
+└── Task 3: Testing (testing-specialist)
+    └── Context: pytest facts + test amalgamations
+
+All share: Work Item 6W, Project standards
+Each has: Role-specific filtered context
+```
+
+## Quick Reference: Context Commands
+
+```bash
+# View context
+apm context show --task-id=355 --format=json
+
+# Validate quality
+apm context validate --task-id=355
+
+# Refresh (update timestamp, re-detect)
+apm context refresh --task-id=355
+
+# Update 6W
+apm context update --task-id=355 \
+  --who="@alice,@bob" \
+  --what="Implement JWT" \
+  --acceptance-criteria="Tokens expire 1h"
+```
+
+## Performance Targets
+
+| Metric | Target | Current | Status |
+|--------|--------|---------|--------|
+| Assembly p95 | <200ms | 180ms | ✅ GREEN |
+| Assembly avg | <120ms | 120ms | ✅ GREEN |
+| Confidence | >0.70 | 0.85 | ✅ GREEN |
+| Cache hit rate | >70% | N/A | 🟡 Phase 2 |
+| Context freshness | <30 days | 21 days | ✅ GREEN |
+
+## Integration Example
+
+```python
+# Standard pattern (all agents use this)
+from agentpm.core.context.assembly_service import ContextAssemblyService
+
+# 1. Initialize service
+service = ContextAssemblyService(db, project_path)
+
+# 2. Assemble context
+payload = service.assemble_task_context(
+    task_id=355,
+    agent_role="python-implementer"
+)
+
+# 3. Access hierarchical data
+project = payload.project['name']
+work_item = payload.work_item['type']
+task = payload.task['status']
+
+# 4. Access merged 6W
+who = payload.merged_6w.implementers
+what = payload.merged_6w.acceptance_criteria
+why = payload.merged_6w.business_value
+
+# 5. Access plugin intelligence
+tech_stack = payload.plugin_facts
+code_files = payload.amalgamations
+
+# 6. Check quality
+if payload.confidence_band == ConfidenceBand.RED:
+    print("Warning: Low context quality")
+
+# 7. Use temporal context
+recent_sessions = payload.temporal_context
+```
+
+---
+
+**Document**: Visual Reference for Unified Context Delivery System
+**Companion to**: UNIFIED-CONTEXT-DELIVERY-SYSTEM.md
+**Last Updated**: 2025-10-17

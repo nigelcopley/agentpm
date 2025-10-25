@@ -1,0 +1,33 @@
+<!-- Task Progress Indicator Component -->
+<!-- Usage: Include this component in templates -->
+<!-- Variables: task (required) -->
+
+<div class="flex items-center space-x-2">
+    {% if task.started_at %}
+        <div class="flex items-center text-green-600" title="Started {{ task.started_at.strftime('%Y-%m-%d %H:%M') }}">
+            <i class="bi bi-play-circle text-xs mr-1"></i>
+            <span class="text-xs">Started</span>
+        </div>
+    {% endif %}
+    {% if task.completed_at %}
+        <div class="flex items-center text-blue-600" title="Completed {{ task.completed_at.strftime('%Y-%m-%d %H:%M') }}">
+            <i class="bi bi-check-circle text-xs mr-1"></i>
+            <span class="text-xs">Done</span>
+        </div>
+    {% endif %}
+    {% if task.blocked_reason %}
+        <div class="flex items-center text-red-600" title="Blocked: {{ task.blocked_reason }}">
+            <i class="bi bi-exclamation-triangle text-xs mr-1"></i>
+            <span class="text-xs">Blocked</span>
+        </div>
+    {% endif %}
+    {% if task.quality_metadata %}
+        <div class="flex items-center text-purple-600" title="Quality metadata available">
+            <i class="bi bi-shield-check text-xs mr-1"></i>
+            <span class="text-xs">Quality</span>
+        </div>
+    {% endif %}
+    {% if not task.started_at and not task.completed_at and not task.blocked_reason and not task.quality_metadata %}
+        <span class="text-gray-400 text-xs">-</span>
+    {% endif %}
+</div>

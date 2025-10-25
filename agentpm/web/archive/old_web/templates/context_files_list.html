@@ -1,0 +1,112 @@
+{% extends "layouts/modern_base.html" %}
+{% from 'macros/empty_state.html' import render as empty_state %}
+
+{% block title %}Context Files - APM (Agent Project Manager){% endblock %}
+
+{% block content %}
+<section class="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+  <div>
+    <h1 class="text-3xl font-semibold text-gray-900">Context Files Explorer</h1>
+    <p class="mt-2 text-sm text-gray-500">Framework-generated amalgamations produced by the plugin system.</p>
+  </div>
+  {% if view.project %}
+  <div class="flex flex-wrap items-center gap-2 text-sm text-gray-500">
+    <i class="bi bi-folder2-open text-primary"></i>
+    <span class="font-medium text-gray-700">{{ view.project.name }}</span>
+  </div>
+  {% endif %}
+</section>
+
+<section class="grid gap-4 md:grid-cols-2">
+  <article class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Total Files</p>
+    <p class="mt-3 text-3xl font-semibold text-gray-900">{{ view.total_files }}</p>
+    <p class="text-xs text-gray-500">Available amalgamations ready for preview and download.</p>
+  </article>
+  <article class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Total Size</p>
+    <p class="mt-3 text-3xl font-semibold text-gray-900">{{ (view.total_size / 1024) | round(1) }} KB</p>
+    <p class="text-xs text-gray-500">Aggregate storage consumed by generated context files.</p>
+  </article>
+</section>
+
+{% if view.files %}
+<section class="mt-8 rounded-2xl border border-gray-200 bg-white shadow-sm">
+  <header class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+    <div class="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-gray-500">
+      <i class="bi bi-files text-primary"></i>
+      Context Files
+    </div>
+    <span class="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">{{ view.total_files }} files</span>
+  </header>
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-100 text-left text-sm text-gray-700">
+      <thead class="bg-gray-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
+        <tr>
+          <th class="px-6 py-3">Name</th>
+          <th class="px-4 py-3">Type</th>
+          <th class="px-4 py-3">Size</th>
+          <th class="px-4 py-3">Last Modified</th>
+          <th class="px-4 py-3 text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {% for file in view.files %}
+        <tr class="transition hover:bg-primary/5">
+          <td class="px-6 py-4 align-top">
+            <div class="flex items-start gap-3">
+              <span class="mt-1 text-primary"><i class="bi bi-file-text"></i></span>
+              <div>
+                <p class="font-semibold text-gray-900">{{ file.name }}</p>
+                {% if file.path != file.name %}
+                <p class="text-xs text-gray-500">{{ file.path }}</p>
+                {% endif %}
+              </div>
+            </div>
+          </td>
+          <td class="px-4 py-4 align-top">
+            <span class="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">{{ file.file_type }}</span>
+          </td>
+          <td class="px-4 py-4 align-top text-sm text-gray-600">{{ file.size_human }}</td>
+          <td class="px-4 py-4 align-top text-sm text-gray-600">{{ file.modified.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td class="px-4 py-4 align-top text-right">
+            <div class="flex flex-wrap items-center justify-end gap-2">
+              <a href="/context-files/preview/{{ file.path }}" class="inline-flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/10 px-3 py-2 text-xs font-semibold text-primary transition hover:bg-primary/20">
+                <i class="bi bi-eye"></i>
+                Preview
+              </a>
+              <a href="/context-files/download/{{ file.path }}" class="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100">
+                <i class="bi bi-download"></i>
+                Download
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% else %}
+{{ empty_state(
+    icon='file-earmark-code',
+    heading='No context files found',
+    description='Context files appear once plugin analysis has generated amalgamations. Run: apm context refresh to rebuild context data after plugins finish scanning your project.',
+    size='normal'
+) }}
+{% endif %}
+
+<section class="mt-8 flex gap-3">
+  {% if view.project %}
+  <a href="/projects/{{ view.project.id }}/context" class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:border-primary/30 hover:text-primary">
+    <i class="bi bi-arrow-left"></i>
+    Back to Project Context
+  </a>
+  {% else %}
+  <a href="/" class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:border-primary/30 hover:text-primary">
+    <i class="bi bi-arrow-left"></i>
+    Back to Dashboard
+  </a>
+  {% endif %}
+</section>
+{% endblock %}

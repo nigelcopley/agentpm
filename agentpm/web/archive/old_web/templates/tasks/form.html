@@ -1,0 +1,311 @@
+{% extends "layouts/modern_base.html" %}
+
+{% block title %}{{ 'Edit' if task else 'Create' }} Task - APM (Agent Project Manager) Dashboard{% endblock %}
+
+{% block content %}
+<!-- Breadcrumbs -->
+<nav class="mb-6">
+    <ol class="flex items-center space-x-2 text-sm text-gray-500">
+        <li><a href="/" class="hover:text-primary">Dashboard</a></li>
+        <li class="flex items-center">
+            <svg class="w-4 h-4 mx-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+            </svg>
+            <a href="/tasks" class="hover:text-primary">Tasks</a>
+        </li>
+        <li class="flex items-center">
+            <svg class="w-4 h-4 mx-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+            </svg>
+            <span class="text-gray-900">{{ 'Edit' if task else 'Create' }} Task</span>
+        </li>
+    </ol>
+</nav>
+
+<!-- Page Header -->
+<div class="mb-8">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">{{ 'Edit' if task else 'Create' }} Task</h1>
+            <p class="mt-2 text-lg text-gray-600">{{ 'Update task details' if task else 'Create a new task to track work progress' }}</p>
+        </div>
+        <div class="flex items-center space-x-3">
+            <a href="/tasks" class="btn btn-secondary">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+                Cancel
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Form -->
+<div class="max-w-4xl">
+    <form method="POST" data-validate data-autosave>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Main Form -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Basic Information -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Basic Information</h3>
+                    </div>
+                    <div class="card-body space-y-4">
+                        <div class="form-group">
+                            <label for="name" class="form-label">Task Name *</label>
+                            <input 
+                                type="text" 
+                                id="name" 
+                                name="name" 
+                                class="form-input" 
+                                placeholder="Enter task name"
+                                value="{{ task.name if task else '' }}"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea 
+                                id="description" 
+                                name="description" 
+                                class="form-input" 
+                                rows="4" 
+                                placeholder="Describe the task..."
+                            >{{ task.description if task else '' }}</textarea>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="form-group">
+                                <label for="type" class="form-label">Type *</label>
+                                <select id="type" name="type" class="form-select" required>
+                                    <option value="">Select type</option>
+                                    <option value="design" {{ 'selected' if task and task.type.value == 'design' else '' }}>Design</option>
+                                    <option value="implementation" {{ 'selected' if task and task.type.value == 'implementation' else '' }}>Implementation</option>
+                                    <option value="testing" {{ 'selected' if task and task.type.value == 'testing' else '' }}>Testing</option>
+                                    <option value="documentation" {{ 'selected' if task and task.type.value == 'documentation' else '' }}>Documentation</option>
+                                    <option value="analysis" {{ 'selected' if task and task.type.value == 'analysis' else '' }}>Analysis</option>
+                                    <option value="research" {{ 'selected' if task and task.type.value == 'research' else '' }}>Research</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="effort_hours" class="form-label">Effort Hours *</label>
+                                <input 
+                                    type="number" 
+                                    id="effort_hours" 
+                                    name="effort_hours" 
+                                    class="form-input" 
+                                    placeholder="4"
+                                    min="1"
+                                    max="8"
+                                    value="{{ task.effort_hours if task else '' }}"
+                                    required
+                                >
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Work Item Assignment -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Work Item Assignment</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="work_item_id" class="form-label">Work Item *</label>
+                            <select id="work_item_id" name="work_item_id" class="form-select" required>
+                                <option value="">Select work item</option>
+                                {% for work_item in work_items %}
+                                <option value="{{ work_item.id }}" {{ 'selected' if task and task.work_item_id == work_item.id else '' }}>
+                                    #{{ work_item.id }} - {{ work_item.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="space-y-6">
+                <!-- Status -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Status</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="status" class="form-label">Current Status</label>
+                            <select id="status" name="status" class="form-select">
+                                <option value="proposed" {{ 'selected' if task and task.status.value == 'proposed' else '' }}>Proposed</option>
+                                <option value="in_progress" {{ 'selected' if task and task.status.value == 'in_progress' else '' }}>In Progress</option>
+                                <option value="completed" {{ 'selected' if task and task.status.value == 'completed' else '' }}>Completed</option>
+                                <option value="blocked" {{ 'selected' if task and task.status.value == 'blocked' else '' }}>Blocked</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Priority -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Priority</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="priority" class="form-label">Priority</label>
+                            <select id="priority" name="priority" class="form-select">
+                                <option value="">Select priority</option>
+                                <option value="1" {{ 'selected' if task and task.priority == 1 else '' }}>Critical (P1)</option>
+                                <option value="2" {{ 'selected' if task and task.priority == 2 else '' }}>High (P2)</option>
+                                <option value="3" {{ 'selected' if task and task.priority == 3 else '' }}>Medium (P3)</option>
+                                <option value="4" {{ 'selected' if task and task.priority == 4 else '' }}>Low (P4)</option>
+                                <option value="5" {{ 'selected' if task and task.priority == 5 else '' }}>Very Low (P5)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Actions</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="space-y-3">
+                            <button type="submit" class="btn btn-primary w-full" data-loading>
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                {{ 'Update' if task else 'Create' }} Task
+                            </button>
+                            
+                            <a href="/tasks" class="btn btn-secondary w-full">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                                Cancel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Help -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Help</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-sm text-gray-600 space-y-2">
+                            <p><strong>Design:</strong> Planning and design work</p>
+                            <p><strong>Implementation:</strong> Coding and development</p>
+                            <p><strong>Testing:</strong> Quality assurance and testing</p>
+                            <p><strong>Documentation:</strong> Writing and updating docs</p>
+                            <p><strong>Analysis:</strong> Investigation and analysis</p>
+                            <p><strong>Research:</strong> Research and exploration</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Task Form JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-save functionality
+    const form = document.querySelector('form[data-autosave]');
+    if (form) {
+        const inputs = form.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            const debouncedSave = AIPM.utils.debounce(() => {
+                saveDraft();
+            }, 2000);
+            
+            input.addEventListener('input', debouncedSave);
+        });
+    }
+    
+    // Form validation
+    const formElement = document.querySelector('form[data-validate]');
+    if (formElement) {
+        formElement.addEventListener('submit', function(e) {
+            if (!validateForm()) {
+                e.preventDefault();
+            }
+        });
+    }
+});
+
+function validateForm() {
+    let isValid = true;
+    
+    // Required fields
+    const requiredFields = ['name', 'type', 'effort_hours', 'work_item_id'];
+    requiredFields.forEach(fieldName => {
+        const field = document.getElementById(fieldName);
+        if (field && !field.value.trim()) {
+            AIPM.forms.showFieldError(field, 'This field is required');
+            isValid = false;
+        } else if (field) {
+            AIPM.forms.clearFieldError(field);
+        }
+    });
+    
+    // Effort hours validation
+    const effortHours = document.getElementById('effort_hours');
+    if (effortHours) {
+        const hours = parseInt(effortHours.value);
+        if (hours < 1 || hours > 8) {
+            AIPM.forms.showFieldError(effortHours, 'Effort hours must be between 1 and 8');
+            isValid = false;
+        }
+    }
+    
+    if (!isValid) {
+        AIPM.utils.showToast('Please fix the errors above', 'error');
+    }
+    
+    return isValid;
+}
+
+function saveDraft() {
+    const formData = new FormData(document.querySelector('form'));
+    const data = Object.fromEntries(formData);
+    
+    // Save to localStorage as draft
+    localStorage.setItem('task-draft', JSON.stringify(data));
+    AIPM.utils.showToast('Draft saved', 'info', 2000);
+}
+
+function loadDraft() {
+    const draft = localStorage.getItem('task-draft');
+    if (draft) {
+        const data = JSON.parse(draft);
+        
+        // Populate form fields
+        Object.keys(data).forEach(key => {
+            const field = document.getElementById(key);
+            if (field) {
+                field.value = data[key];
+            }
+        });
+        
+        AIPM.utils.showToast('Draft loaded', 'info', 2000);
+    }
+}
+
+// Load draft on page load if creating new task
+{% if not task %}
+document.addEventListener('DOMContentLoaded', function() {
+    loadDraft();
+});
+{% endif %}
+</script>
+{% endblock %}

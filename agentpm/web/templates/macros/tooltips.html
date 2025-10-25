@@ -1,0 +1,258 @@
+{#
+  Tooltip & Help Text Macros
+
+  Provides accessible, keyboard-navigable tooltips and help text for UI elements.
+  Uses Alpine.js for interactive tooltip positioning and display.
+
+  Usage:
+    {% from 'macros/tooltips.html' import tooltip, tooltip_icon, info_popover %}
+
+    {{ tooltip('This field is required', 'Required field') }}
+    {{ tooltip_icon('Click to filter by status') }}
+    {{ info_popover('Work Items', 'Work items track features, bugs, and improvements...') }}
+#}
+
+{#
+  Tooltip Component
+
+  Displays helpful tooltip on hover/focus.
+  Accessible via keyboard (focus) and screen readers (aria-label).
+
+  Parameters:
+    - content (str): Tooltip text content
+    - label (str, optional): Screen reader label (defaults to content)
+    - position (str): 'top', 'bottom', 'left', 'right' - default: 'top'
+#}
+{% macro tooltip(content, label=None, position='top') %}
+{% set aria_label = label if label else content %}
+{% set position_classes = {
+    'top': 'bottom-full left-1/2 -translate-x-1/2 mb-2',
+    'bottom': 'top-full left-1/2 -translate-x-1/2 mt-2',
+    'left': 'right-full top-1/2 -translate-y-1/2 mr-2',
+    'right': 'left-full top-1/2 -translate-y-1/2 ml-2'
+} %}
+{% set arrow_classes = {
+    'top': 'top-full left-1/2 -translate-x-1/2 border-t-gray-900',
+    'bottom': 'bottom-full left-1/2 -translate-x-1/2 border-b-gray-900',
+    'left': 'left-full top-1/2 -translate-y-1/2 border-l-gray-900',
+    'right': 'right-full top-1/2 -translate-y-1/2 border-r-gray-900'
+} %}
+
+<span class="relative inline-block"
+      x-data="{ show: false }"
+      @mouseenter="show = true"
+      @mouseleave="show = false"
+      @focus="show = true"
+      @blur="show = false"
+      tabindex="0"
+      role="tooltip"
+      aria-label="{{ aria_label }}">
+    <!-- Trigger Content -->
+    {{ caller() }}
+
+    <!-- Tooltip -->
+    <span x-show="show"
+          x-transition
+          class="absolute z-50 {{ position_classes[position] }} px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg whitespace-nowrap pointer-events-none">
+        {{ content }}
+        <!-- Arrow -->
+        <span class="absolute {{ arrow_classes[position] }} w-0 h-0 border-4 border-transparent"></span>
+    </span>
+</span>
+{% endmacro %}
+
+
+{#
+  Tooltip Icon
+
+  Info icon with tooltip - commonly used next to labels/headings.
+  Provides contextual help without cluttering the UI.
+
+  Parameters:
+    - content (str): Tooltip text
+    - icon (str): Bootstrap icon name - default: 'info-circle'
+    - position (str): Tooltip position - default: 'top'
+#}
+{% macro tooltip_icon(content, icon='info-circle', position='top') %}
+<span class="inline-flex items-center gap-1.5">
+    {{ caller() if caller else '' }}
+    {% call tooltip(content, position=position) %}
+    <i class="bi bi-{{ icon }} text-gray-400 hover:text-gray-600 cursor-help transition-colors"
+       aria-hidden="true"></i>
+    {% endcall %}
+</span>
+{% endmacro %}
+
+
+{#
+  Info Popover
+
+  Larger popover for detailed explanations or multi-line help text.
+  Click to toggle, click outside to dismiss.
+
+  Parameters:
+    - heading (str): Popover heading
+    - content (str): Popover body text (can include HTML)
+    - icon (str): Trigger icon - default: 'question-circle'
+#}
+{% macro info_popover(heading, content, icon='question-circle') %}
+<div class="relative inline-block"
+     x-data="{ open: false }"
+     @click.away="open = false">
+    <!-- Trigger Button -->
+    <button @click="open = !open"
+            type="button"
+            class="inline-flex items-center justify-center w-5 h-5 text-gray-400 hover:text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-full"
+            aria-label="Show help for {{ heading }}"
+            :aria-expanded="open">
+        <i class="bi bi-{{ icon }}-fill" aria-hidden="true"></i>
+    </button>
+
+    <!-- Popover -->
+    <div x-show="open"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         class="absolute z-50 mt-2 w-80 left-0"
+         role="dialog"
+         aria-labelledby="popover-heading">
+        <div class="bg-white rounded-lg shadow-xl border border-gray-200 p-4">
+            <h4 id="popover-heading" class="text-sm font-semibold text-gray-900 mb-2">
+                {{ heading }}
+            </h4>
+            <div class="text-sm text-gray-600 prose-sm">
+                {{ content | safe }}
+            </div>
+            <button @click="open = false"
+                    class="mt-3 text-xs text-primary hover:text-primary-dark transition-colors">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+
+{#
+  Field Help Text
+
+  Helper text displayed below form fields.
+  Provides guidance before user interaction (proactive help).
+
+  Parameters:
+    - field_id (str): ID of associated form field
+    - text (str): Help text content
+    - icon (str, optional): Bootstrap icon name - default: None
+#}
+{% macro field_help(field_id, text, icon=None) %}
+<p id="{{ field_id }}-help" class="mt-1 text-sm text-gray-500 flex items-start gap-1.5">
+    {% if icon %}
+    <i class="bi bi-{{ icon }} flex-shrink-0 mt-0.5" aria-hidden="true"></i>
+    {% endif %}
+    <span>{{ text }}</span>
+</p>
+{% endmacro %}
+
+
+{#
+  Keyboard Shortcut Hint
+
+  Displays keyboard shortcut in tooltip or inline.
+  Uses platform-specific modifier keys (Cmd on Mac, Ctrl on Windows).
+
+  Parameters:
+    - keys (str): Keyboard shortcut (e.g., 'Cmd+K', 'Ctrl+Enter')
+    - description (str): Action description
+    - inline (bool): Display inline vs. as tooltip - default: False
+#}
+{% macro keyboard_shortcut(keys, description, inline=False) %}
+{% if inline %}
+<span class="inline-flex items-center gap-2 text-sm text-gray-500">
+    <kbd class="px-2 py-1 text-xs font-semibold text-gray-700 bg-gray-100 border border-gray-300 rounded-lg">
+        {{ keys }}
+    </kbd>
+    <span>{{ description }}</span>
+</span>
+{% else %}
+{% call tooltip(description) %}
+<kbd class="px-2 py-1 text-xs font-semibold text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors cursor-help">
+    {{ keys }}
+</kbd>
+{% endcall %}
+{% endif %}
+{% endmacro %}
+
+
+{#
+  Status Badge with Tooltip
+
+  Badge with tooltip explaining status meaning.
+  Useful for complex status systems or unfamiliar terminology.
+
+  Parameters:
+    - status (str): Status text (displayed in badge)
+    - explanation (str): Tooltip explanation
+    - color (str): Badge color class - default: 'gray'
+#}
+{% macro status_with_tooltip(status, explanation, color='gray') %}
+{% call tooltip(explanation) %}
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-{{ color }}-100 text-{{ color }}-800 cursor-help">
+    {{ status }}
+</span>
+{% endcall %}
+{% endmacro %}
+
+
+{#
+  Icon Button with Tooltip
+
+  Accessible icon-only button with tooltip label.
+  Essential for accessibility (provides text alternative for icon).
+
+  Parameters:
+    - label (str): Button label (shown in tooltip)
+    - icon (str): Bootstrap icon name
+    - url (str, optional): Link URL (if <a> tag) - default: None
+    - onclick (str, optional): JavaScript onclick - default: None
+    - button_class (str): Additional CSS classes - default: ''
+#}
+{% macro icon_button_with_tooltip(label, icon, url=None, onclick=None, button_class='') %}
+{% if url %}
+{% call tooltip(label, position='top') %}
+<a href="{{ url }}"
+   class="inline-flex items-center justify-center p-2 text-gray-600 hover:text-primary hover:bg-gray-100 rounded-lg transition-colors {{ button_class }}"
+   aria-label="{{ label }}">
+    <i class="bi bi-{{ icon }}" aria-hidden="true"></i>
+</a>
+{% endcall %}
+{% else %}
+{% call tooltip(label, position='top') %}
+<button type="button"
+        {% if onclick %}onclick="{{ onclick }}"{% endif %}
+        class="inline-flex items-center justify-center p-2 text-gray-600 hover:text-primary hover:bg-gray-100 rounded-lg transition-colors {{ button_class }}"
+        aria-label="{{ label }}">
+    <i class="bi bi-{{ icon }}" aria-hidden="true"></i>
+</button>
+{% endcall %}
+{% endif %}
+{% endmacro %}
+
+
+{#
+  Definition Tooltip
+
+  Tooltip for technical terms or jargon.
+  Underlines the term to indicate it's interactive.
+
+  Parameters:
+    - term (str): Technical term
+    - definition (str): Plain-language definition
+#}
+{% macro definition(term, definition) %}
+{% call tooltip(definition, label="Definition: " ~ term) %}
+<span class="border-b border-dotted border-gray-400 cursor-help">{{ term }}</span>
+{% endcall %}
+{% endmacro %}
