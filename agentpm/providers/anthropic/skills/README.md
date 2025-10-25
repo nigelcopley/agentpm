@@ -102,7 +102,7 @@ skill-directory/
 ```markdown
 ---
 name: APM (Agent Project Manager) Project Manager
-description: Comprehensive AI Project Manager for managing work items, tasks, and context
+description: Comprehensive Agent Project Manager for managing work items, tasks, and context
 allowed-tools: Read, Write, Bash, Grep, Glob
 ---
 

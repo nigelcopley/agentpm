@@ -2387,7 +2387,7 @@ version: 2.0.0
 # Project settings
 project:
   name: "APM (Agent Project Manager)"
-  description: "AI Project Manager - Database-driven workflow system"
+  description: "Agent Project Manager - Database-driven workflow system"
   tech_stack:
     - Python 3.9+
     - Click

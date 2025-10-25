@@ -38,12 +38,12 @@ class TestLegacyPatternDetection:
         """Verify legacy patterns are defined for detection."""
         assert 'APM (Agent Project Manager)' in legacy_patterns
         assert 'APM project' in legacy_patterns
-        assert 'AI Project Manager' in legacy_patterns
+        assert 'Agent Project Manager' in legacy_patterns
 
     def test_detect_legacy_in_sample_text(self, legacy_patterns):
         """Test legacy pattern detection in sample text."""
         sample_texts = [
-            "Welcome to APM (Agent Project Manager) - AI Project Manager",
+            "Welcome to APM (Agent Project Manager) - Agent Project Manager",
             "Initialize APM project with database",
             "The APM tool helps you manage projects",
         ]
@@ -75,7 +75,7 @@ class TestBrandingGuidelines:
             'legacy_to_avoid': [
                 'APM (Agent Project Manager)',
                 'APM project',
-                'AI Project Manager',
+                'Agent Project Manager',
             ],
         }
 

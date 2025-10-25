@@ -658,7 +658,7 @@ apm {command_name} --help
     def _create_core_skill(self, skill_name: str) -> str:
         """Create core APM (Agent Project Manager) skill."""
         skills = {
-            "project-manager": "Comprehensive AI Project Manager for managing work items, tasks, and context",
+            "project-manager": "Comprehensive Agent Project Manager for managing work items, tasks, and context",
             "quality-assurance": "Quality assurance and testing with APM (Agent Project Manager) standards",
             "context-assembly": "Hierarchical context assembly for AI agents"
         }

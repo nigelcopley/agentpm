@@ -114,7 +114,7 @@ class LazyGroup(click.Group):
 @click.pass_context
 def main(ctx: click.Context, verbose: bool):
     """
-    🤖 APM (Agent Project Manager) - AI Project Manager
+    🤖 APM (Agent Project Manager) - Agent Project Manager
 
     Persistent context and framework intelligence for AI coding agents.
 

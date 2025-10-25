@@ -1,5 +1,5 @@
 """
-APM (Agent Project Manager) CLI - Command-line interface for AI Project Manager
+APM (Agent Project Manager) CLI - Command-line interface for Agent Project Manager
 
 Provides professional-grade CLI for AI coding agents and developers to interact
 with the quality-gated project management system.

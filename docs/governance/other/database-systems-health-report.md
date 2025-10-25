@@ -318,7 +318,7 @@ ID: 1
 Name: AIPM Dogfooding
 Path: /Users/nigelcopley/.project_manager/aipm-v2
 Status: active
-Description: AI Project Manager V2 - Self-hosting project for development and testing
+Description: Agent Project Manager V2 - Self-hosting project for development and testing
 ```
 
 **Insight**: This is a **meta-project** - AIPM managing its own development.

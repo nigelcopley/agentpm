@@ -46,7 +46,7 @@ aipm-v2-skill/
 ```yaml
 ---
 name: aipm-v2-project-manager
-description: Comprehensive AI Project Manager V2 - Intelligent project management and development workflow orchestration for AI agents
+description: Comprehensive Agent Project Manager V2 - Intelligent project management and development workflow orchestration for AI agents
 ---
 ```
 

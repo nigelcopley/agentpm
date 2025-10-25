@@ -1,6 +1,6 @@
 # Getting Started with AIPM
 
-**AI Project Manager (AIPM)** is a framework-agnostic, AI-powered project management tool that helps you organize development work with intelligent context awareness, quality gates, and phase-based workflows.
+**Agent Project Manager (APM)** is a framework-agnostic, AI-powered project management tool that helps you organize development work with intelligent context awareness, quality gates, and phase-based workflows.
 
 ## What You'll Learn
 

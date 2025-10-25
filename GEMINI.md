@@ -1,6 +1,6 @@
 # Gemini Context for AIPM Project
 
-This document provides a comprehensive overview of the AI Project Manager (AIPM) project, its architecture, development practices, and how to interact with it. This context is generated for Gemini to facilitate effective understanding and interaction with the codebase.
+This document provides a comprehensive overview of the Agent Project Manager (APM) project, its architecture, development practices, and how to interact with it. This context is generated for Gemini to facilitate effective understanding and interaction with the codebase.
 
 ## Project Overview
 

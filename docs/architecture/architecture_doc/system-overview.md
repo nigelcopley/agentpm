@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-APM (Agent Project Manager) (AI Project Manager Version 2) is a sophisticated **database-driven project management system** designed for AI-assisted software development workflows. The system integrates 9 major subsystems across CLI, web, agent orchestration, workflow management, and provider integrations.
+APM (Agent Project Manager) (Agent Project Manager Version 2) is a sophisticated **database-driven project management system** designed for AI-assisted software development workflows. The system integrates 9 major subsystems across CLI, web, agent orchestration, workflow management, and provider integrations.
 
 **Key Characteristics:**
 - **Architecture:** Database-first with three-layer pattern (Models → Adapters → Methods)

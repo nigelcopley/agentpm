@@ -33,7 +33,7 @@ class TestCLIBranding:
         assert 'apm, version' in result.output.lower()
         # Should NOT contain "APM (Agent Project Manager)" or similar legacy branding
         assert 'APM (Agent Project Manager)' not in result.output
-        assert 'AI Project Manager' not in result.output
+        assert 'Agent Project Manager' not in result.output
 
     def test_help_text_main_description(self):
         """Verify main help text uses APM branding."""

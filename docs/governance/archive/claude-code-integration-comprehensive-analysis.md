@@ -406,7 +406,7 @@ claude mcp add --transport stdio <name> -- <command>
 - Sub-agents: `.claude/agents/sub-agents/`
 - Utilities: `.claude/agents/utilities/`
 
-### 9.2 Agent File Format (AIPM)
+### 9.2 Agent File Format (APM)
 
 **YAML Frontmatter**:
 ```yaml

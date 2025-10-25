@@ -2423,7 +2423,7 @@ pytest tests-BAK/core/database/test_schema.py::TestSchemaInitialization::test_al
 [project]
 name = "aipm-v2"
 version = "0.1.0"
-description = "AI Project Manager V2 - Quality-gated coding agent enablement"
+description = "Agent Project Manager V2 - Quality-gated coding agent enablement"
 requires-python = ">=3.9"
 
 dependencies = [

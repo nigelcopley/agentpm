@@ -348,7 +348,7 @@ class ClaudeCodeSkillGenerator:
         """Generate core project manager skill."""
         return template.render_skill(
             name="APM (Agent Project Manager) Project Manager",
-            description="Comprehensive AI Project Manager for managing work items, tasks, and context. Use when working on projects that need structured project management, work item tracking, or quality gate enforcement.",
+            description="Comprehensive Agent Project Manager for managing work items, tasks, and context. Use when working on projects that need structured project management, work item tracking, or quality gate enforcement.",
             project_id=project_id,
             skill_type=skill_type.value
         )

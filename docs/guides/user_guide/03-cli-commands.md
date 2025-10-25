@@ -34,7 +34,7 @@ apm --help
 
 **Output** (condensed):
 ```
-🤖 APM (Agent Project Manager) - AI Project Manager
+🤖 APM (Agent Project Manager) - Agent Project Manager
 
 Commands:
   init         Initialize APM project

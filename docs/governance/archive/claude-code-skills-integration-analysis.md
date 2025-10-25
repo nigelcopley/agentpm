@@ -521,7 +521,7 @@ aipm-plugin/
 {
   "name": "aipm",
   "version": "2.0.0",
-  "description": "AI Project Manager - Workflow-driven project management with quality gates",
+  "description": "Agent Project Manager - Workflow-driven project management with quality gates",
   "author": {
     "name": "AIPM Team",
     "url": "https://github.com/agentpm/aipm-v2"

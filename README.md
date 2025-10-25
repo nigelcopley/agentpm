@@ -1,4 +1,4 @@
-# APM (Agent Project Manager) - AI Project Manager V2
+# APM (Agent Project Manager)
 
 **Quality-Gated Coding Agent Enablement System**
 

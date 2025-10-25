@@ -8,7 +8,7 @@
 
 ## **🎯 Vision & Mission**
 
-APM (Agent Project Manager) transforms from a development tool into a **comprehensive AI Project Manager** that provides intelligent, context-aware guidance across the entire spectrum of product development - from initial idea through market success.
+APM (Agent Project Manager) transforms from a development tool into a **comprehensive Agent Project Manager** that provides intelligent, context-aware guidance across the entire spectrum of product development - from initial idea through market success.
 
 ### **Core Mission**
 Enable AI agents to make informed, strategic decisions by providing comprehensive business and technical context that guides development work toward measurable business outcomes.

@@ -166,7 +166,7 @@ def legacy_patterns():
     return [
         'APM (Agent Project Manager)',
         'APM project',
-        'AI Project Manager',
+        'Agent Project Manager',
     ]
 ```
 
