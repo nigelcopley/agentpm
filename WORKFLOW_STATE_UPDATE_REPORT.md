@@ -185,7 +185,7 @@
 **Option 1: Override Test Coverage Rules** (Recommended)
 ```bash
 # Temporarily relax coverage rules for Phase 1 retroactive tracking
-sqlite3 .apm/apm.db "UPDATE rules SET enforcement_level = 'GUIDE' WHERE rule_id IN ('TEST-021', 'TEST-023', 'TEST-024');"
+sqlite3 .agentpm/data/apm.db "UPDATE rules SET enforcement_level = 'GUIDE' WHERE rule_id IN ('TEST-021', 'TEST-023', 'TEST-024');"
 
 # Restart APM to reload rules
 apm work-item next 158  # Should now progress
@@ -194,10 +194,10 @@ apm work-item next 158  # Should now progress
 **Option 2: Manual Database Update with Triggers Disabled**
 ```bash
 # Backup database first
-cp .apm/apm.db .apm/apm.db.backup
+cp .agentpm/data/agentpm.db .agentpm/data/agentpm.db.backup
 
 # Update task status directly
-sqlite3 .apm/apm.db "PRAGMA foreign_keys=OFF; UPDATE tasks SET status='done' WHERE id=1035; PRAGMA foreign_keys=ON;"
+sqlite3 .agentpm/data/agentpm.db "PRAGMA foreign_keys=OFF; UPDATE tasks SET status='done' WHERE id=1035; PRAGMA foreign_keys=ON;"
 
 # Verify
 apm task show 1035

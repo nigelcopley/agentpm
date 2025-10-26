@@ -72,7 +72,7 @@
 **Test Requirements**:
 - Test type: Integration
 - Minimum coverage: 85%
-- Test in clean environment (no existing .apm/)
+- Test in clean environment (no existing .agentpm/)
 - Verify migrations run successfully
 
 **Test Scenarios**:

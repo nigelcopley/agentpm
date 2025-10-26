@@ -899,6 +899,100 @@ If violation detected:
 
 ---
 
+## 10.1) Document Visibility and Lifecycle Management
+
+**CRITICAL**: Documents have visibility scopes and lifecycle states that control access and publication.
+
+### Visibility Scopes
+
+**Private** (Internal only):
+- Testing artifacts, analysis, drafts
+- Never auto-published
+- Visible only to agents/system
+
+**Team** (Project members):
+- Architecture decisions, developer guides, processes
+- Auto-published on approval
+- Visible to project team
+
+**Public** (End users):
+- User guides, API docs, CLI reference
+- Auto-published always
+- Visible to all users
+
+### Lifecycle States
+
+```
+Draft → Review → Approved → Published → Archived
+```
+
+**Auto-publish triggers**:
+- `guides/user_guide` → public (on creation)
+- `architecture/adr` → team (on approval)
+- `testing/*` → NEVER auto-publish (always private)
+
+### Commands
+
+```bash
+# Create with explicit visibility
+apm document add \
+  --entity-type=work-item \
+  --entity-id=<id> \
+  --category=guides \
+  --type=user_guide \
+  --visibility-scope=public \
+  --title="User Guide: Feature" \
+  --content="..."
+
+# Publish/unpublish manually
+apm document publish <doc-id>
+apm document unpublish <doc-id> --reason "Needs revision"
+
+# List by scope
+apm document list --visibility-scope=public
+apm document list --visibility-scope=team
+apm document list --visibility-scope=private
+```
+
+### Delegation Guidance
+
+When delegating documentation tasks, **always specify visibility requirements**:
+
+```python
+Task(
+  subagent_type="aipm-documentation-specialist",
+  description="Create user guide",
+  prompt="""VISIBILITY REQUIREMENTS:
+- Document type: User guide (public-facing)
+- Visibility scope: PUBLIC
+- Auto-publish: Yes
+
+Create user guide using:
+apm document add \
+  --entity-type=work-item \
+  --entity-id=<id> \
+  --category=guides \
+  --type=user_guide \
+  --visibility-scope=public \
+  --title="User Guide: [Feature]" \
+  --content="..."
+"""
+)
+```
+
+### Detailed Reference
+
+**Full workflow documentation**: `.agentpm/docs/processes/runbook/document-visibility-and-lifecycle-workflow.md`
+
+This includes:
+- Complete visibility scope rules
+- Auto-publish policies
+- Context-aware filtering
+- Troubleshooting guide
+- Best practices
+
+---
+
 ## 11) Reference Documentation
 
 **Architecture**:

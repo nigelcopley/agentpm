@@ -1,13 +1,17 @@
-# DOC-020: Database-First Document Creation
+# DOC-020: Database-First Document Creation with Visibility
 
 **Status**: ACTIVE
 **Enforcement**: BLOCK (hard failure)
 **Category**: Documentation Principles
 **Priority**: CRITICAL
+**Last Updated**: 2025-10-26
+**Version**: 2.0.0
 
 ## Rule
 
 **All document creation MUST use `apm document add` command. Direct file creation is PROHIBITED.**
+
+All agents MUST create documents through the database-first document management system. Document visibility is automatically determined by document type and can be explicitly set during creation.
 
 ## Rationale
 
@@ -25,17 +29,47 @@ Without this rule, documents become orphaned files with:
 - ❌ No lifecycle tracking (created, updated, archived)
 - ❌ Inconsistent file naming and location
 
+## Visibility System
+
+Documents are automatically categorized by visibility scope, which determines their location and intended audience:
+
+### Visibility Scopes
+
+| Scope | Location | Audience | Purpose | Auto-Assigned When |
+|-------|----------|----------|---------|-------------------|
+| **private** | `.agentpm/docs/` | Internal system only | Agent workflows, internal specs, system metadata | Document type is `agent_workflow`, `internal_spec`, or `metadata` |
+| **team** | `docs/` | Development team | Collaboration docs, work-in-progress, team guides | Default for most document types |
+| **public** | `docs/` | End users | Published guides, API docs, user documentation | After calling `apm document publish <id>` |
+
+### Visibility Rules
+
+1. **Internal document types** (e.g., `agent_workflow`, `internal_spec`) are AUTOMATICALLY set to `private`
+2. **Published documents** MUST have `visibility=public` and `published_at` timestamp
+3. **Team documents** default to `team` visibility
+4. **File paths** MUST match visibility scope:
+   - `private` → `.agentpm/docs/{category}/{type}/{filename}`
+   - `team`/`public` → `docs/{category}/{type}/{filename}`
+
+### Path Auto-Generation
+
+When using `apm document add`, the file path is automatically generated based on:
+- Document category (planning, architecture, guides, reference, etc.)
+- Document type (requirements, design_doc, user_guide, api_doc, etc.)
+- Document title (slugified to create filename)
+- Visibility scope (determines docs/ vs .agentpm/docs/)
+
+**You do NOT need to specify `--file-path`** - it will be auto-generated. If you do provide one, it will be validated and corrected if needed.
+
 ## Correct Workflow
 
 ### 1. Prepare Content
 Write your document content in a variable or prepare it.
 
-### 2. Use apm document add
+### 2. Use apm document add (Path Auto-Generated)
 ```bash
 apm document add \
   --entity-type=work-item \
   --entity-id=158 \
-  --file-path="docs/features/phase-1-completion.md" \
   --category=planning \
   --type=requirements \
   --title="Phase 1 Completion Report" \
@@ -52,6 +86,24 @@ Phase 1 successfully implemented...
 ...
 EOF
 )"
+
+# Path will be AUTO-GENERATED as:
+# docs/planning/requirements/phase-1-completion-report.md
+```
+
+### 2b. Optional: Specify Custom Path
+```bash
+# If you need a specific path, you can provide it
+# (will be validated and corrected if needed)
+apm document add \
+  --entity-type=work-item \
+  --entity-id=158 \
+  --file-path="docs/features/phase-1-completion.md" \
+  --category=planning \
+  --type=requirements \
+  --title="Phase 1 Completion Report" \
+  --description="Comprehensive report of Phase 1 deliverables" \
+  --content="..."
 ```
 
 ### 3. Verify Creation
@@ -62,36 +114,56 @@ ls docs/features/phase-1-completion.md
 
 ## Required Fields
 
-All fields must be provided:
+Core required fields (path is auto-generated):
 
 | Field | Required | Description | Example |
 |-------|----------|-------------|---------|
 | `--entity-type` | ✅ | What this documents | `work-item`, `task`, `project` |
-| `--entity-id` | ✅ | Which entity | `158` |
-| `--file-path` | ✅ | Where to create file | `docs/features/spec.md` |
+| `--entity-id` | ✅ | Which entity ID | `158` |
 | `--category` | ✅ | Document category | `planning`, `architecture`, `guides` |
 | `--type` | ✅ | Document type | `requirements`, `design_doc`, `user_guide` |
 | `--title` | ✅ | Clear title | `Phase 1 Completion Report` |
 | `--content` | ✅ | Actual content | `# Phase 1...` |
 | `--description` | Recommended | Brief summary | `Comprehensive report...` |
+| `--file-path` | Optional | Custom path (auto-generated if not provided) | `docs/features/spec.md` |
+
+**Note**: The `--file-path` is now OPTIONAL. If you don't provide it, the system will automatically generate an appropriate path based on category, type, and title.
 
 ## File Path Patterns
 
-Follow standard patterns:
+Standard directory structure (auto-generated based on visibility and type):
 
 ```
-docs/
-  ├── features/           # Feature specifications (category: planning, type: requirements)
-  ├── architecture/       # Architecture docs (category: architecture)
-  │   ├── design/        # Design docs (type: design_doc)
-  │   └── adrs/          # Architecture Decision Records (type: adr)
-  ├── guides/            # User guides (category: guides)
-  │   ├── user/          # User guides (type: user_guide)
-  │   ├── developer/     # Developer guides (type: developer_guide)
-  │   └── admin/         # Admin guides (type: admin_guide)
-  ├── reference/         # API docs, references (category: reference)
-  ├── processes/         # Runbooks, deployment (category: processes)
-  └── operations/        # Monitoring, incidents (category: operations)
+docs/                          # Team and public visibility
+  ├── features/                # Legacy location (being migrated)
+  ├── planning/                # Planning documents (category)
+  │   ├── requirements/       # Requirements docs (type: requirements)
+  │   ├── user_story/         # User stories (type: user_story)
+  │   └── use_case/           # Use cases (type: use_case)
+  ├── architecture/            # Architecture docs (category)
+  │   ├── design_doc/         # Design docs (type: design_doc)
+  │   ├── adr/                # Architecture Decision Records (type: adr)
+  │   └── technical_spec/     # Technical specifications (type: technical_spec)
+  ├── guides/                  # User/developer guides (category)
+  │   ├── user_guide/         # User guides (type: user_guide)
+  │   ├── developer_guide/    # Developer guides (type: developer_guide)
+  │   └── admin_guide/        # Admin guides (type: admin_guide)
+  ├── reference/               # API docs, references (category)
+  │   └── api_doc/            # API documentation (type: api_doc)
+  ├── processes/               # Process documentation (category)
+  │   ├── runbook/            # Runbooks (type: runbook)
+  │   └── deployment_guide/   # Deployment guides (type: deployment_guide)
+  └── operations/              # Operations docs (category)
+      ├── monitoring_guide/   # Monitoring guides (type: monitoring_guide)
+      └── incident_report/    # Incident reports (type: incident_report)
+
+.agentpm/docs/                 # Private visibility (internal only)
+  ├── internal/                # Internal documentation (category)
+  │   ├── agent_workflow/     # Agent SOPs (type: agent_workflow)
+  │   ├── internal_spec/      # Internal specs (type: internal_spec)
+  │   └── metadata/           # System metadata (type: metadata)
+  └── governance/              # Internal governance (category)
+      └── quality_gates_spec/ # Quality gates (type: quality_gates_spec)
 ```
 
 ## Violations
@@ -327,10 +399,54 @@ echo "# My Feature" > docs/features/my-feature.md
 # REMEDIATION: Delete file, recreate via apm document add
 ```
 
+## Publishing Workflow
+
+Documents can progress through visibility levels:
+
+```
+private → team → public (published)
+```
+
+### Publishing a Document
+
+```bash
+# 1. Create document (defaults to team visibility)
+apm document add \
+  --entity-type=work-item \
+  --entity-id=164 \
+  --category=guides \
+  --type=user_guide \
+  --title="Document Management Guide" \
+  --content="..."
+
+# 2. Review and refine
+apm document update <id> --content="<updated content>"
+
+# 3. Publish to users (when ready)
+apm document publish <id>
+```
+
+Publishing a document:
+- Sets `visibility = 'public'`
+- Sets `published_at = <timestamp>`
+- Triggers validation checks
+- May require approval workflow (depending on configuration)
+
+### Document Lifecycle States
+
+| State | Description | Visibility | Typical Audience |
+|-------|-------------|------------|------------------|
+| `draft` | Work in progress | private/team | Author only |
+| `review` | Under review | team | Reviewers + author |
+| `approved` | Review passed | team | Team members |
+| `published` | Public release | public | End users |
+| `archived` | Deprecated | team | Historical reference |
+
 ## See Also
 
 - `apm document add --help` - Full command documentation
 - `apm document types` - Available categories and types
+- `apm document publish --help` - Publishing command documentation
 - `docs/architecture/three-tier-architecture.md` - Database-first architecture
 - `CLAUDE.md` - Master orchestrator instructions (includes DOC-020 enforcement)
 - `agentpm/core/database/schema.md` - Database schema documentation
@@ -340,7 +456,11 @@ echo "# My Feature" > docs/features/my-feature.md
 - **2025-10-25**: DOC-020 created as BLOCK-level rule
 - **2025-10-25**: Validator implementation added
 - **2025-10-25**: CLAUDE.md updated with hard rule
-- **2025-10-25**: Documentation created
+- **2025-10-25**: Documentation created (v1.0.0)
+- **2025-10-26**: Added visibility system documentation (v2.0.0)
+- **2025-10-26**: Updated for auto-generated file paths
+- **2025-10-26**: Added publishing workflow section
+- **2025-10-26**: Enhanced directory structure with private docs support
 
 ## Related Rules
 
@@ -349,9 +469,15 @@ echo "# My Feature" > docs/features/my-feature.md
 - **WF-004**: All work documented in database
 - **CI-004**: Documentation coverage requirements
 
+## Related Work Items
+
+- **WI-164**: Auto-Generate Document File Paths (visibility system implementation)
+- **WI-133**: Hybrid Storage System (database + file storage)
+
 ---
 
-**Version**: 1.0.0
-**Last Updated**: 2025-10-25
+**Version**: 2.0.0
+**Last Updated**: 2025-10-26
 **Rule ID**: DOC-020
 **Enforcement**: BLOCK (hard failure)
+**Status**: ACTIVE
