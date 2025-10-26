@@ -1,13 +1,13 @@
 {
-  "project_path": "/private/var/folders/53/jjm94d8s1_x0dqtqskv43bk40000gn/T/pytest-of-nigelcopley/pytest-98/test_graph_with_cache0/test_project",
+  "project_path": "/private/var/folders/53/jjm94d8s1_x0dqtqskv43bk40000gn/T/pytest-of-nigelcopley/pytest-35/test_graph_with_cache0/test_project",
   "total_modules": 7,
   "total_dependencies": 7,
   "circular_dependencies": [
     {
       "cycle": [
-        "module_e",
         "module_d",
-        "module_e"
+        "module_e",
+        "module_d"
       ],
       "severity": "high",
       "suggestion": "Extract shared functionality to a third module. Consider dependency inversion or interface segregation."
@@ -66,5 +66,5 @@
     "__init__"
   ],
   "max_depth": -1,
-  "analyzed_at": "2025-10-25T19:04:26.472880"
+  "analyzed_at": "2025-10-26T14:22:22.430382"
 }

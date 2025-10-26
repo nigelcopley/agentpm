@@ -1,9 +1,9 @@
-analyzed_at: '2025-10-25T19:04:26.450661'
+analyzed_at: '2025-10-26T14:22:22.406854'
 circular_dependencies:
 - cycle:
-  - module_e
   - module_d
   - module_e
+  - module_d
   severity: high
   suggestion: Extract shared functionality to a third module. Consider dependency
     inversion or interface segregation.
@@ -40,7 +40,7 @@ leaf_modules:
 - module_a
 - __init__
 max_depth: -1
-project_path: /private/var/folders/53/jjm94d8s1_x0dqtqskv43bk40000gn/T/pytest-of-nigelcopley/pytest-98/test_graph_yaml_format0/test_project
+project_path: /private/var/folders/53/jjm94d8s1_x0dqtqskv43bk40000gn/T/pytest-of-nigelcopley/pytest-35/test_graph_yaml_format0/test_project
 root_modules:
 - __init__
 - module_f
