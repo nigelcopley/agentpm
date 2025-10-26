@@ -186,6 +186,19 @@ class DocumentReferenceAdapter:
             'content_updated_at': doc.content_updated_at.isoformat() if doc.content_updated_at else None,
             'last_synced_at': doc.last_synced_at.isoformat() if doc.last_synced_at else None,
             'sync_status': doc.sync_status.value if doc.sync_status else 'synced',  # Enum to string
+
+            # Visibility and lifecycle (Migration 0044 - WI-164)
+            'visibility': doc.visibility,
+            'lifecycle_stage': doc.lifecycle_stage,
+            'published_path': doc.published_path,
+            'published_date': doc.published_date.isoformat() if doc.published_date else None,
+            'unpublished_date': doc.unpublished_date.isoformat() if doc.unpublished_date else None,
+            'review_status': doc.review_status,
+            'reviewer_id': doc.reviewer_id,
+            'reviewer_assigned_at': doc.reviewer_assigned_at.isoformat() if doc.reviewer_assigned_at else None,
+            'review_comment': doc.review_comment,
+            'review_completed_at': doc.review_completed_at.isoformat() if doc.review_completed_at else None,
+            'auto_publish': doc.auto_publish,
         }
 
     @staticmethod
@@ -234,6 +247,19 @@ class DocumentReferenceAdapter:
             content_updated_at=_parse_datetime(row.get('content_updated_at')),
             last_synced_at=_parse_datetime(row.get('last_synced_at')),
             sync_status=SyncStatus(row['sync_status']) if row.get('sync_status') else SyncStatus.SYNCED,  # String to Enum
+
+            # Visibility and lifecycle (Migration 0044 - WI-164)
+            visibility=row.get('visibility'),
+            lifecycle_stage=row.get('lifecycle_stage'),
+            published_path=row.get('published_path'),
+            published_date=_parse_datetime(row.get('published_date')),
+            unpublished_date=_parse_datetime(row.get('unpublished_date')),
+            review_status=row.get('review_status'),
+            reviewer_id=row.get('reviewer_id'),
+            reviewer_assigned_at=_parse_datetime(row.get('reviewer_assigned_at')),
+            review_comment=row.get('review_comment'),
+            review_completed_at=_parse_datetime(row.get('review_completed_at')),
+            auto_publish=row.get('auto_publish'),
         )
 
 

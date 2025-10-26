@@ -51,9 +51,11 @@ def create_document_reference(service, document: DocumentReference) -> DocumentR
             created_by, created_at, updated_at,
             category, document_type_dir, segment_type, component, domain,
             audience, maturity, priority, tags, phase, work_item_id,
-            content, filename, storage_mode, content_updated_at, last_synced_at, sync_status
+            content, filename, storage_mode, content_updated_at, last_synced_at, sync_status,
+            visibility, lifecycle_stage, published_path, published_date, unpublished_date,
+            review_status, reviewer_id, reviewer_assigned_at, review_comment, review_completed_at, auto_publish
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """
     params = (
         db_data['entity_type'],
@@ -85,6 +87,17 @@ def create_document_reference(service, document: DocumentReference) -> DocumentR
         db_data.get('content_updated_at'),
         db_data.get('last_synced_at'),
         db_data.get('sync_status'),
+        db_data.get('visibility'),
+        db_data.get('lifecycle_stage'),
+        db_data.get('published_path'),
+        db_data.get('published_date'),
+        db_data.get('unpublished_date'),
+        db_data.get('review_status'),
+        db_data.get('reviewer_id'),
+        db_data.get('reviewer_assigned_at'),
+        db_data.get('review_comment'),
+        db_data.get('review_completed_at'),
+        db_data.get('auto_publish'),
     )
 
     with service.transaction() as conn:

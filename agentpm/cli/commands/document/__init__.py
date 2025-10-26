@@ -90,6 +90,10 @@ from .update import update
 from .delete import delete
 from .types import types
 from .migrate import migrate_to_structure
+from .migrate_visibility import migrate_visibility
+from .publish import publish
+from .unpublish import unpublish
+from .list_unpublished import list_unpublished
 
 # Register subcommands
 document.add_command(add)
@@ -99,3 +103,7 @@ document.add_command(update)
 document.add_command(delete)
 document.add_command(types)
 document.add_command(migrate_to_structure)
+document.add_command(migrate_visibility)
+document.add_command(publish)
+document.add_command(unpublish)
+document.add_command(list_unpublished)

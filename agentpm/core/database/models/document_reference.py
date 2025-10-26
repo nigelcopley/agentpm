@@ -82,7 +82,9 @@ class DocumentReference(BaseModel):
     unpublished_date: Optional[datetime] = Field(None, description="When document was unpublished")
     review_status: Optional[str] = Field(None, description="Review status (pending|approved|rejected)")
     reviewer_id: Optional[str] = Field(None, description="Who is/was reviewing")
+    reviewer_assigned_at: Optional[datetime] = Field(None, description="When reviewer was assigned")
     review_comment: Optional[str] = Field(None, description="Reviewer feedback")
+    review_completed_at: Optional[datetime] = Field(None, description="When review was completed")
     auto_publish: Optional[bool] = Field(False, description="Auto-publish when approved")
 
     # Lifecycle

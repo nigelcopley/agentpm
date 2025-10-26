@@ -3,10 +3,16 @@ Validator for DOC-020: Database-First Document Creation
 
 This validator enforces that all documents in docs/ must have
 corresponding database records in the document_references table.
+
+Additionally validates document visibility rules:
+- visibility must be 'private', 'public', or 'internal'
+- File path consistency: private documents in .agentpm/docs/, public/internal in docs/
+- Internal document types (testing, analysis) must be 'private'
+- Published documents must match file location
 """
 
 from pathlib import Path
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Dict, Any
 import sqlite3
 import re
 
@@ -222,6 +228,196 @@ EOF
 
         return command
 
+    def validate_document_visibility(
+        self,
+        visibility: str,
+        file_path: str,
+        document_type: str,
+        lifecycle_stage: Optional[str] = None,
+        published_path: Optional[str] = None
+    ) -> Tuple[bool, List[str]]:
+        """
+        Validate document visibility rules.
+
+        Rules:
+        1. visibility must be 'private', 'public', or 'internal'
+        2. File path consistency:
+           - private → .agentpm/docs/
+           - public/internal → docs/
+        3. Internal types (testing, analysis, investigation) must be 'private'
+        4. Published documents must match file location
+
+        Args:
+            visibility: Document visibility level
+            file_path: Document file path (relative to project root)
+            document_type: Document type (e.g., 'user_guide', 'test_plan')
+            lifecycle_stage: Optional lifecycle stage (draft, approved, published)
+            published_path: Optional published path (for published documents)
+
+        Returns:
+            Tuple of (is_valid, violations)
+            - is_valid: True if all rules pass
+            - violations: List of violation messages
+        """
+        violations = []
+
+        # Rule 1: Valid visibility values
+        valid_visibility = ['private', 'public', 'internal']
+        if visibility not in valid_visibility:
+            violations.append(
+                f"Invalid visibility '{visibility}'. Must be one of: {', '.join(valid_visibility)}"
+            )
+            return False, violations  # Early return for critical error
+
+        # Rule 2: File path consistency
+        is_private_path = file_path.startswith('.agentpm/docs/')
+        is_public_path = file_path.startswith('docs/')
+
+        if visibility == 'private' and not is_private_path:
+            violations.append(
+                f"Private document must be in .agentpm/docs/, not '{file_path}'. "
+                f"Move to .agentpm/docs/ or change visibility to 'public'/'internal'."
+            )
+
+        if visibility in ['public', 'internal'] and is_private_path:
+            violations.append(
+                f"{visibility.capitalize()} document cannot be in .agentpm/docs/ ('{file_path}'). "
+                f"Move to docs/ or change visibility to 'private'."
+            )
+
+        # Rule 3: Internal types must be private
+        internal_types = [
+            'test_plan', 'test_report', 'coverage_report', 'validation_report',
+            'analysis_report', 'investigation_report', 'assessment_report',
+            'session_summary', 'internal_note'
+        ]
+
+        if document_type in internal_types and visibility != 'private':
+            violations.append(
+                f"Document type '{document_type}' is internal and must be 'private', "
+                f"not '{visibility}'. Change visibility to 'private'."
+            )
+
+        # Rule 4: Publishing state consistency
+        if lifecycle_stage == 'published':
+            if visibility == 'private':
+                violations.append(
+                    f"Published document cannot be 'private'. "
+                    f"Change lifecycle_stage to 'approved' or visibility to 'public'/'internal'."
+                )
+
+            if published_path and not published_path.startswith('docs/'):
+                violations.append(
+                    f"Published document must have published_path in docs/, "
+                    f"not '{published_path}'."
+                )
+
+        return len(violations) == 0, violations
+
+    def validate_visibility_for_document_id(
+        self,
+        document_id: int
+    ) -> Tuple[bool, List[str]]:
+        """
+        Validate visibility for a specific document by ID.
+
+        Queries database for document details and runs validation.
+
+        Args:
+            document_id: Document ID in database
+
+        Returns:
+            Tuple of (is_valid, violations)
+        """
+        violations = []
+
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+
+            # Get document details
+            cursor.execute(
+                """
+                SELECT visibility, file_path, document_type, lifecycle_stage, published_path
+                FROM document_references
+                WHERE id = ?
+                """,
+                (document_id,)
+            )
+            result = cursor.fetchone()
+
+            conn.close()
+
+            if not result:
+                violations.append(f"Document ID {document_id} not found in database")
+                return False, violations
+
+            visibility, file_path, document_type, lifecycle_stage, published_path = result
+
+            # Run validation
+            return self.validate_document_visibility(
+                visibility=visibility,
+                file_path=file_path,
+                document_type=document_type or 'other',
+                lifecycle_stage=lifecycle_stage,
+                published_path=published_path
+            )
+
+        except Exception as e:
+            violations.append(f"Error validating document {document_id}: {e}")
+            return False, violations
+
+    def validate_all_document_visibility(self) -> Tuple[bool, List[str]]:
+        """
+        Validate visibility rules for all documents in database.
+
+        Returns:
+            Tuple of (is_valid, violations)
+            - is_valid: True if all documents pass validation
+            - violations: List of violation messages with document IDs
+        """
+        violations = []
+
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+
+            # Get all documents
+            cursor.execute(
+                """
+                SELECT id, visibility, file_path, document_type, lifecycle_stage, published_path, title
+                FROM document_references
+                ORDER BY id
+                """
+            )
+            documents = cursor.fetchall()
+
+            conn.close()
+
+            for doc in documents:
+                doc_id, visibility, file_path, document_type, lifecycle_stage, published_path, title = doc
+
+                # Run validation for this document
+                is_valid, doc_violations = self.validate_document_visibility(
+                    visibility=visibility,
+                    file_path=file_path,
+                    document_type=document_type or 'other',
+                    lifecycle_stage=lifecycle_stage,
+                    published_path=published_path
+                )
+
+                if not is_valid:
+                    # Prefix each violation with document ID and title
+                    for violation in doc_violations:
+                        violations.append(
+                            f"Document #{doc_id} ({title or file_path}): {violation}"
+                        )
+
+        except Exception as e:
+            violations.append(f"Error validating documents: {e}")
+
+        return len(violations) == 0, violations
+
     def validate_and_report(self) -> bool:
         """
         Run all validations and print report.
@@ -255,9 +451,20 @@ EOF
             for violation in agent_violations:
                 print(f"    - {violation}")
 
+        # Check 3: Validate document visibility rules
+        print("\n[3] Validating document visibility rules...")
+        is_valid_visibility, visibility_violations = self.validate_all_document_visibility()
+
+        if is_valid_visibility:
+            print("✅ PASS: All documents have valid visibility settings")
+        else:
+            print(f"❌ FAIL: Found {len(visibility_violations)} visibility violations")
+            for violation in visibility_violations:
+                print(f"    - {violation}")
+
         # Overall result
         print("\n" + "=" * 80)
-        overall_valid = is_valid_docs and is_valid_agents
+        overall_valid = is_valid_docs and is_valid_agents and is_valid_visibility
         if overall_valid:
             print("✅ VALIDATION PASSED: DOC-020 compliance verified")
         else:
@@ -266,6 +473,7 @@ EOF
             print("1. Delete orphaned files: rm <file>")
             print("2. Recreate using: apm document add ...")
             print("3. Update agent definitions to use apm document add")
+            print("4. Fix visibility violations: apm document update <id> --visibility=<value>")
         print("=" * 80)
 
         return overall_valid

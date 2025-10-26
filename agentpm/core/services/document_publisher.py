@@ -782,3 +782,31 @@ class DocumentPublisher:
 
         orphaned = [f for f in all_public_files if f not in known_paths]
         return orphaned
+
+    def list_unpublished_documents(self) -> List[DocumentReference]:
+        """
+        Get all documents that are approved and can be published.
+
+        Returns documents that are:
+        - In APPROVED lifecycle stage
+        - Have PUBLIC visibility
+        - Are not yet published (no published_path or lifecycle != published)
+
+        Returns:
+            List of DocumentReference objects ready for publishing
+        """
+        # Query all documents
+        all_docs = doc_methods.list_document_references(self.db)
+
+        # Filter for publishable documents
+        unpublished = []
+        for doc in all_docs:
+            lifecycle = getattr(doc, 'lifecycle_stage', DocumentLifecycle.DRAFT.value)
+            visibility = getattr(doc, 'visibility', DocumentVisibility.PRIVATE.value)
+
+            # Must be approved and public to be publishable
+            if (lifecycle == DocumentLifecycle.APPROVED.value and
+                visibility == DocumentVisibility.PUBLIC.value):
+                unpublished.append(doc)
+
+        return unpublished
