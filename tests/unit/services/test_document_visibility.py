@@ -82,7 +82,7 @@ def engine(db):
 
 @pytest.fixture
 def sample_policy():
-    """Sample visibility policy for testing (using unique category/type to avoid conflicts)"""
+    """Sample visibility policy for testing (uses test_* to avoid conflicts with default policies)"""
     return VisibilityPolicy(
         category="test_category",
         doc_type="test_type",
@@ -198,8 +198,8 @@ class TestVisibilityPolicyAdapter:
         created = VisibilityPolicyAdapter.create(db, sample_policy)
 
         assert created.id is not None
-        assert created.category == "planning"
-        assert created.doc_type == "idea"
+        assert created.category == "test_category"
+        assert created.doc_type == "test_type"
         assert created.base_score == 20
         assert created.force_private is True
 
@@ -220,40 +220,44 @@ class TestVisibilityPolicyAdapter:
     def test_get_by_type(self, db, sample_policy):
         """Test getting policy by category and doc_type"""
         VisibilityPolicyAdapter.create(db, sample_policy)
-        fetched = VisibilityPolicyAdapter.get_by_type(db, "planning", "idea")
+        fetched = VisibilityPolicyAdapter.get_by_type(db, "test_category", "test_type")
 
         assert fetched is not None
-        assert fetched.category == "planning"
-        assert fetched.doc_type == "idea"
+        assert fetched.category == "test_category"
+        assert fetched.doc_type == "test_type"
 
     def test_list_policies(self, db, sample_policy):
         """Test listing all policies"""
+        # Get initial count (default policies from migration)
+        initial_policies = VisibilityPolicyAdapter.list(db)
+        initial_count = len(initial_policies)
+
         VisibilityPolicyAdapter.create(db, sample_policy)
 
         policy2 = VisibilityPolicy(
-            category="architecture",
-            doc_type="adr",
+            category="test_category2",
+            doc_type="test_type2",
             base_score=65
         )
         VisibilityPolicyAdapter.create(db, policy2)
 
         policies = VisibilityPolicyAdapter.list(db)
-        assert len(policies) == 2
+        assert len(policies) == initial_count + 2
 
     def test_list_policies_by_category(self, db, sample_policy):
         """Test listing policies filtered by category"""
         VisibilityPolicyAdapter.create(db, sample_policy)
 
         policy2 = VisibilityPolicy(
-            category="architecture",
-            doc_type="adr",
+            category="test_category2",
+            doc_type="test_type2",
             base_score=65
         )
         VisibilityPolicyAdapter.create(db, policy2)
 
-        planning_policies = VisibilityPolicyAdapter.list(db, category="planning")
-        assert len(planning_policies) == 1
-        assert planning_policies[0].category == "planning"
+        test_policies = VisibilityPolicyAdapter.list(db, category="test_category")
+        assert len(test_policies) == 1
+        assert test_policies[0].category == "test_category"
 
     def test_update_policy(self, db, sample_policy):
         """Test updating policy"""
@@ -347,15 +351,16 @@ class TestVisibilityDetermination:
 
     def test_force_private_override(self, db, engine):
         """Test force_private overrides scoring"""
+        # Use test_* to avoid conflicts with default policies
         policy = VisibilityPolicy(
-            category="planning",
-            doc_type="idea",
+            category="test_force",
+            doc_type="test_private",
             base_score=90,  # High score
             force_private=True
         )
         VisibilityPolicyAdapter.create(db, policy)
 
-        result = engine.determine_visibility("planning", "idea", "approved")
+        result = engine.determine_visibility("test_force", "test_private", "approved")
 
         assert result.visibility == "private"
         assert result.final_score == 0
@@ -363,15 +368,16 @@ class TestVisibilityDetermination:
 
     def test_force_public_override(self, db, engine):
         """Test force_public overrides scoring when approved"""
+        # Use test_* to avoid conflicts with default policies
         policy = VisibilityPolicy(
-            category="guides",
-            doc_type="user_guide",
+            category="test_force",
+            doc_type="test_public",
             base_score=20,  # Low score
             force_public=True
         )
         VisibilityPolicyAdapter.create(db, policy)
 
-        result = engine.determine_visibility("guides", "user_guide", "approved")
+        result = engine.determine_visibility("test_force", "test_public", "approved")
 
         assert result.visibility == "public"
         assert result.final_score == 100
@@ -379,30 +385,32 @@ class TestVisibilityDetermination:
 
     def test_draft_lifecycle_override(self, db, engine):
         """Test draft lifecycle always private"""
+        # Use test_* to avoid conflicts with default policies
         policy = VisibilityPolicy(
-            category="guides",
-            doc_type="user_guide",
+            category="test_lifecycle",
+            doc_type="test_draft",
             base_score=90,
             force_public=True
         )
         VisibilityPolicyAdapter.create(db, policy)
 
-        result = engine.determine_visibility("guides", "user_guide", "draft")
+        result = engine.determine_visibility("test_lifecycle", "test_draft", "draft")
 
         assert result.visibility == "private"
         assert "draft" in result.rationale.lower()
 
     def test_archived_lifecycle_override(self, db, engine):
         """Test archived lifecycle always private"""
+        # Use test_* to avoid conflicts with default policies
         policy = VisibilityPolicy(
-            category="guides",
-            doc_type="user_guide",
+            category="test_lifecycle",
+            doc_type="test_archived",
             base_score=90,
             force_public=True
         )
         VisibilityPolicyAdapter.create(db, policy)
 
-        result = engine.determine_visibility("guides", "user_guide", "archived")
+        result = engine.determine_visibility("test_lifecycle", "test_archived", "archived")
 
         assert result.visibility == "private"
         assert "archived" in result.rationale.lower()
@@ -444,6 +452,53 @@ class TestVisibilityDetermination:
         assert result.visibility == "private"
         assert result.base_score == 50  # Default
 
+    def test_audience_team_threshold(self, db):
+        """Test audience 'team' for scores 30-49"""
+        policy = VisibilityPolicy(category="test_audience", doc_type="test_team", base_score=50)
+        VisibilityPolicyAdapter.create(db, policy)
+
+        engine = VisibilityPolicyEngine(db)
+        engine.project_context.team_size = "solo"  # -20
+        engine.project_context.dev_stage = "development"  # -10
+        engine.project_context.collaboration_model = "internal"  # 0
+        # Base 50 - 20 - 10 + 0 (review) = 20, but we want 30-49 range
+        # Adjust base score to hit that range
+        policy2 = VisibilityPolicy(category="test_audience2", doc_type="test_team2", base_score=60)
+        VisibilityPolicyAdapter.create(db, policy2)
+
+        result = engine.determine_visibility("test_audience2", "test_team2", "review")
+        # Base 60 - 20 - 10 = 30 → team audience
+        assert result.audience == "team"
+
+    def test_audience_users_threshold(self, db):
+        """Test audience 'users' for scores 70-84"""
+        policy = VisibilityPolicy(category="test_audience", doc_type="test_users", base_score=70)
+        VisibilityPolicyAdapter.create(db, policy)
+
+        engine = VisibilityPolicyEngine(db)
+        engine.project_context.team_size = "medium"  # +10
+        engine.project_context.dev_stage = "staging"  # 0
+        engine.project_context.collaboration_model = "internal"  # 0
+        # Base 70 + 10 + 0 + 0 (review) = 80 → users audience
+
+        result = engine.determine_visibility("test_audience", "test_users", "review")
+        assert result.audience == "users"
+
+    def test_rationale_includes_policy_rationale(self, db, engine):
+        """Test that policy rationale is included in evaluation rationale"""
+        policy = VisibilityPolicy(
+            category="test_rationale",
+            doc_type="test_doc",
+            base_score=50,
+            rationale="This is a custom policy rationale for testing"
+        )
+        VisibilityPolicyAdapter.create(db, policy)
+
+        result = engine.determine_visibility("test_rationale", "test_doc", "review")
+
+        assert "Policy rationale" in result.rationale
+        assert "custom policy rationale" in result.rationale
+
 
 # ============================================================================
 # SERVICE TESTS - AUTO-PUBLISH
@@ -454,39 +509,38 @@ class TestAutoPublish:
 
     def test_auto_publish_on_approved(self, db, engine):
         """Test on_approved trigger"""
+        # Use test_* to avoid conflicts, but set auto_publish_on_approved=True
         policy = VisibilityPolicy(
-            category="guides",
-            doc_type="user_guide",
+            category="test_auto",
+            doc_type="test_approved",
             auto_publish_on_approved=True
         )
         VisibilityPolicyAdapter.create(db, policy)
 
-        result = engine.should_auto_publish("guides", "user_guide", "approved")
+        result = engine.should_auto_publish("test_auto", "test_approved", "approved")
 
         assert result.should_publish is True
         assert result.trigger_type == "on_approved"
 
     def test_auto_publish_already_published(self, db, engine):
         """Test already published returns False"""
+        # Use test_* to avoid conflicts
         policy = VisibilityPolicy(
-            category="guides",
-            doc_type="user_guide",
+            category="test_auto",
+            doc_type="test_published",
             auto_publish_on_approved=True
         )
         VisibilityPolicyAdapter.create(db, policy)
 
-        result = engine.should_auto_publish("guides", "user_guide", "published")
+        result = engine.should_auto_publish("test_auto", "test_published", "published")
 
         assert result.should_publish is False
         assert "already published" in result.trigger_reason
 
     def test_auto_publish_on_work_item_phase_R1(self, db, engine):
-        """Test on_work_item_phase_R1 trigger"""
-        policy = VisibilityPolicy(
-            category="architecture",
-            doc_type="design_doc"
-        )
-        VisibilityPolicyAdapter.create(db, policy)
+        """Test on_work_item_phase_R1 trigger - uses default policy from migration"""
+        # architecture.design_doc is in AUTO_PUBLISH_ON_WORK_ITEM_PHASE_R1 list
+        # It already exists from migration, so we just test against it directly
 
         result = engine.should_auto_publish(
             "architecture", "design_doc", "approved", work_item_phase="R1_REVIEW"
@@ -496,12 +550,9 @@ class TestAutoPublish:
         assert result.trigger_type == "on_work_item_phase_R1"
 
     def test_auto_publish_on_work_item_phase_O1(self, db, engine):
-        """Test on_work_item_phase_O1 trigger"""
-        policy = VisibilityPolicy(
-            category="architecture",
-            doc_type="adr"
-        )
-        VisibilityPolicyAdapter.create(db, policy)
+        """Test on_work_item_phase_O1 trigger - uses default policy from migration"""
+        # architecture.adr is in AUTO_PUBLISH_ON_WORK_ITEM_PHASE_O1 list
+        # It already exists from migration, so we just test against it directly
 
         result = engine.should_auto_publish(
             "architecture", "adr", "approved", work_item_phase="O1_OPERATIONS"
@@ -512,14 +563,15 @@ class TestAutoPublish:
 
     def test_manual_publish_required(self, db, engine):
         """Test manual publish required (no triggers)"""
+        # Use test_* to avoid conflicts
         policy = VisibilityPolicy(
-            category="planning",
-            doc_type="idea",
+            category="test_manual",
+            doc_type="test_no_auto",
             auto_publish_on_approved=False
         )
         VisibilityPolicyAdapter.create(db, policy)
 
-        result = engine.should_auto_publish("planning", "idea", "approved")
+        result = engine.should_auto_publish("test_manual", "test_no_auto", "approved")
 
         assert result.should_publish is False
         assert "manual publish required" in result.trigger_reason
@@ -533,16 +585,9 @@ class TestEndToEnd:
     """Test complete visibility evaluation workflows"""
 
     def test_user_guide_workflow(self, db, engine):
-        """Test user guide: force_public, auto-publish on approved"""
-        policy = VisibilityPolicy(
-            category="guides",
-            doc_type="user_guide",
-            base_score=90,
-            force_public=True,
-            auto_publish_on_approved=True,
-            requires_review=True
-        )
-        VisibilityPolicyAdapter.create(db, policy)
+        """Test user guide: force_public, auto-publish on approved - uses default policy"""
+        # guides.user_guide already exists from migration with force_public=True
+        # No need to create policy, just test against default
 
         # Draft → private
         result_draft = engine.determine_visibility("guides", "user_guide", "draft")
@@ -558,15 +603,9 @@ class TestEndToEnd:
         assert auto_publish.should_publish is True
 
     def test_idea_workflow(self, db, engine):
-        """Test idea: force_private, never auto-publish"""
-        policy = VisibilityPolicy(
-            category="planning",
-            doc_type="idea",
-            base_score=20,
-            force_private=True,
-            auto_publish_on_approved=False
-        )
-        VisibilityPolicyAdapter.create(db, policy)
+        """Test idea: force_private, never auto-publish - uses default policy"""
+        # planning.idea already exists from migration with force_private=True
+        # No need to create policy, just test against default
 
         # Draft → private
         result_draft = engine.determine_visibility("planning", "idea", "draft")
@@ -581,16 +620,9 @@ class TestEndToEnd:
         assert auto_publish.should_publish is False
 
     def test_adr_workflow(self, db):
-        """Test ADR: context-aware, auto-publish on O1"""
-        policy = VisibilityPolicy(
-            category="architecture",
-            doc_type="adr",
-            base_score=65,
-            force_private=False,
-            force_public=False,
-            auto_publish_on_approved=False
-        )
-        VisibilityPolicyAdapter.create(db, policy)
+        """Test ADR: context-aware, auto-publish on O1 - uses default policy"""
+        # architecture.adr already exists from migration with base_score=65
+        # No need to create policy, just test against default
 
         # Open source production context → high score
         engine_public = VisibilityPolicyEngine(db)

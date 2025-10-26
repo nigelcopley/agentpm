@@ -684,3 +684,80 @@ class TestEdgeCases:
         result = generator.slugify("Test Тест تست")
         assert "test" in result
         # Cyrillic and Arabic won't transliterate, so we just get "test"
+
+    def test_truncation_at_word_boundary_edge_case(self, generator):
+        """Test truncation when last hyphen is very close to max length."""
+        # Create a title that truncates close to 75% of max_length
+        long_title = "a" * 80 + "-b" * 20  # Forces truncation past 75% threshold
+        result = generator.slugify(long_title, max_length=100)
+
+        # Should be truncated
+        assert len(result) <= 100
+
+    def test_entity_type_enum_conversion_in_conflict_resolution(self, generator, mock_db):
+        """Test EntityType enum handling in resolve_conflicts."""
+        with patch('agentpm.core.database.methods.document_references.get_document_by_path') as mock_get:
+            # Test with EntityType enum directly
+            mock_get.return_value = None
+
+            path = Path("docs/planning/requirements/test.md")
+            result = generator.resolve_conflicts(path, EntityType.WORK_ITEM, 158)
+
+            assert result == path
+
+    def test_move_file_target_already_exists(self, generator, tmp_path):
+        """Test move operation when target file already exists."""
+        # Create source and target files
+        from_path = tmp_path / "old" / "doc.md"
+        from_path.parent.mkdir(parents=True, exist_ok=True)
+        from_path.write_text("source content")
+
+        to_path = tmp_path / "new" / "doc.md"
+        to_path.parent.mkdir(parents=True, exist_ok=True)
+        to_path.write_text("target content")
+
+        result = GeneratedPathResult(
+            final_path=str(to_path),
+            filename="doc.md",
+            directory=str(to_path.parent),
+            was_corrected=True,
+            original_path=str(from_path),
+            correction_reason="Test move",
+            needs_move=True,
+            move_from=str(from_path),
+            is_valid=True,
+            validation_errors=[]
+        )
+
+        with pytest.raises(FileExistsError) as exc_info:
+            generator.move_file_to_correct_location(result)
+
+        assert "target already exists" in str(exc_info.value).lower()
+
+    def test_move_file_os_error(self, generator, tmp_path):
+        """Test move operation with OS error."""
+        # Create source file
+        from_path = tmp_path / "old" / "doc.md"
+        from_path.parent.mkdir(parents=True, exist_ok=True)
+        from_path.write_text("test content")
+
+        # Create result
+        result = GeneratedPathResult(
+            final_path=str(tmp_path / "new" / "doc.md"),
+            filename="doc.md",
+            directory=str(tmp_path / "new"),
+            was_corrected=True,
+            original_path=str(from_path),
+            correction_reason="Test move",
+            needs_move=True,
+            move_from=str(from_path),
+            is_valid=True,
+            validation_errors=[]
+        )
+
+        # Mock shutil.move to raise OSError
+        with patch('shutil.move', side_effect=OSError("Permission denied")):
+            with pytest.raises(OSError) as exc_info:
+                generator.move_file_to_correct_location(result)
+
+            assert "Permission denied" in str(exc_info.value)
