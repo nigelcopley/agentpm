@@ -206,6 +206,276 @@ document.addEventListener('alpine:init', () => {
                 </div>
             </div>
             {% endif %}
+
+            <!-- Comprehensive Context -->
+            {% if context_payload %}
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Comprehensive Context</h2>
+                
+                <!-- Context Quality Metrics -->
+                <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+                    <h3 class="text-sm font-medium text-gray-900 mb-3">Context Quality</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {% if context_payload.quality_metrics %}
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-blue-600">
+                                {{ (context_payload.quality_metrics.confidence_score * 100)|round(1) }}%
+                            </div>
+                            <div class="text-xs text-gray-600">Confidence</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-green-600">
+                                {{ (context_payload.quality_metrics.completeness_score * 100)|round(1) }}%
+                            </div>
+                            <div class="text-xs text-gray-600">Completeness</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-purple-600">
+                                {{ context_payload.quality_metrics.freshness_score.age_hours|round(1) }}h
+                            </div>
+                            <div class="text-xs text-gray-600">Age</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Hierarchical 6W Context -->
+                {% if context_payload.six_w %}
+                <div class="mb-6">
+                    <h3 class="text-sm font-medium text-gray-900 mb-3">6W Context (What, Who, When, Where, Why, How)</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {% if context_payload.six_w.what %}
+                        <div class="p-3 bg-blue-50 rounded-lg">
+                            <h4 class="text-xs font-medium text-blue-900 mb-1">What</h4>
+                            <p class="text-sm text-blue-800">{{ context_payload.six_w.what }}</p>
+                        </div>
+                        {% endif %}
+                        {% if context_payload.six_w.who %}
+                        <div class="p-3 bg-green-50 rounded-lg">
+                            <h4 class="text-xs font-medium text-green-900 mb-1">Who</h4>
+                            <p class="text-sm text-green-800">{{ context_payload.six_w.who }}</p>
+                        </div>
+                        {% endif %}
+                        {% if context_payload.six_w.when %}
+                        <div class="p-3 bg-yellow-50 rounded-lg">
+                            <h4 class="text-xs font-medium text-yellow-900 mb-1">When</h4>
+                            <p class="text-sm text-yellow-800">{{ context_payload.six_w.when }}</p>
+                        </div>
+                        {% endif %}
+                        {% if context_payload.six_w.where %}
+                        <div class="p-3 bg-purple-50 rounded-lg">
+                            <h4 class="text-xs font-medium text-purple-900 mb-1">Where</h4>
+                            <p class="text-sm text-purple-800">{{ context_payload.six_w.where }}</p>
+                        </div>
+                        {% endif %}
+                        {% if context_payload.six_w.why %}
+                        <div class="p-3 bg-red-50 rounded-lg">
+                            <h4 class="text-xs font-medium text-red-900 mb-1">Why</h4>
+                            <p class="text-sm text-red-800">{{ context_payload.six_w.why }}</p>
+                        </div>
+                        {% endif %}
+                        {% if context_payload.six_w.how %}
+                        <div class="p-3 bg-indigo-50 rounded-lg">
+                            <h4 class="text-xs font-medium text-indigo-900 mb-1">How</h4>
+                            <p class="text-sm text-indigo-800">{{ context_payload.six_w.how }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Supporting Context -->
+                {% if context_payload.documents or context_payload.evidence or context_payload.recent_events %}
+                <div class="mb-6">
+                    <h3 class="text-sm font-medium text-gray-900 mb-3">Supporting Context</h3>
+                    <div class="space-y-3">
+                        {% if context_payload.documents %}
+                        <div class="flex items-center space-x-2 p-2 bg-blue-50 rounded">
+                            <i class="bi bi-file-text text-blue-600"></i>
+                            <span class="text-sm text-blue-800">{{ context_payload.documents|length }} documents</span>
+                        </div>
+                        {% endif %}
+                        {% if context_payload.evidence %}
+                        <div class="flex items-center space-x-2 p-2 bg-green-50 rounded">
+                            <i class="bi bi-clipboard-check text-green-600"></i>
+                            <span class="text-sm text-green-800">{{ context_payload.evidence|length }} evidence sources</span>
+                        </div>
+                        {% endif %}
+                        {% if context_payload.recent_events %}
+                        <div class="flex items-center space-x-2 p-2 bg-yellow-50 rounded">
+                            <i class="bi bi-clock-history text-yellow-600"></i>
+                            <span class="text-sm text-yellow-800">{{ context_payload.recent_events|length }} recent events</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Code Context -->
+                {% if context_payload.plugin_facts or context_payload.amalgamations %}
+                <div class="mb-6">
+                    <h3 class="text-sm font-medium text-gray-900 mb-3">Code Context</h3>
+                    <div class="space-y-3">
+                        {% if context_payload.plugin_facts %}
+                        <div class="flex items-center space-x-2 p-2 bg-purple-50 rounded">
+                            <i class="bi bi-code-slash text-purple-600"></i>
+                            <span class="text-sm text-purple-800">{{ context_payload.plugin_facts|length }} plugin facts</span>
+                        </div>
+                        {% endif %}
+                        {% if context_payload.amalgamations %}
+                        <div class="flex items-center space-x-2 p-2 bg-indigo-50 rounded">
+                            <i class="bi bi-files text-indigo-600"></i>
+                            <span class="text-sm text-indigo-800">{{ context_payload.amalgamations|length }} code files</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Task Contexts -->
+            {% if task_contexts %}
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Task Contexts</h2>
+                <div class="space-y-4">
+                    {% for context in task_contexts %}
+                    <a href="{{ url_for('context.context_detail', context_id=context.id) }}" 
+                       class="block p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-sm font-medium text-gray-900">{{ context.context_type|replace('_', ' ')|title }}</h3>
+                            {% if context.confidence_score %}
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                                {% if context.confidence_score >= 0.8 %}bg-green-100 text-green-800
+                                {% elif context.confidence_score >= 0.6 %}bg-yellow-100 text-yellow-800
+                                {% else %}bg-red-100 text-red-800{% endif %}">
+                                {{ (context.confidence_score * 100)|round(1) }}% confidence
+                            </span>
+                            {% endif %}
+                        </div>
+                        {% if context.context_data %}
+                        <div class="prose max-w-none text-sm">
+                            <div class="text-gray-700">{{ context.context_data|markdown }}</div>
+                        </div>
+                        {% endif %}
+                        <div class="mt-2 text-xs text-gray-500">
+                            Created: {{ context.created_at.strftime('%Y-%m-%d %H:%M') if context.created_at else 'Unknown' }}
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Documents Section -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900">Documents</h2>
+                    <a href="{{ url_for('documents.create_document') }}" 
+                       class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+                        <i class="bi bi-plus mr-2"></i>Add Document
+                    </a>
+                </div>
+                
+                {% if task_documents %}
+                <!-- Documents by Type -->
+                {% for doc_type, docs in documents_by_type.items() %}
+                <div class="mb-6">
+                    <h3 class="text-sm font-medium text-gray-900 mb-3">{{ doc_type|replace('_', ' ')|title }} Documents ({{ docs|length }})</h3>
+                    <div class="space-y-3">
+                        {% for doc in docs %}
+                        <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all">
+                            <div class="flex items-center space-x-3">
+                                <div class="flex-shrink-0">
+                                    {% if doc.format and doc.format.value == 'markdown' %}
+                                        <i class="bi bi-file-text text-blue-600"></i>
+                                    {% elif doc.format and doc.format.value == 'html' %}
+                                        <i class="bi bi-file-code text-green-600"></i>
+                                    {% elif doc.format and doc.format.value == 'pdf' %}
+                                        <i class="bi bi-file-pdf text-red-600"></i>
+                                    {% else %}
+                                        <i class="bi bi-file text-gray-600"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="text-sm font-medium text-gray-900">{{ doc.title or doc.filename }}</h4>
+                                    {% if doc.description %}
+                                    <p class="text-xs text-gray-500">{{ doc.description|truncate(100) }}</p>
+                                    {% endif %}
+                                    <div class="flex items-center space-x-4 text-xs text-gray-500 mt-1">
+                                        <span>{{ doc.file_path }}</span>
+                                        {% if doc.file_size_bytes %}
+                                        <span>{{ (doc.file_size_bytes / 1024)|round(1) }} KB</span>
+                                        {% endif %}
+                                        {% if doc.maturity %}
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium
+                                            {% if doc.maturity == 'approved' %}bg-green-100 text-green-800
+                                            {% elif doc.maturity == 'review' %}bg-yellow-100 text-yellow-800
+                                            {% elif doc.maturity == 'draft' %}bg-gray-100 text-gray-800
+                                            {% else %}bg-blue-100 text-blue-800{% endif %}">
+                                            {{ doc.maturity|title }}
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <a href="{{ url_for('documents.document_detail', document_id=doc.id) }}" 
+                                   class="px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition-colors">
+                                    <i class="bi bi-eye mr-1"></i>View
+                                </a>
+                                {% if doc.content %}
+                                <span class="px-2 py-1 text-xs font-medium text-green-600 bg-green-50 rounded">
+                                    <i class="bi bi-database mr-1"></i>Stored
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <!-- Documents by Category -->
+                {% if documents_by_category|length > 1 %}
+                <div class="mt-6">
+                    <h3 class="text-sm font-medium text-gray-900 mb-3">Documents by Category</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {% for category, docs in documents_by_category.items() %}
+                        <div class="p-3 border border-gray-200 rounded-lg">
+                            <h4 class="text-sm font-medium text-gray-900 mb-2">{{ category|title }}</h4>
+                            <p class="text-xs text-gray-500 mb-2">{{ docs|length }} documents</p>
+                            <div class="space-y-1">
+                                {% for doc in docs[:3] %}
+                                <div class="flex items-center space-x-2">
+                                    <i class="bi bi-file-text text-gray-400 text-xs"></i>
+                                    <span class="text-xs text-gray-600 truncate">{{ doc.title or doc.filename }}</span>
+                                </div>
+                                {% endfor %}
+                                {% if docs|length > 3 %}
+                                <p class="text-xs text-gray-400">+{{ docs|length - 3 }} more</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% else %}
+                <div class="text-center py-8">
+                    <div class="bg-gray-50 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                        <i class="bi bi-file-text text-2xl text-gray-400"></i>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">No documents yet</h3>
+                    <p class="text-gray-500 mb-4">Start by adding your first document to this task.</p>
+                    <a href="{{ url_for('documents.create_document') }}" 
+                       class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+                        <i class="bi bi-plus mr-2"></i>Add First Document
+                    </a>
+                </div>
+                {% endif %}
+            </div>
         </div>
 
         <!-- Sidebar -->

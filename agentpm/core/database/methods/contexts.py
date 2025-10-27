@@ -417,6 +417,150 @@ def update_rich_context(
     )
 
 
+def get_all_contexts_by_entity(
+    service,
+    entity_type: EntityType,
+    entity_id: int,
+    context_types: Optional[List[ContextType]] = None
+) -> List[Context]:
+    """
+    Get ALL contexts for an entity (including those without context_data).
+    
+    Unlike get_rich_contexts_by_entity, this method returns all contexts
+    regardless of whether they have context_data or not.
+    
+    Args:
+        service: DatabaseService instance
+        entity_type: Type of entity
+        entity_id: ID of the entity
+        context_types: Optional list of context types to filter by
+        
+    Returns:
+        List of Context models (including those without context_data)
+    """
+    # Build query
+    if context_types:
+        placeholders = ', '.join('?' * len(context_types))
+        query = f"""
+            SELECT * FROM contexts
+            WHERE entity_type = ? AND entity_id = ? 
+            AND context_type IN ({placeholders})
+        """
+        params = (entity_type.value, entity_id) + tuple(ct.value for ct in context_types)
+    else:
+        query = """
+            SELECT * FROM contexts
+            WHERE entity_type = ? AND entity_id = ?
+        """
+        params = (entity_type.value, entity_id)
+    
+    with service.transaction() as conn:
+        cursor = conn.execute(query, params)
+        rows = cursor.fetchall()
+    
+    return [ContextAdapter.from_db(dict(row)) for row in rows]
+
+
+def get_all_contexts_by_entity_ids(
+    service,
+    entity_type: EntityType,
+    entity_ids: List[int],
+    context_types: Optional[List[ContextType]] = None
+) -> List[Context]:
+    """
+    Get ALL contexts for multiple entities of the same type (including those without context_data).
+    
+    Efficiently retrieves all contexts for multiple entities using SQL IN clause.
+    
+    Args:
+        service: DatabaseService instance
+        entity_type: Type of entity
+        entity_ids: List of entity IDs
+        context_types: Optional list of context types to filter by
+        
+    Returns:
+        List of Context models (including those without context_data)
+    """
+    if not entity_ids:
+        return []
+    
+    # Create placeholders for IN clause
+    placeholders = ','.join(['?' for _ in entity_ids])
+    
+    # Build query
+    if context_types:
+        context_placeholders = ', '.join('?' * len(context_types))
+        query = f"""
+            SELECT * FROM contexts
+            WHERE entity_type = ? AND entity_id IN ({placeholders})
+            AND context_type IN ({context_placeholders})
+        """
+        params = (entity_type.value,) + tuple(entity_ids) + tuple(ct.value for ct in context_types)
+    else:
+        query = f"""
+            SELECT * FROM contexts
+            WHERE entity_type = ? AND entity_id IN ({placeholders})
+        """
+        params = (entity_type.value,) + tuple(entity_ids)
+    
+    with service.transaction() as conn:
+        cursor = conn.execute(query, params)
+        rows = cursor.fetchall()
+    
+    return [ContextAdapter.from_db(dict(row)) for row in rows]
+
+
+def get_rich_contexts_by_entity_ids(
+    service,
+    entity_type: EntityType,
+    entity_ids: List[int],
+    context_types: Optional[List[ContextType]] = None
+) -> List[Context]:
+    """
+    Get all rich contexts for multiple entities of the same type.
+    
+    Efficiently retrieves contexts for multiple entities using SQL IN clause.
+    
+    Args:
+        service: DatabaseService instance
+        entity_type: Type of entity
+        entity_ids: List of entity IDs
+        context_types: Optional list of context types to filter by
+        
+    Returns:
+        List of Context models with rich context data
+    """
+    if not entity_ids:
+        return []
+    
+    # Create placeholders for IN clause
+    placeholders = ','.join(['?' for _ in entity_ids])
+    
+    # Build query
+    if context_types:
+        context_placeholders = ', '.join('?' * len(context_types))
+        query = f"""
+            SELECT * FROM contexts
+            WHERE entity_type = ? AND entity_id IN ({placeholders})
+            AND context_type IN ({context_placeholders})
+            AND context_data IS NOT NULL
+        """
+        params = (entity_type.value,) + tuple(entity_ids) + tuple(ct.value for ct in context_types)
+    else:
+        query = f"""
+            SELECT * FROM contexts
+            WHERE entity_type = ? AND entity_id IN ({placeholders})
+            AND context_data IS NOT NULL
+        """
+        params = (entity_type.value,) + tuple(entity_ids)
+    
+    with service.transaction() as conn:
+        cursor = conn.execute(query, params)
+        rows = cursor.fetchall()
+    
+    return [ContextAdapter.from_db(dict(row)) for row in rows]
+
+
 def get_rich_contexts_by_entity(
     service,
     entity_type: EntityType,

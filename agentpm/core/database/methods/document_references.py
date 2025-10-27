@@ -255,6 +255,56 @@ def delete_document_reference(service, doc_id: int) -> bool:
         return cursor.rowcount > 0
 
 
+def get_documents_by_entity_ids(
+    service,
+    entity_type: EntityType,
+    entity_ids: List[int],
+    document_type: Optional[DocumentType] = None
+) -> List[DocumentReference]:
+    """
+    Get all documents for multiple entities of the same type.
+    
+    Efficiently retrieves documents for multiple entities using SQL IN clause.
+    
+    Args:
+        service: DatabaseService instance
+        entity_type: Entity type (project, work_item, task)
+        entity_ids: List of entity IDs
+        document_type: Optional filter by document type
+        
+    Returns:
+        List of DocumentReference models sorted by creation time (newest first)
+        
+    Example:
+        >>> # Get all documents for tasks 1, 2, 3
+        >>> docs = get_documents_by_entity_ids(db, EntityType.TASK, [1, 2, 3])
+        >>> # Get only design documents for work items 10, 20, 30
+        >>> design_docs = get_documents_by_entity_ids(
+        ...     db, EntityType.WORK_ITEM, [10, 20, 30], DocumentType.DESIGN
+        ... )
+    """
+    if not entity_ids:
+        return []
+    
+    # Create placeholders for IN clause
+    placeholders = ','.join(['?' for _ in entity_ids])
+    query = f"SELECT * FROM document_references WHERE entity_type = ? AND entity_id IN ({placeholders})"
+    params = [entity_type.value] + entity_ids
+    
+    if document_type:
+        query += " AND document_type = ?"
+        params.append(document_type.value)
+    
+    query += " ORDER BY created_at DESC"
+    
+    with service.connect() as conn:
+        conn.row_factory = sqlite3.Row
+        cursor = conn.execute(query, tuple(params))
+        rows = cursor.fetchall()
+    
+    return [DocumentReferenceAdapter.from_db(dict(row)) for row in rows]
+
+
 def get_documents_by_entity(
     service,
     entity_type: EntityType,
