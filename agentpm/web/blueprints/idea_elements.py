@@ -4,40 +4,28 @@ Idea Elements Blueprint for APM (Agent Project Manager) Web Application
 Handles idea element management functionality.
 """
 
-from flask import Blueprint, request, jsonify
 import logging
 from datetime import datetime
+from typing import Optional, Dict, Any
+
+from flask import Blueprint, request, jsonify
+
+from ...core.database.service import DatabaseService
+from ...core.database.models.idea_element import IdeaElement
+from ...core.database.enums import TaskType
+from ...core.database.adapters.idea_element_adapter import IdeaElementAdapter
+from .utils import get_database_service
 
 # Create idea elements blueprint
 idea_elements_bp = Blueprint('idea_elements', __name__, url_prefix='/idea-elements')
 
 logger = logging.getLogger(__name__)
 
-def get_database_service():
-    """Get database service instance"""
-    from ...core.database.service import DatabaseService
-    import os
-    
-    # Try different database paths
-    db_paths = [
-        '.agentpm/data/agentpm.db',
-        '../.agentpm/data/agentpm.db',
-        '../../.agentpm/data/agentpm.db'
-    ]
-    
-    for db_path in db_paths:
-        if os.path.exists(db_path):
-            return DatabaseService(db_path)
-    
-    # If no database found, return service with default path
-    return DatabaseService('.agentpm/data/agentpm.db')
-
 @idea_elements_bp.route('/<int:element_id>', methods=['GET'])
 def get_idea_element(element_id: int):
-    """Get a specific idea element"""
+    """Get a specific idea element."""
     try:
         db = get_database_service()
-        from ...core.database.adapters.idea_element_adapter import IdeaElementAdapter
         
         # Get element
         element = IdeaElementAdapter.get(db, element_id)

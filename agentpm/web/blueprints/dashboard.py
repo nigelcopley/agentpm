@@ -4,44 +4,29 @@ Dashboard Blueprint for APM (Agent Project Manager) Web Application
 Main dashboard and project overview functionality.
 """
 
-from flask import Blueprint, render_template, redirect, url_for
 import logging
+from typing import Optional, Dict, Any, List
+
+from flask import Blueprint, render_template, redirect, url_for, request, jsonify
+
+from ...core.database.service import DatabaseService
+from ...core.database.models import Context
+from ...core.database.methods import (
+    projects, work_items, tasks, agents, ideas, contexts, 
+    rules, evidence_sources, events, document_references
+)
+from ...core.database.enums import EntityType, ContextType, WorkItemStatus, TaskStatus, IdeaStatus
+from .utils import get_database_service
 
 # Create dashboard blueprint
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='')
 
 logger = logging.getLogger(__name__)
 
-def get_database_service():
-    """Get database service instance"""
-    from ...core.database.service import DatabaseService
-    import os
-    
-    # Try different database paths
-    db_paths = [
-        '.agentpm/data/agentpm.db',
-        '../.agentpm/data/agentpm.db',
-        '../../.agentpm/data/agentpm.db'
-    ]
-    
-    for db_path in db_paths:
-        if os.path.exists(db_path):
-            return DatabaseService(db_path)
-    
-    # If no database found, return service with default path
-    return DatabaseService('.agentpm/data/agentpm.db')
-
 @dashboard_bp.route('/')
 def dashboard_home():
-    """Dashboard home - comprehensive project portal with all project-level context"""
+    """Dashboard home - comprehensive project portal with all project-level context."""
     db = get_database_service()
-    
-    # Import database methods
-    from ...core.database.methods import (
-        projects, work_items, tasks, agents, ideas, contexts, 
-        rules, evidence_sources, events, document_references
-    )
-    from ...core.database.enums import EntityType, ContextType, WorkItemStatus, TaskStatus, IdeaStatus
     
     # Get project data
     projects_list = projects.list_projects(db) or []
@@ -210,12 +195,9 @@ def update_project_context():
     
     Allows updating project-level context information from the dashboard.
     """
-    from flask import request, jsonify
     
     try:
         db = get_database_service()
-        from ...core.database.methods import projects, contexts
-        from ...core.database.enums import EntityType, ContextType
         
         # Get project
         projects_list = projects.list_projects(db) or []
@@ -249,7 +231,6 @@ def update_project_context():
             )
         else:
             # Create new context
-            from ...core.database.models import Context
             new_context = Context(
                 entity_type=EntityType.PROJECT,
                 entity_id=project.id,
