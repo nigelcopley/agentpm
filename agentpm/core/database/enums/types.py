@@ -1143,6 +1143,54 @@ class AgentTier(int, Enum):
             raise ValueError(f"Invalid {cls.__name__}: '{value}'. Valid: {valid}")
 
 
+class AgentFunctionalCategory(str, Enum):
+    """
+    Agent functional category classification (WI-165: Tier to Functional Category refactor).
+
+    Replaces confusing tier system (1/2/3) with clear functional categories.
+    Categories reflect WHAT agents do, not hierarchical levels.
+
+    Categories:
+    - PLANNING: Orchestrators, planners, framers (define what to do)
+    - IMPLEMENTATION: Developers, implementers, builders (build features)
+    - TESTING: Test specialists, verifiers, quality analyzers (validate quality)
+    - DOCUMENTATION: Documentation writers, curators (create docs)
+    - UTILITIES: Support agents, helpers (enable other agents)
+
+    Migration: 0046
+    """
+    PLANNING = "planning"
+    IMPLEMENTATION = "implementation"
+    TESTING = "testing"
+    DOCUMENTATION = "documentation"
+    UTILITIES = "utilities"
+
+    @classmethod
+    def choices(cls) -> list[str]:
+        """Get all enum values for CLI/form dropdowns."""
+        return [item.value for item in cls]
+
+    @classmethod
+    def from_string(cls, value: str):
+        """Safe conversion from string with helpful error message."""
+        try:
+            return cls(value)
+        except ValueError:
+            valid = ", ".join(cls.choices())
+            raise ValueError(f"Invalid {cls.__name__}: '{value}'. Valid: {valid}")
+
+    @classmethod
+    def labels(cls) -> dict[str, str]:
+        """Human-readable labels for UI display."""
+        return {
+            cls.PLANNING.value: "Planning - Orchestrators, planners, framers (define what to do)",
+            cls.IMPLEMENTATION.value: "Implementation - Developers, implementers, builders (build features)",
+            cls.TESTING.value: "Testing - Test specialists, verifiers, quality analyzers (validate quality)",
+            cls.DOCUMENTATION.value: "Documentation - Documentation writers, curators (create docs)",
+            cls.UTILITIES.value: "Utilities - Support agents, helpers (enable other agents)",
+        }
+
+
 class LearningType(str, Enum):
     """
     Session learning categorization (ADR-003: Sub-Agent Communication).

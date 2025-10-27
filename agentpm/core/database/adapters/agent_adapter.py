@@ -13,7 +13,7 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime
 
 from ..models.agent import Agent
-from ..enums import AgentTier
+from ..enums import AgentTier, AgentFunctionalCategory
 
 
 class AgentAdapter:
@@ -91,7 +91,8 @@ class AgentAdapter:
     def list(
         service,
         project_id: Optional[int] = None,
-        active_only: bool = False
+        active_only: bool = False,
+        functional_category: Optional[AgentFunctionalCategory] = None
     ) -> List[Agent]:
         """
         List agents with optional filters (CLI entry point).
@@ -100,6 +101,7 @@ class AgentAdapter:
             service: DatabaseService instance
             project_id: Optional project filter
             active_only: If True, only return active agents
+            functional_category: Optional functional category filter (Migration 0046, WI-165)
 
         Returns:
             List of Agent models
@@ -108,7 +110,8 @@ class AgentAdapter:
         return agent_methods.list_agents(
             service,
             project_id=project_id,
-            active_only=active_only
+            active_only=active_only,
+            functional_category=functional_category
         )
 
     @staticmethod
@@ -218,6 +221,7 @@ class AgentAdapter:
         Convert Agent model to database row format.
 
         NEW (WI-009.3): Includes agent_type, file_path, generated_at
+        NEW (Migration 0046, WI-165): Includes functional_category
 
         Args:
             agent: Agent domain model
@@ -241,6 +245,8 @@ class AgentAdapter:
             'tier': agent.tier.value if agent.tier else None,
             'last_used_at': agent.last_used_at.isoformat() if agent.last_used_at else None,
             'metadata': agent.metadata or '{}',
+            # NEW (Migration 0046, WI-165): Functional category
+            'functional_category': agent.functional_category.value if agent.functional_category else None,
         }
 
     @staticmethod
@@ -249,6 +255,7 @@ class AgentAdapter:
         Convert database row to Agent model.
 
         NEW (WI-009.3): Parses agent_type, file_path, generated_at
+        NEW (Migration 0046, WI-165): Parses functional_category
 
         Args:
             row: Database row (dict-like from sqlite3.Row)
@@ -256,9 +263,13 @@ class AgentAdapter:
         Returns:
             Validated Agent model
         """
-        # Parse tier enum
+        # Parse tier enum (deprecated but maintained for backward compatibility)
         tier_value = row.get('tier')
         tier = AgentTier(tier_value) if tier_value else None
+
+        # Parse functional_category enum (NEW: Migration 0046)
+        functional_category_value = row.get('functional_category')
+        functional_category = AgentFunctionalCategory(functional_category_value) if functional_category_value else None
 
         return Agent(
             id=row.get('id'),
@@ -277,6 +288,8 @@ class AgentAdapter:
             tier=tier,
             last_used_at=_parse_datetime(row.get('last_used_at')),
             metadata=row.get('metadata', '{}'),
+            # NEW (Migration 0046, WI-165): Functional category
+            functional_category=functional_category,
             created_at=_parse_datetime(row.get('created_at')),
             updated_at=_parse_datetime(row.get('updated_at')),
         )

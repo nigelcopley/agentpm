@@ -27,6 +27,7 @@ class ProviderType(str, Enum):
     VSCODE = "vscode"
     ZED = "zed"
     CLAUDE_CODE = "claude_code"
+    CODEX = "codex"
 
 
 class InstallationStatus(str, Enum):

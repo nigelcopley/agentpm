@@ -41,6 +41,7 @@ from .types import (
     DocumentType,
     DocumentFormat,
     AgentTier,
+    AgentFunctionalCategory,
     SummaryType,
     SearchResultType,
     StorageMode,
@@ -93,6 +94,7 @@ __all__ = [
     "DocumentType",
     "DocumentFormat",
     "AgentTier",
+    "AgentFunctionalCategory",
     # Summary system enums
     "SummaryType",
     # Search system enums

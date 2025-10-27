@@ -18,6 +18,7 @@ import sqlite3
 
 from ..models import Agent
 from ..adapters import AgentAdapter
+from ..enums import AgentFunctionalCategory
 
 
 def create_agent(service, agent: Agent) -> Agent:
@@ -44,8 +45,39 @@ def create_agent(service, agent: Agent) -> Agent:
     # This allows the code to work with both base schema and migrated schema
     has_tier_columns = _check_columns_exist(service, 'agents', ['tier', 'last_used_at', 'metadata'])
 
-    if has_tier_columns:
-        # NEW (Migration 0011): Full schema with tier, last_used_at, metadata
+    # Check if migration 0046 column exists (functional_category)
+    has_functional_category = _check_columns_exist(service, 'agents', ['functional_category'])
+
+    if has_tier_columns and has_functional_category:
+        # NEW (Migration 0046): Full schema with tier + functional_category
+        query = """
+            INSERT INTO agents (project_id, role, display_name, description,
+                               sop_content, capabilities, is_active,
+                               agent_type, file_path, generated_at,
+                               tier, last_used_at, metadata, functional_category)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """
+        params = (
+            db_data['project_id'],
+            db_data['role'],
+            db_data['display_name'],
+            db_data['description'],
+            db_data['sop_content'],
+            db_data['capabilities'],
+            db_data['is_active'],
+            # NEW (WI-009.3): Generation tracking fields
+            db_data['agent_type'],
+            db_data['file_path'],
+            db_data['generated_at'],
+            # NEW (Migration 0011): Agent tier and usage tracking
+            db_data['tier'],
+            db_data['last_used_at'],
+            db_data['metadata'],
+            # NEW (Migration 0046, WI-165): Functional category
+            db_data['functional_category'],
+        )
+    elif has_tier_columns:
+        # Migration 0011 only (without functional_category)
         query = """
             INSERT INTO agents (project_id, role, display_name, description,
                                sop_content, capabilities, is_active,
@@ -71,7 +103,7 @@ def create_agent(service, agent: Agent) -> Agent:
             db_data['metadata'],
         )
     else:
-        # Base schema without migration 0011 columns
+        # Base schema without migrations
         query = """
             INSERT INTO agents (project_id, role, display_name, description,
                                sop_content, capabilities, is_active,
@@ -145,6 +177,13 @@ def update_agent(service, agent_id: int, **updates) -> Optional[Agent]:
         # Remove migration 0011 columns from update
         db_data = {k: v for k, v in db_data.items() if k not in ['tier', 'last_used_at', 'metadata']}
 
+    # Check if migration 0046 column exists (functional_category)
+    # Filter out if it doesn't exist in the schema
+    has_functional_category = _check_columns_exist(service, 'agents', ['functional_category'])
+    if not has_functional_category:
+        # Remove migration 0046 column from update
+        db_data = {k: v for k, v in db_data.items() if k not in ['functional_category']}
+
     set_clause = ', '.join(f"{k} = ?" for k in db_data.keys())
     query = f"UPDATE agents SET {set_clause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
     params = (*db_data.values(), agent_id)
@@ -164,7 +203,12 @@ def delete_agent(service, agent_id: int) -> bool:
         return cursor.rowcount > 0
 
 
-def list_agents(service, project_id: Optional[int] = None, active_only: bool = False) -> List[Agent]:
+def list_agents(
+    service,
+    project_id: Optional[int] = None,
+    active_only: bool = False,
+    functional_category: Optional[AgentFunctionalCategory] = None
+) -> List[Agent]:
     """
     List agents with optional filters.
 
@@ -172,6 +216,7 @@ def list_agents(service, project_id: Optional[int] = None, active_only: bool = F
         service: DatabaseService instance
         project_id: Optional project filter
         active_only: If True, only return active agents
+        functional_category: Optional functional category filter (Migration 0046, WI-165)
 
     Returns:
         List of Agent models
@@ -185,6 +230,11 @@ def list_agents(service, project_id: Optional[int] = None, active_only: bool = F
 
     if active_only:
         query += " AND is_active = 1"
+
+    # NEW (Migration 0046, WI-165): Filter by functional_category
+    if functional_category:
+        query += " AND functional_category = ?"
+        params.append(functional_category.value)
 
     query += " ORDER BY role ASC"
 

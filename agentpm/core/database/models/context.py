@@ -287,6 +287,72 @@ class Context(BaseModel):
             return ConfidenceBand.RED
         return ConfidenceBand.from_score(self.confidence_score)
 
+    # ========================================================================
+    # Unified Context Data Access Methods (WI-167)
+    # ========================================================================
+    
+    def get_business_context(self) -> Optional[str]:
+        """Get business context from unified context_data structure."""
+        if not self.context_data:
+            return None
+        return self.context_data.get('business_context')
+    
+    def set_business_context(self, business_context: str) -> None:
+        """Set business context in unified context_data structure."""
+        if not self.context_data:
+            self.context_data = {}
+        self.context_data['business_context'] = business_context
+    
+    def get_six_w_data(self) -> Optional[dict]:
+        """Get six_w data from unified context_data structure."""
+        if not self.context_data:
+            return None
+        return self.context_data.get('six_w')
+    
+    def set_six_w_data(self, six_w_data: dict) -> None:
+        """Set six_w data in unified context_data structure."""
+        if not self.context_data:
+            self.context_data = {}
+        self.context_data['six_w'] = six_w_data
+    
+    def get_rich_context(self, context_type: str) -> Optional[dict]:
+        """Get rich context data by type from unified context_data structure."""
+        if not self.context_data:
+            return None
+        return self.context_data.get('rich_context', {}).get(context_type)
+    
+    def set_rich_context(self, context_type: str, data: dict) -> None:
+        """Set rich context data by type in unified context_data structure."""
+        if not self.context_data:
+            self.context_data = {}
+        if 'rich_context' not in self.context_data:
+            self.context_data['rich_context'] = {}
+        self.context_data['rich_context'][context_type] = data
+    
+    def has_unified_context(self) -> bool:
+        """Check if context has unified context_data structure."""
+        return bool(self.context_data)
+    
+    def get_context_summary(self) -> dict:
+        """Get summary of available context data."""
+        if not self.context_data:
+            return {'available': False, 'types': []}
+        
+        types = []
+        if 'business_context' in self.context_data:
+            types.append('business_context')
+        if 'six_w' in self.context_data:
+            types.append('six_w')
+        if 'rich_context' in self.context_data:
+            rich_types = list(self.context_data['rich_context'].keys())
+            types.extend([f'rich_context.{rt}' for rt in rich_types])
+        
+        return {
+            'available': True,
+            'types': types,
+            'count': len(types)
+        }
+
     # Convenience properties for 6W access (makes display code cleaner)
     @property
     def who(self) -> Optional[str]:

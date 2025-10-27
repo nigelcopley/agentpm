@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from datetime import datetime
 
-from ..enums import AgentTier
+from ..enums import AgentTier, AgentFunctionalCategory
 
 
 class Agent(BaseModel):
@@ -24,6 +24,7 @@ class Agent(BaseModel):
 
     NEW (WI-009.3): Added agent_type, file_path, generated_at for file generation
     NEW (Migration 0011): Added tier, last_used_at, metadata
+    NEW (Migration 0046, WI-165): Added functional_category (replaces tier)
 
     Attributes:
         id: Database primary key (None for new agents)
@@ -37,9 +38,10 @@ class Agent(BaseModel):
         agent_type: Base template type (e.g., 'implementer', 'tester')
         file_path: Generated file path (e.g., '.claude/agents/python-implementer.md')
         generated_at: When agent file was last generated
-        tier: Agent tier (1=sub-agent, 2=specialist, 3=reserved) (Migration 0011)
+        tier: Agent tier (1=sub-agent, 2=specialist, 3=reserved) (Migration 0011, deprecated)
         last_used_at: When agent was last assigned to a task (Migration 0011)
         metadata: Optional JSON metadata (Migration 0011)
+        functional_category: Functional category (planning, implementation, testing, documentation, utilities) (Migration 0046)
         created_at: Creation timestamp
         updated_at: Last update timestamp
     """
@@ -86,6 +88,12 @@ class Agent(BaseModel):
     tier: Optional[AgentTier] = None
     last_used_at: Optional[datetime] = None
     metadata: Optional[str] = Field(default='{}')
+
+    # NEW (Migration 0046, WI-165): Functional category (replaces tier)
+    functional_category: Optional[AgentFunctionalCategory] = Field(
+        default=None,
+        description="Functional category: planning, implementation, testing, documentation, utilities"
+    )
 
     # Timestamps
     created_at: Optional[datetime] = None

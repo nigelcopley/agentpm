@@ -126,6 +126,8 @@ class DocumentReference(BaseModel):
             # Exception 4: Test reports and test code
             or v.startswith('testing/')
             or v.startswith('tests/')
+            # Exception 5: Legacy aipm_v2 paths (temporary compatibility)
+            or v.startswith('aipm_v2/')
         )
 
         if not is_valid:

@@ -162,7 +162,11 @@ def list_tasks(
     service,
     work_item_id: Optional[int] = None,
     status: Optional[TaskStatus] = None,
-    assigned_to: Optional[str] = None
+    assigned_to: Optional[str] = None,
+    task_type: Optional[TaskType] = None,
+    priority: Optional[int] = None,
+    sort_by: str = "priority",
+    ascending: bool = True
 ) -> List[Task]:
     """
     List tasks with optional filters.
@@ -172,6 +176,10 @@ def list_tasks(
         work_item_id: Optional work item filter
         status: Optional status filter
         assigned_to: Optional assignment filter
+        task_type: Optional task type filter
+        priority: Optional priority filter
+        sort_by: Sort field (priority, name, created_at, status)
+        ascending: Sort direction (default: True for priority, False for others)
 
     Returns:
         List of Task models
@@ -190,8 +198,27 @@ def list_tasks(
     if assigned_to:
         query += " AND assigned_to = ?"
         params.append(assigned_to)
+    
+    if task_type:
+        query += " AND type = ?"
+        params.append(task_type.value)
+    
+    if priority:
+        query += " AND priority = ?"
+        params.append(priority)
 
-    query += " ORDER BY priority ASC, created_at DESC"
+    # Add sorting
+    if sort_by == "priority":
+        query += " ORDER BY priority ASC, created_at DESC"
+    elif sort_by == "name":
+        query += " ORDER BY name ASC"
+    elif sort_by == "status":
+        query += " ORDER BY status ASC, priority ASC"
+    elif sort_by == "created_at":
+        direction = "ASC" if ascending else "DESC"
+        query += f" ORDER BY created_at {direction}"
+    else:
+        query += " ORDER BY priority ASC, created_at DESC"
 
     with service.connect() as conn:
         conn.row_factory = sqlite3.Row
