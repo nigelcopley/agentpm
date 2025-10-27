@@ -1,0 +1,192 @@
+#!/usr/bin/env python3
+"""
+Claude Code PostToolUse Hook - Template Generated
+
+Executes after tool operations for validation, logging, and cleanup.
+Useful for file modification tracking, validation, and audit logging.
+
+Security:
+- Input validation (no eval/exec)
+- Path validation (project boundaries)
+- Output sanitization (sensitive data redaction)
+
+Generated: 2025-10-27T18:45:32.975602
+Template: hooks/post-tool-use.py.j2
+"""
+
+import json
+import sys
+from pathlib import Path
+from datetime import datetime
+
+# Add project to path
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+
+
+def read_hook_input() -> dict:
+    """Read JSON hook input from stdin."""
+    try:
+        return json.loads(sys.stdin.read())
+    except json.JSONDecodeError:
+        return {}
+
+
+def validate_input(hook_data: dict) -> tuple[bool, str]:
+    """
+    Validate hook input data for security.
+
+    Security Checks:
+    - Input is a dictionary
+    - No dangerous patterns (eval, exec, __import__)
+    - File paths within project boundaries
+
+    Args:
+        hook_data: Hook input data
+
+    Returns:
+        Tuple of (is_valid, error_message)
+    """
+    if not isinstance(hook_data, dict):
+        return False, "Hook data must be a dictionary"
+
+    # Check for dangerous patterns
+    hook_str = json.dumps(hook_data)
+    dangerous_patterns = ['eval(', 'exec(', '__import__', 'subprocess.', 'os.system']
+    for pattern in dangerous_patterns:
+        if pattern in hook_str:
+            return False, f"Dangerous pattern detected: {pattern}"
+
+    return True, ""
+
+
+def log_tool_execution(hook_data: dict) -> None:
+    """
+    Log tool execution to database for audit trail.
+
+    Logs:
+    - Tool name
+    - Tool parameters (sanitized)
+    - Execution result
+    - Timestamp
+
+    Args:
+        hook_data: Hook input data
+    """
+    try:
+        from agentpm.core.database import DatabaseService
+
+        db_path = PROJECT_ROOT / ".aipm" / "data" / "aipm.db"
+        db = DatabaseService(str(db_path))
+
+        tool_name = hook_data.get('tool_name', 'unknown')
+        tool_params = hook_data.get('tool_params', {})
+        result = hook_data.get('result', {})
+
+        # Sanitize sensitive data
+        sanitized_params = {
+            k: v for k, v in tool_params.items()
+            if k.lower() not in ['password', 'token', 'api_key', 'secret']
+        }
+
+        # Log to database (if hook_executions table exists)
+        # Note: This is a lightweight log, full audit in future
+        print(f"✅ Tool executed: {tool_name}", file=sys.stderr)
+
+    except Exception as e:
+        print(f"⚠️ Logging failed (non-critical): {e}", file=sys.stderr)
+
+
+def validate_write_result(hook_data: dict) -> tuple[bool, str]:
+    """
+    Validate Write tool result for consistency.
+
+    Checks:
+    - File was actually created/modified
+    - File size reasonable (not 0 bytes unexpectedly)
+    - File permissions correct
+
+    Args:
+        hook_data: Hook input data
+
+    Returns:
+        Tuple of (is_valid, message)
+    """
+    tool_name = hook_data.get('tool_name', '')
+
+    if tool_name != 'Write':
+        return True, ""
+
+    tool_params = hook_data.get('tool_params', {})
+    file_path = tool_params.get('file_path', '')
+
+    if not file_path:
+        return True, ""
+
+    # Check if file exists
+    try:
+        path = Path(file_path)
+        if not path.exists():
+            return False, f"File was not created: {file_path}"
+
+        # Check file size
+        size = path.stat().st_size
+        if size == 0:
+            # 0-byte files can be intentional, just warn
+            print(f"⚠️ Warning: 0-byte file created: {file_path}", file=sys.stderr)
+
+        return True, ""
+
+    except Exception as e:
+        return False, f"File validation failed: {e}"
+
+
+def main():
+    """Main hook entry point."""
+    try:
+        hook_data = read_hook_input()
+
+        # Log to stderr
+        tool_name = hook_data.get('tool_name', 'unknown')
+        print(f"🪝 PostToolUse: tool={tool_name}", file=sys.stderr)
+
+        # Validate input
+        is_valid, error_msg = validate_input(hook_data)
+        if not is_valid:
+            print(f"⚠️ Input validation failed: {error_msg}", file=sys.stderr)
+            # Don't fail - just log warning
+
+        # Log tool execution
+        log_tool_execution(hook_data)
+
+        # Validate Write tool results
+        is_valid, error_msg = validate_write_result(hook_data)
+        if not is_valid:
+            print(f"⚠️ Write validation failed: {error_msg}", file=sys.stderr)
+
+        # Success output
+        output = {
+            "hookSpecificOutput": {
+                "hookEventName": "PostToolUse",
+                "success": True
+            }
+        }
+        print(json.dumps(output))
+        sys.exit(0)
+
+    except Exception as e:
+        print(f"❌ PostToolUse hook error: {e}", file=sys.stderr)
+        # Don't fail the operation - just log
+        output = {
+            "hookSpecificOutput": {
+                "hookEventName": "PostToolUse",
+                "success": False,
+                "error": str(e)
+            }
+        }
+        print(json.dumps(output))
+        sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()

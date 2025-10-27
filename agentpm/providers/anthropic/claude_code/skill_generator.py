@@ -6,9 +6,11 @@ Generates reusable skill modules that can be assigned to agents:
 - Generates .claude/skills/*.md files
 - Supports progressive loading (metadata → instructions → resources)
 - Integrates with ClaudeCodeGenerator
+- Uses unified context system for project context
 
 Part of WI-171: Claude Code Provider Enhancement
 Task #1131: Implementation: SkillGenerator with Templates
+Task #1144: Refactor to use unified context system
 
 Pattern: Template Method Pattern with Database-First Architecture
 """
@@ -19,6 +21,8 @@ from datetime import datetime
 
 from agentpm.core.database.service import DatabaseService
 from agentpm.core.database.models.skill import Skill, SkillCategory
+from agentpm.core.database.enums import EntityType
+from agentpm.core.context.unified_service import UnifiedContextService
 from agentpm.providers.base import TemplateBasedMixin, FileOutput
 
 
@@ -45,17 +49,34 @@ class SkillGenerator(TemplateBasedMixin):
         >>> generator.generate_skill_files(output_dir=Path(".claude/skills"))
     """
 
-    def __init__(self, db_service: DatabaseService):
+    def __init__(
+        self,
+        db_service: DatabaseService,
+        context_service: Optional[UnifiedContextService] = None,
+        project_path: Optional[Path] = None
+    ):
         """
-        Initialize skill generator.
+        Initialize skill generator with unified context support.
 
         Args:
             db_service: Database service for accessing APM data
+            context_service: Optional unified context service (created if not provided)
+            project_path: Optional project path (required if context_service not provided)
 
         Raises:
             FileNotFoundError: If template directory doesn't exist
+            ValueError: If neither context_service nor project_path provided
         """
         self.db = db_service
+
+        # Initialize unified context service
+        if context_service:
+            self.context_service = context_service
+        elif project_path:
+            self.context_service = UnifiedContextService(db_service, project_path)
+        else:
+            # Fallback: try to determine project path from database
+            self.context_service = None
 
         # Initialize Jinja2 templates
         template_dir = Path(__file__).parent / "templates"

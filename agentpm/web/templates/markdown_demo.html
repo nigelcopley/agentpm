@@ -1,0 +1,128 @@
+{% extends "layouts/modern_base.html" %}
+
+{% block title %}Markdown Demo - AgentPM{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-4">Enhanced Markdown Rendering</h1>
+            <p class="text-lg text-gray-600">Demonstrating improved markdown formatting with Tailwind Typography</p>
+        </div>
+
+        <!-- Demo Content -->
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">Sample Markdown Content</h2>
+            </div>
+            <div class="p-6">
+                {{ sample_markdown|markdown_large|safe }}
+            </div>
+        </div>
+
+        <!-- Features Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+            <!-- Code Highlighting -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center mb-4">
+                    <div class="bg-blue-100 p-2 rounded-lg">
+                        <i class="bi bi-code-slash text-blue-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 ml-3">Syntax Highlighting</h3>
+                </div>
+                <p class="text-gray-600">Enhanced code blocks with syntax highlighting and copy functionality</p>
+            </div>
+
+            <!-- Responsive Tables -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center mb-4">
+                    <div class="bg-green-100 p-2 rounded-lg">
+                        <i class="bi bi-table text-green-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 ml-3">Responsive Tables</h3>
+                </div>
+                <p class="text-gray-600">Tables that adapt to different screen sizes with proper styling</p>
+            </div>
+
+            <!-- Typography -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center mb-4">
+                    <div class="bg-purple-100 p-2 rounded-lg">
+                        <i class="bi bi-type text-purple-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 ml-3">Typography</h3>
+                </div>
+                <p class="text-gray-600">Beautiful typography with proper spacing and hierarchy</p>
+            </div>
+
+            <!-- Dark Mode -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center mb-4">
+                    <div class="bg-gray-100 p-2 rounded-lg">
+                        <i class="bi bi-moon text-gray-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 ml-3">Dark Mode</h3>
+                </div>
+                <p class="text-gray-600">Automatic dark mode support with proper contrast</p>
+            </div>
+
+            <!-- Interactive Elements -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center mb-4">
+                    <div class="bg-yellow-100 p-2 rounded-lg">
+                        <i class="bi bi-cursor text-yellow-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 ml-3">Interactive</h3>
+                </div>
+                <p class="text-gray-600">Copy buttons, smooth scrolling, and enhanced user experience</p>
+            </div>
+
+            <!-- Extensions -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center mb-4">
+                    <div class="bg-red-100 p-2 rounded-lg">
+                        <i class="bi bi-puzzle text-red-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 ml-3">Extensions</h3>
+                </div>
+                <p class="text-gray-600">Support for footnotes, definition lists, and more markdown features</p>
+            </div>
+        </div>
+
+        <!-- Usage Examples -->
+        <div class="mt-8 bg-white rounded-lg shadow-lg overflow-hidden">
+            <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">Usage Examples</h2>
+            </div>
+            <div class="p-6">
+                <div class="space-y-6">
+                    <!-- Compact -->
+                    <div>
+                        <h3 class="text-md font-semibold text-gray-800 mb-2">Compact Format (for cards/previews)</h3>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            {{ sample_markdown|markdown_compact|safe }}
+                        </div>
+                    </div>
+
+                    <!-- Dark Theme -->
+                    <div>
+                        <h3 class="text-md font-semibold text-gray-800 mb-2">Dark Theme</h3>
+                        <div class="bg-gray-900 p-4 rounded-lg">
+                            {{ sample_markdown|markdown_dark|safe }}
+                        </div>
+                    </div>
+
+                    <!-- Table of Contents -->
+                    <div>
+                        <h3 class="text-md font-semibold text-gray-800 mb-2">Table of Contents</h3>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            {{ sample_markdown|markdown_toc|safe }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

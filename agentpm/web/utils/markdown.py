@@ -1,23 +1,24 @@
 """
-Markdown rendering utilities for APM (Agent Project Manager) Web Application
+Enhanced markdown rendering utilities for APM (Agent Project Manager) Web Application
 """
 
 import markdown
-from markdown.extensions import codehilite, fenced_code, tables, toc
+from markdown.extensions import codehilite, fenced_code, tables, toc, attr_list, nl2br, def_list, footnotes
 import re
 from markupsafe import Markup
 
 
-def render_markdown(text, safe_mode=False):
+def render_markdown(text, safe_mode=False, prose_class="prose prose-slate max-w-none"):
     """
-    Render markdown text to HTML with extensions.
+    Render markdown text to HTML with enhanced extensions and Tailwind Typography.
     
     Args:
         text (str): Markdown text to render
         safe_mode (bool): Whether to use safe mode (strip HTML)
+        prose_class (str): Tailwind prose classes for styling
     
     Returns:
-        str: Rendered HTML
+        str: Rendered HTML wrapped in prose container
     """
     if not text:
         return ""
@@ -26,7 +27,7 @@ def render_markdown(text, safe_mode=False):
     if not isinstance(text, str):
         text = str(text)
     
-    # Configure markdown extensions
+    # Configure markdown extensions for enhanced formatting
     extensions = [
         'codehilite',
         'fenced_code', 
@@ -34,17 +35,27 @@ def render_markdown(text, safe_mode=False):
         'toc',
         'nl2br',  # Convert newlines to <br>
         'attr_list',  # Allow attributes on elements
+        'def_list',  # Definition lists
+        'footnotes',  # Footnotes support
+        'md_in_html',  # Allow HTML in markdown
     ]
     
     # Configure extension options
     extension_configs = {
         'codehilite': {
             'css_class': 'highlight',
-            'use_pygments': False,  # Use simple highlighting
+            'use_pygments': True,  # Enable syntax highlighting
+            'linenums': True,  # Enable line numbers
+            'guess_lang': True,  # Auto-detect language
         },
         'toc': {
             'permalink': True,
             'permalink_title': 'Link to this section',
+            'permalink_class': 'text-blue-600 hover:text-blue-800',
+        },
+        'footnotes': {
+            'BACKLINK_TEXT': '↩',
+            'BACKLINK_TITLE': 'Jump back to footnote %d in the text',
         }
     }
     
@@ -58,69 +69,149 @@ def render_markdown(text, safe_mode=False):
     # Render markdown
     html = md.convert(text)
     
-    # Post-process to add Tailwind classes for better styling
-    html = add_tailwind_classes(html)
+    # Post-process to enhance styling and add custom classes
+    html = enhance_markdown_html(html)
+    
+    # Wrap in prose container with custom classes
+    wrapped_html = f'<div class="{prose_class}">{html}</div>'
     
     # Return as safe HTML (won't be escaped by Jinja2)
-    return Markup(html)
+    return Markup(wrapped_html)
 
 
-def add_tailwind_classes(html):
+def enhance_markdown_html(html):
     """
-    Add Tailwind CSS classes to markdown-rendered HTML for better styling.
+    Enhance markdown-rendered HTML with custom styling and features.
     
     Args:
         html (str): HTML content
     
     Returns:
-        str: HTML with Tailwind classes
+        str: Enhanced HTML with custom classes and features
     """
     if not html:
         return html
     
-    # Add classes to common elements
-    replacements = [
-        # Headings
-        (r'<h1>', '<h1 class="text-3xl font-bold text-gray-900 mb-4">'),
-        (r'<h2>', '<h2 class="text-2xl font-semibold text-gray-800 mb-3">'),
-        (r'<h3>', '<h3 class="text-xl font-semibold text-gray-800 mb-2">'),
-        (r'<h4>', '<h4 class="text-lg font-medium text-gray-800 mb-2">'),
-        (r'<h5>', '<h5 class="text-base font-medium text-gray-800 mb-1">'),
-        (r'<h6>', '<h6 class="text-sm font-medium text-gray-800 mb-1">'),
-        
-        # Paragraphs
-        (r'<p>', '<p class="text-gray-700 leading-relaxed mb-4">'),
-        
-        # Lists
-        (r'<ul>', '<ul class="list-disc list-inside text-gray-700 mb-4 space-y-1">'),
-        (r'<ol>', '<ol class="list-decimal list-inside text-gray-700 mb-4 space-y-1">'),
-        (r'<li>', '<li class="text-gray-700">'),
-        
-        # Code blocks
-        (r'<pre>', '<pre class="bg-gray-100 rounded-lg p-4 overflow-x-auto mb-4">'),
-        (r'<code>', '<code class="bg-gray-100 text-gray-800 px-1 py-0.5 rounded text-sm">'),
-        
-        # Blockquotes
-        (r'<blockquote>', '<blockquote class="border-l-4 border-blue-500 pl-4 italic text-gray-600 mb-4">'),
-        
-        # Tables
-        (r'<table>', '<table class="min-w-full divide-y divide-gray-200 mb-4">'),
-        (r'<thead>', '<thead class="bg-gray-50">'),
-        (r'<th>', '<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">'),
-        (r'<td>', '<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">'),
-        
-        # Links
-        (r'<a href=', '<a href='),
-        (r'<a href="([^"]*)"', r'<a href="\1" class="text-blue-600 hover:text-blue-800 underline"'),
-        
-        # Strong and emphasis
-        (r'<strong>', '<strong class="font-semibold text-gray-900">'),
-        (r'<em>', '<em class="italic text-gray-800">'),
-    ]
+    # Enhance code blocks with better styling
+    html = enhance_code_blocks(html)
     
-    # Apply replacements
-    for pattern, replacement in replacements:
-        html = re.sub(pattern, replacement, html)
+    # Enhance tables with responsive design
+    html = enhance_tables(html)
+    
+    # Add custom styling for specific elements
+    html = add_custom_styling(html)
+    
+    return html
+
+
+def enhance_code_blocks(html):
+    """
+    Enhance code blocks with better styling and features.
+    
+    Args:
+        html (str): HTML content
+    
+    Returns:
+        str: HTML with enhanced code blocks
+    """
+    # Add copy button functionality to code blocks
+    def add_copy_button(match):
+        code_content = match.group(1)
+        language = match.group(2) if match.group(2) else 'text'
+        
+        return f'''
+        <div class="relative group">
+            <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onclick="copyToClipboard(this)" 
+                        class="bg-gray-800 text-white px-2 py-1 rounded text-xs hover:bg-gray-700 transition-colors"
+                        data-code="{code_content.replace('"', '&quot;')}">
+                    <i class="bi bi-clipboard mr-1"></i>Copy
+                </button>
+            </div>
+            <pre class="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto text-sm"><code class="language-{language}">{code_content}</code></pre>
+        </div>
+        '''
+    
+    # Pattern to match code blocks
+    pattern = r'<pre><code class="language-(\w+)">(.*?)</code></pre>'
+    html = re.sub(pattern, add_copy_button, html, flags=re.DOTALL)
+    
+    return html
+
+
+def enhance_tables(html):
+    """
+    Enhance tables with responsive design and better styling.
+    
+    Args:
+        html (str): HTML content
+    
+    Returns:
+        str: HTML with enhanced tables
+    """
+    # Wrap tables in responsive container
+    def wrap_table(match):
+        table_content = match.group(0)
+        return f'''
+        <div class="overflow-x-auto shadow-sm rounded-lg border border-gray-200 mb-6">
+            {table_content}
+        </div>
+        '''
+    
+    # Pattern to match tables
+    pattern = r'<table>.*?</table>'
+    html = re.sub(pattern, wrap_table, html, flags=re.DOTALL)
+    
+    return html
+
+
+def add_custom_styling(html):
+    """
+    Add custom styling to specific markdown elements.
+    
+    Args:
+        html (str): HTML content
+    
+    Returns:
+        str: HTML with custom styling
+    """
+    # Enhance blockquotes with better styling
+    html = re.sub(
+        r'<blockquote>',
+        '<blockquote class="border-l-4 border-blue-500 bg-blue-50 pl-6 pr-4 py-4 rounded-r-lg my-6">',
+        html
+    )
+    
+    # Enhance horizontal rules
+    html = re.sub(
+        r'<hr>',
+        '<hr class="border-gray-300 my-8">',
+        html
+    )
+    
+    # Enhance definition lists
+    html = re.sub(
+        r'<dl>',
+        '<dl class="space-y-2">',
+        html
+    )
+    html = re.sub(
+        r'<dt>',
+        '<dt class="font-semibold text-gray-900">',
+        html
+    )
+    html = re.sub(
+        r'<dd>',
+        '<dd class="ml-4 text-gray-700">',
+        html
+    )
+    
+    # Enhance footnotes
+    html = re.sub(
+        r'<div class="footnote">',
+        '<div class="footnote border-t border-gray-200 pt-4 mt-8 text-sm text-gray-600">',
+        html
+    )
     
     return html
 
@@ -158,6 +249,96 @@ def markdown_to_text(text, max_length=None):
         text_only = text_only[:max_length] + "..."
     
     return text_only
+
+
+def render_markdown_compact(text, max_length=200):
+    """
+    Render markdown text in a compact format suitable for previews and cards.
+    
+    Args:
+        text (str): Markdown text to render
+        max_length (int): Maximum length of rendered text
+    
+    Returns:
+        str: Compact HTML
+    """
+    if not text:
+        return ""
+    
+    # Convert to string if not already
+    if not isinstance(text, str):
+        text = str(text)
+    
+    # Truncate text first
+    if len(text) > max_length:
+        text = text[:max_length] + "..."
+    
+    # Use compact prose classes
+    return render_markdown(text, prose_class="prose prose-sm prose-slate max-w-none")
+
+
+def render_markdown_large(text):
+    """
+    Render markdown text in a large format suitable for full document display.
+    
+    Args:
+        text (str): Markdown text to render
+    
+    Returns:
+        str: Large format HTML
+    """
+    if not text:
+        return ""
+    
+    # Use large prose classes
+    return render_markdown(text, prose_class="prose prose-lg prose-slate max-w-none")
+
+
+def render_markdown_dark(text):
+    """
+    Render markdown text with dark theme styling.
+    
+    Args:
+        text (str): Markdown text to render
+    
+    Returns:
+        str: Dark themed HTML
+    """
+    if not text:
+        return ""
+    
+    # Use dark prose classes
+    return render_markdown(text, prose_class="prose prose-slate dark:prose-invert max-w-none")
+
+
+def get_markdown_toc(text):
+    """
+    Extract table of contents from markdown text.
+    
+    Args:
+        text (str): Markdown text
+    
+    Returns:
+        str: Table of contents HTML
+    """
+    if not text:
+        return ""
+    
+    # Convert to string if not already
+    if not isinstance(text, str):
+        text = str(text)
+    
+    # Create markdown instance with TOC extension
+    md = markdown.Markdown(extensions=['toc'])
+    md.convert(text)
+    
+    # Get the TOC
+    toc_html = md.toc
+    
+    if toc_html:
+        return Markup(f'<div class="prose prose-sm prose-slate max-w-none">{toc_html}</div>')
+    
+    return ""
 
 
 def format_enum_display(enum_value):

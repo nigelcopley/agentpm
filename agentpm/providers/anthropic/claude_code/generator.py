@@ -17,6 +17,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 import hashlib
 import json
+import sys
 
 from agentpm.core.database.service import DatabaseService
 from agentpm.core.database.models.agent import Agent
@@ -502,9 +503,15 @@ class ClaudeCodeGenerator(BaseProviderGenerator, TemplateBasedMixin):
         """
         Generate Python hooks for Claude Code.
 
-        Creates:
+        Creates all 8 hook types:
         - session-start.py: Load APM context at session start
+        - session-end.py: Session cleanup and state capture
         - pre-tool-use.py: Validate operations before tool execution
+        - post-tool-use.py: Validation, logging, and cleanup after tool execution
+        - file-open.py: File access logging and validation
+        - file-save.py: File modification tracking and validation
+        - pre-response.py: Context enrichment before AI response
+        - error-handler.py: Error capture and recovery suggestions
 
         Args:
             project: Project metadata
@@ -517,28 +524,34 @@ class ClaudeCodeGenerator(BaseProviderGenerator, TemplateBasedMixin):
         hooks_dir = output_dir / "hooks"
         hooks_dir.mkdir(parents=True, exist_ok=True)
 
-        # Session start hook
+        # Shared context for all hooks
         context = {
             "project": project,
             "generation_time": datetime.utcnow().isoformat()
         }
 
-        session_start_content = self._render_template(
-            "hooks/session-start.py.j2",
-            context
-        )
-        session_start_path = hooks_dir / "session-start.py"
-        session_start_path.write_text(session_start_content)
-        files.append(FileOutput.create_from_content(session_start_path, session_start_content))
+        # Define all hook types to generate
+        hook_templates = [
+            ("session-start.py", "hooks/session-start.py.j2"),
+            ("session-end.py", "hooks/session-end.py.j2"),
+            ("pre-tool-use.py", "hooks/pre-tool-use.py.j2"),
+            ("post-tool-use.py", "hooks/post-tool-use.py.j2"),
+            ("file-open.py", "hooks/file-open.py.j2"),
+            ("file-save.py", "hooks/file-save.py.j2"),
+            ("pre-response.py", "hooks/pre-response.py.j2"),
+            ("error-handler.py", "hooks/error-handler.py.j2")
+        ]
 
-        # Pre-tool-use hook
-        pre_tool_use_content = self._render_template(
-            "hooks/pre-tool-use.py.j2",
-            context
-        )
-        pre_tool_use_path = hooks_dir / "pre-tool-use.py"
-        pre_tool_use_path.write_text(pre_tool_use_content)
-        files.append(FileOutput.create_from_content(pre_tool_use_path, pre_tool_use_content))
+        # Generate each hook
+        for hook_filename, template_name in hook_templates:
+            try:
+                content = self._render_template(template_name, context)
+                output_path = hooks_dir / hook_filename
+                output_path.write_text(content)
+                files.append(FileOutput.create_from_content(output_path, content))
+            except Exception as e:
+                # Log error but continue generating other hooks
+                print(f"Warning: Failed to generate {hook_filename}: {e}", file=sys.stderr)
 
         return files
 

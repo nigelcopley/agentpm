@@ -13,11 +13,11 @@
                 <div class="mt-4 flex items-center space-x-6 text-sm">
                     <div class="flex items-center">
                         <i class="bi bi-folder mr-2"></i>
-                        <span>{{ view.total_files }} Files</span>
+                        <span>{{ total_files }} Files</span>
                     </div>
                     <div class="flex items-center">
                         <i class="bi bi-hdd mr-2"></i>
-                        <span>{{ view.total_size|format_file_size }}</span>
+                        <span>{{ total_size|format_file_size }}</span>
                     </div>
                 </div>
             </div>
@@ -59,7 +59,7 @@
             </select>
             <select class="border border-gray-300 rounded-lg py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500">
                 <option>All Projects</option>
-                <option value="1">{{ view.project.name }}</option>
+                <option value="1">Agent PM</option>
             </select>
             <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
                 <i class="bi bi-plus mr-2"></i>Add File
@@ -69,16 +69,16 @@
 
     <!-- Files List -->
     <div class="bg-white rounded-lg shadow-lg">
-        {% if view.context_files %}
+        {% if contexts %}
         <div class="divide-y divide-gray-200">
-            {% for file in view.context_files %}
+            {% for file in contexts %}
             <div class="p-6 hover:bg-gray-50 transition-colors">
                 <div class="flex items-start justify-between">
                     <div class="flex-1">
                         <div class="flex items-center space-x-3 mb-2">
                             <h3 class="text-lg font-semibold text-gray-900">{{ file.name }}</h3>
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                                {{ file.file_type or 'unknown' }}
+                                {{ file.file_type }}
                             </span>
                             {% if file.size_bytes > 1024 * 1024 %}
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
@@ -104,16 +104,16 @@
                                 <i class="bi bi-hdd mr-1"></i>{{ file.size_human }}
                             </span>
                             <span>
-                                <i class="bi bi-file-earmark mr-1"></i>{{ file.file_type or 'unknown' }}
+                                <i class="bi bi-file-earmark mr-1"></i>{{ file.file_type }}
                             </span>
                         </div>
                     </div>
                     <div class="flex items-center space-x-2 ml-4">
-                        <a href="{{ url_for('context.context_files_preview', filepath=file.path) }}" 
+                        <a href="{{ url_for('context.preview_file', filepath=file.path) }}" 
                            class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors">
                             <i class="bi bi-eye mr-1"></i>Preview
                         </a>
-                        <a href="{{ url_for('context.context_files_download', filepath=file.path) }}" 
+                        <a href="{{ url_for('context.download_file', filepath=file.path) }}" 
                            class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
                             <i class="bi bi-download mr-1"></i>Download
                         </a>

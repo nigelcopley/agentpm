@@ -1,0 +1,272 @@
+#!/usr/bin/env python3
+"""
+Claude Code PreResponse Hook - Template Generated
+
+Executes before AI generates response for context enrichment and validation.
+Useful for injecting dynamic context, checking constraints, and response guidance.
+
+Features:
+- Dynamic context injection (recent changes, active work)
+- Quality gate reminders (time-boxing, coverage)
+- Agent routing suggestions
+- Response constraints (token limits, focus areas)
+
+Security:
+- No modification of user input
+- Read-only database access
+- No external network calls
+
+Generated: 2025-10-27T18:45:32.975602
+Template: hooks/pre-response.py.j2
+"""
+
+import json
+import sys
+from pathlib import Path
+from datetime import datetime, timedelta
+
+# Add project to path
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+
+
+def read_hook_input() -> dict:
+    """Read JSON hook input from stdin."""
+    try:
+        return json.loads(sys.stdin.read())
+    except json.JSONDecodeError:
+        return {}
+
+
+def get_database():
+    """Get database service instance."""
+    from agentpm.core.database import DatabaseService
+    db_path = PROJECT_ROOT / ".aipm" / "data" / "aipm.db"
+    return DatabaseService(str(db_path))
+
+
+def get_recent_activity() -> dict:
+    """
+    Get recent project activity for context enrichment.
+
+    Returns:
+        Dictionary with recent activity data
+    """
+    try:
+        db = get_database()
+        from agentpm.core.database.methods import work_items as wi_methods
+        from agentpm.core.database.methods import tasks as task_methods
+        from agentpm.core.database.enums import WorkItemStatus, TaskStatus
+
+        activity = {
+            'active_work_items': 0,
+            'active_tasks': 0,
+            'recent_updates': [],
+            'time_warnings': []
+        }
+
+        # Count active items
+        active_wis = wi_methods.list_work_items(db, status=WorkItemStatus.ACTIVE)
+        activity['active_work_items'] = len(active_wis)
+
+        active_tasks = task_methods.list_tasks(db, status=TaskStatus.ACTIVE)
+        activity['active_tasks'] = len(active_tasks)
+
+        # Check for time-boxed tasks exceeding limits
+        for task in active_tasks:
+            if task.started_at:
+                duration = datetime.now() - task.started_at
+                if task.effort_hours and duration.total_seconds() / 3600 > task.effort_hours:
+                    activity['time_warnings'].append({
+                        'task_id': task.id,
+                        'objective': task.objective,
+                        'hours_exceeded': (duration.total_seconds() / 3600) - task.effort_hours
+                    })
+
+        return activity
+
+    except Exception as e:
+        print(f"⚠️ Activity gathering failed (non-critical): {e}", file=sys.stderr)
+        return {}
+
+
+def get_quality_reminders() -> list[str]:
+    """
+    Get quality gate reminders based on current phase and status.
+
+    Returns:
+        List of reminder strings
+    """
+    try:
+        db = get_database()
+        from agentpm.core.database.methods import work_items as wi_methods
+        from agentpm.core.database.enums import WorkItemStatus, Phase
+
+        reminders = []
+
+        active_wis = wi_methods.list_work_items(db, status=WorkItemStatus.ACTIVE)
+
+        for wi in active_wis:
+            # Phase-specific reminders
+            if wi.phase == Phase.I1_IMPLEMENTATION:
+                reminders.append(f"WI-{wi.id}: Implementation time-boxed to ≤4 hours")
+                reminders.append(f"WI-{wi.id}: Test coverage target >90%")
+                reminders.append(f"WI-{wi.id}: Use three-layer pattern (Models → Adapters → Methods)")
+
+            elif wi.phase == Phase.D1_DISCOVERY:
+                reminders.append(f"WI-{wi.id}: Need business_context ≥50 chars")
+                reminders.append(f"WI-{wi.id}: Need acceptance_criteria ≥3")
+                reminders.append(f"WI-{wi.id}: Need 6W confidence ≥0.70")
+
+            elif wi.phase == Phase.R1_REVIEW:
+                reminders.append(f"WI-{wi.id}: Verify all acceptance criteria")
+                reminders.append(f"WI-{wi.id}: Run full test suite")
+                reminders.append(f"WI-{wi.id}: Check quality gates (CI-001 to CI-006)")
+
+        return reminders[:5]  # Limit to 5 reminders
+
+    except Exception as e:
+        print(f"⚠️ Reminders gathering failed (non-critical): {e}", file=sys.stderr)
+        return []
+
+
+def generate_context_enrichment() -> str:
+    """
+    Generate context enrichment text for AI response.
+
+    Returns:
+        Markdown-formatted context enrichment
+    """
+    try:
+        activity = get_recent_activity()
+        reminders = get_quality_reminders()
+
+        lines = []
+
+        # Activity summary
+        if activity.get('active_work_items', 0) > 0 or activity.get('active_tasks', 0) > 0:
+            lines.append("### 📊 Current Activity")
+            lines.append(f"- Active Work Items: {activity['active_work_items']}")
+            lines.append(f"- Active Tasks: {activity['active_tasks']}")
+            lines.append("")
+
+        # Time warnings
+        if activity.get('time_warnings'):
+            lines.append("### ⏰ Time-Boxing Warnings")
+            for warning in activity['time_warnings']:
+                lines.append(f"- Task-{warning['task_id']}: Exceeded by {warning['hours_exceeded']:.1f}h - {warning['objective']}")
+            lines.append("")
+
+        # Quality reminders
+        if reminders:
+            lines.append("### ✅ Quality Reminders")
+            for reminder in reminders:
+                lines.append(f"- {reminder}")
+            lines.append("")
+
+        return "\n".join(lines) if lines else ""
+
+    except Exception as e:
+        print(f"⚠️ Context enrichment failed: {e}", file=sys.stderr)
+        return ""
+
+
+def suggest_agent_routing() -> str:
+    """
+    Suggest agent routing based on current work context.
+
+    Returns:
+        Agent routing suggestion
+    """
+    try:
+        db = get_database()
+        from agentpm.core.database.methods import work_items as wi_methods
+        from agentpm.core.database.methods import tasks as task_methods
+        from agentpm.core.database.enums import WorkItemStatus, TaskStatus, Phase
+
+        # Get highest priority active task
+        active_tasks = task_methods.list_tasks(db, status=TaskStatus.ACTIVE)
+        if not active_tasks:
+            return ""
+
+        task = min(active_tasks, key=lambda t: t.priority or 999)
+
+        # Get work item phase
+        if task.work_item_id:
+            wi = wi_methods.get_work_item(db, task.work_item_id)
+            if wi and wi.phase:
+                phase_map = {
+                    Phase.D1_DISCOVERY: 'definition-orch',
+                    Phase.P1_PLAN: 'planning-orch',
+                    Phase.I1_IMPLEMENTATION: 'implementation-orch',
+                    Phase.R1_REVIEW: 'review-test-orch',
+                    Phase.O1_OPERATIONS: 'release-ops-orch',
+                    Phase.E1_EVOLUTION: 'evolution-orch'
+                }
+                orchestrator = phase_map.get(wi.phase)
+                if orchestrator:
+                    return f"💡 Consider routing to: `{orchestrator}` (Task-{task.id}, Phase: {wi.phase.value})"
+
+        return ""
+
+    except Exception as e:
+        print(f"⚠️ Agent routing suggestion failed: {e}", file=sys.stderr)
+        return ""
+
+
+def main():
+    """Main hook entry point."""
+    try:
+        hook_data = read_hook_input()
+
+        print(f"🪝 PreResponse: enriching context", file=sys.stderr)
+
+        # Generate context enrichment
+        enrichment = generate_context_enrichment()
+
+        # Suggest agent routing
+        routing = suggest_agent_routing()
+
+        # Combine enrichment
+        lines = []
+        if enrichment:
+            lines.append(enrichment)
+        if routing:
+            lines.append(routing)
+
+        context = "\n".join(lines) if lines else ""
+
+        # Output enriched context
+        import os
+        use_json = os.environ.get('AIPM_HOOK_JSON', '0') == '1'
+
+        if use_json:
+            output = {
+                "hookSpecificOutput": {
+                    "hookEventName": "PreResponse",
+                    "additionalContext": context[:2000]  # Limit size
+                }
+            }
+            print(json.dumps(output))
+        else:
+            if context:
+                print(context)
+
+        sys.exit(0)
+
+    except Exception as e:
+        print(f"❌ PreResponse hook error: {e}", file=sys.stderr)
+        # Don't fail - just log
+        output = {
+            "hookSpecificOutput": {
+                "hookEventName": "PreResponse",
+                "success": False,
+                "error": str(e)
+            }
+        }
+        print(json.dumps(output))
+        sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()

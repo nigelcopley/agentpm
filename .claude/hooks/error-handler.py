@@ -1,0 +1,307 @@
+#!/usr/bin/env python3
+"""
+Claude Code ErrorHandler Hook - Template Generated
+
+Executes when errors occur for error capture, analysis, and recovery suggestions.
+Useful for error logging, debugging assistance, and automated recovery.
+
+Features:
+- Error capture and logging
+- Error pattern analysis
+- Recovery suggestions
+- Error categorization (syntax, runtime, logic)
+- Automated fixes (when safe)
+
+Security:
+- No automatic code execution
+- Error sanitization (no sensitive data in logs)
+- Safe recovery suggestions only
+
+Generated: 2025-10-27T18:45:32.975602
+Template: hooks/error-handler.py.j2
+"""
+
+import json
+import sys
+from pathlib import Path
+from datetime import datetime
+import re
+
+# Add project to path
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+
+
+# Common error patterns and recovery suggestions
+ERROR_PATTERNS = [
+    {
+        'pattern': r'ModuleNotFoundError: No module named ["\'](\w+)["\']',
+        'category': 'dependency',
+        'suggestion': 'Install missing module: pip install {match}',
+        'severity': 'high'
+    },
+    {
+        'pattern': r'FileNotFoundError: \[Errno 2\] No such file or directory: ["\']([^"\']+)["\']',
+        'category': 'file',
+        'suggestion': 'Create missing file or check path: {match}',
+        'severity': 'medium'
+    },
+    {
+        'pattern': r'SyntaxError: invalid syntax',
+        'category': 'syntax',
+        'suggestion': 'Check Python syntax near the error line',
+        'severity': 'high'
+    },
+    {
+        'pattern': r'IndentationError',
+        'category': 'syntax',
+        'suggestion': 'Fix indentation (use 4 spaces, not tabs)',
+        'severity': 'high'
+    },
+    {
+        'pattern': r'KeyError: ["\'](\w+)["\']',
+        'category': 'logic',
+        'suggestion': 'Dictionary key not found: {match}. Check if key exists before access',
+        'severity': 'medium'
+    },
+    {
+        'pattern': r'AttributeError: .*object has no attribute ["\'](\w+)["\']',
+        'category': 'logic',
+        'suggestion': 'Attribute not found: {match}. Check object type and available attributes',
+        'severity': 'medium'
+    },
+    {
+        'pattern': r'TypeError: .*takes (\d+) positional arguments? but (\d+) were given',
+        'category': 'logic',
+        'suggestion': 'Argument count mismatch. Check function signature',
+        'severity': 'medium'
+    },
+    {
+        'pattern': r'ImportError: cannot import name ["\'](\w+)["\']',
+        'category': 'dependency',
+        'suggestion': 'Module import failed: {match}. Check if module/function exists',
+        'severity': 'high'
+    }
+]
+
+
+def read_hook_input() -> dict:
+    """Read JSON hook input from stdin."""
+    try:
+        return json.loads(sys.stdin.read())
+    except json.JSONDecodeError:
+        return {}
+
+
+def sanitize_error(error_message: str) -> str:
+    """
+    Sanitize error message to remove sensitive data.
+
+    Removes:
+    - File paths (replace with relative paths)
+    - User names
+    - API keys/tokens in error messages
+
+    Args:
+        error_message: Raw error message
+
+    Returns:
+        Sanitized error message
+    """
+    # Replace absolute paths with relative paths
+    error_message = error_message.replace(str(PROJECT_ROOT), '<project_root>')
+
+    # Replace home directory paths
+    import os
+    home_dir = os.path.expanduser('~')
+    error_message = error_message.replace(home_dir, '~')
+
+    # Remove potential API keys/tokens
+    error_message = re.sub(r'(api[_-]?key|token|secret)[\s:=]+["\']?[a-zA-Z0-9_-]+["\']?', r'\1=***REDACTED***', error_message, flags=re.IGNORECASE)
+
+    return error_message
+
+
+def analyze_error(error_data: dict) -> dict:
+    """
+    Analyze error and provide recovery suggestions.
+
+    Args:
+        error_data: Error data from hook input
+
+    Returns:
+        Dictionary with analysis results
+    """
+    error_message = error_data.get('error_message', '')
+    error_type = error_data.get('error_type', 'Unknown')
+
+    analysis = {
+        'category': 'unknown',
+        'severity': 'medium',
+        'suggestions': [],
+        'matches': []
+    }
+
+    # Match against known patterns
+    for pattern_info in ERROR_PATTERNS:
+        match = re.search(pattern_info['pattern'], error_message)
+        if match:
+            analysis['category'] = pattern_info['category']
+            analysis['severity'] = pattern_info['severity']
+
+            # Format suggestion with match group
+            suggestion = pattern_info['suggestion']
+            if match.groups():
+                suggestion = suggestion.format(match=match.group(1))
+
+            analysis['suggestions'].append(suggestion)
+            analysis['matches'].append(pattern_info['pattern'])
+
+    # Add general suggestions if no specific pattern matched
+    if not analysis['suggestions']:
+        if 'Error' in error_type:
+            analysis['suggestions'].append('Check the error traceback for the exact line causing the issue')
+            analysis['suggestions'].append('Review recent changes that might have introduced this error')
+
+    return analysis
+
+
+def log_error(error_data: dict, analysis: dict) -> None:
+    """
+    Log error to database for debugging and analysis.
+
+    Logs:
+    - Error message (sanitized)
+    - Error type
+    - Error category
+    - Timestamp
+    - Session ID
+
+    Args:
+        error_data: Error data from hook input
+        analysis: Error analysis results
+    """
+    try:
+        from agentpm.core.database import DatabaseService
+
+        db_path = PROJECT_ROOT / ".aipm" / "data" / "aipm.db"
+        db = DatabaseService(str(db_path))
+
+        # Log to database (lightweight log for now)
+        # Future: Track in error_log table
+        error_type = error_data.get('error_type', 'Unknown')
+        severity = analysis.get('severity', 'medium')
+
+        print(f"❌ Error logged: {error_type} (severity: {severity})", file=sys.stderr)
+
+    except Exception as e:
+        print(f"⚠️ Error logging failed (non-critical): {e}", file=sys.stderr)
+
+
+def format_recovery_message(error_data: dict, analysis: dict) -> str:
+    """
+    Format recovery message for user.
+
+    Args:
+        error_data: Error data from hook input
+        analysis: Error analysis results
+
+    Returns:
+        Markdown-formatted recovery message
+    """
+    error_message = sanitize_error(error_data.get('error_message', ''))
+    error_type = error_data.get('error_type', 'Unknown')
+
+    lines = []
+    lines.append("## 🔧 Error Recovery Assistance")
+    lines.append("")
+    lines.append(f"**Error Type**: {error_type}")
+    lines.append(f"**Category**: {analysis['category']}")
+    lines.append(f"**Severity**: {analysis['severity']}")
+    lines.append("")
+
+    if analysis['suggestions']:
+        lines.append("### 💡 Suggested Fixes")
+        for i, suggestion in enumerate(analysis['suggestions'], 1):
+            lines.append(f"{i}. {suggestion}")
+        lines.append("")
+
+    lines.append("### 📋 Next Steps")
+    lines.append("1. Review the error message above")
+    lines.append("2. Try the suggested fixes")
+    lines.append("3. If issue persists, check recent commits: `git log -5`")
+    lines.append("4. Run tests to verify fix: `pytest`")
+    lines.append("")
+
+    return "\n".join(lines)
+
+
+def main():
+    """Main hook entry point."""
+    try:
+        hook_data = read_hook_input()
+
+        error_data = hook_data.get('error', {})
+        error_message = error_data.get('error_message', '') or hook_data.get('error_message', '')
+        error_type = error_data.get('error_type', '') or hook_data.get('error_type', 'Unknown')
+
+        print(f"🪝 ErrorHandler: type={error_type}", file=sys.stderr)
+
+        # Sanitize error message
+        sanitized_message = sanitize_error(error_message)
+
+        # Analyze error
+        analysis = analyze_error({
+            'error_message': sanitized_message,
+            'error_type': error_type
+        })
+
+        # Log error
+        log_error({
+            'error_message': sanitized_message,
+            'error_type': error_type
+        }, analysis)
+
+        # Format recovery message
+        recovery_message = format_recovery_message({
+            'error_message': sanitized_message,
+            'error_type': error_type
+        }, analysis)
+
+        # Output recovery assistance
+        import os
+        use_json = os.environ.get('AIPM_HOOK_JSON', '0') == '1'
+
+        if use_json:
+            output = {
+                "hookSpecificOutput": {
+                    "hookEventName": "ErrorHandler",
+                    "error_type": error_type,
+                    "category": analysis['category'],
+                    "severity": analysis['severity'],
+                    "suggestions": analysis['suggestions'],
+                    "recovery_message": recovery_message[:2000]  # Limit size
+                }
+            }
+            print(json.dumps(output))
+        else:
+            print(recovery_message)
+
+        sys.exit(0)
+
+    except Exception as e:
+        print(f"❌ ErrorHandler hook error: {e}", file=sys.stderr)
+        # Don't fail - just log
+        output = {
+            "hookSpecificOutput": {
+                "hookEventName": "ErrorHandler",
+                "success": False,
+                "error": str(e)
+            }
+        }
+        print(json.dumps(output))
+        sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()

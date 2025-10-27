@@ -389,7 +389,16 @@ app.config.from_object(config[config_name])
 # csrf = CSRFProtect(app)
 
 # Register markdown and enum filters
-from .utils.markdown import render_markdown, markdown_to_text, format_enum_display, render_context_data
+from .utils.markdown import (
+    render_markdown, 
+    markdown_to_text, 
+    format_enum_display, 
+    render_context_data,
+    render_markdown_compact,
+    render_markdown_large,
+    render_markdown_dark,
+    get_markdown_toc
+)
 
 # Helper function to find latest built files
 def get_latest_built_files():
@@ -439,6 +448,10 @@ app.jinja_env.filters['markdown'] = render_markdown
 app.jinja_env.filters['markdown_to_text'] = markdown_to_text
 app.jinja_env.filters['enum_display'] = format_enum_display
 app.jinja_env.filters['render_context'] = render_context_data
+app.jinja_env.filters['markdown_compact'] = render_markdown_compact
+app.jinja_env.filters['markdown_large'] = render_markdown_large
+app.jinja_env.filters['markdown_dark'] = render_markdown_dark
+app.jinja_env.filters['markdown_toc'] = get_markdown_toc
 
 
 # ========================================
@@ -708,6 +721,7 @@ from .blueprints import (
     system_bp,
     search_bp
 )
+from .blueprints.markdown_demo import markdown_demo_bp
 
 # Register consolidated blueprints (30+ routes total)
 app.register_blueprint(dashboard_bp)
@@ -721,6 +735,7 @@ app.register_blueprint(agents_bp)
 app.register_blueprint(rules_bp)
 app.register_blueprint(system_bp)
 app.register_blueprint(search_bp)
+app.register_blueprint(markdown_demo_bp)
 
 # Legacy blueprints have been archived - using only new modular structure
 

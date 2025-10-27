@@ -1,0 +1,284 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ rule.name or 'Rule' }} - Rule Details - APM (Agent Project Manager){% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Page Header -->
+    <div class="bg-gradient-to-r from-orange-500 to-red-600 rounded-lg p-6 text-white">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold mb-2">{{ rule.name or 'Untitled Rule' }}</h1>
+                <p class="text-orange-100">Rule Details & Enforcement Information</p>
+            </div>
+            <div class="bg-white/20 p-3 rounded-full">
+                <i class="bi bi-shield-check text-3xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Bar -->
+    <div class="bg-white rounded-lg shadow-lg p-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <a href="/rules/" class="text-gray-600 hover:text-gray-800">
+                    <i class="bi bi-arrow-left mr-2"></i>Back to Rules
+                </a>
+                <div class="h-6 w-px bg-gray-300"></div>
+                <span class="text-sm text-gray-500">Rule ID: {{ rule.id }}</span>
+                <span class="text-sm text-gray-500">Rule Code: {{ rule.rule_id or 'N/A' }}</span>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                    <i class="bi bi-pencil mr-2"></i>Edit
+                </button>
+                <button class="px-4 py-2 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 transition-colors">
+                    <i class="bi bi-gear mr-2"></i>Configure
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Main Content Area -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Rule Description -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold text-gray-900">Description</h2>
+                    <button class="text-orange-600 hover:text-orange-800 transition-colors">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                </div>
+                <div class="prose max-w-none">
+                    {% if rule.description %}
+                        <div class="text-gray-700 leading-relaxed">{{ rule.description|markdown }}</div>
+                    {% else %}
+                        <p class="text-gray-500 italic">No description provided.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Rule Logic & Conditions -->
+            {% if rule_logic %}
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Rule Logic & Conditions</h2>
+                <div class="space-y-4">
+                    {% if rule_logic.validation_logic %}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Validation Logic</label>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <code class="text-sm text-gray-800">{{ rule_logic.validation_logic }}</code>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if rule_logic.conditions %}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Conditions</label>
+                        <div class="space-y-2">
+                            {% for condition in rule_logic.conditions %}
+                            <div class="flex items-center p-3 bg-orange-50 rounded-lg border border-orange-200">
+                                <i class="bi bi-check-circle text-orange-500 mr-3"></i>
+                                <span class="text-sm font-medium text-gray-900">{{ condition }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Enforcement Details -->
+            {% if enforcement_details %}
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Enforcement Details</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Enforcement Level</label>
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                            {% if rule.enforcement_level.value == 'BLOCK' %}bg-red-100 text-red-800
+                            {% elif rule.enforcement_level.value == 'LIMIT' %}bg-yellow-100 text-yellow-800
+                            {% elif rule.enforcement_level.value == 'GUIDE' %}bg-blue-100 text-blue-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            <i class="bi bi-circle-fill mr-2 text-xs"></i>{{ rule.enforcement_level.value }}
+                        </span>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                            {{ rule.category or 'general' }}
+                        </span>
+                    </div>
+                    {% if enforcement_details.error_message %}
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Error Message</label>
+                        <div class="bg-red-50 border border-red-200 rounded-lg p-3">
+                            <div class="flex items-start">
+                                <i class="bi bi-exclamation-triangle text-red-500 mr-2 mt-0.5"></i>
+                                <div>
+                                    <p class="text-sm font-medium text-red-800">Error Message</p>
+                                    <p class="text-sm text-red-700">{{ enforcement_details.error_message }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Usage Statistics -->
+            {% if usage_stats %}
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Usage Statistics</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="text-center">
+                        <div class="bg-blue-50 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
+                            <i class="bi bi-graph-up text-2xl text-blue-500"></i>
+                        </div>
+                        <p class="text-2xl font-bold text-gray-900">{{ usage_stats.total_validations or 0 }}</p>
+                        <p class="text-sm text-gray-500">Total Validations</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="bg-green-50 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
+                            <i class="bi bi-check-circle text-2xl text-green-500"></i>
+                        </div>
+                        <p class="text-2xl font-bold text-gray-900">{{ usage_stats.successful_validations or 0 }}</p>
+                        <p class="text-sm text-gray-500">Successful</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="bg-red-50 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
+                            <i class="bi bi-x-circle text-2xl text-red-500"></i>
+                        </div>
+                        <p class="text-2xl font-bold text-gray-900">{{ usage_stats.failed_validations or 0 }}</p>
+                        <p class="text-sm text-gray-500">Failed</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Related Rules -->
+            {% if related_rules %}
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Related Rules</h2>
+                <div class="space-y-3">
+                    {% for related_rule in related_rules[:5] %}
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <div class="flex-1">
+                            <h4 class="text-sm font-medium text-gray-900">{{ related_rule.name or 'Untitled Rule' }}</h4>
+                            <p class="text-xs text-gray-500">{{ related_rule.category or 'general' }} • {{ related_rule.enforcement_level.value if related_rule.enforcement_level else 'N/A' }}</p>
+                        </div>
+                        <a href="/rules/{{ related_rule.id }}" class="text-orange-600 hover:text-orange-800 text-sm">
+                            <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-6">
+            <!-- Status & Actions -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Status & Actions</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Current Status</label>
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                            {% if rule.enabled %}bg-green-100 text-green-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            <i class="bi bi-circle-fill mr-2 text-xs"></i>{{ 'Enabled' if rule.enabled else 'Disabled' }}
+                        </span>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Enforcement Level</label>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                            {% if rule.enforcement_level.value == 'BLOCK' %}bg-red-100 text-red-800
+                            {% elif rule.enforcement_level.value == 'LIMIT' %}bg-yellow-100 text-yellow-800
+                            {% elif rule.enforcement_level.value == 'GUIDE' %}bg-blue-100 text-blue-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ rule.enforcement_level.value }}
+                        </span>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                            {{ rule.category or 'general' }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Metadata -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Details</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500">Rule ID</label>
+                        <p class="text-sm text-gray-900">{{ rule.rule_id or 'N/A' }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500">Created</label>
+                        <p class="text-sm text-gray-900">{{ rule.created_at.strftime('%Y-%m-%d %H:%M') if rule.created_at else 'N/A' }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500">Last Updated</label>
+                        <p class="text-sm text-gray-900">{{ rule.updated_at.strftime('%Y-%m-%d %H:%M') if rule.updated_at else 'N/A' }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500">Created By</label>
+                        <p class="text-sm text-gray-900">{{ rule.created_by or 'System' }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rule Statistics -->
+            {% if rule_stats %}
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Statistics</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500">Total Validations</label>
+                        <p class="text-lg font-semibold text-gray-900">{{ rule_stats.total_validations or 0 }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500">Success Rate</label>
+                        <p class="text-lg font-semibold text-gray-900">{{ rule_stats.success_rate or 'N/A' }}%</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500">Last Triggered</label>
+                        <p class="text-sm text-gray-900">{{ rule_stats.last_triggered.strftime('%Y-%m-%d %H:%M') if rule_stats.last_triggered else 'Never' }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Quick Actions -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+                <div class="space-y-3">
+                    <button class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">
+                        <i class="bi bi-pencil mr-2"></i>Edit Rule
+                    </button>
+                    <button class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">
+                        <i class="bi bi-gear mr-2"></i>Configure
+                    </button>
+                    <button class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">
+                        <i class="bi bi-graph-up mr-2"></i>View Analytics
+                    </button>
+                    <button class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">
+                        <i class="bi bi-copy mr-2"></i>Duplicate Rule
+                    </button>
+                    <button class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                        <i class="bi bi-trash mr-2"></i>Delete Rule
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

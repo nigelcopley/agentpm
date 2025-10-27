@@ -3,13 +3,16 @@ Claude Code Memory Generator
 
 Generates structured memory files in .claude/memory/ from APM database entities.
 Implements 4-tier memory hierarchy with @import resolution and security validation.
+Uses unified context system for consistent context access.
 
 Architecture:
 - MemoryGenerator: Main generator class for memory files
 - SecureImportResolver: @import resolution with security controls
 - Memory templates: Jinja2 templates for structured memory content
+- Unified context: Uses UnifiedContextService for consistent context delivery
 
-Pattern: Template Method Pattern with security-first design
+Pattern: Template Method Pattern with security-first design + unified context
+Task #1144: Refactor to use unified context system
 """
 
 from pathlib import Path
@@ -21,6 +24,8 @@ import re
 
 from agentpm.core.database.service import DatabaseService
 from agentpm.core.database.models.project import Project
+from agentpm.core.database.enums import EntityType
+from agentpm.core.context.unified_service import UnifiedContextService
 from agentpm.providers.base import (
     TemplateBasedMixin,
     FileOutput
@@ -308,17 +313,33 @@ class MemoryGenerator(TemplateBasedMixin):
         >>> print(f"Generated {len(files)} memory files")
     """
 
-    def __init__(self, db_service: DatabaseService):
+    def __init__(
+        self,
+        db_service: DatabaseService,
+        context_service: Optional[UnifiedContextService] = None,
+        project_path: Optional[Path] = None
+    ):
         """
-        Initialize memory generator.
+        Initialize memory generator with unified context support.
 
         Args:
             db_service: Database service for accessing APM data
+            context_service: Optional unified context service (created if not provided)
+            project_path: Optional project path (required if context_service not provided)
 
         Raises:
             FileNotFoundError: If template directory doesn't exist
         """
         self.db = db_service
+
+        # Initialize unified context service
+        if context_service:
+            self.context_service = context_service
+        elif project_path:
+            self.context_service = UnifiedContextService(db_service, project_path)
+        else:
+            # Fallback: context service will be None (legacy mode)
+            self.context_service = None
 
         # Initialize Jinja2 templates
         template_dir = Path(__file__).parent / "templates" / "memory"
@@ -583,7 +604,7 @@ class MemoryGenerator(TemplateBasedMixin):
         resolver: Optional[SecureImportResolver]
     ) -> FileOutput:
         """
-        Generate project context file from project metadata.
+        Generate project context file from project metadata using unified context.
 
         Args:
             project: Project metadata
@@ -596,9 +617,25 @@ class MemoryGenerator(TemplateBasedMixin):
         context_dir = memory_dir / "context"
         context_dir.mkdir(parents=True, exist_ok=True)
 
-        # Render template
+        # Get unified context if available
+        context_payload = None
+        if self.context_service:
+            try:
+                context_payload = self.context_service.get_context(
+                    EntityType.PROJECT,
+                    project.id,
+                    include_supporting=True,
+                    include_code=True
+                )
+            except Exception as e:
+                print(f"⚠️ Failed to load unified context: {e}")
+
+        # Render template with unified context
         context = {
             "project": project,
+            "unified_context": context_payload.to_dict() if context_payload else None,
+            "six_w": context_payload.six_w if context_payload else None,
+            "plugin_facts": context_payload.plugin_facts if context_payload else {},
             "generation_time": datetime.utcnow().isoformat()
         }
 

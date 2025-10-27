@@ -73,7 +73,7 @@
         <div class="p-6">
             <div id="content-preview" class="prose max-w-none">
                 {% if document.format and document.format.value == 'markdown' %}
-                    {{ document_content|markdown|safe }}
+                    {{ document_content|markdown_large|safe }}
                 {% else %}
                     <pre class="whitespace-pre-wrap text-sm bg-gray-50 p-4 rounded-md overflow-x-auto">{{ document_content }}</pre>
                 {% endif %}
@@ -81,7 +81,7 @@
             {% if document_content|length > 1000 %}
             <div id="content-full" class="prose max-w-none hidden">
                 {% if document.format and document.format.value == 'markdown' %}
-                    {{ document_content|markdown|safe }}
+                    {{ document_content|markdown_large|safe }}
                 {% else %}
                     <pre class="whitespace-pre-wrap text-sm bg-gray-50 p-4 rounded-md overflow-x-auto">{{ document_content }}</pre>
                 {% endif %}

@@ -5,7 +5,7 @@ Claude Code PreToolUse Hook - Template Generated
 Validates operations before tool execution.
 Enforces DOC-020 rule: Database-first document creation.
 
-Generated: 2025-10-27T18:31:35.769264
+Generated: 2025-10-27T18:45:32.975602
 Template: hooks/pre-tool-use.py.j2
 """
 

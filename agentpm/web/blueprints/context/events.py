@@ -8,6 +8,7 @@ Handles event-related context functionality including:
 
 from flask import render_template
 import logging
+from datetime import datetime
 
 from . import context_bp
 from ..utils import get_database_service

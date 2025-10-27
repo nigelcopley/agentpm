@@ -1,0 +1,261 @@
+/* Enhanced Markdown Styling for APM (Agent Project Manager) Web Application */
+
+/* Custom prose theme for AgentPM branding */
+.prose {
+    --tw-prose-body: #374151;
+    --tw-prose-headings: #111827;
+    --tw-prose-lead: #4b5563;
+    --tw-prose-links: #2563eb;
+    --tw-prose-bold: #111827;
+    --tw-prose-counters: #6b7280;
+    --tw-prose-bullets: #d1d5db;
+    --tw-prose-hr: #e5e7eb;
+    --tw-prose-quotes: #374151;
+    --tw-prose-quote-borders: #e5e7eb;
+    --tw-prose-captions: #6b7280;
+    --tw-prose-code: #111827;
+    --tw-prose-pre-code: #e5e7eb;
+    --tw-prose-pre-bg: #1f2937;
+    --tw-prose-th-borders: #d1d5db;
+    --tw-prose-td-borders: #e5e7eb;
+}
+
+/* Dark mode prose theme */
+.dark .prose {
+    --tw-prose-body: #d1d5db;
+    --tw-prose-headings: #f9fafb;
+    --tw-prose-lead: #9ca3af;
+    --tw-prose-links: #60a5fa;
+    --tw-prose-bold: #f9fafb;
+    --tw-prose-counters: #9ca3af;
+    --tw-prose-bullets: #4b5563;
+    --tw-prose-hr: #374151;
+    --tw-prose-quotes: #d1d5db;
+    --tw-prose-quote-borders: #374151;
+    --tw-prose-captions: #9ca3af;
+    --tw-prose-code: #f9fafb;
+    --tw-prose-pre-code: #d1d5db;
+    --tw-prose-pre-bg: #111827;
+    --tw-prose-th-borders: #4b5563;
+    --tw-prose-td-borders: #374151;
+}
+
+/* Enhanced code block styling */
+.prose pre {
+    position: relative;
+    background: #1f2937 !important;
+    border: 1px solid #374151;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.prose pre code {
+    background: transparent !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    font-size: inherit;
+    color: #e5e7eb;
+}
+
+/* Syntax highlighting for common languages */
+.prose pre code.language-python {
+    color: #fbbf24;
+}
+
+.prose pre code.language-javascript,
+.prose pre code.language-js {
+    color: #f59e0b;
+}
+
+.prose pre code.language-html {
+    color: #ef4444;
+}
+
+.prose pre code.language-css {
+    color: #3b82f6;
+}
+
+.prose pre code.language-json {
+    color: #10b981;
+}
+
+.prose pre code.language-yaml {
+    color: #8b5cf6;
+}
+
+.prose pre code.language-bash,
+.prose pre code.language-shell {
+    color: #06b6d4;
+}
+
+/* Enhanced table styling */
+.prose table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+    margin: 1.5rem 0;
+}
+
+.prose table th {
+    background: #f9fafb;
+    font-weight: 600;
+    text-align: left;
+    padding: 0.75rem 1rem;
+    border-bottom: 2px solid #e5e7eb;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #374151;
+}
+
+.prose table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 0.875rem;
+}
+
+.prose table tr:hover {
+    background: #f9fafb;
+}
+
+/* Enhanced blockquote styling */
+.prose blockquote {
+    border-left: 4px solid #3b82f6;
+    background: #eff6ff;
+    padding: 1rem 1.5rem;
+    margin: 1.5rem 0;
+    border-radius: 0 0.5rem 0.5rem 0;
+    font-style: italic;
+    color: #1e40af;
+}
+
+.dark .prose blockquote {
+    background: #1e3a8a;
+    color: #93c5fd;
+    border-left-color: #60a5fa;
+}
+
+/* Enhanced list styling */
+.prose ul {
+    list-style-type: disc;
+    padding-left: 1.5rem;
+}
+
+.prose ol {
+    list-style-type: decimal;
+    padding-left: 1.5rem;
+}
+
+.prose li {
+    margin: 0.25rem 0;
+}
+
+.prose li p {
+    margin: 0;
+}
+
+/* Enhanced heading styling */
+.prose h1 {
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.prose h2 {
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 0.25rem;
+    margin-bottom: 1rem;
+}
+
+/* Enhanced link styling */
+.prose a {
+    color: #2563eb;
+    text-decoration: underline;
+    text-decoration-color: #93c5fd;
+    text-underline-offset: 2px;
+    transition: all 0.2s ease;
+}
+
+.prose a:hover {
+    color: #1d4ed8;
+    text-decoration-color: #2563eb;
+}
+
+/* Enhanced image styling */
+.prose img {
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    margin: 1.5rem 0;
+}
+
+/* Enhanced horizontal rule styling */
+.prose hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, #e5e7eb, transparent);
+    margin: 2rem 0;
+}
+
+/* Enhanced footnote styling */
+.prose .footnote {
+    border-top: 1px solid #e5e7eb;
+    padding-top: 1rem;
+    margin-top: 2rem;
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.prose .footnote ol {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.prose .footnote li {
+    margin: 0.5rem 0;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .prose {
+        font-size: 0.875rem;
+    }
+    
+    .prose pre {
+        font-size: 0.75rem;
+        padding: 0.75rem;
+    }
+    
+    .prose table {
+        font-size: 0.75rem;
+    }
+    
+    .prose table th,
+    .prose table td {
+        padding: 0.5rem 0.75rem;
+    }
+}
+
+/* Print styles */
+@media print {
+    .prose {
+        color: #000 !important;
+    }
+    
+    .prose pre {
+        background: #f5f5f5 !important;
+        border: 1px solid #ccc !important;
+    }
+    
+    .prose a {
+        color: #000 !important;
+        text-decoration: underline !important;
+    }
+    
+    .prose blockquote {
+        background: #f5f5f5 !important;
+        border-left-color: #ccc !important;
+    }
+}

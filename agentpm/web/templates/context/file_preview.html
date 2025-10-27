@@ -41,11 +41,11 @@
     <!-- Action Bar -->
     <div class="bg-white rounded-lg shadow-lg p-4 flex items-center justify-between">
         <div class="flex items-center space-x-4">
-            <a href="{{ url_for('context.context_files_list') }}" 
+            <a href="{{ url_for('context.context_files') }}" 
                class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-600 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                 <i class="bi bi-arrow-left mr-2"></i>Back to Files
             </a>
-            <a href="{{ url_for('context.context_files_download', filepath=file_path) }}" 
+            <a href="{{ url_for('context.download_file', filepath=file_path) }}" 
                class="inline-flex items-center px-4 py-2 text-sm font-medium text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
                 <i class="bi bi-download mr-2"></i>Download
             </a>
@@ -66,7 +66,7 @@
             {% if file_name.endswith('.md') %}
                 <!-- Markdown content -->
                 <div class="prose max-w-none">
-                    {{ content|markdown }}
+                    {{ content|markdown_large }}
                 </div>
             {% elif file_name.endswith('.json') %}
                 <!-- JSON content -->

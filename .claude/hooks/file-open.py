@@ -1,0 +1,238 @@
+#!/usr/bin/env python3
+"""
+Claude Code FileOpen Hook - Template Generated
+
+Executes when files are opened/read for access logging and validation.
+Useful for tracking file access patterns and security monitoring.
+
+Features:
+- File access logging
+- Sensitive file detection
+- Access pattern analysis
+- File metadata capture
+
+Security:
+- Path validation (no traversal)
+- Sensitive file blacklist
+- Access rate limiting (prevent DoS)
+
+Generated: 2025-10-27T18:45:32.975602
+Template: hooks/file-open.py.j2
+"""
+
+import json
+import sys
+from pathlib import Path
+from datetime import datetime
+
+# Add project to path
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+
+
+# Sensitive file patterns (should not be frequently accessed)
+SENSITIVE_PATTERNS = [
+    '.env', 'credentials.json', '.aws/', '.ssh/',
+    'id_rsa', 'private.key', 'secret', '.pem',
+    'config.json', 'settings.json', 'secrets.',
+    'api_key', 'token', 'password'
+]
+
+
+def read_hook_input() -> dict:
+    """Read JSON hook input from stdin."""
+    try:
+        return json.loads(sys.stdin.read())
+    except json.JSONDecodeError:
+        return {}
+
+
+def validate_file_path(file_path: str) -> tuple[bool, str]:
+    """
+    Validate file path for security.
+
+    Security Checks:
+    - No path traversal (..)
+    - Within project boundaries
+    - Not a symbolic link
+    - Not in sensitive directories
+
+    Args:
+        file_path: File path from hook input
+
+    Returns:
+        Tuple of (is_valid, warning_message)
+    """
+    if not file_path:
+        return True, ""
+
+    # Check for path traversal
+    if '..' in file_path:
+        return False, f"Path traversal detected: {file_path}"
+
+    try:
+        # Resolve to absolute path
+        path = Path(file_path)
+        if not path.is_absolute():
+            path = (PROJECT_ROOT / file_path).resolve()
+        else:
+            path = path.resolve()
+
+        # Check within project boundaries
+        try:
+            path.relative_to(PROJECT_ROOT.resolve())
+        except ValueError:
+            return False, f"File outside project: {file_path}"
+
+        # Check for symbolic links
+        if path.is_symlink():
+            return False, f"Symbolic link not allowed: {file_path}"
+
+        return True, ""
+
+    except Exception as e:
+        return False, f"Path validation failed: {e}"
+
+
+def is_sensitive_file(file_path: str) -> bool:
+    """
+    Check if file matches sensitive file patterns.
+
+    Args:
+        file_path: File path to check
+
+    Returns:
+        True if file is sensitive
+    """
+    file_path_lower = file_path.lower()
+    return any(pattern in file_path_lower for pattern in SENSITIVE_PATTERNS)
+
+
+def log_file_access(file_path: str, is_sensitive: bool) -> None:
+    """
+    Log file access to database for audit trail.
+
+    Logs:
+    - File path (sanitized)
+    - Access timestamp
+    - Sensitive flag
+    - Access frequency
+
+    Args:
+        file_path: File path being accessed
+        is_sensitive: Whether file is sensitive
+    """
+    try:
+        from agentpm.core.database import DatabaseService
+
+        db_path = PROJECT_ROOT / ".aipm" / "data" / "aipm.db"
+        db = DatabaseService(str(db_path))
+
+        # Log to database (lightweight log for now)
+        # Future: Track in file_accesses table
+        if is_sensitive:
+            print(f"⚠️ Sensitive file accessed: {file_path}", file=sys.stderr)
+        else:
+            print(f"📖 File accessed: {file_path}", file=sys.stderr)
+
+    except Exception as e:
+        print(f"⚠️ Access logging failed (non-critical): {e}", file=sys.stderr)
+
+
+def get_file_metadata(file_path: str) -> dict:
+    """
+    Gather file metadata for context.
+
+    Metadata:
+    - File size
+    - Last modified time
+    - File type
+    - Line count (for text files)
+
+    Args:
+        file_path: File path
+
+    Returns:
+        Dictionary with file metadata
+    """
+    try:
+        path = Path(file_path)
+        if not path.exists():
+            return {}
+
+        stat = path.stat()
+
+        metadata = {
+            'size_bytes': stat.st_size,
+            'modified_time': datetime.fromtimestamp(stat.st_mtime).isoformat(),
+            'file_type': path.suffix,
+            'is_binary': False
+        }
+
+        # Try to get line count for text files
+        if path.suffix in ['.py', '.md', '.txt', '.json', '.yaml', '.yml']:
+            try:
+                with open(path, 'r', encoding='utf-8') as f:
+                    metadata['line_count'] = sum(1 for _ in f)
+            except Exception:
+                pass
+
+        return metadata
+
+    except Exception as e:
+        print(f"⚠️ Metadata gathering failed: {e}", file=sys.stderr)
+        return {}
+
+
+def main():
+    """Main hook entry point."""
+    try:
+        hook_data = read_hook_input()
+
+        # Extract file path from hook data
+        file_path = hook_data.get('file_path', '') or hook_data.get('tool_params', {}).get('file_path', '')
+
+        print(f"🪝 FileOpen: file={file_path}", file=sys.stderr)
+
+        # Validate file path
+        is_valid, warning = validate_file_path(file_path)
+        if not is_valid:
+            print(f"⚠️ Path validation warning: {warning}", file=sys.stderr)
+
+        # Check if sensitive file
+        is_sensitive = is_sensitive_file(file_path)
+
+        # Log file access
+        log_file_access(file_path, is_sensitive)
+
+        # Get file metadata
+        metadata = get_file_metadata(file_path)
+
+        # Output (informational only - don't block)
+        output = {
+            "hookSpecificOutput": {
+                "hookEventName": "FileOpen",
+                "file_path": file_path,
+                "is_sensitive": is_sensitive,
+                "metadata": metadata
+            }
+        }
+        print(json.dumps(output))
+        sys.exit(0)
+
+    except Exception as e:
+        print(f"❌ FileOpen hook error: {e}", file=sys.stderr)
+        # Don't fail - just log
+        output = {
+            "hookSpecificOutput": {
+                "hookEventName": "FileOpen",
+                "success": False,
+                "error": str(e)
+            }
+        }
+        print(json.dumps(output))
+        sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()

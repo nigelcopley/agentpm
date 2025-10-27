@@ -1,0 +1,27 @@
+{
+  "name": "APM (Agent Project Manager) Claude Code Integration",
+  "description": "Claude Code integration generated via new template system",
+  "version": "2.0.0",
+  "plugins": [],
+  "hooks": [],
+  "subagents": [],
+  "settings": [],
+  "slash_commands": [],
+  "checkpoints": [],
+  "memory_tools": [],
+  "dependencies": [
+    "agentpm",
+    "jinja2"
+  ],
+  "requirements": [
+    "python>=3.9",
+    "pydantic>=2.0.0",
+    "jinja2>=3.0.0"
+  ],
+  "permissions": [
+    "read_project_files",
+    "write_agent_files"
+  ],
+  "created_at": "2025-10-27 18:45:13.072829",
+  "updated_at": "2025-10-27 18:45:13.072835"
+}
