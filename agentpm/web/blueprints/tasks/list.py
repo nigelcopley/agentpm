@@ -19,15 +19,18 @@ from flask import render_template, request, jsonify, Response
 from ....core.database.methods import tasks, work_items, projects
 from ....core.database.enums import TaskStatus, TaskType
 from ..utils import get_database_service, _is_htmx_request
-from ..utils.pagination import paginate_items, get_pagination_from_request, get_query_params_from_request
+from ...utils.pagination import paginate_items, get_pagination_from_request, get_query_params_from_request
 from . import tasks_bp
 
 logger = logging.getLogger(__name__)
 
 @tasks_bp.route('/')
 def tasks_list():
-    """Tasks list view with comprehensive metrics, filtering, and search."""
+    """Tasks list view with comprehensive metrics, filtering, search, and pagination."""
     db = get_database_service()
+    
+    # Get pagination parameters
+    page, per_page = get_pagination_from_request(request, default_per_page=20)
     
     # Get filter parameters
     search_query = request.args.get('search', '').strip()
@@ -126,6 +129,15 @@ def tasks_list():
     else:  # updated_desc (default)
         filtered_tasks.sort(key=lambda x: x.updated_at or x.created_at or datetime.min, reverse=True)
     
+    # Apply pagination
+    paginated_tasks, pagination = paginate_items(
+        items=filtered_tasks,
+        page=page,
+        per_page=per_page,
+        base_url=request.path,
+        query_params=get_query_params_from_request(request)
+    )
+    
     # Calculate comprehensive metrics for the sidebar
     metrics = {
         # Basic counts
@@ -195,10 +207,11 @@ def tasks_list():
     if _is_htmx_request():
         # Return only the content that should be updated
         return render_template('tasks/partials/tasks_content.html', 
-                             tasks=filtered_tasks,
+                             tasks=paginated_tasks,
                              work_items=work_items_list,
                              metrics=metrics,
                              filter_options=filter_options,
+                             pagination=pagination,
                              current_filters={
                                  'search': search_query,
                                  'status': status_filter,
@@ -211,10 +224,11 @@ def tasks_list():
     
     # Return full page for regular requests
     return render_template('tasks/list.html', 
-                         tasks=filtered_tasks,
+                         tasks=paginated_tasks,
                          work_items=work_items_list,
                          metrics=metrics,
                          filter_options=filter_options,
+                         pagination=pagination,
                          current_filters={
                              'search': search_query,
                              'status': status_filter,

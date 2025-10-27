@@ -11,16 +11,20 @@ import logging
 
 from . import documents_bp
 from ..utils import get_database_service, _is_htmx_request, validate_required_fields, handle_error
+from ...utils.pagination import paginate_items, get_pagination_from_request, get_query_params_from_request
 from ....core.database.enums import EntityType
 
 logger = logging.getLogger(__name__)
 
 @documents_bp.route('/')
 def documents_list():
-    """Documents list view with comprehensive metrics and search"""
+    """Documents list view with comprehensive metrics, search, and pagination"""
     try:
         db = get_database_service()
         from ....core.database.methods import document_references, projects
+        
+        # Get pagination parameters
+        page, per_page = get_pagination_from_request(request, default_per_page=20)
         
         projects_list = projects.list_projects(db) or []
         
@@ -71,6 +75,15 @@ def documents_list():
         elif current_sort == 'type_desc':
             documents.sort(key=lambda x: (x.document_type or '').lower(), reverse=True)
         
+        # Apply pagination
+        paginated_documents, pagination = paginate_items(
+            items=documents,
+            page=page,
+            per_page=per_page,
+            base_url=request.path,
+            query_params=get_query_params_from_request(request)
+        )
+        
         # Calculate document types
         doc_types = {}
         for doc in documents:
@@ -93,7 +106,7 @@ def documents_list():
         }
         
         return render_template('documents/list.html', 
-                             documents=documents,
+                             documents=paginated_documents,
                              metrics=metrics,
                              search_query=search_query,
                              projects=projects_list,
@@ -102,7 +115,8 @@ def documents_list():
                              current_sort=current_sort,
                              doc_types=doc_types,
                              total_documents=len(documents),
-                             recent_documents=recent_documents)
+                             recent_documents=recent_documents,
+                             pagination=pagination)
     
     except Exception as e:
         logger.error(f"Error loading documents: {e}")

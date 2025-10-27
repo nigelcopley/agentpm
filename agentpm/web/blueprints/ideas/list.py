@@ -13,14 +13,18 @@ import logging
 
 from . import ideas_bp
 from ..utils import get_database_service, _is_htmx_request
+from ...utils.pagination import paginate_items, get_pagination_from_request, get_query_params_from_request
 
 logger = logging.getLogger(__name__)
 
 @ideas_bp.route('/')
 def ideas_list():
-    """Ideas list view with comprehensive metrics, filtering, and search"""
+    """Ideas list view with comprehensive metrics, filtering, search, and pagination"""
     try:
         db = get_database_service()
+        
+        # Get pagination parameters
+        page, per_page = get_pagination_from_request(request, default_per_page=20)
         
         # Get project ID for ideas
         from ....core.database.methods import projects, ideas
@@ -108,6 +112,15 @@ def ideas_list():
         else:  # updated_desc (default)
             filtered_ideas.sort(key=lambda x: x.updated_at or x.created_at or datetime.min, reverse=True)
         
+        # Apply pagination
+        paginated_ideas, pagination = paginate_items(
+            items=filtered_ideas,
+            page=page,
+            per_page=per_page,
+            base_url=request.path,
+            query_params=get_query_params_from_request(request)
+        )
+        
         # Calculate comprehensive metrics for the sidebar
         metrics = {
             # Basic counts
@@ -152,9 +165,10 @@ def ideas_list():
         }
         
         return render_template('ideas/list.html', 
-                             ideas=filtered_ideas, 
+                             ideas=paginated_ideas, 
                              metrics=metrics,
                              filter_options=filter_options,
+                             pagination=pagination,
                              current_filters={
                                  'search': search_query,
                                  'status': status_filter,

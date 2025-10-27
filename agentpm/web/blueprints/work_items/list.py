@@ -16,6 +16,7 @@ import io
 
 from . import work_items_bp
 from ..utils import get_database_service, _is_htmx_request
+from ...utils.pagination import paginate_items, get_pagination_from_request, get_query_params_from_request
 
 # Core imports
 from ....core.database.methods import projects, work_items, tasks
@@ -25,8 +26,11 @@ logger = logging.getLogger(__name__)
 
 @work_items_bp.route('/')
 def work_items_list():
-    """Work items list view with comprehensive metrics, filtering, and search"""
+    """Work items list view with comprehensive metrics, filtering, search, and pagination"""
     db = get_database_service()
+    
+    # Get pagination parameters
+    page, per_page = get_pagination_from_request(request, default_per_page=20)
     
     # Get project ID for work items
     
@@ -100,6 +104,15 @@ def work_items_list():
     else:  # updated_desc (default)
         filtered_work_items.sort(key=lambda x: x.updated_at or x.created_at or datetime.min, reverse=True)
     
+    # Apply pagination
+    paginated_work_items, pagination = paginate_items(
+        items=filtered_work_items,
+        page=page,
+        per_page=per_page,
+        base_url=request.path,
+        query_params=get_query_params_from_request(request)
+    )
+    
     # Calculate comprehensive metrics for the sidebar
     metrics = {
         # Basic counts
@@ -164,9 +177,10 @@ def work_items_list():
     if _is_htmx_request():
         # Return only the content that should be updated
         return render_template('work-items/partials/work_items_content.html', 
-                             work_items=filtered_work_items,
+                             work_items=paginated_work_items,
                              metrics=metrics,
                              filter_options=filter_options,
+                             pagination=pagination,
                              current_filters={
                                  'search': search_query,
                                  'status': status_filter,
@@ -177,9 +191,10 @@ def work_items_list():
     
     # Return full page for regular requests
     return render_template('work-items/list.html', 
-                         work_items=filtered_work_items,
+                         work_items=paginated_work_items,
                          metrics=metrics,
                          filter_options=filter_options,
+                         pagination=pagination,
                          current_filters={
                              'search': search_query,
                              'status': status_filter,
