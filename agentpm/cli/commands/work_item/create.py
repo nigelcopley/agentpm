@@ -289,7 +289,7 @@ def create(ctx: click.Context, name: str, wi_type: str, continuous: bool, descri
         status=WorkItemStatus.DRAFT,
         project_id=project_id,
         priority=priority,
-        business_context=business_context,
+        business_context=business_context,  # Keep for backward compatibility
         phase=phase,
         metadata=json.dumps(metadata) if metadata else '{}',
         is_continuous=is_continuous
@@ -298,7 +298,16 @@ def create(ctx: click.Context, name: str, wi_type: str, continuous: bool, descri
     # THREE-LAYER PATTERN: Use adapter, not direct methods call
     created_wi = WorkItemAdapter.create(db, work_item)
 
-    # Create 6W context if any 6W fields provided
+    # Create unified context if business_context or 6W fields provided
+    context_data = {}
+    has_context = False
+    
+    # Add business context to unified structure
+    if business_context:
+        context_data['business_context'] = business_context
+        has_context = True
+    
+    # Add 6W data to unified structure
     six_w_who = six_w_fields.get('six_w_who')
     six_w_what = six_w_fields.get('six_w_what')
     six_w_where = six_w_fields.get('six_w_where')
@@ -316,14 +325,35 @@ def create(ctx: click.Context, name: str, wi_type: str, continuous: bool, descri
             business_value=six_w_why,
             suggested_approach=six_w_how
         )
+        
+        # Convert to dict for unified storage
+        context_data['six_w'] = {
+            'end_users': six_w_data.end_users,
+            'implementers': six_w_data.implementers,
+            'reviewers': six_w_data.reviewers,
+            'functional_requirements': six_w_data.functional_requirements,
+            'technical_constraints': six_w_data.technical_constraints,
+            'acceptance_criteria': six_w_data.acceptance_criteria,
+            'affected_services': six_w_data.affected_services,
+            'repositories': six_w_data.repositories,
+            'deployment_targets': six_w_data.deployment_targets,
+            'deadline': six_w_data.deadline.isoformat() if six_w_data.deadline else None,
+            'dependencies_timeline': six_w_data.dependencies_timeline,
+            'business_value': six_w_data.business_value,
+            'risk_if_delayed': six_w_data.risk_if_delayed,
+            'suggested_approach': six_w_data.suggested_approach,
+            'existing_patterns': six_w_data.existing_patterns
+        }
+        has_context = True
 
-        # Create context entry
+    # Create unified context entry if we have any context data
+    if has_context:
         context = Context(
             project_id=project_id,
             context_type=ContextType.WORK_ITEM_CONTEXT,
             entity_type=EntityType.WORK_ITEM,
             entity_id=created_wi.id,
-            six_w=six_w_data,
+            context_data=context_data,
             confidence_score=0.7,  # User-provided = medium confidence
             confidence_band=ConfidenceBand.YELLOW
         )

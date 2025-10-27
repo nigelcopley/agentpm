@@ -1,0 +1,153 @@
+<!--
+Pagination Component for APM (Agent Project Manager) Web Application
+
+Usage:
+{% include 'components/pagination.html' with context %}
+
+Required context variables:
+- pagination: PaginationInfo object or dict with pagination data
+
+Optional context variables:
+- show_info: Show pagination info text (default: true)
+- show_per_page: Show per-page selector (default: false)
+- per_page_options: List of per-page options (default: [10, 20, 50, 100])
+- compact: Use compact pagination style (default: false)
+- class: Additional CSS classes
+-->
+
+{% if pagination and pagination.total_pages > 1 %}
+<div class="pagination-container {{ class or '' }}">
+    <!-- Pagination Info -->
+    {% if show_info is not defined or show_info %}
+    <div class="flex items-center justify-between mb-4">
+        <div class="text-sm text-gray-700">
+            Showing {{ pagination.start_item }} to {{ pagination.end_item }} of {{ pagination.total }} results
+        </div>
+        
+        <!-- Per Page Selector -->
+        {% if show_per_page is defined and show_per_page %}
+        <div class="flex items-center space-x-2">
+            <label for="per-page-select" class="text-sm text-gray-700">Per page:</label>
+            <select id="per-page-select" 
+                    class="px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    onchange="changePerPage(this.value)">
+                {% for option in per_page_options or [10, 20, 50, 100] %}
+                <option value="{{ option }}" {% if option == pagination.per_page %}selected{% endif %}>
+                    {{ option }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <!-- Pagination Controls -->
+    <div class="flex items-center justify-center space-x-1">
+        <!-- Previous Button -->
+        {% if pagination.has_prev %}
+        <a href="{{ pagination.prev_url }}" 
+           class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-l-md hover:bg-gray-50 hover:text-gray-700 transition-colors"
+           title="Previous page">
+            <i class="bi bi-chevron-left"></i>
+        </a>
+        {% else %}
+        <span class="px-3 py-2 text-sm font-medium text-gray-300 bg-gray-100 border border-gray-300 rounded-l-md cursor-not-allowed">
+            <i class="bi bi-chevron-left"></i>
+        </span>
+        {% endif %}
+        
+        <!-- Page Numbers -->
+        {% if compact is defined and compact %}
+        <!-- Compact Mode: Show only current page -->
+        <span class="px-3 py-2 text-sm font-medium text-white bg-blue-600 border border-blue-600">
+            {{ pagination.page }}
+        </span>
+        {% else %}
+        <!-- Full Mode: Show page numbers with ellipsis -->
+        {% for page_num in pagination.page_numbers %}
+            {% if page_num is none %}
+            <!-- Ellipsis -->
+            <span class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border-t border-b border-gray-300">
+                ...
+            </span>
+            {% elif page_num == pagination.page %}
+            <!-- Current Page -->
+            <span class="px-3 py-2 text-sm font-medium text-white bg-blue-600 border border-blue-600">
+                {{ page_num }}
+            </span>
+            {% else %}
+            <!-- Other Pages -->
+            <a href="{{ pagination.get_page_url(page_num) }}" 
+               class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border-t border-b border-gray-300 hover:bg-gray-50 hover:text-gray-700 transition-colors">
+                {{ page_num }}
+            </a>
+            {% endif %}
+        {% endfor %}
+        {% endif %}
+        
+        <!-- Next Button -->
+        {% if pagination.has_next %}
+        <a href="{{ pagination.next_url }}" 
+           class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-r-md hover:bg-gray-50 hover:text-gray-700 transition-colors"
+           title="Next page">
+            <i class="bi bi-chevron-right"></i>
+        </a>
+        {% else %}
+        <span class="px-3 py-2 text-sm font-medium text-gray-300 bg-gray-100 border border-gray-300 rounded-r-md cursor-not-allowed">
+            <i class="bi bi-chevron-right"></i>
+        </span>
+        {% endif %}
+    </div>
+    
+    <!-- Page Jump (for large datasets) -->
+    {% if pagination.total_pages > 10 %}
+    <div class="flex items-center justify-center mt-4 space-x-2">
+        <span class="text-sm text-gray-700">Go to page:</span>
+        <input type="number" 
+               id="page-jump-input" 
+               min="1" 
+               max="{{ pagination.total_pages }}" 
+               value="{{ pagination.page }}"
+               class="w-16 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+               onkeypress="handlePageJump(event)">
+        <button onclick="jumpToPage()" 
+                class="px-3 py-1 text-sm text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors">
+            Go
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// Per page change handler
+function changePerPage(newPerPage) {
+    const url = new URL(window.location);
+    url.searchParams.set('per_page', newPerPage);
+    url.searchParams.set('page', '1'); // Reset to first page
+    window.location.href = url.toString();
+}
+
+// Page jump handlers
+function handlePageJump(event) {
+    if (event.key === 'Enter') {
+        jumpToPage();
+    }
+}
+
+function jumpToPage() {
+    const input = document.getElementById('page-jump-input');
+    const page = parseInt(input.value);
+    const maxPage = {{ pagination.total_pages }};
+    
+    if (page >= 1 && page <= maxPage) {
+        const url = new URL(window.location);
+        url.searchParams.set('page', page.toString());
+        window.location.href = url.toString();
+    } else {
+        alert(`Please enter a page number between 1 and ${maxPage}`);
+        input.value = {{ pagination.page }};
+    }
+}
+</script>
+{% endif %}

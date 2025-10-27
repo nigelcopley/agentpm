@@ -5,7 +5,8 @@ Provides lazy-initialized, cached service instances for database, workflow,
 and context operations. Single source of truth for service configuration.
 
 Benefits:
-- Caching prevents redundant database connections (1 per project)
+- Uses centralized database initialization for consistency
+- Caching prevents redundant service creation
 - Consistent error handling across all commands
 - Easy to mock for testing
 - Lazy initialization (services created only when needed)
@@ -19,61 +20,60 @@ from agentpm.core.context import ContextService
 import click
 
 
-@lru_cache(maxsize=1)
-def get_database_service(project_root: Path) -> DatabaseService:
+def get_database_service(project_root: Path = None) -> DatabaseService:
     """
-    Get or create database service (cached per project).
-
-    Uses LRU cache to ensure only one DatabaseService instance per project.
-    This prevents multiple database connections and ensures consistent state.
-
+    Get database service instance from centralized initializer.
+    
+    Uses the centralized DatabaseInitializer to ensure single instance
+    per application with proper lifecycle management.
+    
     Args:
-        project_root: Path to project root containing .agentpm directory
-
+        project_root: Optional project root (for backward compatibility)
+        
     Returns:
         DatabaseService instance
-
+        
     Raises:
-        FileNotFoundError: If database file doesn't exist (project not initialized)
-
-    Performance:
-        - First call: ~50ms (database connection + schema validation)
-        - Subsequent calls: <1ms (cache hit)
-
+        RuntimeError: If database not initialized
+        
     Example:
         ```python
-        db = get_database_service(Path("/path/to/project"))
+        db = get_database_service()
         tasks = db.tasks.list_tasks()
         ```
     """
-    db_path = project_root / '.agentpm' / 'data' / 'agentpm.db'
+    from agentpm.core.database.initializer import DatabaseInitializer
+    
+    if not DatabaseInitializer.is_initialized():
+        # Try to initialize if not already done
+        try:
+            DatabaseInitializer.initialize()
+        except Exception as e:
+            raise RuntimeError(
+                f"Database not initialized and initialization failed: {e}\n"
+                f"Run 'apm init' to initialize the project."
+            ) from e
+    
+    return DatabaseInitializer.get_instance()
 
-    if not db_path.exists():
-        raise FileNotFoundError(
-            f"Database not found at {db_path}.\n"
-            f"Project may not be initialized. Run 'apm init' to initialize."
-        )
 
-    # Create and return cached database service
-    return DatabaseService(str(db_path))
-
-
-def get_workflow_service(project_root: Path) -> WorkflowService:
+@lru_cache(maxsize=1)
+def get_workflow_service(project_root: Path = None) -> WorkflowService:
     """
-    Get workflow service with database dependency.
+    Get workflow service with centralized database dependency.
 
-    Creates WorkflowService instance with cached DatabaseService.
+    Creates WorkflowService instance with centralized DatabaseService.
     No caching on WorkflowService itself (lightweight wrapper).
 
     Args:
-        project_root: Path to project root
+        project_root: Optional project root (for backward compatibility)
 
     Returns:
         WorkflowService instance for quality gate operations
 
     Example:
         ```python
-        workflow = get_workflow_service(project_root)
+        workflow = get_workflow_service()
         updated_task = workflow.transition_task(task_id=123, new_status="in_progress")
         ```
     """
@@ -81,22 +81,22 @@ def get_workflow_service(project_root: Path) -> WorkflowService:
     return WorkflowService(db)
 
 
-def get_context_service(project_root: Path) -> ContextService:
+def get_context_service(project_root: Path = None) -> ContextService:
     """
-    Get context service with database and path dependencies.
+    Get context service with centralized database and path dependencies.
 
-    Creates ContextService instance with cached DatabaseService and project path.
+    Creates ContextService instance with centralized DatabaseService and project path.
     No caching on ContextService itself (stateless operations).
 
     Args:
-        project_root: Path to project root
+        project_root: Optional project root (for backward compatibility)
 
     Returns:
         ContextService instance for context assembly and scoring
 
     Example:
         ```python
-        context_svc = get_context_service(project_root)
+        context_svc = get_context_service()
         context = context_svc.get_task_context(task_id=123)
         ```
     """

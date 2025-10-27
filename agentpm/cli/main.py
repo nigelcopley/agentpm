@@ -174,10 +174,22 @@ def main(ctx: click.Context, verbose: bool):
         from agentpm.cli.utils.project import find_project_root
         ctx.obj['project_root'] = find_project_root()
 
-    # Services initialized on-demand by commands (not here)
-    # Allow tests to override db_service
+    # Initialize database service at startup (except for init command)
     if 'db_service' not in ctx.obj:
-        ctx.obj['db_service'] = None
+        try:
+            # Skip database initialization for init command
+            if ctx.invoked_subcommand != 'init':
+                from agentpm.core.database.initializer import DatabaseInitializer
+                ctx.obj['db_service'] = DatabaseInitializer.initialize()
+            else:
+                ctx.obj['db_service'] = None
+        except Exception as e:
+            # Database initialization failed - commands will handle gracefully
+            ctx.obj['db_service'] = None
+            if verbose:
+                ctx.obj['console_err'].print(f"[yellow]Database initialization skipped: {e}[/yellow]")
+    
+    # Other services initialized on-demand by commands
     if 'workflow_service' not in ctx.obj:
         ctx.obj['workflow_service'] = None
     if 'context_service' not in ctx.obj:
@@ -191,5 +203,17 @@ def main(ctx: click.Context, verbose: bool):
 # Export for testing
 cli = main
 
+def cleanup():
+    """Cleanup resources on application shutdown."""
+    try:
+        from agentpm.core.database.initializer import DatabaseInitializer
+        DatabaseInitializer.cleanup()
+    except Exception:
+        # Ignore cleanup errors during shutdown
+        pass
+
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    finally:
+        cleanup()

@@ -19,6 +19,7 @@ from flask import render_template, request, jsonify, Response
 from ....core.database.methods import tasks, work_items, projects
 from ....core.database.enums import TaskStatus, TaskType
 from ..utils import get_database_service, _is_htmx_request
+from ..utils.pagination import paginate_items, get_pagination_from_request, get_query_params_from_request
 from . import tasks_bp
 
 logger = logging.getLogger(__name__)
