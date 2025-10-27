@@ -1,0 +1,329 @@
+#!/usr/bin/env python3
+"""
+Claude Code SessionStart Hook - Template Generated
+
+Loads AIPM project context when Claude Code session starts.
+Output is injected into Claude's context automatically.
+
+Performance: ~200ms (faster than bash with subprocess overhead)
+
+Generated: 2025-10-27T11:34:30.479549
+Template: hooks/session-start.py.j2
+"""
+
+import json
+import sys
+from pathlib import Path
+from datetime import datetime
+
+# Add project to path
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+
+from agentpm.core.database import DatabaseService
+from agentpm.core.database.methods import work_items as wi_methods
+from agentpm.core.database.methods import tasks as task_methods
+from agentpm.core.database.methods import projects as project_methods
+from agentpm.core.database.enums import WorkItemStatus, TaskStatus, Phase
+
+# Context Agent integration
+from agentpm.core.hooks.context_integration import ContextHookAdapter
+
+# Phase-based orchestrator routing (O(1) lookup)
+PHASE_TO_ORCHESTRATOR = {
+    Phase.D1_DISCOVERY: 'definition-orch',
+    Phase.P1_PLAN: 'planning-orch',
+    Phase.I1_IMPLEMENTATION: 'implementation-orch',
+    Phase.R1_REVIEW: 'review-test-orch',
+    Phase.O1_OPERATIONS: 'release-ops-orch',
+    Phase.E1_EVOLUTION: 'evolution-orch'
+}
+
+
+def read_hook_input() -> dict:
+    """Read JSON hook input from stdin."""
+    try:
+        return json.loads(sys.stdin.read())
+    except json.JSONDecodeError:
+        return {}
+
+
+def get_database() -> DatabaseService:
+    """Get database service instance."""
+    db_path = PROJECT_ROOT / ".aipm" / "data" / "aipm.db"
+    return DatabaseService(str(db_path))
+
+
+def determine_orchestrator(db: DatabaseService) -> tuple[str | None, dict | None]:
+    """
+    Determine which orchestrator to route to based on active work item phase.
+
+    Returns:
+        Tuple of (orchestrator_name, work_item_dict) or (None, None) if no routing needed
+    """
+    try:
+        active_wis = wi_methods.list_work_items(db, status=WorkItemStatus.ACTIVE)
+        review_wis = wi_methods.list_work_items(db, status=WorkItemStatus.REVIEW)
+        all_active = active_wis + review_wis
+
+        if not all_active:
+            return None, None
+
+        work_item = min(all_active, key=lambda wi: wi.priority)
+
+        if not work_item.phase:
+            return None, None
+
+        orchestrator = PHASE_TO_ORCHESTRATOR.get(work_item.phase)
+
+        if orchestrator:
+            wi_dict = {
+                'id': work_item.id,
+                'name': work_item.name,
+                'type': work_item.type.value,
+                'status': work_item.status.value,
+                'phase': work_item.phase.value,
+                'priority': work_item.priority
+            }
+            return orchestrator, wi_dict
+
+        return None, None
+
+    except Exception as e:
+        print(f"⚠️ Orchestrator routing failed (non-critical): {e}", file=sys.stderr)
+        return None, None
+
+
+def create_session_record(session_id: str) -> None:
+    """Create session record in database and emit SESSION_STARTED event."""
+    try:
+        db = get_database()
+        from agentpm.core.database.models.session import Session, SessionTool, SessionType
+        from agentpm.core.database.methods import sessions as session_methods
+        from agentpm.core.database.methods import projects as project_methods
+        from agentpm.core.sessions.event_bus import EventBus
+        from agentpm.core.events.models import Event, EventType, EventCategory, EventSeverity
+        from datetime import datetime
+        import subprocess
+
+        projects = project_methods.list_projects(db)
+        if not projects:
+            print("⚠️ No project found, skipping session tracking", file=sys.stderr)
+            return
+
+        project_id = projects[0].id
+
+        # Get developer info from git config
+        try:
+            name_result = subprocess.run(
+                ['git', 'config', 'user.name'],
+                capture_output=True,
+                text=True,
+                timeout=1
+            )
+            email_result = subprocess.run(
+                ['git', 'config', 'user.email'],
+                capture_output=True,
+                text=True,
+                timeout=1
+            )
+            developer_name = name_result.stdout.strip() if name_result.returncode == 0 else None
+            developer_email = email_result.stdout.strip() if email_result.returncode == 0 else None
+        except Exception:
+            developer_name = None
+            developer_email = None
+
+        session = Session(
+            session_id=session_id,
+            project_id=project_id,
+            tool_name=SessionTool.CLAUDE_CODE,
+            llm_model=None,
+            start_time=datetime.now(),
+            session_type=SessionType.CODING,
+            developer_name=developer_name,
+            developer_email=developer_email
+        )
+
+        created_session = session_methods.create_session(db, session)
+        session_methods.set_current_session(db, session_id)
+
+        # Emit SESSION_STARTED event
+        try:
+            event_bus = EventBus(db)
+            event = Event(
+                event_type=EventType.SESSION_STARTED,
+                event_category=EventCategory.SESSION_LIFECYCLE,
+                event_severity=EventSeverity.INFO,
+                session_id=created_session.id,
+                source='session_start_hook',
+                event_data={
+                    'session_uuid': session_id,
+                    'tool': 'claude_code',
+                    'session_type': 'coding',
+                    'developer': developer_name
+                },
+                project_id=project_id
+            )
+            event_bus.emit(event)
+            event_bus.shutdown(timeout=2.0)
+            print(f"✅ SESSION_STARTED event emitted", file=sys.stderr)
+        except Exception as e:
+            print(f"⚠️ Event emission failed (non-critical): {e}", file=sys.stderr)
+
+        print(f"✅ Session {session_id} tracked in database", file=sys.stderr)
+
+    except Exception as e:
+        print(f"⚠️ Session tracking failed (non-critical): {e}", file=sys.stderr)
+
+
+def format_context() -> str:
+    """Format AIPM context for Claude using Context Delivery Agent."""
+    try:
+        adapter = ContextHookAdapter(PROJECT_ROOT)
+        context_agent_output = adapter.format_session_start_context()
+
+        lines = []
+        lines.append("")
+        lines.append("---")
+        lines.append(f"**Session Started**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        lines.append("")
+        lines.append(context_agent_output)
+
+        # Context Delivery Agent instructions
+        lines.append("### 🤖 Context Delivery Agent Available")
+        lines.append("")
+        lines.append("**For deep hierarchical context** (Project → Work Item → Task):")
+        lines.append("- The Context Delivery Agent can assemble complete context with:")
+        lines.append("  - Hierarchical 6W merging (task > work_item > project)")
+        lines.append("  - Plugin facts and code amalgamations")
+        lines.append("  - Agent SOPs and temporal context (session summaries)")
+        lines.append("  - Confidence scoring (RED/YELLOW/GREEN quality assessment)")
+        lines.append("")
+
+        # Phase-based orchestrator routing
+        try:
+            db = get_database()
+            orchestrator, work_item = determine_orchestrator(db)
+            if orchestrator and work_item:
+                lines.append("### 🎯 Recommended Orchestrator")
+                lines.append("")
+                lines.append(f"**Current Work**: WI-{work_item['id']} - {work_item['name']}")
+                lines.append(f"**Phase**: {work_item['phase']} ({work_item['type']})")
+                lines.append(f"**Route To**: `{orchestrator}`")
+                lines.append("")
+        except Exception as e:
+            print(f"⚠️ Orchestrator routing display failed: {e}", file=sys.stderr)
+
+        lines.extend(_format_critical_reminders())
+        lines.append("---")
+        lines.append("")
+
+        return "\n".join(lines)
+
+    except Exception as e:
+        print(f"⚠️ Context Agent unavailable, using fallback: {e}", file=sys.stderr)
+        return _format_context_fallback()
+
+
+def _format_context_fallback() -> str:
+    """Original manual context loading (fallback if Context Agent fails)."""
+    db = get_database()
+    lines = []
+
+    lines.append("")
+    lines.append("---")
+    lines.append("## 🤖 AIPM Session Context Loaded")
+    lines.append("")
+    lines.append(f"**Session Started**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+    try:
+        projects = project_methods.list_projects(db)
+        if projects:
+            project = projects[0]
+            lines.append(f"**Project**: {project.name} ({project.status.value})")
+    except Exception:
+        lines.append("**Project**: APM (Agent Project Manager)")
+
+    lines.append("")
+    lines.append("### 📊 Current Project State")
+    lines.append("")
+
+    try:
+        active_wis = wi_methods.list_work_items(db, status=WorkItemStatus.ACTIVE)
+        review_wis = wi_methods.list_work_items(db, status=WorkItemStatus.REVIEW)
+        all_active = active_wis + review_wis
+
+        if all_active:
+            lines.append(f"**Active Work Items** ({len(all_active)}):")
+            for wi in all_active[:3]:
+                lines.append(f"- WI-{wi.id}: {wi.name} ({wi.type.value}, {wi.status.value})")
+            lines.append("")
+    except Exception:
+        pass
+
+    lines.extend(_format_critical_reminders())
+    lines.append("---")
+    lines.append("")
+
+    return "\n".join(lines)
+
+
+def _format_critical_reminders() -> list:
+    """Format critical reminders."""
+    lines = []
+    lines.append("### ⚠️ Critical Reminders")
+    lines.append("")
+    lines.append("**AIPM Workflow** (RULES.md):")
+    lines.append("- ✅ Use specialist agents via Task tool (never implement directly!)")
+    lines.append("- ✅ Commit frequently (every 30-60 min)")
+    lines.append("- ✅ Time-boxing STRICT: IMPLEMENTATION ≤4h")
+    lines.append("- ✅ Testing >90% coverage (CI-004)")
+    lines.append("- ✅ Three-layer pattern: Models → Adapters → Methods")
+    lines.append("")
+    lines.append("**Quick Commands**:")
+    lines.append("```bash")
+    lines.append("apm status              # Project dashboard")
+    lines.append("apm task show <id>      # Task details")
+    lines.append("apm task start <id>     # Begin work")
+    lines.append("```")
+    lines.append("")
+
+    return lines
+
+
+def main():
+    """Main hook entry point."""
+    try:
+        hook_data = read_hook_input()
+        session_id = hook_data.get('session_id', 'unknown')
+
+        print(f"🪝 SessionStart (Python): session={session_id}", file=sys.stderr)
+
+        create_session_record(session_id)
+
+        context = format_context()
+
+        import os
+        use_json = os.environ.get('AIPM_HOOK_JSON', '0') == '1'
+
+        if use_json:
+            output = {
+                "hookSpecificOutput": {
+                    "hookEventName": "SessionStart",
+                    "additionalContext": context[:5000]
+                }
+            }
+            print(json.dumps(output))
+        else:
+            print(context)
+
+        sys.exit(0)
+
+    except Exception as e:
+        print(f"❌ SessionStart hook error: {e}", file=sys.stderr)
+        print("\n⚠️ AIPM context loading failed - check hook configuration\n")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

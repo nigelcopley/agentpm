@@ -1,4 +1,4 @@
-analyzed_at: '2025-10-26T14:22:22.406854'
+analyzed_at: '2025-10-27T12:47:25.101914'
 circular_dependencies:
 - cycle:
   - module_d
@@ -40,7 +40,7 @@ leaf_modules:
 - module_a
 - __init__
 max_depth: -1
-project_path: /private/var/folders/53/jjm94d8s1_x0dqtqskv43bk40000gn/T/pytest-of-nigelcopley/pytest-35/test_graph_yaml_format0/test_project
+project_path: /private/var/folders/53/jjm94d8s1_x0dqtqskv43bk40000gn/T/pytest-of-nigelcopley/pytest-24/test_graph_yaml_format0/test_project
 root_modules:
 - __init__
 - module_f
