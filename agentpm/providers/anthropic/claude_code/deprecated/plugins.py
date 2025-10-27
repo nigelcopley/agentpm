@@ -15,7 +15,7 @@ from datetime import datetime
 
 from agentpm.core.database.service import DatabaseService
 from agentpm.core.database.models.agent import Agent
-from .models import PluginDefinition, MarketplaceDefinition, ClaudeCodeComponentType
+from ..models import PluginDefinition, MarketplaceDefinition, ClaudeCodeComponentType
 
 
 class ClaudeCodePluginManager:

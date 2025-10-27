@@ -15,7 +15,7 @@ import gzip
 from datetime import datetime
 
 from agentpm.core.database.service import DatabaseService
-from .models import CheckpointDefinition, CheckpointType, ClaudeCodeComponentType
+from ..models import CheckpointDefinition, CheckpointType, ClaudeCodeComponentType
 
 
 class ClaudeCodeCheckpointingManager:

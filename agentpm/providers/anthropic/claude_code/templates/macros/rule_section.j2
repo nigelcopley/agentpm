@@ -1,0 +1,28 @@
+{# Rule section macro for reusable rule formatting #}
+
+{% macro rule_summary(rule) -%}
+**{{ rule.rule_id }}**: {{ rule.name }}
+- **Enforcement**: {{ rule.enforcement_level.value }}
+- **Category**: {{ rule.category }}
+- **Priority**: {{ rule.priority or "NORMAL" }}
+{%- endmacro %}
+
+{% macro rules_by_category(rules, category) -%}
+### {{ category }} Rules
+
+{% for rule in rules %}
+{% if rule.category == category %}
+{{ rule_summary(rule) }}
+{% endif %}
+{% endfor %}
+{%- endmacro %}
+
+{% macro critical_rules(rules, limit=10) -%}
+### Critical Rules (BLOCK Enforcement)
+
+{% for rule in rules[:limit] %}
+{% if rule.enforcement_level.value == "BLOCK" %}
+{{ rule_summary(rule) }}
+{% endif %}
+{% endfor %}
+{%- endmacro %}

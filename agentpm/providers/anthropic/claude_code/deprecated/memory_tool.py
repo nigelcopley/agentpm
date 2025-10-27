@@ -14,7 +14,7 @@ import hashlib
 from datetime import datetime, timedelta
 
 from agentpm.core.database.service import DatabaseService
-from .models import MemoryToolDefinition, MemoryToolType, ClaudeCodeComponentType
+from ..models import MemoryToolDefinition, MemoryToolType, ClaudeCodeComponentType
 
 
 class ClaudeCodeMemoryToolManager:

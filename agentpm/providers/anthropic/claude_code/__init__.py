@@ -1,66 +1,96 @@
 """
-Claude Code Comprehensive Integration
+Claude Code Integration (Simplified)
 
-Provides complete integration with Claude Code including:
-- Plugins system
-- Hooks system  
-- Subagents
-- Settings management
-- Slash commands
-- Checkpointing
-- Memory tools
-- Skills (already implemented)
+DEPRECATED ARCHITECTURE:
+The old manager-based integration system (plugins, hooks, subagents, settings,
+slash commands, checkpointing, memory tools) has been replaced with a simpler
+template-based generator system.
 
-Based on Claude Code documentation:
-- https://docs.claude.com/en/docs/claude-code/plugins
-- https://docs.claude.com/en/docs/claude-code/hooks-guide
-- https://docs.claude.com/en/docs/claude-code/sub-agents
-- https://docs.claude.com/en/docs/claude-code/settings
-- https://docs.claude.com/en/docs/claude-code/slash-commands
-- https://docs.claude.com/en/docs/claude-code/checkpointing
-- https://docs.claude.com/en/docs/agents-and-tools/tool-use/memory-tool
+RECOMMENDED APPROACH:
+Use the new template-based generator:
+
+```python
+from agentpm.providers.anthropic.claude_code.generator import ClaudeCodeGenerator
+generator = ClaudeCodeGenerator(db_service)
+result = generator.generate_from_agents(agents, rules, project, output_dir)
+```
+
+Or use the high-level service:
+
+```python
+from agentpm.core.services.agent_generator import AgentGeneratorService
+generator = AgentGeneratorService(db_service, project_path)
+summary = generator.generate_all()
+```
+
+BACKWARD COMPATIBILITY:
+This module still exports the deprecated managers for backward compatibility.
+They are located in the `deprecated/` directory.
+
+See deprecated/README.md for migration guide.
 """
 
-from .plugins import ClaudeCodePluginManager, PluginDefinition, MarketplaceDefinition
-from .hooks import ClaudeCodeHooksManager, HookDefinition, HookEvent
-from .subagents import ClaudeCodeSubagentsManager, SubagentDefinition
-from .settings import ClaudeCodeSettingsManager, SettingsDefinition
-from .slash_commands import ClaudeCodeSlashCommandsManager, SlashCommandDefinition
-from .checkpointing import ClaudeCodeCheckpointingManager, CheckpointDefinition
-from .memory_tool import ClaudeCodeMemoryToolManager, MemoryToolDefinition
+import warnings
+
+# New template-based generator (recommended)
+from .generator import ClaudeCodeGenerator
+
+# Deprecated: Legacy orchestrator (now a thin compatibility wrapper)
 from .orchestrator import ClaudeCodeOrchestrator
 
+# Models (still useful for data structures)
+from .models import ClaudeCodeIntegration
+
+# Deprecated: Old manager classes (moved to deprecated/)
+# These imports are kept for backward compatibility but will emit warnings
+try:
+    from .deprecated.plugins import ClaudeCodePluginManager, PluginDefinition, MarketplaceDefinition
+    from .deprecated.hooks import ClaudeCodeHooksManager, HookDefinition, HookEvent
+    from .deprecated.subagents import ClaudeCodeSubagentsManager, SubagentDefinition
+    from .deprecated.settings import ClaudeCodeSettingsManager, SettingsDefinition
+    from .deprecated.slash_commands import ClaudeCodeSlashCommandsManager, SlashCommandDefinition
+    from .deprecated.checkpointing import ClaudeCodeCheckpointingManager, CheckpointDefinition
+    from .deprecated.memory_tool import ClaudeCodeMemoryToolManager, MemoryToolDefinition
+
+    # Emit deprecation warning when importing deprecated managers
+    warnings.warn(
+        "Claude Code manager classes (PluginManager, HooksManager, etc.) are deprecated. "
+        "Use AgentGeneratorService from agentpm.core.services.agent_generator instead. "
+        "See deprecated/README.md for migration guide.",
+        DeprecationWarning,
+        stacklevel=2
+    )
+except ImportError as e:
+    # If deprecated modules can't be imported, provide stub classes
+    warnings.warn(
+        f"Deprecated Claude Code managers could not be imported: {e}. "
+        "Use AgentGeneratorService instead.",
+        DeprecationWarning
+    )
+
 __all__ = [
-    # Core managers
+    # New template-based generator (recommended)
+    "ClaudeCodeGenerator",
+
+    # Core (deprecated but maintained for compatibility)
     "ClaudeCodeOrchestrator",
-    
-    # Plugin system
+    "ClaudeCodeIntegration",
+
+    # Deprecated managers (use AgentGeneratorService instead)
     "ClaudeCodePluginManager",
-    "PluginDefinition", 
+    "PluginDefinition",
     "MarketplaceDefinition",
-    
-    # Hooks system
     "ClaudeCodeHooksManager",
     "HookDefinition",
     "HookEvent",
-    
-    # Subagents system
     "ClaudeCodeSubagentsManager",
     "SubagentDefinition",
-    
-    # Settings system
     "ClaudeCodeSettingsManager",
     "SettingsDefinition",
-    
-    # Slash commands
     "ClaudeCodeSlashCommandsManager",
     "SlashCommandDefinition",
-    
-    # Checkpointing
     "ClaudeCodeCheckpointingManager",
     "CheckpointDefinition",
-    
-    # Memory tools
     "ClaudeCodeMemoryToolManager",
     "MemoryToolDefinition",
 ]

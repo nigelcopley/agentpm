@@ -1,0 +1,31 @@
+{# Agent block macro for reusable agent formatting #}
+
+{% macro agent_summary(agent) -%}
+### {{ agent.display_name }}
+- **Role**: `{{ agent.role }}`
+- **Description**: {{ agent.description or "No description available" }}
+- **Category**: {{ agent.functional_category.value if agent.functional_category else "utilities" }}
+- **Priority**: {{ agent.priority or 50 }}
+- **Active**: {{ "Yes" if agent.is_active else "No" }}
+{%- endmacro %}
+
+{% macro agent_capabilities(agent) -%}
+**Capabilities**:
+{% if agent.capabilities %}
+{% for capability in agent.capabilities %}
+- {{ capability }}
+{% endfor %}
+{% else %}
+- General purpose capabilities
+{% endif %}
+{%- endmacro %}
+
+{% macro agent_delegation(agent, description="<task description>", prompt="<detailed instructions>") -%}
+```python
+Task(
+  subagent_type="{{ agent.role }}",
+  description="{{ description }}",
+  prompt="{{ prompt }}"
+)
+```
+{%- endmacro %}

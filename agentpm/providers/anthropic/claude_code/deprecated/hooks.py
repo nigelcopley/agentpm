@@ -15,7 +15,7 @@ import sys
 from datetime import datetime
 
 from agentpm.core.database.service import DatabaseService
-from .models import HookDefinition, HookEvent, HookEventType, HookMatcher, HookAction, HookMatcherType
+from ..models import HookDefinition, HookEvent, HookEventType, HookMatcher, HookAction, HookMatcherType
 
 
 class ClaudeCodeHooksManager:

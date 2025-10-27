@@ -14,8 +14,8 @@ from datetime import datetime
 
 from agentpm.core.database.service import DatabaseService
 from agentpm.core.database.models.agent import Agent
-from agentpm.core.database.enums import AgentTier
-from .models import SubagentDefinition, SubagentCapability, ClaudeCodeComponentType
+from agentpm.core.database.enums import AgentTier, AgentFunctionalCategory
+from ..models import SubagentDefinition, SubagentCapability, ClaudeCodeComponentType
 
 
 class ClaudeCodeSubagentsManager:
@@ -164,13 +164,16 @@ class ClaudeCodeSubagentsManager:
         """Create subagent definition from APM (Agent Project Manager) agent."""
         # Map agent capabilities to subagent capabilities
         subagent_capabilities = self._map_agent_capabilities(agent.capabilities)
-        
-        # Determine auto-invoke based on agent tier
-        auto_invoke = agent.tier == AgentTier.ORCHESTRATOR if agent.tier else False
-        
-        # Determine priority based on agent tier
-        priority = self._get_priority_from_tier(agent.tier)
-        
+
+        # Determine auto-invoke based on functional category or tier
+        auto_invoke = self._get_auto_invoke_from_category(agent.functional_category, agent.tier)
+
+        # Determine priority based on functional category (preferred) or tier (fallback)
+        priority = self._get_priority_from_category(agent.functional_category, agent.tier)
+
+        # Get category string for subagent
+        category = self._get_category_string(agent.functional_category, agent.tier)
+
         # Create subagent definition
         subagent = SubagentDefinition(
             name=agent.display_name,
@@ -182,7 +185,7 @@ class ClaudeCodeSubagentsManager:
             auto_invoke=auto_invoke,
             priority=priority,
             max_concurrent=1,
-            category=self._get_category_from_tier(agent.tier),
+            category=category,
             keywords=[agent.role] + agent.capabilities,
             source_agent_id=agent.id,
             version="1.0.0",
@@ -492,22 +495,60 @@ class ClaudeCodeSubagentsManager:
         
         return list(tools) if tools else ["Read", "Write", "Bash", "Grep", "Glob"]
     
-    def _get_priority_from_tier(self, tier: Optional[AgentTier]) -> int:
-        """Get priority from agent tier."""
-        if tier == AgentTier.ORCHESTRATOR:
+    def _get_priority_from_category(
+        self,
+        functional_category: Optional[AgentFunctionalCategory],
+        tier: Optional[AgentTier]
+    ) -> int:
+        """Get priority from agent functional category (preferred) or tier (fallback)."""
+        # Use functional_category if available
+        if functional_category:
+            category_priorities = {
+                AgentFunctionalCategory.PLANNING: 90,      # High priority - orchestrators
+                AgentFunctionalCategory.IMPLEMENTATION: 75, # Medium-high - builders
+                AgentFunctionalCategory.TESTING: 70,       # Medium - verifiers
+                AgentFunctionalCategory.DOCUMENTATION: 60,  # Medium-low - writers
+                AgentFunctionalCategory.UTILITIES: 50,     # Low - support
+            }
+            return category_priorities.get(functional_category, 50)
+
+        # Fallback to tier (deprecated)
+        if tier == AgentTier.TIER_3:  # Master/Orchestrator
             return 100
-        elif tier == AgentTier.SPECIALIST:
+        elif tier == AgentTier.TIER_2:  # Specialist
             return 75
-        else:  # SUB_AGENT
+        else:  # SUB_AGENT (TIER_1)
             return 50
-    
-    def _get_category_from_tier(self, tier: Optional[AgentTier]) -> str:
-        """Get category from agent tier."""
-        if tier == AgentTier.ORCHESTRATOR:
+
+    def _get_auto_invoke_from_category(
+        self,
+        functional_category: Optional[AgentFunctionalCategory],
+        tier: Optional[AgentTier]
+    ) -> bool:
+        """Determine auto-invoke based on functional category or tier."""
+        # Use functional_category if available
+        if functional_category:
+            # Only planning agents (orchestrators) auto-invoke
+            return functional_category == AgentFunctionalCategory.PLANNING
+
+        # Fallback to tier (deprecated)
+        return tier == AgentTier.TIER_3 if tier else False
+
+    def _get_category_string(
+        self,
+        functional_category: Optional[AgentFunctionalCategory],
+        tier: Optional[AgentTier]
+    ) -> str:
+        """Get category string from functional category (preferred) or tier (fallback)."""
+        if functional_category:
+            return functional_category.value
+
+        # Fallback to tier (deprecated)
+        if tier == AgentTier.TIER_3:
             return "orchestration"
-        elif tier == AgentTier.SPECIALIST:
+        elif tier == AgentTier.TIER_2:
             return "specialist"
-        else:  # SUB_AGENT
+        else:
             return "sub-agent"
     
     def _create_subagent_definition(

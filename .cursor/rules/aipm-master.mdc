@@ -1,0 +1,485 @@
+---
+alwaysApply: true
+description: APM (Agent Project Manager) master orchestrator - workflow, commands, quality gates
+priority: 100
+---
+
+# APM (Agent Project Manager) Master Rule - Cursor Integration
+
+## 1. Database-First Architecture (CRITICAL)
+
+### Core Principle
+
+APM (Agent Project Manager) is **database-driven**. All runtime state, rules, and workflows come from the database, NOT from files.
+
+**ALWAYS use `apm` commands to query state:**
+
+```bash
+# ✅ CORRECT: Database queries
+apm rules list                    # Query rules table
+apm status                        # Project dashboard from database
+apm work-item show <id>          # Work item details
+apm task show <id>               # Task details
+apm context show                 # Assembled context from database
+
+# ❌ INCORRECT: File-based queries
+cat .agentpm/config.yaml            # Static file, may be stale
+grep -r "rule:" _RULES/          # Documentation only
+cat docs/status.md               # Manual documentation
+```
+
+**Why Database-First:**
+- Single source of truth
+- Real-time state
+- Enforced consistency
+- Audit trail
+- Multi-agent coordination
+
+**The `_RULES/` directory is documentation only** - rules are loaded from database at runtime.
+
+### Session Start Commands (MANDATORY)
+
+**Always start your session with these commands:**
+
+```bash
+apm status                        # Get project overview
+apm work-item list               # See active work items
+apm context show --work-item-id=<id>  # Get specific work item context
+```
+
+---
+
+## 2. Workflow Phases
+
+APM (Agent Project Manager) follows a strict phase progression: **D1 → P1 → I1 → R1 → O1 → E1**
+
+Each phase has:
+- **Gate requirements** (must pass before advancing)
+- **Specific commands** for common operations
+- **Expected deliverables**
+- **Quality checks**
+
+### Phase Progression Table
+
+| Phase | Name | Gate Requirements | Primary Commands | Deliverables |
+|-------|------|-------------------|-----------------|--------------|
+| **D1** | Discovery | business_context ≥50 chars<br>acceptance_criteria ≥3<br>risks ≥1<br>6W confidence ≥0.70 | `apm work-item show <id>`<br>`apm context show --work-item-id=<id>`<br>`apm idea analyze <id>` | Requirements defined<br>Context enriched<br>Risks identified |
+| **P1** | Planning | Tasks created<br>Estimates complete<br>Dependencies mapped<br>Mitigations planned | `apm task create`<br>`apm task list --work-item-id=<id>`<br>`apm work-item add-dependency` | Implementation plan<br>Task breakdown<br>Dependencies mapped |
+| **I1** | Implementation | Tests updated<br>Code complete<br>Docs updated<br>Migrations created | `apm task start <id>`<br>`apm context show --task-id=<id>`<br>`pytest tests/ -v --cov=agentpm` | Feature implemented<br>Tests passing<br>Documentation updated |
+| **R1** | Review | AC verified<br>Tests pass (100%)<br>Quality checks pass<br>Code review approved | `pytest --cov-report=html`<br>`ruff check agentpm/`<br>`apm task approve <id>` | Quality validated<br>AC verified<br>Review approved |
+| **O1** | Operations | Version bumped<br>Deployed<br>Health checks pass<br>Monitors active | `git tag v<version>`<br>`git push origin v<version>` | Deployed to production<br>Monitoring active<br>Health checks passing |
+| **E1** | Evolution | Telemetry analyzed<br>Improvements identified<br>Feedback captured | `apm learnings list --recent`<br>`apm idea create` | Improvements backlog<br>Patterns documented<br>Technical debt cataloged |
+
+---
+
+## 3. Command Usage Matrix
+
+### By Workflow Phase
+
+#### D1 Discovery Commands
+```bash
+# Get work item details
+apm work-item show <id>
+
+# Get comprehensive context
+apm context show --work-item-id=<id>
+
+# Analyze idea comprehensively
+apm idea analyze <id> --comprehensive
+
+# Search related learnings
+apm learnings list --search='relevant keywords'
+
+# Validate D1 gate
+apm work-item validate <id>
+
+# Progress to next phase
+apm work-item next <id>
+```
+
+#### P1 Planning Commands
+```bash
+# Create tasks for work item
+apm task create 'Task Name' --type=implementation --effort=4
+
+# List tasks for work item
+apm task list --work-item-id=<id>
+
+# Add dependencies
+apm work-item add-dependency <id> --depends-on=<id>
+
+# View dependency graph
+apm work-item list-dependencies <id>
+
+# Validate P1 gate
+apm work-item validate <id>
+```
+
+#### I1 Implementation Commands
+```bash
+# Start task
+apm task start <id>
+
+# Get task context
+apm context show --task-id=<id>
+
+# Run tests with coverage
+pytest tests/ -v --cov=agentpm
+
+# Record implementation decisions
+apm learnings record --type=decision --content='Decision rationale'
+
+# Complete task with evidence
+apm task complete <id> --evidence='Implementation details'
+```
+
+#### R1 Review Commands
+```bash
+# Run full test suite with coverage report
+pytest tests/ -v --cov=agentpm --cov-report=html
+
+# Run linter
+ruff check agentpm/
+
+# Check code formatting
+black --check agentpm/
+
+# Validate work item quality
+apm work-item validate <id>
+
+# Approve task (different agent required)
+apm task approve <id>
+
+# Request changes with reason
+apm task request-changes <id> --reason='Specific issue'
+```
+
+#### O1 Operations Commands
+```bash
+# Create version tag
+git tag v<version>
+
+# Deploy to production
+git push origin v<version>
+
+# Record deployment learning
+apm learnings record --type=deployment --content='Deployment notes'
+
+# Validate O1 gate
+apm work-item validate <id>
+```
+
+#### E1 Evolution Commands
+```bash
+# Review recent learnings
+apm learnings list --recent
+
+# Record patterns discovered
+apm learnings record --type=pattern --content='Pattern description'
+
+# Create improvement ideas
+apm idea create 'Improvement idea' --type=enhancement
+
+# Analyze idea for feasibility
+apm idea analyze <id> --comprehensive
+
+# Create improvement work item
+apm work-item create 'Improvement' --type=enhancement
+```
+
+---
+
+## 4. Quality Gates
+
+### Gate Validation Process
+
+**Before advancing phases, ALWAYS validate gates:**
+
+```bash
+# Check if work item is ready to advance
+apm work-item validate <id>
+
+# View validation results and missing requirements
+apm work-item show <id>
+```
+
+### CI Gates (Automated Validation)
+
+APM (Agent Project Manager) enforces these quality gates automatically:
+
+#### CI-001: Agent Validation
+- Valid agent assigned to work item/task
+- Agent has required capabilities
+- Agent is active and available
+
+**Check**: `apm agents list`
+
+#### CI-002: Context Quality
+- Context confidence ≥ 0.70
+- 6W context complete (WHO, WHAT, WHEN, WHERE, WHY, HOW)
+- Evidence sources documented
+
+**Check**: `apm context show --work-item-id=<id>`
+
+#### CI-004: Testing Quality
+- Test coverage ≥ 90%
+- All tests passing (100% pass rate)
+- AAA pattern (Arrange-Act-Assert) followed
+- Project-relative imports only
+
+**Check**: `pytest tests/ -v --cov=agentpm`
+
+#### CI-006: Documentation Standards
+- Description ≥ 50 chars
+- Business context defined
+- No placeholder text (TODO, TBD, FIXME)
+- Technical decisions documented
+
+**Check**: `apm work-item validate <id>`
+
+### Phase-Specific Gates
+
+Each phase has specific gate requirements. Query current rules from database:
+
+```bash
+# Get all blocking rules
+apm rules list -e BLOCK
+
+# Get rules by category
+apm rules list -c workflow_gates
+apm rules list -c testing_standards
+apm rules list -c code_quality
+```
+
+---
+
+## 5. Agent Delegation
+
+### When to Delegate to Claude Agents
+
+APM (Agent Project Manager) uses a multi-agent architecture. Delegate work to specialist agents for:
+
+#### Phase Orchestrators (Main Workflow)
+
+| Phase | Agent | Purpose |
+|-------|-------|---------|
+| D1 | `definition-orch` | Requirements gathering, 6W analysis |
+| P1 | `planning-orch` | Task decomposition, estimation |
+| I1 | `implementation-orch` | Feature implementation |
+| R1 | `review-test-orch` | Quality validation, testing |
+| O1 | `release-ops-orch` | Deployment, monitoring |
+| E1 | `evolution-orch` | Continuous improvement |
+
+#### Specialist Agents (Domain Expertise)
+
+| Task Type | Agent | When to Use |
+|-----------|-------|-------------|
+| Python/CLI development | `aipm-python-cli-developer` | Implementing Python code, CLI commands |
+| Database operations | `aipm-database-developer` | Schema changes, migrations, data operations |
+| Testing | `aipm-testing-specialist` | Test creation, coverage analysis |
+| Documentation | `aipm-documentation-specialist` | User guides, API docs, developer guides |
+| Quality validation | `aipm-quality-validator` | Gate checks, compliance validation |
+
+#### Sub-Agents (Single Responsibility)
+
+**Context Assembly** (MANDATORY at session start):
+```bash
+# Agent: context-delivery
+# Purpose: Assemble project context from database
+# When: Every session start, before any work
+```
+
+**Other Sub-Agents**:
+- `intent-triage`: Analyze user intent
+- `ac-writer`: Write acceptance criteria
+- `test-runner`: Execute test suites
+- `quality-gatekeeper`: Validate quality gates
+- `code-implementer`: Implement code patterns
+
+### Delegation Pattern
+
+**DO NOT implement directly in Cursor. Instead:**
+
+1. Identify the work type (discovery, planning, implementation, review, etc.)
+2. Select appropriate agent from table above
+3. Document the delegation in commit or task notes
+4. Let the agent handle the specialized work
+
+---
+
+## 6. Error Patterns & Recovery
+
+### Common Issues
+
+#### Error: "Gate validation failed"
+
+**Symptoms**: `apm work-item validate <id>` fails
+**Diagnostic**:
+```bash
+apm work-item show <id>
+apm work-item validate <id>
+```
+**Recovery**:
+- Check missing criteria in validation output
+- Complete missing requirements
+- Re-validate before advancing
+
+#### Error: "Test failure"
+
+**Symptoms**: pytest returns non-zero exit code
+**Diagnostic**:
+```bash
+pytest tests/ -v --tb=short
+```
+**Recovery**:
+- Fix failing tests
+- Ensure ≥90% coverage
+- Re-run tests: `pytest tests/ -v --cov=agentpm`
+
+#### Error: "Context confidence low"
+
+**Symptoms**: Context confidence < 0.70
+**Diagnostic**:
+```bash
+apm context show --task-id=<id>
+```
+**Recovery**:
+- Enrich context with evidence
+- Add sources and references
+- Document decision rationale
+- Re-check confidence
+
+#### Error: "Task time-box exceeded"
+
+**Symptoms**: Implementation task > 4 hours effort
+**Diagnostic**:
+```bash
+apm task show <id>
+```
+**Recovery**:
+- Break task into smaller units (≤4h each)
+- Create subtasks: `apm task create 'Subtask' --effort=3`
+- Map dependencies between subtasks
+
+#### Error: "Database error"
+
+**Symptoms**: SQLite errors, integrity issues
+**Diagnostic**:
+```bash
+apm status
+```
+**Recovery**:
+- Check database integrity
+- Review recent migrations
+- Consult database developer agent
+
+---
+
+## 7. Custom Mode Selection
+
+### Phase-Based Modes
+
+APM (Agent Project Manager) provides custom Cursor modes for each workflow phase:
+
+| Mode File | Phase | When to Activate |
+|-----------|-------|------------------|
+| `d1-discovery.json` | D1 Discovery | Defining requirements, gathering context |
+| `p1-planning.json` | P1 Planning | Creating tasks, estimating effort |
+| `i1-implementation.json` | I1 Implementation | Writing code, implementing features |
+| `r1-review.json` | R1 Review | Validating quality, reviewing code |
+| `o1-operations.json` | O1 Operations | Deploying, monitoring production |
+| `e1-evolution.json` | E1 Evolution | Analyzing telemetry, planning improvements |
+
+**How to Activate Modes**:
+1. Open Cursor command palette (Cmd/Ctrl+Shift+P)
+2. Type "Select Custom Mode"
+3. Choose mode matching current phase
+4. Mode provides phase-specific tools, commands, and checklists
+
+---
+
+## 8. Best Practices
+
+### DO:
+- ✅ Start every session with `apm status` and `apm context show`
+- ✅ Query database for all state information
+- ✅ Validate gates before advancing phases
+- ✅ Use project-relative imports in tests
+- ✅ Follow three-layer architecture (Models → Adapters → Methods)
+- ✅ Document decisions with evidence
+- ✅ Run tests frequently during development
+
+### DON'T:
+- ❌ Read files directly for state information
+- ❌ Skip gate validation
+- ❌ Bypass phase progression
+- ❌ Use absolute imports in tests
+- ❌ Modify database schema without migrations
+- ❌ Commit without running tests
+- ❌ Self-approve code reviews (different agent required)
+
+---
+
+## 9. Quick Reference
+
+### Most Common Commands
+
+```bash
+# Session start
+apm status
+apm work-item list
+apm context show --work-item-id=<id>
+
+# Development workflow
+apm task start <id>
+apm context show --task-id=<id>
+pytest tests/ -v --cov=agentpm
+apm task complete <id>
+
+# Quality checks
+apm work-item validate <id>
+pytest --cov-report=html
+ruff check agentpm/
+black --check agentpm/
+
+# Phase progression
+apm work-item next <id>
+apm task next <id>
+```
+
+### Help Commands
+
+```bash
+# Command help
+apm <command> --help
+
+# List available rules
+apm rules list
+
+# List available agents
+apm agents list
+
+# Show specific rule details
+apm rules show <rule-id>
+```
+
+---
+
+## 10. Architecture Reference
+
+**Detailed Documentation**:
+- Three-tier architecture: `docs/components/agents/architecture/three-tier-orchestration.md`
+- Workflow guide: `docs/components/workflow/`
+- Database schema: `docs/components/database/schema.md`
+- Context system: `docs/components/context/`
+- Developer guide: `docs/developer-guide/`
+
+**Agent Definitions**: `.claude/agents/` directory contains SOPs for all agents
+
+**Rules Reference**: Query live from database: `apm rules list`
+
+---
+
+**Version**: 1.0.0
+**Last Updated**: 2025-10-20
+**Pattern**: Database-driven, phase-based, multi-agent orchestration

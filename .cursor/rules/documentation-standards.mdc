@@ -1,0 +1,167 @@
+---
+description: Documentation Standards rules for this project
+globs: ['docs/**/*.md', '**/*.md']
+priority: 80
+---
+
+# Documentation Standards
+
+## Rules from Database
+
+Query these rules dynamically:
+```bash
+apm rules list --category="Documentation Standards"
+```
+
+### DOC-001: doc-module-docstring
+
+**Enforcement**: GUIDE
+
+Every module has docstring
+
+---
+
+### DOC-002: doc-class-docstring
+
+**Enforcement**: GUIDE
+
+Every public class has docstring
+
+---
+
+### DOC-003: doc-function-docstring
+
+**Enforcement**: GUIDE
+
+Every public function has docstring
+
+---
+
+### DOC-004: doc-parameter-description
+
+**Enforcement**: GUIDE
+
+Document all parameters
+
+---
+
+### DOC-005: doc-return-description
+
+**Enforcement**: GUIDE
+
+Document return values
+
+---
+
+### DOC-006: doc-exception-documentation
+
+**Enforcement**: GUIDE
+
+Document raised exceptions
+
+---
+
+### DOC-007: doc-example-in-docstring
+
+**Enforcement**: GUIDE
+
+Include usage examples
+
+---
+
+### DOC-008: doc-google-style
+
+**Enforcement**: ENHANCE
+
+Use Google-style docstrings (Python)
+
+---
+
+### DOC-009: doc-jsdoc-style
+
+**Enforcement**: ENHANCE
+
+Use JSDoc (JavaScript/TypeScript)
+
+---
+
+### DOC-010: doc-complexity-explanation
+
+**Enforcement**: GUIDE
+
+Complex code needs explanation
+
+---
+
+### DOC-011: doc-readme-required
+
+**Enforcement**: LIMIT
+
+README.md at project root
+
+---
+
+### DOC-012: doc-setup-instructions
+
+**Enforcement**: GUIDE
+
+Setup instructions in README
+
+---
+
+### DOC-013: doc-api-documentation
+
+**Enforcement**: GUIDE
+
+API endpoints documented
+
+---
+
+### DOC-014: doc-architecture-overview
+
+**Enforcement**: GUIDE
+
+Architecture documented
+
+---
+
+### DOC-015: doc-changelog-maintained
+
+**Enforcement**: GUIDE
+
+CHANGELOG.md updated
+
+---
+
+### DOC-016: doc-contributing-guide
+
+**Enforcement**: GUIDE
+
+CONTRIBUTING.md for open source
+
+---
+
+### DOC-017: doc-decision-records
+
+**Enforcement**: GUIDE
+
+ADRs for significant decisions
+
+---
+
+### DOC-018: doc-deployment-guide
+
+**Enforcement**: GUIDE
+
+Deployment instructions
+
+---
+
+### DOC-019: doc-troubleshooting
+
+**Enforcement**: GUIDE
+
+Common issues documented
+
+---
+

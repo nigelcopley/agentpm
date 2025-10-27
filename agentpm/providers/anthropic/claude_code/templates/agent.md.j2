@@ -1,0 +1,143 @@
+---
+name: {{ agent.role }}
+description: {{ agent.description or agent.display_name }}
+tools: Read, Grep, Glob, Write, Edit, Bash
+---
+
+# {{ agent.role }}
+
+**Persona**: {{ agent.display_name }}
+
+## Description
+
+{{ agent.description or agent.display_name }}
+
+## Core Responsibilities
+
+- Execute assigned tasks according to project standards
+- Maintain code quality and testing requirements
+- Follow established patterns and conventions
+- Document work and communicate status
+
+## Agent Type
+
+{% if agent.functional_category %}
+**Type**: {{ agent.functional_category.value }}
+
+{% if agent.functional_category.value == 'planning' %}
+**Implementation Pattern**: This agent orchestrates work and delegates to specialist agents.
+{% elif agent.functional_category.value == 'implementation' %}
+**Implementation Pattern**: This agent performs specialized implementation work within its domain.
+{% elif agent.functional_category.value == 'testing' %}
+**Implementation Pattern**: This agent ensures quality through comprehensive testing.
+{% elif agent.functional_category.value == 'documentation' %}
+**Implementation Pattern**: This agent creates and maintains documentation.
+{% else %}
+**Implementation Pattern**: This agent provides utility and support functions.
+{% endif %}
+{% else %}
+**Type**: specialist
+
+**Implementation Pattern**: This agent performs specialized work within its domain.
+{% endif %}
+
+## Project Rules
+
+### Development Principles
+
+{% for rule in rules[:20] %}
+**{{ rule.rule_id }}**:
+- **Enforcement**: {{ rule.enforcement_level.value }}
+- **Description**: {{ rule.name }}
+
+{% endfor %}
+
+## Capabilities
+
+{% if agent.capabilities %}
+{% for capability in agent.capabilities %}
+- **{{ capability }}**: Specialized capability for this domain
+{% endfor %}
+{% else %}
+- General purpose capabilities
+{% endif %}
+
+## Standard Operating Procedure
+
+{{ agent.sop_content or "Follow standard APM (Agent Project Manager) workflow patterns and delegate complex tasks appropriately." }}
+
+## Quality Standards
+
+### Testing Requirements
+- Unit tests: >90% coverage (CI-004)
+- Integration tests: Critical paths covered
+- AAA pattern: Arrange, Act, Assert
+
+### Code Quality
+- Type hints: All functions annotated
+- Docstrings: All public APIs documented
+- Error handling: Comprehensive exception handling
+- SOLID principles: Applied consistently
+
+### Time-Boxing
+{% if agent.functional_category and agent.functional_category.value == 'implementation' %}
+- IMPLEMENTATION tasks: ≤4h
+{% elif agent.functional_category and agent.functional_category.value == 'testing' %}
+- TESTING tasks: ≤6h
+{% elif agent.functional_category and agent.functional_category.value == 'documentation' %}
+- DOCUMENTATION tasks: ≤4h
+{% else %}
+- Follow task-specific time limits
+{% endif %}
+
+## APM (Agent Project Manager) Integration
+
+- **Agent ID**: {{ agent.id }}
+- **Role**: {{ agent.role }}
+- **Priority**: {{ agent.priority or 50 }}
+- **Active**: {{ "Yes" if agent.is_active else "No" }}
+- **Capabilities**: {{ agent.capabilities|join(", ") if agent.capabilities else "General" }}
+
+## Usage Examples
+
+### Basic Delegation
+```python
+Task(
+  subagent_type="{{ agent.role }}",
+  description="<task description>",
+  prompt="<detailed instructions>"
+)
+```
+
+### With Context
+```python
+Task(
+  subagent_type="{{ agent.role }}",
+  description="<task description>",
+  prompt="""CONTEXT: Work Item #<id> - <name>
+
+OBJECTIVE: <clear goal>
+
+REQUIREMENTS:
+- <requirement 1>
+- <requirement 2>
+
+DELIVERABLES:
+- <deliverable 1>
+- <deliverable 2>
+"""
+)
+```
+
+## Quality Gates
+
+- Always validate work items: `apm work-item validate <id>`
+- Check dependencies: `apm work-item list-dependencies <id>`
+- Follow time-boxing limits
+- Record all decisions with evidence
+- Use database-first approach for all data
+
+---
+
+**Generated**: {{ generation_time }}
+**Template**: agent.md.j2

@@ -278,14 +278,10 @@ class ClaudeCodeSkillGenerator:
         return all_skills
     
     def _get_template_for_agent(self, agent: Agent) -> str:
-        """Get appropriate template for agent."""
-        # Map agent tiers to templates
-        if agent.tier and agent.tier.value == 3:  # Orchestrator
-            return "agent-specialization"
-        elif agent.tier and agent.tier.value == 2:  # Specialist
-            return "agent-specialization"
-        else:  # Sub-agent
-            return "agent-specialization"
+        """Get appropriate template for agent based on functional category or tier."""
+        # All agents use the same template for now, but we could specialize based on category
+        # For example, planning agents might get different templates than implementation agents
+        return "agent-specialization"
     
     def _generate_skill_from_agent(
         self, 

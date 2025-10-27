@@ -13,7 +13,7 @@ import json
 from datetime import datetime
 
 from agentpm.core.database.service import DatabaseService
-from .models import SettingsDefinition, SettingDefinition, SettingType, ClaudeCodeComponentType
+from ..models import SettingsDefinition, SettingDefinition, SettingType, ClaudeCodeComponentType
 
 
 class ClaudeCodeSettingsManager:
