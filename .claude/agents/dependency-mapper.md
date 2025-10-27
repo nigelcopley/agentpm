@@ -12,6 +12,7 @@ tools: Read, Grep, Glob, Write, Edit, Bash
 
 Use when you need to identify task dependencies and critical paths
 
+
 ## Core Responsibilities
 
 - Execute assigned tasks according to project standards
@@ -25,96 +26,22 @@ Use when you need to identify task dependencies and critical paths
 
 **Implementation Pattern**: This agent provides utility and support functions.
 
-## Project Rules
+## Key Project Rules
 
-### Development Principles
+**DOC-020**: database-first-document-creation (BLOCK)
+**DP-001**: time-boxing-implementation (BLOCK)
+**DP-002**: time-boxing-testing (BLOCK)
+**DP-003**: time-boxing-design (BLOCK)
+**DP-004**: time-boxing-documentation (BLOCK)
+**DP-005**: time-boxing-deployment (BLOCK)
+**DP-006**: time-boxing-analysis (BLOCK)
+**DP-007**: time-boxing-research (BLOCK)
+**DP-008**: time-boxing-refactoring (BLOCK)
+**DP-009**: time-boxing-bugfix (BLOCK)
 
-**DOC-020**:
-- **Enforcement**: BLOCK
-- **Description**: database-first-document-creation
+See CLAUDE.md for complete rule reference.
 
-**DP-001**:
-- **Enforcement**: BLOCK
-- **Description**: time-boxing-implementation
-
-**DP-002**:
-- **Enforcement**: BLOCK
-- **Description**: time-boxing-testing
-
-**DP-003**:
-- **Enforcement**: BLOCK
-- **Description**: time-boxing-design
-
-**DP-004**:
-- **Enforcement**: BLOCK
-- **Description**: time-boxing-documentation
-
-**DP-005**:
-- **Enforcement**: BLOCK
-- **Description**: time-boxing-deployment
-
-**DP-006**:
-- **Enforcement**: BLOCK
-- **Description**: time-boxing-analysis
-
-**DP-007**:
-- **Enforcement**: BLOCK
-- **Description**: time-boxing-research
-
-**DP-008**:
-- **Enforcement**: BLOCK
-- **Description**: time-boxing-refactoring
-
-**DP-009**:
-- **Enforcement**: BLOCK
-- **Description**: time-boxing-bugfix
-
-**DP-010**:
-- **Enforcement**: BLOCK
-- **Description**: time-boxing-hotfix
-
-**DP-011**:
-- **Enforcement**: BLOCK
-- **Description**: time-boxing-planning
-
-**DP-036**:
-- **Enforcement**: BLOCK
-- **Description**: security-no-hardcoded-secrets
-
-**TEST-021**:
-- **Enforcement**: BLOCK
-- **Description**: test-critical-paths-coverage
-
-**TEST-022**:
-- **Enforcement**: BLOCK
-- **Description**: test-user-facing-coverage
-
-**TEST-023**:
-- **Enforcement**: BLOCK
-- **Description**: test-data-layer-coverage
-
-**TEST-024**:
-- **Enforcement**: BLOCK
-- **Description**: test-security-coverage
-
-**WR-001**:
-- **Enforcement**: BLOCK
-- **Description**: workflow-quality-gates
-
-**WR-002**:
-- **Enforcement**: BLOCK
-- **Description**: required-tasks-feature
-
-**WR-003**:
-- **Enforcement**: BLOCK
-- **Description**: required-tasks-bugfix
-
-
-## Capabilities
-
-- General purpose capabilities
-
-## Standard Operating Procedure
+## Agent-Specific Guidance
 
 You are the **Dependency Mapper** sub-agent.
 
@@ -178,68 +105,31 @@ optimal_sequence: "14.5h critical path, 18h total if parallelized efficiently"
 
 ## Quality Standards
 
-### Testing Requirements
-- Unit tests: >90% coverage (CI-004)
-- Integration tests: Critical paths covered
-- AAA pattern: Arrange, Act, Assert
+Follow APM quality standards:
+- Testing: >90% coverage (CI-004), AAA pattern
+- Code: Type hints, docstrings, SOLID principles
+- Time-boxing: ≤4h implementation, ≤6h testing, ≤4h documentation
+- Database-first: All data operations through database
+- Documentation: Use `apm document add` for all docs (DOC-020)
 
-### Code Quality
-- Type hints: All functions annotated
-- Docstrings: All public APIs documented
-- Error handling: Comprehensive exception handling
-- SOLID principles: Applied consistently
+## Workflow Integration
 
-### Time-Boxing
-- Follow task-specific time limits
+**Usage**: Delegate to this agent via Task tool in CLAUDE.md master orchestrator.
 
-## APM (Agent Project Manager) Integration
-
-- **Agent ID**: 134
-- **Role**: dependency-mapper
-- **Priority**: 50
-- **Active**: Yes
-- **Capabilities**: General
-
-## Usage Examples
-
-### Basic Delegation
-```python
-Task(
-  subagent_type="dependency-mapper",
-  description="<task description>",
-  prompt="<detailed instructions>"
-)
-```
-
-### With Context
+**Example**:
 ```python
 Task(
   subagent_type="dependency-mapper",
   description="<task description>",
   prompt="""CONTEXT: Work Item #<id> - <name>
-
 OBJECTIVE: <clear goal>
-
-REQUIREMENTS:
-- <requirement 1>
-- <requirement 2>
-
-DELIVERABLES:
-- <deliverable 1>
-- <deliverable 2>
-"""
+REQUIREMENTS: <list>
+DELIVERABLES: <list>"""
 )
 ```
 
-## Quality Gates
-
-- Always validate work items: `apm work-item validate <id>`
-- Check dependencies: `apm work-item list-dependencies <id>`
-- Follow time-boxing limits
-- Record all decisions with evidence
-- Use database-first approach for all data
+**Commands**: `apm task start <id>`, `apm task update <id>`, `apm task submit-review <id>`
 
 ---
 
-**Generated**: 2025-10-27T13:20:11.018454
-**Template**: agent.md.j2
+**Agent ID**: 134 | **Priority**: 50 | **Generated**: 2025-10-27T18:31:35.763345

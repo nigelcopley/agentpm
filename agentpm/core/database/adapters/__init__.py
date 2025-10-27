@@ -44,6 +44,7 @@ from .provider import (
     CursorMemoryAdapter,
     ProviderFileAdapter,
 )
+from .skill_adapter import SkillAdapter
 
 __all__ = [
     "BaseAdapter",
@@ -69,4 +70,6 @@ __all__ = [
     "ProviderInstallationAdapter",
     "CursorMemoryAdapter",
     "ProviderFileAdapter",
+    # Skills adapters (WI-171)
+    "SkillAdapter",
 ]

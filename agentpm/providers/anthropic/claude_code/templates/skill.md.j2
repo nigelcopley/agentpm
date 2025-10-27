@@ -1,0 +1,112 @@
+{#
+  Skill Template - Claude Code Provider
+
+  Generates .claude/skills/<category>/<name>.md files with YAML frontmatter.
+
+  Structure:
+  - YAML frontmatter: Metadata for Claude Code skill loading
+  - Instructions: Main skill content (markdown)
+  - Resources: Optional examples, templates, docs
+
+  Progressive Loading:
+  - Level 1: Metadata only (name, description, category)
+  - Level 2: + Instructions (full skill content)
+  - Level 3: + Resources (examples, templates, docs)
+#}
+---
+# Skill Metadata (Level 1)
+name: {{ skill.name }}
+display_name: {{ skill.display_name }}
+description: {{ skill.description }}
+category: {{ skill.category if skill.category else 'uncategorized' }}
+enabled: {{ 'true' if skill.enabled else 'false' }}
+
+# Provider Configuration
+{% if skill.provider_config and 'claude-code' in skill.provider_config %}
+provider: claude-code
+allowed_tools:
+{% for tool in skill.provider_config['claude-code'].get('allowed_tools', []) %}
+  - {{ tool }}
+{% endfor %}
+{% endif %}
+
+# Progressive Loading
+progressive_load_level: 2
+# Level 1: Metadata only (this frontmatter)
+# Level 2: + Instructions (skill content below)
+# Level 3: + Resources (examples, templates, docs at end)
+
+# Timestamps
+created_at: {{ skill.created_at.isoformat() }}
+updated_at: {{ skill.updated_at.isoformat() }}
+---
+
+# {{ skill.display_name }}
+
+## Description
+{{ skill.description }}
+
+{% if skill.category %}
+**Category**: {{ skill.category }}
+{% endif %}
+
+---
+
+## Instructions (Level 2)
+
+{{ skill.instructions }}
+
+---
+
+{% if skill.resources %}
+## Resources (Level 3)
+
+{% if skill.resources.examples %}
+### Examples
+{% for example in skill.resources.examples %}
+- `{{ example }}`
+{% endfor %}
+{% endif %}
+
+{% if skill.resources.templates %}
+### Templates
+{% for template in skill.resources.templates %}
+- `{{ template }}`
+{% endfor %}
+{% endif %}
+
+{% if skill.resources.docs %}
+### Documentation
+{% for doc in skill.resources.docs %}
+- [{{ doc }}]({{ doc }})
+{% endfor %}
+{% endif %}
+
+{% endif %}
+
+---
+
+## Usage in Agent Delegation
+
+When delegating to an agent that needs this skill:
+
+```python
+Task(
+  subagent_type="<agent-role>",
+  description="Task requiring {{ skill.display_name }}",
+  prompt=\"\"\"
+  Apply {{ skill.name }} skill:
+
+  Context: [Provide context]
+  Requirements: [Provide requirements]
+
+  Follow the patterns and best practices from the {{ skill.display_name }} skill.
+  \"\"\"
+)
+```
+
+---
+
+**Skill ID**: {{ skill.id if skill.id else 'Not yet saved' }}
+**Generated**: {{ generation_time }}
+**Status**: {{ 'Enabled' if skill.enabled else 'Disabled' }}

@@ -73,6 +73,11 @@ from .detection_preset import (
 from .detection_runtime import (
     RuntimeOverlay,
 )
+from .skill import (
+    Skill,
+    AgentSkill,
+    SkillCategory,
+)
 
 __all__ = [
     "Project",
@@ -139,4 +144,8 @@ __all__ = [
     "DetectionPreset",
     # Detection runtime models
     "RuntimeOverlay",
+    # Skills models (WI-171)
+    "Skill",
+    "AgentSkill",
+    "SkillCategory",
 ]

@@ -1,0 +1,39 @@
+# Code Patterns: {{ project.name }}
+
+**Project**: {{ project.name }}
+**Generated**: {{ generation_time }}
+
+---
+
+## Architecture Patterns
+
+{% for pattern in patterns %}
+### {{ pattern.name }}
+
+**Category**: {{ pattern.category }}
+
+{{ pattern.description }}
+
+{% if pattern.examples %}
+**Examples**:
+{% for example in pattern.examples %}
+- {{ example }}
+{% endfor %}
+{% endif %}
+
+---
+
+{% endfor %}
+
+## Project Conventions
+
+- **Testing**: >90% coverage, AAA pattern, project-relative paths
+- **Database**: Three-layer pattern (Models → Adapters → Methods)
+- **Templates**: Jinja2 for code generation, not f-strings
+- **Documentation**: Use `apm document add` for all docs (DOC-020)
+- **Quality**: SOLID principles, type hints, docstrings
+
+---
+
+**Generated**: {{ generation_time }}
+**Source**: APM Database (project metadata)

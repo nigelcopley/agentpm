@@ -31,6 +31,7 @@ from . import events
 from . import document_references
 from . import summaries
 from . import provider_methods
+from . import skills
 
 __all__ = [
     "projects",
@@ -49,4 +50,6 @@ __all__ = [
     "summaries",
     # Provider methods
     "provider_methods",
+    # Skills methods (WI-171)
+    "skills",
 ]

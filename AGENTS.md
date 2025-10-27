@@ -1,7 +1,7 @@
 ---
 version: "1.0"
 architecture: flat
-generated: 2025-10-27T13:20:11.003648Z
+generated: 2025-10-27T18:31:35.750426Z
 project:
   id: 1
   name: "Agent PM"
@@ -13,7 +13,7 @@ project:
 **Project**: Agent PM
 **Total Active Agents**: 85
 **Active Rules**: 76
-**Generated**: 2025-10-27 13:20:11 UTC
+**Generated**: 2025-10-27 18:31:35 UTC
 
 ---
 

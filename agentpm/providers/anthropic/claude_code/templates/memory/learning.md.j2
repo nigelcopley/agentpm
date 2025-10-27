@@ -1,0 +1,26 @@
+# Learning: {{ learning.title }}
+
+**ID**: {{ learning.id }}
+**Category**: {{ learning.category }}
+**Date**: {{ generation_time }}
+
+---
+
+## Context
+
+{{ learning.context }}
+
+## Learning
+
+{{ learning.learning }}
+
+{% if learning.examples %}
+## Examples
+
+{{ learning.examples }}
+{% endif %}
+
+---
+
+**Generated**: {{ generation_time }}
+**Source**: APM Database (learnings table)

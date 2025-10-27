@@ -1,0 +1,52 @@
+# Project Context: {{ project.name }}
+
+**Project**: {{ project.name }}
+**Status**: {{ project.status.value }}
+**Generated**: {{ generation_time }}
+
+---
+
+## Project Overview
+
+{{ project.description or "No description available" }}
+
+## Architecture
+
+APM (Agent Project Manager) operates on a **database-driven architecture**:
+
+- **Database-First**: All data in SQLite database (`.agentpm/data/agentpm.db`)
+- **Three-Layer Pattern**: Models → Adapters → Methods
+- **Provider Abstraction**: BaseProviderGenerator interface for multi-provider support
+- **Template-Based Generation**: Jinja2 templates for all configuration files
+
+## Workflow
+
+**Phase Progression**:
+```
+D1_DISCOVERY → P1_PLAN → I1_IMPLEMENTATION → R1_REVIEW → O1_OPERATIONS → E1_EVOLUTION
+```
+
+**Quality Gates**: Each phase has entry criteria that must be met before progression.
+
+## Key Commands
+
+```bash
+apm status                    # Project dashboard
+apm work-item list           # List work items
+apm task list --status=active # List active tasks
+apm context show             # Show current context
+apm rules list               # List active rules
+```
+
+## Development Principles
+
+1. **Database-First**: All data operations through database, not files
+2. **Template-Based**: Use Jinja2 templates for code generation
+3. **Testing Standards**: >90% coverage, AAA pattern, project-relative paths
+4. **Quality Gates**: Must pass gates before phase advancement
+5. **Documentation**: Use `apm document add` for all docs (DOC-020)
+
+---
+
+**Generated**: {{ generation_time }}
+**Source**: APM Database (project metadata)

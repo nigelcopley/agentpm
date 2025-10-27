@@ -46,11 +46,76 @@
                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">{{ document.description or '' }}</textarea>
             </div>
 
+            <!-- Content -->
+            <div>
+                <label for="content" class="block text-sm font-medium text-gray-700 mb-2">
+                    Content
+                    <span class="text-yellow-600 text-xs ml-2">
+                        <i class="bi bi-exclamation-triangle mr-1"></i>Warning: This will overwrite file content
+                    </span>
+                </label>
+                <div class="space-y-2">
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-3">
+                        <div class="flex items-start">
+                            <i class="bi bi-exclamation-triangle text-yellow-600 mr-2 mt-0.5"></i>
+                            <div class="text-sm text-yellow-800">
+                                <p class="font-medium">Content Editing Warning</p>
+                                <p>This document's source of truth is the file system. Editing content here will overwrite the file content. Consider editing the file directly instead.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <textarea id="content" 
+                              name="content" 
+                              rows="10"
+                              placeholder="Enter document content..."
+                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">{{ document.content or '' }}</textarea>
+                    
+                    <!-- Content change confirmation -->
+                    <div class="mt-2">
+                        <label class="flex items-center">
+                            <input type="checkbox" 
+                                   id="confirm_content_change" 
+                                   name="confirm_content_change"
+                                   class="mr-2 text-red-600 focus:ring-red-500">
+                            <span class="text-sm text-red-700 font-medium">
+                                I understand that changing content will overwrite the file and I have backed up the original content
+                            </span>
+                        </label>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-4 text-sm text-gray-500">
+                            <span id="content-length">0 characters</span>
+                            <span id="content-lines">0 lines</span>
+                        </div>
+                        <button type="button" 
+                                onclick="toggleContentPreview()"
+                                class="text-sm text-blue-600 hover:text-blue-800">
+                            <i class="bi bi-eye mr-1"></i>Preview Content
+                        </button>
+                    </div>
+                    <div id="content-preview" class="hidden bg-gray-50 border rounded-md p-4 prose max-w-none">
+                        <!-- Preview content will be inserted here -->
+                    </div>
+                </div>
+            </div>
+
             <!-- File Path -->
             <div>
                 <label for="file_path" class="block text-sm font-medium text-gray-700 mb-2">
                     File Path <span class="text-red-500">*</span>
+                    <span class="text-yellow-600 text-xs ml-2">
+                        <i class="bi bi-exclamation-triangle mr-1"></i>Warning: Changing path may break associations
+                    </span>
                 </label>
+                <div class="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-3">
+                    <div class="flex items-start">
+                        <i class="bi bi-exclamation-triangle text-yellow-600 mr-2 mt-0.5"></i>
+                        <div class="text-sm text-yellow-800">
+                            <p class="font-medium">File Path Warning</p>
+                            <p>Changing the file path may break existing associations and references. Only change this if you're moving the file to a new location.</p>
+                        </div>
+                    </div>
+                </div>
                 <input type="text" 
                        id="file_path" 
                        name="file_path" 
@@ -82,7 +147,54 @@
                 </select>
             </div>
 
-            <!-- Entity Association -->
+            <!-- Current Entity Association (Read-only) -->
+            {% if document.entity_type and document.entity_id %}
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div class="flex items-center gap-2 mb-2">
+                    <i class="bi bi-link-45deg text-blue-600"></i>
+                    <h3 class="text-sm font-medium text-blue-900">Current Association</h3>
+                </div>
+                <div class="text-sm text-blue-800">
+                    <p><strong>Entity Type:</strong> {{ document.entity_type.value.replace('_', ' ').title() }}</p>
+                    <p><strong>Entity ID:</strong> {{ document.entity_id }}</p>
+                    {% if current_entity %}
+                        <p><strong>Entity Name:</strong> {{ current_entity.name or current_entity.title or 'Untitled' }}</p>
+                        {% if current_entity.description %}
+                        <p class="text-xs text-blue-600 mt-1">
+                            <i class="bi bi-info-circle mr-1"></i>
+                            {{ current_entity.description[:100] }}{% if current_entity.description|length > 100 %}...{% endif %}
+                        </p>
+                        {% endif %}
+                    {% endif %}
+                    {% if document.entity_type.value == 'work_item' %}
+                        <p class="text-xs text-blue-600 mt-1">
+                            <i class="bi bi-info-circle mr-1"></i>
+                            This document is associated with Work Item #{{ document.entity_id }}
+                        </p>
+                    {% elif document.entity_type.value == 'task' %}
+                        <p class="text-xs text-blue-600 mt-1">
+                            <i class="bi bi-info-circle mr-1"></i>
+                            This document is associated with Task #{{ document.entity_id }}
+                        </p>
+                    {% elif document.entity_type.value == 'project' %}
+                        <p class="text-xs text-blue-600 mt-1">
+                            <i class="bi bi-info-circle mr-1"></i>
+                            This document is associated with Project #{{ document.entity_id }}
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <div class="flex items-center gap-2 mb-2">
+                    <i class="bi bi-unlink text-gray-600"></i>
+                    <h3 class="text-sm font-medium text-gray-900">No Association</h3>
+                </div>
+                <p class="text-sm text-gray-600">This document is not currently associated with any entity.</p>
+            </div>
+            {% endif %}
+
+            <!-- Entity Association (Editable) -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label for="entity_type" class="block text-sm font-medium text-gray-700 mb-2">
@@ -92,9 +204,9 @@
                             name="entity_type" 
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         <option value="">No Association</option>
-                        <option value="PROJECT" {% if document.entity_type and document.entity_type.value == 'PROJECT' %}selected{% endif %}>Project</option>
-                        <option value="WORK_ITEM" {% if document.entity_type and document.entity_type.value == 'WORK_ITEM' %}selected{% endif %}>Work Item</option>
-                        <option value="TASK" {% if document.entity_type and document.entity_type.value == 'TASK' %}selected{% endif %}>Task</option>
+                        <option value="project" {% if document.entity_type and document.entity_type.value == 'project' %}selected{% endif %}>Project</option>
+                        <option value="work_item" {% if document.entity_type and document.entity_type.value == 'work_item' %}selected{% endif %}>Work Item</option>
+                        <option value="task" {% if document.entity_type and document.entity_type.value == 'task' %}selected{% endif %}>Task</option>
                     </select>
                 </div>
 
@@ -109,6 +221,54 @@
                            placeholder="Enter entity ID..."
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     <p class="mt-1 text-sm text-gray-500">Leave empty if no association</p>
+                    
+                    <!-- Entity Suggestions -->
+                    <div class="mt-2 space-y-2">
+                        {% if recent_work_items %}
+                        <div>
+                            <p class="text-xs font-medium text-gray-600 mb-1">Recent Work Items:</p>
+                            <div class="flex flex-wrap gap-1">
+                                {% for wi in recent_work_items[:5] %}
+                                <button type="button" 
+                                        onclick="setEntityAssociation('work_item', {{ wi.id }})"
+                                        class="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded hover:bg-blue-200 transition-colors">
+                                    #{{ wi.id }}: {{ wi.name[:20] }}{% if wi.name|length > 20 %}...{% endif %}
+                                </button>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if recent_tasks %}
+                        <div>
+                            <p class="text-xs font-medium text-gray-600 mb-1">Recent Tasks:</p>
+                            <div class="flex flex-wrap gap-1">
+                                {% for task in recent_tasks[:5] %}
+                                <button type="button" 
+                                        onclick="setEntityAssociation('task', {{ task.id }})"
+                                        class="text-xs px-2 py-1 bg-green-100 text-green-800 rounded hover:bg-green-200 transition-colors">
+                                    #{{ task.id }}: {{ task.title[:20] }}{% if task.title|length > 20 %}...{% endif %}
+                                </button>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if projects_list %}
+                        <div>
+                            <p class="text-xs font-medium text-gray-600 mb-1">Projects:</p>
+                            <div class="flex flex-wrap gap-1">
+                                {% for project in projects_list[:3] %}
+                                <button type="button" 
+                                        onclick="setEntityAssociation('project', {{ project.id }})"
+                                        class="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded hover:bg-purple-200 transition-colors">
+                                    #{{ project.id }}: {{ project.name[:20] }}{% if project.name|length > 20 %}...{% endif %}
+                                </button>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
 
@@ -141,4 +301,65 @@
         </div>
     </div>
 </div>
+
+<script>
+// Entity association helper
+function setEntityAssociation(entityType, entityId) {
+    document.getElementById('entity_type').value = entityType;
+    document.getElementById('entity_id').value = entityId;
+    
+    // Visual feedback
+    const buttons = document.querySelectorAll('[onclick^="setEntityAssociation"]');
+    buttons.forEach(btn => btn.classList.remove('ring-2', 'ring-blue-500'));
+    
+    const clickedButton = event.target;
+    clickedButton.classList.add('ring-2', 'ring-blue-500');
+}
+
+// Content preview and statistics
+function updateContentStats() {
+    const content = document.getElementById('content').value;
+    const length = content.length;
+    const lines = content.split('\n').length;
+    
+    document.getElementById('content-length').textContent = `${length} characters`;
+    document.getElementById('content-lines').textContent = `${lines} lines`;
+}
+
+function toggleContentPreview() {
+    const preview = document.getElementById('content-preview');
+    const content = document.getElementById('content').value;
+    
+    if (preview.classList.contains('hidden')) {
+        // Show preview
+        preview.innerHTML = content ? `<pre class="whitespace-pre-wrap">${content}</pre>` : '<p class="text-gray-500 italic">No content to preview</p>';
+        preview.classList.remove('hidden');
+        event.target.innerHTML = '<i class="bi bi-eye-slash mr-1"></i>Hide Preview';
+    } else {
+        // Hide preview
+        preview.classList.add('hidden');
+        event.target.innerHTML = '<i class="bi bi-eye mr-1"></i>Preview Content';
+    }
+}
+
+// Initialize content stats
+document.addEventListener('DOMContentLoaded', function() {
+    updateContentStats();
+    
+    // Update stats as user types
+    document.getElementById('content').addEventListener('input', updateContentStats);
+    
+    // File path validation
+    document.getElementById('file_path').addEventListener('blur', function() {
+        const path = this.value;
+        if (path && !path.match(/^(\.|\/|docs\/)/)) {
+            this.classList.add('border-yellow-400', 'bg-yellow-50');
+            this.classList.remove('border-gray-300');
+        } else {
+            this.classList.remove('border-yellow-400', 'bg-yellow-50');
+            this.classList.add('border-gray-300');
+        }
+    });
+});
+</script>
 {% endblock %}

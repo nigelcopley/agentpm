@@ -745,6 +745,6 @@ apm work-item request-changes <id> --reason "..."
 ---
 
 **Version**: 5.0.0 (Template-Generated)
-**Last Updated**: 2025-10-27T13:20:11.008546
+**Last Updated**: 2025-10-27T18:31:35.755693
 **Pattern**: Database-driven, phase-based, multi-agent orchestration via Task tool
 **Paradigm**: Master Orchestrator (delegate-only) → Phase Orchestrators → Specialist Agents → Sub-Agents

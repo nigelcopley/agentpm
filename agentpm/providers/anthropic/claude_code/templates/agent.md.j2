@@ -2,6 +2,12 @@
 name: {{ agent.role }}
 description: {{ agent.description or agent.display_name }}
 tools: Read, Grep, Glob, Write, Edit, Bash
+{% if agent_skills %}
+skills:
+{% for skill in agent_skills %}
+  - {{ skill.name }}
+{% endfor %}
+{% endif %}
 ---
 
 # {{ agent.role }}
@@ -11,6 +17,24 @@ tools: Read, Grep, Glob, Write, Edit, Bash
 ## Description
 
 {{ agent.description or agent.display_name }}
+
+{% if agent_skills %}
+## Skills
+
+This agent uses the following skills for its operations:
+
+{% for skill in agent_skills %}
+### {{ skill.display_name }}
+
+{{ skill.description }}
+
+**Category**: {{ skill.category.value if skill.category else 'General' }}
+
+{% endfor %}
+
+For full skill instructions, see `.claude/skills/{{ agent_skills[0].name }}/SKILL.md` and related skill directories.
+
+{% endif %}
 
 ## Core Responsibilities
 
@@ -41,103 +65,45 @@ tools: Read, Grep, Glob, Write, Edit, Bash
 **Implementation Pattern**: This agent performs specialized work within its domain.
 {% endif %}
 
-## Project Rules
+## Key Project Rules
 
-### Development Principles
-
-{% for rule in rules[:20] %}
-**{{ rule.rule_id }}**:
-- **Enforcement**: {{ rule.enforcement_level.value }}
-- **Description**: {{ rule.name }}
-
+{% for rule in rules[:10] %}
+**{{ rule.rule_id }}**: {{ rule.name }} ({{ rule.enforcement_level.value }})
 {% endfor %}
 
-## Capabilities
+See CLAUDE.md for complete rule reference.
 
-{% if agent.capabilities %}
-{% for capability in agent.capabilities %}
-- **{{ capability }}**: Specialized capability for this domain
-{% endfor %}
-{% else %}
-- General purpose capabilities
-{% endif %}
-
-## Standard Operating Procedure
+## Agent-Specific Guidance
 
 {{ agent.sop_content or "Follow standard APM (Agent Project Manager) workflow patterns and delegate complex tasks appropriately." }}
 
 ## Quality Standards
 
-### Testing Requirements
-- Unit tests: >90% coverage (CI-004)
-- Integration tests: Critical paths covered
-- AAA pattern: Arrange, Act, Assert
+Follow APM quality standards:
+- Testing: >90% coverage (CI-004), AAA pattern
+- Code: Type hints, docstrings, SOLID principles
+- Time-boxing: ≤4h implementation, ≤6h testing, ≤4h documentation
+- Database-first: All data operations through database
+- Documentation: Use `apm document add` for all docs (DOC-020)
 
-### Code Quality
-- Type hints: All functions annotated
-- Docstrings: All public APIs documented
-- Error handling: Comprehensive exception handling
-- SOLID principles: Applied consistently
+## Workflow Integration
 
-### Time-Boxing
-{% if agent.functional_category and agent.functional_category.value == 'implementation' %}
-- IMPLEMENTATION tasks: ≤4h
-{% elif agent.functional_category and agent.functional_category.value == 'testing' %}
-- TESTING tasks: ≤6h
-{% elif agent.functional_category and agent.functional_category.value == 'documentation' %}
-- DOCUMENTATION tasks: ≤4h
-{% else %}
-- Follow task-specific time limits
-{% endif %}
+**Usage**: Delegate to this agent via Task tool in CLAUDE.md master orchestrator.
 
-## APM (Agent Project Manager) Integration
-
-- **Agent ID**: {{ agent.id }}
-- **Role**: {{ agent.role }}
-- **Priority**: {{ agent.priority or 50 }}
-- **Active**: {{ "Yes" if agent.is_active else "No" }}
-- **Capabilities**: {{ agent.capabilities|join(", ") if agent.capabilities else "General" }}
-
-## Usage Examples
-
-### Basic Delegation
-```python
-Task(
-  subagent_type="{{ agent.role }}",
-  description="<task description>",
-  prompt="<detailed instructions>"
-)
-```
-
-### With Context
+**Example**:
 ```python
 Task(
   subagent_type="{{ agent.role }}",
   description="<task description>",
   prompt="""CONTEXT: Work Item #<id> - <name>
-
 OBJECTIVE: <clear goal>
-
-REQUIREMENTS:
-- <requirement 1>
-- <requirement 2>
-
-DELIVERABLES:
-- <deliverable 1>
-- <deliverable 2>
-"""
+REQUIREMENTS: <list>
+DELIVERABLES: <list>"""
 )
 ```
 
-## Quality Gates
-
-- Always validate work items: `apm work-item validate <id>`
-- Check dependencies: `apm work-item list-dependencies <id>`
-- Follow time-boxing limits
-- Record all decisions with evidence
-- Use database-first approach for all data
+**Commands**: `apm task start <id>`, `apm task update <id>`, `apm task submit-review <id>`
 
 ---
 
-**Generated**: {{ generation_time }}
-**Template**: agent.md.j2
+**Agent ID**: {{ agent.id }} | **Priority**: {{ agent.priority or 50 }} | **Generated**: {{ generation_time }}

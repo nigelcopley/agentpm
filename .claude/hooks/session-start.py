@@ -7,7 +7,7 @@ Output is injected into Claude's context automatically.
 
 Performance: ~200ms (faster than bash with subprocess overhead)
 
-Generated: 2025-10-27T13:20:11.024681
+Generated: 2025-10-27T18:31:35.769264
 Template: hooks/session-start.py.j2
 """
 

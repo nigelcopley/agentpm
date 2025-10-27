@@ -1,0 +1,30 @@
+# Decision: {{ decision.title }}
+
+**ID**: {{ decision.id }}
+**Status**: {{ decision.status }}
+**Date**: {{ generation_time }}
+
+---
+
+## Context
+
+{{ decision.context }}
+
+## Decision
+
+{{ decision.decision }}
+
+## Consequences
+
+{{ decision.consequences }}
+
+{% if decision.alternatives %}
+## Alternatives Considered
+
+{{ decision.alternatives }}
+{% endif %}
+
+---
+
+**Generated**: {{ generation_time }}
+**Source**: APM Database (decisions table)

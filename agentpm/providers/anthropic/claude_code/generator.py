@@ -29,6 +29,8 @@ from agentpm.providers.base import (
     GenerationResult,
     FileOutput
 )
+from agentpm.providers.anthropic.claude_code.skill_generator import SkillGenerator
+from agentpm.providers.anthropic.claude_code.memory_generator import MemoryGenerator
 
 
 class ClaudeCodeGenerator(BaseProviderGenerator, TemplateBasedMixin):
@@ -40,6 +42,7 @@ class ClaudeCodeGenerator(BaseProviderGenerator, TemplateBasedMixin):
     - .claude/agents/*.md: Individual agent files with YAML frontmatter
     - .claude/hooks/*.py: Python hooks for session start and pre-tool-use
     - .claude/settings.json: Claude Code configuration
+    - .claude/memory/**/*.md: Structured memory files (decisions, learnings, patterns, context)
 
     Design Principles:
     - Template-driven: All formatting in Jinja2 templates
@@ -79,6 +82,12 @@ class ClaudeCodeGenerator(BaseProviderGenerator, TemplateBasedMixin):
         # Register custom filters
         self._register_custom_filters()
 
+        # Initialize skill generator
+        self.skill_generator = SkillGenerator(db_service)
+
+        # Initialize memory generator
+        self.memory_generator = MemoryGenerator(db_service)
+
     @property
     def provider_name(self) -> str:
         """Provider identifier."""
@@ -115,6 +124,12 @@ class ClaudeCodeGenerator(BaseProviderGenerator, TemplateBasedMixin):
             **kwargs: Optional parameters:
                 - include_hooks (bool): Generate hooks (default: True)
                 - include_settings (bool): Generate settings.json (default: True)
+                - include_memory (bool): Generate memory files (default: True)
+                - include_decisions (bool): Include decision files (default: True)
+                - include_learnings (bool): Include learning files (default: True)
+                - include_patterns (bool): Include pattern files (default: True)
+                - include_context (bool): Include context file (default: True)
+                - resolve_imports (bool): Resolve @import directives (default: True)
 
         Returns:
             GenerationResult with success status, files, and statistics
@@ -132,6 +147,7 @@ class ClaudeCodeGenerator(BaseProviderGenerator, TemplateBasedMixin):
         files: List[FileOutput] = []
         stats: Dict[str, Any] = {
             "agents_generated": 0,
+            "skills_generated": 0,
             "rules_included": len(rules),
             "duration_ms": 0,
             "generation_time": datetime.utcnow().isoformat()
@@ -189,6 +205,35 @@ class ClaudeCodeGenerator(BaseProviderGenerator, TemplateBasedMixin):
                     files.append(settings_file)
                 except Exception as e:
                     errors.append(f"Settings generation failed: {e}")
+
+            # 5. Generate skill files (optional)
+            if kwargs.get("include_skills", True):
+                try:
+                    skills_dir = claude_dir / "skills"
+                    skill_files = self.skill_generator.generate_skill_files(
+                        output_dir=skills_dir
+                    )
+                    files.extend(skill_files)
+                    stats["skills_generated"] = len(skill_files)
+                except Exception as e:
+                    errors.append(f"Skills generation failed: {e}")
+
+            # 6. Generate memory files (optional)
+            if kwargs.get("include_memory", True):
+                try:
+                    memory_files = self.memory_generator.generate_memory_files(
+                        project=project,
+                        output_dir=claude_dir,
+                        include_decisions=kwargs.get("include_decisions", True),
+                        include_learnings=kwargs.get("include_learnings", True),
+                        include_patterns=kwargs.get("include_patterns", True),
+                        include_context=kwargs.get("include_context", True),
+                        resolve_imports=kwargs.get("resolve_imports", True)
+                    )
+                    files.extend(memory_files)
+                    stats["memory_files_generated"] = len(memory_files)
+                except Exception as e:
+                    errors.append(f"Memory generation failed: {e}")
 
             # Calculate duration
             duration = (datetime.utcnow() - start_time).total_seconds() * 1000
@@ -401,9 +446,11 @@ class ClaudeCodeGenerator(BaseProviderGenerator, TemplateBasedMixin):
         Generate individual agent files in .claude/agents/.
 
         Each agent file contains:
-        - YAML frontmatter (name, description, tools, color)
-        - Agent SOP content
-        - Examples section
+        - YAML frontmatter (name, description, tools, skills)
+        - Agent description and responsibilities
+        - Skills section (if agent has skills)
+        - Agent-specific guidance (reduced SOP)
+        - Quality standards and workflow integration
 
         Args:
             agents: All agents from database
@@ -421,9 +468,18 @@ class ClaudeCodeGenerator(BaseProviderGenerator, TemplateBasedMixin):
             if not agent.is_active:
                 continue
 
+            # Query agent skills (metadata only for performance)
+            try:
+                from agentpm.core.database.methods.skills import get_agent_skills
+                agent_skills = get_agent_skills(self.db, agent.id, metadata_only=False)
+            except Exception:
+                # If skills table doesn't exist yet (Task 1131 not complete), default to empty
+                agent_skills = []
+
             # Render agent template
             context = {
                 "agent": agent,
+                "agent_skills": agent_skills,
                 "rules": rules,
                 "generation_time": datetime.utcnow().isoformat()
             }
