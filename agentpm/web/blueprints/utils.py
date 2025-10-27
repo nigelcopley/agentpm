@@ -12,35 +12,23 @@ from typing import Optional, Dict, Any, List, Callable, Tuple
 from flask import request, jsonify, flash, redirect, url_for
 
 from ...core.database.service import DatabaseService
-from ...cli.utils.services import get_database_service as cli_get_database_service
 
 logger = logging.getLogger(__name__)
 
 def get_database_service() -> DatabaseService:
     """
-    Get database service instance with robust path resolution.
+    Get database service instance using centralized initializer.
     
-    Uses the CLI service factory for consistency and caching.
-    Falls back to direct instantiation if CLI service fails.
+    Uses the centralized DatabaseInitializer for consistent database
+    management across CLI and web interfaces.
     """
-    try:
-        # Try to use the CLI service factory for consistency
-        project_root = Path.cwd()
-        return cli_get_database_service(project_root)
-    except FileNotFoundError:
-        # Fallback to direct instantiation for web context
-        db_paths = [
-            '.agentpm/data/agentpm.db',
-            '../.agentpm/data/agentpm.db',
-            '../../.agentpm/data/agentpm.db'
-        ]
-        
-        for db_path in db_paths:
-            if os.path.exists(db_path):
-                return DatabaseService(db_path)
-        
-        # If no database found, return service with default path
-        return DatabaseService('.agentpm/data/agentpm.db')
+    from agentpm.core.database.initializer import DatabaseInitializer
+    
+    if not DatabaseInitializer.is_initialized():
+        # Initialize with auto-detection
+        DatabaseInitializer.initialize()
+    
+    return DatabaseInitializer.get_instance()
 
 def _is_htmx_request() -> bool:
     """Check if request is from HTMX."""

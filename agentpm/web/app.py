@@ -389,7 +389,7 @@ app.config.from_object(config[config_name])
 # csrf = CSRFProtect(app)
 
 # Register markdown and enum filters
-from .utils.markdown import render_markdown, markdown_to_text, format_enum_display
+from .utils.markdown import render_markdown, markdown_to_text, format_enum_display, render_context_data
 
 # Helper function to find latest built files
 def get_latest_built_files():
@@ -438,6 +438,7 @@ def inject_config():
 app.jinja_env.filters['markdown'] = render_markdown
 app.jinja_env.filters['markdown_to_text'] = markdown_to_text
 app.jinja_env.filters['enum_display'] = format_enum_display
+app.jinja_env.filters['render_context'] = render_context_data
 
 
 # ========================================
@@ -572,42 +573,21 @@ app.jinja_env.filters['format_file_size'] = format_file_size
 
 def get_database_service() -> DatabaseService:
     """
-    Get DatabaseService instance with automatic database detection.
+    Get DatabaseService instance using centralized initializer.
 
-    Detection Priority:
-    1. Environment variable agentpm.db_PATH (explicit override)
-    2. Current directory .agentpm/data/agentpm.db (project context)
-    3. Parent directories (walk up to find APM project)
-    4. Home directory ~/.agentpm/agentpm.db (global fallback)
+    Uses the centralized DatabaseInitializer for consistent database
+    management across CLI and web interfaces.
 
     Returns:
         DatabaseService configured with detected AIPM database path
     """
-    # 1. Check environment variable (explicit override)
-    if 'agentpm.db_PATH' in os.environ:
-        return DatabaseService(os.environ['agentpm.db_PATH'])
-
-    # 2. Check current directory for project database
-    current_dir = Path.cwd()
-    project_db = current_dir / '.agentpm' / 'data' / 'agentpm.db'
-    if project_db.exists():
-        return DatabaseService(str(project_db))
-
-    # 3. Walk up parent directories to find APM project
-    search_dir = current_dir
-    for _ in range(10):  # Limit search depth to prevent infinite loops
-        candidate_db = search_dir / '.agentpm' / 'data' / 'agentpm.db'
-        if candidate_db.exists():
-            return DatabaseService(str(candidate_db))
-
-        # Move to parent directory
-        parent = search_dir.parent
-        if parent == search_dir:  # Reached filesystem root
-            break
-        search_dir = parent
-
-    # 4. Fall back to global database
-    return DatabaseService('~/.agentpm/agentpm.db')
+    from agentpm.core.database.initializer import DatabaseInitializer
+    
+    if not DatabaseInitializer.is_initialized():
+        # Initialize with auto-detection
+        DatabaseInitializer.initialize()
+    
+    return DatabaseInitializer.get_instance()
 
 
 def calculate_status_distribution(

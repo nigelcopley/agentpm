@@ -33,6 +33,7 @@ from ....core.database.enums import (
     DocumentCategory,
     Phase, 
     TaskType, 
+    TaskStatus,
     WorkItemType, 
     WorkItemStatus,
     DocumentFormat, 
@@ -68,8 +69,42 @@ def work_item_detail(work_item_id: int):
     if not work_item:
         abort(404, description=f"Work item {work_item_id} not found")
     
-    # Get related data
-    tasks_list = tasks.list_tasks(db, work_item_id=work_item_id) or []
+    # Get related data with optional filters
+    status_filter = None
+    type_filter = None
+    priority_filter = None
+    sort_by = "priority"
+    
+    # Parse filter parameters from request
+    if request.args.get('status'):
+        try:
+            status_filter = TaskStatus(request.args.get('status'))
+        except ValueError:
+            pass  # Invalid status, ignore filter
+    
+    if request.args.get('type'):
+        try:
+            type_filter = TaskType(request.args.get('type'))
+        except ValueError:
+            pass  # Invalid type, ignore filter
+    
+    if request.args.get('priority'):
+        try:
+            priority_filter = int(request.args.get('priority'))
+        except ValueError:
+            pass  # Invalid priority, ignore filter
+    
+    if request.args.get('sort_by'):
+        sort_by = request.args.get('sort_by')
+    
+    tasks_list = tasks.list_tasks(
+        db, 
+        work_item_id=work_item_id,
+        status=status_filter,
+        task_type=type_filter,
+        priority=priority_filter,
+        sort_by=sort_by
+    ) or []
     agents_list = agents.list_agents(db) or []
     
     # Get project information
@@ -181,7 +216,7 @@ def work_item_detail(work_item_id: int):
             documents_by_type[doc_type].append(doc)
             
             # Group by category
-            category = doc.category.value if doc.category else 'uncategorized'
+            category = doc.category if doc.category else 'uncategorized'
             if category not in documents_by_category:
                 documents_by_category[category] = []
             documents_by_category[category].append(doc)
@@ -240,11 +275,28 @@ def work_item_detail(work_item_id: int):
     business_context = None
     technical_context = None
     
+    # Look for unified business context in work item contexts
     for context in work_item_contexts:
-        if context.context_type == ContextType.BUSINESS_PILLARS_CONTEXT:
+        if context.context_type == ContextType.WORK_ITEM_CONTEXT:
+            # Check if this context has unified business context
+            if context.has_unified_context() and context.get_business_context():
+                business_context = context
+                break
+        elif context.context_type == ContextType.BUSINESS_PILLARS_CONTEXT:
             business_context = context
         elif context.context_type == ContextType.TECHNICAL_CONTEXT:
             technical_context = context
+    
+    # Fallback to legacy WorkItem.business_context if no unified context found
+    if not business_context and work_item.business_context:
+        # Create a mock context object for template compatibility
+        class MockBusinessContext:
+            def __init__(self, business_context_text):
+                self.context_data = {'business_context': business_context_text}
+                self.confidence_score = 0.5
+                self.confidence_band = 'YELLOW'
+        
+        business_context = MockBusinessContext(work_item.business_context)
     
     # Calculate effort statistics
     total_estimated_hours = sum(task.effort_hours or 0 for task in tasks_list)

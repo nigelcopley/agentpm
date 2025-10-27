@@ -420,71 +420,77 @@ class MemoryGenerator:
     def _generate_agents_content(self, project_id: int) -> tuple[str, List[str]]:
         """Generate AGENTS.md content from agents table.
 
-        Extracts agent directory structure, organizing by tier
-        (orchestrators, specialists, sub-agents, utilities).
+        Extracts agent directory structure, organizing by functional_category
+        (planning, implementation, testing, documentation, utilities).
         """
         from agentpm.core.database.methods import agents as agent_methods
+        from agentpm.core.database.enums import AgentFunctionalCategory
 
         # Query all active agents
         all_agents = agent_methods.list_agents(self.db, project_id=project_id, active_only=True)
 
-        # Group agents by tier
-        by_tier = {}
+        # Group agents by functional_category (preferred) or tier (fallback)
+        by_category = {}
         for agent in all_agents:
-            tier = getattr(agent, 'tier', 'unknown')
-            if tier not in by_tier:
-                by_tier[tier] = []
-            by_tier[tier].append(agent)
+            category = getattr(agent, 'functional_category', None)
+            # Convert enum to string value if it's an enum instance
+            if category is not None:
+                category_key = category.value if hasattr(category, 'value') else str(category)
+            elif agent.tier:
+                # Fallback to tier mapping for backwards compatibility
+                tier_to_category = {
+                    1: 'utilities',      # TIER_1 (sub-agents) → utilities
+                    2: 'implementation', # TIER_2 (specialists) → implementation
+                    3: 'planning'        # TIER_3 (orchestrators) → planning
+                }
+                category_key = tier_to_category.get(agent.tier.value, 'uncategorized')
+            else:
+                category_key = 'uncategorized'
+
+            if category_key not in by_category:
+                by_category[category_key] = []
+            by_category[category_key].append(agent)
 
         content = "# APM (Agent Project Manager) Agent System\n\n"
         content += f"**Total Active Agents**: {len(all_agents)}\n"
         content += f"**Generated**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
 
         content += "---\n\n"
-        content += "## Agent Architecture\n\n"
-        content += "APM (Agent Project Manager) uses a 3-tier agent architecture:\n\n"
-        content += "1. **Orchestrators**: Phase-based workflow coordination (6 agents)\n"
-        content += "2. **Specialists**: Domain-specific expertise (15-20 agents)\n"
-        content += "3. **Sub-Agents**: Single-purpose tasks (25-30 agents)\n"
-        content += "4. **Utilities**: Infrastructure support agents\n\n"
+        content += "## Agent Directory (Flat - Organized by Function)\n\n"
 
-        content += "---\n\n"
-        content += "## Agent Directory\n\n"
-
-        # Display agents by tier
-        tier_order = ['orchestrator', 'specialist', 'sub-agent', 'utility']
-        tier_labels = {
-            'orchestrator': 'Phase Orchestrators',
-            'specialist': 'Domain Specialists',
-            'sub-agent': 'Sub-Agents',
-            'utility': 'Utility Agents'
+        # Display agents by functional category
+        category_order = ['planning', 'implementation', 'testing', 'documentation', 'utilities']
+        category_labels = {
+            'planning': 'Planning & Analysis',
+            'implementation': 'Implementation',
+            'testing': 'Testing & Quality',
+            'documentation': 'Documentation',
+            'utilities': 'Utilities'
         }
 
-        for tier in tier_order:
-            if tier not in by_tier:
+        for category in category_order:
+            if category not in by_category:
                 continue
 
-            agents_in_tier = sorted(by_tier[tier], key=lambda a: a.role)
-            content += f"### {tier_labels.get(tier, tier.title())} ({len(agents_in_tier)})\n\n"
+            agents_in_category = sorted(by_category[category], key=lambda a: a.role)
+            content += f"### {category_labels.get(category, category.title())} ({len(agents_in_category)})\n\n"
 
-            for agent in agents_in_tier:
-                content += f"**{agent.role}**: {agent.display_name}\n\n"
+            for agent in agents_in_category:
+                content += f"- **{agent.role}**: {agent.display_name}"
                 if agent.description:
-                    content += f"{agent.description[:150]}...\n\n"
-                if agent.capabilities:
-                    try:
-                        import json
-                        caps = json.loads(agent.capabilities) if isinstance(agent.capabilities, str) else agent.capabilities
-                        if caps:
-                            content += f"*Capabilities*: {', '.join(caps[:3])}\n\n"
-                    except:
-                        pass
+                    # Truncate description to first line or 150 chars
+                    desc = agent.description.split('\n')[0][:150]
+                    content += f" - {desc}"
+                content += "\n"
 
-        # Also list unknown tier agents
-        if 'unknown' in by_tier:
-            content += f"\n### Uncategorized Agents ({len(by_tier['unknown'])})\n\n"
-            for agent in by_tier['unknown']:
-                content += f"- {agent.role}\n"
+            content += "\n"
+
+        # Also list uncategorized agents at the end
+        if 'uncategorized' in by_category:
+            content += f"### Uncategorized ({len(by_category['uncategorized'])})\n\n"
+            for agent in sorted(by_category['uncategorized'], key=lambda a: a.role):
+                content += f"- **{agent.role}**: {agent.display_name}\n"
+            content += "\n"
 
         return (content, ["agents"])
 

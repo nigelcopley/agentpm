@@ -22,6 +22,10 @@ def render_markdown(text, safe_mode=False):
     if not text:
         return ""
     
+    # Convert to string if not already
+    if not isinstance(text, str):
+        text = str(text)
+    
     # Configure markdown extensions
     extensions = [
         'codehilite',
@@ -135,6 +139,10 @@ def markdown_to_text(text, max_length=None):
     if not text:
         return ""
     
+    # Convert to string if not already
+    if not isinstance(text, str):
+        text = str(text)
+    
     # Render markdown to HTML first
     html = render_markdown(text, safe_mode=True)
     
@@ -186,3 +194,91 @@ def format_enum_display(enum_value):
     formatted = value.replace('_', ' ').title()
     
     return formatted
+
+
+def render_context_data(context_data):
+    """
+    Render context data (JSON or text) into a readable format.
+    
+    Args:
+        context_data: Context data (could be JSON string, dict, or text)
+    
+    Returns:
+        str: Rendered HTML
+    """
+    if not context_data:
+        return ""
+    
+    # If it's already a string and looks like JSON, try to parse it
+    if isinstance(context_data, str):
+        # Check if it looks like JSON
+        if context_data.strip().startswith('{') or context_data.strip().startswith('['):
+            try:
+                import json
+                data = json.loads(context_data)
+                return render_json_context(data)
+            except (json.JSONDecodeError, ValueError):
+                # If JSON parsing fails, treat as regular text
+                return render_markdown(context_data, safe_mode=True)
+        else:
+            # Regular text, render as markdown
+            return render_markdown(context_data, safe_mode=True)
+    
+    # If it's already a dict/list, render it directly
+    elif isinstance(context_data, (dict, list)):
+        return render_json_context(context_data)
+    
+    # Fallback to string conversion and markdown rendering
+    else:
+        return render_markdown(str(context_data), safe_mode=True)
+
+
+def render_json_context(data):
+    """
+    Render JSON context data into a readable HTML format.
+    
+    Args:
+        data: JSON data (dict or list)
+    
+    Returns:
+        str: Rendered HTML
+    """
+    if not data:
+        return ""
+    
+    html_parts = []
+    
+    if isinstance(data, dict):
+        # Handle dict data
+        for key, value in data.items():
+            if value:  # Only show non-empty values
+                formatted_key = key.replace('_', ' ').title()
+                
+                if isinstance(value, list):
+                    if value:  # Only show non-empty lists
+                        html_parts.append(f"<div class='mb-2'><strong class='text-gray-900'>{formatted_key}:</strong></div>")
+                        html_parts.append("<ul class='list-disc list-inside ml-4 mb-3 space-y-1'>")
+                        for item in value:
+                            html_parts.append(f"<li class='text-sm text-gray-700'>{item}</li>")
+                        html_parts.append("</ul>")
+                elif isinstance(value, dict):
+                    html_parts.append(f"<div class='mb-2'><strong class='text-gray-900'>{formatted_key}:</strong></div>")
+                    html_parts.append("<div class='ml-4 mb-3 border-l-2 border-gray-200 pl-4'>")
+                    html_parts.append(render_json_context(value))
+                    html_parts.append("</div>")
+                else:
+                    html_parts.append(f"<div class='mb-2'><strong class='text-gray-900'>{formatted_key}:</strong> <span class='text-gray-700'>{value}</span></div>")
+    
+    elif isinstance(data, list):
+        # Handle list data
+        html_parts.append("<ul class='list-disc list-inside ml-4 space-y-1'>")
+        for item in data:
+            if isinstance(item, dict):
+                html_parts.append("<li class='mb-2'>")
+                html_parts.append(render_json_context(item))
+                html_parts.append("</li>")
+            else:
+                html_parts.append(f"<li class='text-sm text-gray-700'>{item}</li>")
+        html_parts.append("</ul>")
+    
+    return Markup(''.join(html_parts))

@@ -126,7 +126,7 @@ class ContextService:
                 'name': work_item.name,
                 'description': work_item.description,
                 'type': work_item.type.value,
-                'business_context': work_item.business_context,
+                'business_context': self._get_unified_business_context(wi_context, work_item),
                 'effort_estimate_hours': work_item.effort_estimate_hours,
                 'priority': work_item.priority,
                 'status': work_item.status.value
@@ -139,6 +139,30 @@ class ContextService:
         }
 
         return context
+
+    def _get_unified_business_context(self, context: Optional[Context], work_item: WorkItem) -> Optional[str]:
+        """
+        Get business context from unified context structure.
+        
+        Priority:
+        1. Context.context_data['business_context'] (unified structure)
+        2. WorkItem.business_context (legacy fallback)
+        
+        Args:
+            context: Context model instance
+            work_item: WorkItem model instance
+            
+        Returns:
+            Business context string or None
+        """
+        # Try unified context structure first
+        if context and context.has_unified_context():
+            unified_context = context.get_business_context()
+            if unified_context:
+                return unified_context
+        
+        # Fallback to legacy WorkItem.business_context
+        return work_item.business_context
 
     def get_idea_context(self, idea_id: int) -> Dict[str, Any]:
         """
