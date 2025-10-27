@@ -1,11 +1,12 @@
 """
-Sub-Agent Registry Validator
+Agent Registry Validator
 
-Validates sub-agent assignments against the registry of available agents
-in .claude/agents/sub-agents/ directory.
+Validates agent assignments against the registry of available agents.
+Supports multiple providers with dynamic path resolution.
 
 This module provides centralized validation for agent assignments to ensure
-tasks are only assigned to agents that exist in the system.
+tasks are only assigned to agents that exist in the system. Uses provider
+detection to find agent files across different directory structures.
 
 Usage:
     from agentpm.core.agents.registry_validator import validate_agent, get_all_agents
@@ -23,6 +24,14 @@ from pathlib import Path
 from typing import List, Optional, Set
 import functools
 
+from .provider_detector import (
+    detect_provider,
+    get_agents_directory as get_provider_agents_directory,
+    get_agent_paths,
+    get_agent_names as get_provider_agent_names,
+    Provider,
+)
+
 
 # Cache for agent registry (refreshes every 60 seconds)
 _AGENT_CACHE: Optional[Set[str]] = None
@@ -30,40 +39,48 @@ _CACHE_TIMESTAMP: Optional[float] = None
 CACHE_TTL_SECONDS = 60
 
 
-def get_agents_directory() -> Path:
+def get_agents_directory() -> Optional[Path]:
     """
-    Get the sub-agents directory path.
+    Get the agents directory path dynamically from provider detection.
 
     Returns:
-        Path to .claude/agents/sub-agents/ directory
+        Path to provider's agents directory, or None if not found
+
+    Examples:
+        >>> agents_dir = get_agents_directory()
+        >>> agents_dir is not None
+        True
     """
-    # Get project root (4 levels up from this file)
-    # File is at: agentpm/core/agents/registry_validator.py
-    # Root is at: aipm-v2/
-    project_root = Path(__file__).parent.parent.parent.parent
-    return project_root / ".claude" / "agents" / "sub-agents"
+    # Use provider detection for dynamic path resolution
+    return get_provider_agents_directory()
 
 
 def _load_agent_registry() -> Set[str]:
     """
-    Load all valid sub-agent names from the registry.
+    Load all valid agent names from the registry.
+
+    Uses provider detection to scan for agent files across all
+    directory structures (flat and tiered).
 
     Returns:
         Set of valid agent names (without .md extension)
     """
     agents_dir = get_agents_directory()
 
-    if not agents_dir.exists():
+    if not agents_dir or not agents_dir.exists():
         import warnings
+        provider = detect_provider()
         warnings.warn(
-            f"Sub-agents directory not found: {agents_dir}",
+            f"Agents directory not found for provider: {provider}",
             RuntimeWarning
         )
         return set()
 
-    # Get all .md files in sub-agents directory
-    agent_files = agents_dir.glob("*.md")
-    return {f.stem for f in agent_files}
+    # Get all agent names using provider-aware scanner
+    # Includes both flat structure (.claude/agents/*.md) and
+    # subdirectories (.claude/agents/sub-agents/*.md)
+    agent_names = get_provider_agent_names(include_subdirs=True)
+    return set(agent_names)
 
 
 def _get_cached_registry() -> Set[str]:
@@ -229,11 +246,13 @@ def get_registry_stats() -> dict:
         - total_agents: Total number of registered agents
         - cache_age: Age of cache in seconds
         - agents_dir: Path to agents directory
+        - provider: Detected provider
+        - supports_agents: Whether provider supports agents
 
     Examples:
         >>> stats = get_registry_stats()
-        >>> stats['total_agents']
-        36
+        >>> stats['total_agents'] > 0
+        True
     """
     import time
 
@@ -243,9 +262,14 @@ def get_registry_stats() -> dict:
         if _CACHE_TIMESTAMP else 0
     )
 
+    agents_dir = get_agents_directory()
+    provider = detect_provider()
+
     return {
         "total_agents": len(registry),
         "cache_age_seconds": round(cache_age, 2),
-        "agents_dir": str(get_agents_directory()),
+        "agents_dir": str(agents_dir) if agents_dir else None,
         "cache_ttl_seconds": CACHE_TTL_SECONDS,
+        "provider": provider.value,
+        "supports_agents": agents_dir is not None,
     }

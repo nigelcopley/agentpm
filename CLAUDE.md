@@ -83,17 +83,6 @@ apm rules list              # Query: SELECT * FROM rules WHERE enabled=1
 - **Runtime loading**: All rules loaded from database via `rule_methods.list_rules(db)`
 - **File-based loading**: Explicitly blocked with RuntimeError in production
 
-**Code Evidence**:
-```python
-# agentpm/core/rules/loader.py:409-449
-def _load_catalog(self) -> dict:
-    """At runtime, rules should ONLY come from the database."""
-    raise RuntimeError(
-        "Rules must be loaded from database. "
-        "Run 'apm init' to populate database with rules."
-    )
-```
-
 **This Applies To**:
 - Rules system (database-first)
 - Work items and tasks (database entities)
@@ -101,57 +90,532 @@ def _load_catalog(self) -> dict:
 - Workflow state (database-driven state machine)
 - Quality metadata (JSON fields in database)
 
-**File-Based Components** (exceptions):
-- Plugin code (`agentpm/core/plugins/`)
-- Agent definitions (`.claude/agents/`)
-- Documentation (`docs/`)
-
 ---
 
-## 1) Universal Rules (Enforced via Delegation)
+## 1) Available Agents (Organized by Functional Category)
 
-### **BLOCK-Level Rules** (Must Never Violate)
+The following agents are available for delegation via the Task tool.
 
-Query database for current enforcement:
-```bash
-apm rules list -e BLOCK    # Live blocking rules from database
-```
+### Testing Agents
 
-**Key Categories**:
-- **DP-001 to DP-008**: Development principles (Hexagonal, DDD, Service Registry, etc.)
-- **TES-001 to TES-010**: Testing standards (Project-relative, AAA pattern, Coverage, etc.)
-- **SEC-001 to SEC-006**: Security requirements (Input validation, Encryption, Authentication, etc.)
-- **WF-001 to WF-008**: Workflow governance (Phase gates, Agent assignment, Time-boxing, etc.)
+#### Ac Verifier
+- **Role**: `ac-verifier`
+- **Description**: Use when you need to verify that all acceptance criteria are met
+- **Capabilities**: General purpose
+- **Priority**: 50
 
-### **Document Obligations**
+#### Aipm Documentation Analyzer
+- **Role**: `aipm-documentation-analyzer`
+- **Description**: SOP for Aipm Documentation Analyzer agent
+- **Capabilities**: General purpose
+- **Priority**: 50
 
-Every significant action must be documented in the database:
+#### Aipm Plugin System Analyzer
+- **Role**: `aipm-plugin-system-analyzer`
+- **Description**: SOP for Aipm Plugin System Analyzer agent
+- **Capabilities**: General purpose
+- **Priority**: 50
 
-**Work Items** (Features, Improvements, Fixes):
-- business_context ≥50 chars (WHY this matters)
-- acceptance_criteria ≥3 (WHAT defines done)
-- risks ≥1 (WHAT could go wrong)
-- 6W confidence ≥0.70 (WHO, WHAT, WHEN, WHERE, WHY, HOW)
+#### Aipm Rules Compliance Checker
+- **Role**: `aipm-rules-compliance-checker`
+- **Description**: SOP for Aipm Rules Compliance Checker agent
+- **Capabilities**: General purpose
+- **Priority**: 50
 
-**Tasks** (Atomic work units):
-- Objective (clear goal)
-- Acceptance criteria (testable)
-- Effort estimate (≤4 hours for implementation)
-- Dependencies (blockers/blocked-by)
+#### Aipm Test Pattern Analyzer
+- **Role**: `aipm-test-pattern-analyzer`
+- **Description**: SOP for Aipm Test Pattern Analyzer agent
+- **Capabilities**: General purpose
+- **Priority**: 50
 
-**Evidence** (Supporting research):
-- sources (URLs, excerpts, hashes)
-- confidence (0.0-1.0)
-- type (primary/secondary/internal)
+#### Aipm Workflow Analyzer
+- **Role**: `aipm-workflow-analyzer`
+- **Description**: SOP for Aipm Workflow Analyzer agent
+- **Capabilities**: General purpose
+- **Priority**: 50
 
-**Delegate documentation to**:
-```
-Task(
-  subagent_type="workitem-writer",
-  description="Document work item metadata",
-  prompt="Update work item #[id] with: [details]"
-)
-```
+#### Code Analyzer
+- **Role**: `code-analyzer`
+- **Description**: SOP for Code Analyzer agent
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Evolution Gate Check
+- **Role**: `evolution-gate-check`
+- **Description**: Use when you need to validate if evolution analysis passes the E1 quality gate
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Health Verifier
+- **Role**: `health-verifier`
+- **Description**: Use when you need to verify system health after deployment
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Implementation Gate Check
+- **Role**: `implementation-gate-check`
+- **Description**: Use when you need to validate if implementation passes the I1 quality gate
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Operability Gatecheck
+- **Role**: `operability-gatecheck`
+- **Description**: Use when you need to validate if deployment passes the O1 quality gate
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Quality Gatekeeper
+- **Role**: `quality-gatekeeper`
+- **Description**: Use when you need to validate if implementation passes the R1 quality gate
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Reviewer
+- **Role**: `reviewer`
+- **Description**: Code review and quality assurance specialist in this project
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Static Analyzer
+- **Role**: `static-analyzer`
+- **Description**: Use when you need to run linters, type checkers, and code quality tools
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Test Runner
+- **Role**: `test-runner`
+- **Description**: Use when you need to execute test suites and report coverage
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Work Item Perpetual Reviewer
+- **Role**: `wi-perpetual-reviewer`
+- **Description**: Prevents false work item completions by validating all ACs, tasks, and quality gates before marking done
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+### Documentation Agents
+
+#### Ac Writer
+- **Role**: `ac-writer`
+- **Description**: Use when you need to generate testable acceptance criteria for a work item
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Backlog Curator
+- **Role**: `backlog-curator`
+- **Description**: Use when you need to create tasks in the database with proper metadata and links
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Changelog Curator
+- **Role**: `changelog-curator`
+- **Description**: Use when you need to update the changelog with release notes
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Doc Toucher
+- **Role**: `doc-toucher`
+- **Description**: Use when documentation needs to be updated to reflect code changes
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Evidence Writer
+- **Role**: `evidence-writer`
+- **Description**: Records evidence sources and research findings to database
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Technical Writer
+- **Role**: `technical-writer`
+- **Description**: SOP for Technical Writer agent
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+### Implementation Agents
+
+#### Agent System Architect
+- **Role**: `agent-builder`
+- **Description**: Creates new agents from specifications, generates agent files for multiple LLM providers, and maintains agent architecture consistency. Ensures all agents follow established patterns and standards.
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Aipm Database Schema Explorer
+- **Role**: `aipm-database-schema-explorer`
+- **Description**: SOP for Aipm Database Schema Explorer agent
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Code Implementer
+- **Role**: `code-implementer`
+- **Description**: Use when you need to write production code following project patterns
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Database Operations Specialist
+- **Role**: `database-query-agent`
+- **Description**: Executes safe, efficient database queries with proper error handling and transaction management. Generates SQL from natural language queries and validates query safety before execution.
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Migration Author
+- **Role**: `migration-author`
+- **Description**: Use when database schema changes are needed - creates migration files with upgrade/downgrade paths
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Performance Engineer
+- **Role**: `performance-engineer`
+- **Description**: SOP for Performance Engineer agent
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Python Expert
+- **Role**: `python-expert`
+- **Description**: SOP for Python Expert agent
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Quality Engineer
+- **Role**: `quality-engineer`
+- **Description**: SOP for Quality Engineer agent
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Security Engineer
+- **Role**: `security-engineer`
+- **Description**: SOP for Security Engineer agent
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Test Implementer
+- **Role**: `test-implementer`
+- **Description**: Use when you need to write comprehensive tests-BAK for implemented code
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+### Utilities Agents
+
+#### Aipm Codebase Navigator
+- **Role**: `aipm-codebase-navigator`
+- **Description**: SOP for Aipm Codebase Navigator agent
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Audit Logger
+- **Role**: `audit-logger`
+- **Description**: Logs decisions, architectural choices, and rationale for audit trail
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Business Panel Experts
+- **Role**: `business-panel-experts`
+- **Description**: SOP for Business Panel Experts agent
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Context Assembler
+- **Role**: `context-assembler`
+- **Description**: Use when you need to gather relevant project context from the database and codebase
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Context Delivery
+- **Role**: `context-delivery`
+- **Description**: Context Agent - Assembles session context from database (MANDATORY at session start)
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Context Assembly Specialist
+- **Role**: `context-generator`
+- **Description**: Assembles comprehensive session context from database records, project files, and plugin intelligence. Calculates context confidence and identifies gaps requiring additional research.
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Debt Registrar
+- **Role**: `debt-registrar`
+- **Description**: Use when you need to document and prioritize technical debt
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Decomposer
+- **Role**: `decomposer`
+- **Description**: Use when you need to break a work item into atomic, time-boxed tasks
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Deep Research Agent
+- **Role**: `deep-research-agent`
+- **Description**: SOP for Deep Research Agent agent
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Dependency Mapper
+- **Role**: `dependency-mapper`
+- **Description**: Use when you need to identify task dependencies and critical paths
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Estimator
+- **Role**: `estimator`
+- **Description**: Use when you need to provide effort estimates for tasks
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### File System Operations Specialist
+- **Role**: `file-operations-agent`
+- **Description**: Performs safe file system operations with proper error handling, atomic operations, and backup capabilities. Handles file creation, reading, updating, deletion, and directory management.
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Incident Scribe
+- **Role**: `incident-scribe`
+- **Description**: Use when deployment fails or incidents occur - documents for post-mortem
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Information Gatherer
+- **Role**: `information-gatherer`
+- **Description**: SOP for Information Gatherer agent
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Insight Synthesizer
+- **Role**: `insight-synthesizer`
+- **Description**: Use when you need to identify patterns and opportunities from telemetry data
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Intent Triage
+- **Role**: `intent-triage`
+- **Description**: Use when you need to classify a raw request by type, domain, complexity, and priority
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Learning Guide
+- **Role**: `learning-guide`
+- **Description**: SOP for Learning Guide agent
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Pattern Applier
+- **Role**: `pattern-applier`
+- **Description**: Use when you need to identify which project patterns to apply for consistent implementation
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Refactor Proposer
+- **Role**: `refactor-proposer`
+- **Description**: Use when you need to propose improvements based on insights and debt analysis
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Refactoring Expert
+- **Role**: `refactoring-expert`
+- **Description**: SOP for Refactoring Expert agent
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Requirements Analyst
+- **Role**: `requirements-analyst`
+- **Description**: SOP for Requirements Analyst agent
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Risk Notary
+- **Role**: `risk-notary`
+- **Description**: Use when you need to identify risks, dependencies, and constraints for a work item
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Root Cause Analyst
+- **Role**: `root-cause-analyst`
+- **Description**: SOP for Root Cause Analyst agent
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Shopify Metafield Admin Dev
+- **Role**: `shopify-metafield-admin-dev`
+- **Description**: SOP for Shopify Metafield Admin Dev agent
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Signal Harvester
+- **Role**: `signal-harvester`
+- **Description**: Use when you need to collect production telemetry and user feedback signals
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Socratic Mentor
+- **Role**: `socratic-mentor`
+- **Description**: SOP for Socratic Mentor agent
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Specifier
+- **Role**: `specifier`
+- **Description**: Requirements specification specialist for the detected technology stack in this project
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Threat Screener
+- **Role**: `threat-screener`
+- **Description**: Use when you need to scan for security vulnerabilities
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Value Articulator
+- **Role**: `value-articulator`
+- **Description**: Use when you need to document why work matters and what business value it provides
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Versioner
+- **Role**: `versioner`
+- **Description**: Use when you need to increment version numbers according to semver rules
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### State Machine Orchestrator
+- **Role**: `workflow-coordinator`
+- **Description**: Manages workflow state transitions for tasks and work items. Validates transitions against state machine rules, enforces gate requirements, and maintains audit trail of all state changes.
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Workflow Updater
+- **Role**: `workflow-updater`
+- **Description**: Updates work item and task status in database via CLI commands
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+### Planning Agents
+
+#### Backend Architect
+- **Role**: `backend-architect`
+- **Description**: SOP for Backend Architect agent
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Core Designer
+- **Role**: `core-designer`
+- **Description**: SOP for Core Designer agent
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Definition Gate Check
+- **Role**: `definition-gate-check`
+- **Description**: Use when you need to validate if a work item passes the D1 quality gate
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Definition Orch
+- **Role**: `definition-orch`
+- **Description**: Use when you have a raw request that needs to be transformed into a well-defined work item with acceptance criteria and risks
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Deploy Orchestrator
+- **Role**: `deploy-orchestrator`
+- **Description**: Use when you need to execute deployment to production
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Devops Architect
+- **Role**: `devops-architect`
+- **Description**: SOP for Devops Architect agent
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Discovery Orch
+- **Role**: `discovery-orch`
+- **Description**: Discovery Orchestrator - Coordinates external/internal/risk discovery when confidence < threshold
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Evolution Orch
+- **Role**: `evolution-orch`
+- **Description**: Use when you have production telemetry that needs analysis to identify improvements, technical debt, or new opportunities
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Flask Ux Designer
+- **Role**: `flask-ux-designer`
+- **Description**: Create professional, accessible Flask web application UI/UX designs with Bootstrap 5, HTMX, Alpine.js, and Chart.js. Specializes in interactive components, form design, and modern web patterns.
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Frontend Architect
+- **Role**: `frontend-architect`
+- **Description**: SOP for Frontend Architect agent
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Implementation Orch
+- **Role**: `implementation-orch`
+- **Description**: Use when you have a plan with time-boxed tasks that need to be executed into working code, tests-BAK, and documentation
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Master Orchestrator
+- **Role**: `master-orchestrator`
+- **Description**: Use when user provides any request - routes to appropriate mini-orchestrator based on artifact type, never executes work directly
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Mitigation Planner
+- **Role**: `mitigation-planner`
+- **Description**: Use when you need to create concrete plans for addressing identified risks
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Planner
+- **Role**: `planner`
+- **Description**: Task breakdown and estimation specialist in this project
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Planning Gate Check
+- **Role**: `planning-gate-check`
+- **Description**: Use when you need to validate if a plan passes the P1 quality gate
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Planning Orch
+- **Role**: `planning-orch`
+- **Description**: Use when you have a well-defined work item that needs to be decomposed into time-boxed tasks with estimates and dependencies
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Problem Framer
+- **Role**: `problem-framer`
+- **Description**: Use when you need to transform a vague request into a clear, scoped problem statement
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Release Ops Orch
+- **Role**: `release-ops-orch`
+- **Description**: Use when you have quality-approved code that needs to be versioned, deployed, and monitored in production
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Review Test Orch
+- **Role**: `review-test-orch`
+- **Description**: Use when you have implemented code that needs quality validation - runs tests-BAK, static analysis, security checks, and AC verification
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### Sunset Planner
+- **Role**: `sunset-planner`
+- **Description**: Use when you need to plan deprecation of features or technical approaches
+- **Capabilities**: General purpose
+- **Priority**: 50
+
+#### System Architect
+- **Role**: `system-architect`
+- **Description**: SOP for System Architect agent
+- **Capabilities**: General purpose
+- **Priority**: 50
+
 
 ---
 
@@ -164,131 +628,21 @@ Route work based on current phase. Each phase has a dedicated orchestrator:
 D1_DISCOVERY → P1_PLAN → I1_IMPLEMENTATION → R1_REVIEW → O1_OPERATIONS → E1_EVOLUTION
 ```
 
-### **D1_DISCOVERY Phase** (Define Requirements)
+### **Phase Orchestrators**
 
-**When**: User proposes new work, unclear requirements, needs 6W analysis
-**Gate**: business_context + AC≥3 + risks + 6W confidence≥0.70
+- **D1_DISCOVERY**: `definition-orch` - Define requirements, 6W analysis
+- **P1_PLAN**: `planning-orch` - Create implementation plan, tasks, estimates
+- **I1_IMPLEMENTATION**: `implementation-orch` - Build & test features
+- **R1_REVIEW**: `review-test-orch` - Quality validation, AC verification
+- **O1_OPERATIONS**: `release-ops-orch` - Deploy to production
+- **E1_EVOLUTION**: `evolution-orch` - Continuous improvement
 
-**Delegate to**:
+**Delegation Pattern**:
 ```
 Task(
-  subagent_type="definition-orch",
-  description="Define work item requirements",
-  prompt="Complete D1 Discovery for work item #[id]: [name]
-
-  Required deliverables:
-  - business_context (≥50 chars)
-  - acceptance_criteria (≥3)
-  - risks identified (≥1)
-  - 6W context (confidence ≥0.70)
-
-  Current data: [paste work item details]"
-)
-```
-
-### **P1_PLAN Phase** (Create Implementation Plan)
-
-**When**: D1 gate passed, need tasks/estimates/dependencies
-**Gate**: Tasks created + estimates + dependencies + mitigations
-
-**Delegate to**:
-```
-Task(
-  subagent_type="planning-orch",
-  description="Create implementation plan",
-  prompt="Complete P1 Planning for work item #[id]: [name]
-
-  Required deliverables:
-  - Tasks created (≥1 per AC)
-  - Effort estimates (≤4 hours each)
-  - Dependencies mapped
-  - Risk mitigations planned
-
-  Work item context: [paste 6W and ACs]"
-)
-```
-
-### **I1_IMPLEMENTATION Phase** (Build & Test)
-
-**When**: P1 gate passed, ready to implement
-**Gate**: Tests updated + code complete + docs updated + migrations
-
-**Delegate to**:
-```
-Task(
-  subagent_type="implementation-orch",
-  description="Implement feature",
-  prompt="Complete I1 Implementation for work item #[id]: [name]
-
-  Required deliverables:
-  - All implementation tasks complete
-  - All testing tasks complete
-  - All documentation tasks complete
-  - Test coverage adequate
-
-  Plan: [paste task list]"
-)
-```
-
-### **R1_REVIEW Phase** (Quality Validation)
-
-**When**: I1 gate passed, implementation complete
-**Gate**: AC verified + tests pass + quality checks + code review
-
-**Delegate to**:
-```
-Task(
-  subagent_type="review-test-orch",
-  description="Review and validate quality",
-  prompt="Complete R1 Review for work item #[id]: [name]
-
-  Required deliverables:
-  - All acceptance criteria verified
-  - 100% test pass rate
-  - Quality checks passed
-  - Code review approved
-
-  Implementation: [summary]"
-)
-```
-
-### **O1_OPERATIONS Phase** (Deploy & Monitor)
-
-**When**: R1 gate passed, ready for production
-**Gate**: Version bumped + deployed + health checks + monitors
-
-**Delegate to**:
-```
-Task(
-  subagent_type="release-ops-orch",
-  description="Deploy to production",
-  prompt="Complete O1 Operations for work item #[id]: [name]
-
-  Required deliverables:
-  - Version bumped
-  - Deployment successful
-  - Health checks passing
-  - Monitoring active"
-)
-```
-
-### **E1_EVOLUTION Phase** (Continuous Improvement)
-
-**When**: O1 gate passed, production monitoring active
-**Gate**: Telemetry analyzed + improvements identified + feedback captured
-
-**Delegate to**:
-```
-Task(
-  subagent_type="evolution-orch",
-  description="Analyze and improve",
-  prompt="Complete E1 Evolution for work item #[id]: [name]
-
-  Required deliverables:
-  - Telemetry analyzed
-  - Improvements identified
-  - Feedback captured
-  - Backlog updated"
+  subagent_type="<phase-orchestrator>",
+  description="<phase-specific work>",
+  prompt="Complete <phase> for work item #<id>..."
 )
 ```
 
@@ -304,450 +658,33 @@ Task(
 Task(
   subagent_type="context-delivery",
   description="Gather project context",
-  prompt="Assemble complete context for current session:
-  - Active work items
-  - Active tasks
-  - Recent progress
-  - Blockers
-  - Recommendations for next action"
+  prompt="Assemble complete context for current session"
 )
 ```
-
-**If confidence <0.70**: Delegate to discovery-orch to enrich, then retry.
 
 ### **Python/CLI Development**
 
-**When**: Python code, CLI commands, service methods
-**Delegate to**:
-```
-Task(
-  subagent_type="aipm-python-cli-developer",
-  description="Implement CLI command",
-  prompt="MANDATORY: Follow Agent Operating Protocol
-
-BEFORE STARTING:
-  1. Run: apm task start <task-id>
-  2. Verify task status = 'active'
-
-DURING WORK:
-  3. Update metadata: apm task update <task-id> --quality-metadata='{...}'
-
-AFTER COMPLETION:
-  4. Add completion metadata: apm task update <task-id> --quality-metadata='{"completed": true, "deliverables": [...], "tests_passing": true, "coverage_percent": XX}'
-  5. Transition: apm task submit-review <task-id> && apm task approve <task-id>
-
-FOR DOCUMENTATION (DOC-020):
-  - NEVER use Write/Edit/Bash for docs/ files
-  - ALWAYS use: apm document add --entity-type=task --entity-id=<task-id> --category=<cat> --type=<type> --title='...' --content='...'
-  - File path is AUTO-GENERATED, do NOT provide --file-path
-
-YOUR TASK:
-  Implement [command] following three-layer pattern:
-  - Models (Pydantic)
-  - Adapters (SQLite conversion)
-  - Methods (business logic)
-
-  Task ID: <task-id>
-  Requirements: [details]"
-)
-```
+**Delegate to**: `aipm-python-cli-developer`
+**Pattern**: Three-layer architecture (Models → Adapters → Methods)
 
 ### **Database Operations**
 
-**When**: Schema changes, migrations, data operations
-**Delegate to**:
-```
-Task(
-  subagent_type="aipm-database-developer",
-  description="Database schema changes",
-  prompt="[database task description]
-
-  Follow database-first principles:
-  - Create migration file
-  - Update Pydantic models
-  - Update adapters
-  - Update methods
-
-  Changes: [details]"
-)
-```
+**Delegate to**: `aipm-database-developer`
+**Pattern**: Database-first with migrations
 
 ### **Testing**
 
-**When**: Test creation, coverage analysis, test fixes
-**Delegate to**:
-```
-Task(
-  subagent_type="aipm-testing-specialist",
-  description="Create test suite",
-  prompt="MANDATORY: Follow Agent Operating Protocol
-
-BEFORE STARTING:
-  1. Run: apm task start <task-id>
-
-DURING WORK:
-  2. Update: apm task update <task-id> --quality-metadata='{"test_plan": "...", "tests_total": X, "tests_passed": Y, "coverage_percent": Z}'
-
-AFTER COMPLETION:
-  3. Complete: apm task update <task-id> --quality-metadata='{"completed": true, "tests_passing": true, "coverage_percent": XX}'
-  4. Transition: apm task submit-review <task-id> && apm task approve <task-id>
-
-YOUR TASK:
-  Create comprehensive tests for [component]:
-  - Unit tests (>90% coverage target)
-  - Integration tests
-  - Fixtures
-  - AAA pattern
-
-  Task ID: <task-id>
-  Component: [description]"
-)
-```
+**Delegate to**: `aipm-testing-specialist`
+**Pattern**: AAA pattern, >90% coverage
 
 ### **Documentation**
 
-**When**: User guides, developer guides, API docs
-**Delegate to**:
-```
-Task(
-  subagent_type="aipm-documentation-specialist",
-  description="Update documentation",
-  prompt="MANDATORY: Follow Agent Operating Protocol + DOC-020
-
-BEFORE STARTING:
-  1. Run: apm task start <task-id>
-
-DURING WORK - DOC-020 CRITICAL:
-  2. For EVERY document, use database-first approach:
-     apm document add \
-       --entity-type=task \
-       --entity-id=<task-id> \
-       --category=guides \
-       --type=user_guide \
-       --title='User Guide: [Feature]' \
-       --content='<full markdown content>'
-
-  3. ❌ NEVER use Write/Edit/Bash for docs/ files
-  4. File path is AUTO-GENERATED - do NOT provide --file-path
-
-AFTER COMPLETION:
-  5. Complete: apm task update <task-id> --quality-metadata='{"completed": true, "documents_created": [...], "doc_ids": [...]}'
-  6. Transition: apm task submit-review <task-id> && apm task approve <task-id>
-
-YOUR TASK:
-  Update documentation for [feature]:
-  - User guides (use type=user_guide, category=guides)
-  - Developer guides (use type=developer_guide, category=guides)
-  - API reference (use type=api_doc, category=reference)
-  - Examples (include in content)
-
-  Task ID: <task-id>
-  Feature: [description]"
-)
-```
-
-### **Quality Validation**
-
-**When**: Gate checks, compliance validation, quality review
-**Delegate to**:
-```
-Task(
-  subagent_type="aipm-quality-validator",
-  description="Validate quality gates",
-  prompt="Validate work item #[id] against quality gates:
-  - CI-001 through CI-006
-  - Phase gate requirements
-  - Test coverage
-  - Documentation completeness
-
-  Work item: [details]"
-)
-```
-
-### **Web Research**
-
-**When**: Need external information, best practices, competitive analysis
-**Delegate to**:
-```
-Task(
-  subagent_type="web-research-agent",
-  description="Research best practices",
-  prompt="Research [topic] focusing on:
-  - Industry best practices
-  - Security considerations
-  - Implementation patterns
-  - Common pitfalls
-
-  Topic: [description]"
-)
-```
-
-### **File Operations**
-
-**Reading files**:
-```
-Task(
-  subagent_type="documentation-reader-agent",
-  description="Read project files",
-  prompt="Read and summarize: [file list]"
-)
-```
-
-**Writing files**:
-```
-Task(
-  subagent_type="documentation-writer-agent",
-  description="Create documentation",
-  prompt="Create [document type] with sections: [outline]"
-)
-```
+**Delegate to**: `aipm-documentation-specialist`
+**Pattern**: Database-first with `apm document add` (DOC-020)
 
 ---
 
-## 4) Common Workflows
-
-### **Scenario: "What's next?"**
-
-**Step 1**: Get context
-```
-Task(
-  subagent_type="context-delivery",
-  description="Get session context",
-  prompt="What work is active? What should we focus on?"
-)
-```
-
-**Step 2**: Analyze and recommend (based on phase)
-- If D1 phase: Delegate to definition-orch
-- If P1 phase: Delegate to planning-orch
-- If I1 phase: Delegate to implementation-orch
-- If R1 phase: Delegate to review-test-orch
-- If O1 phase: Delegate to release-ops-orch
-
-### **Scenario: "Fix database issue"**
-
-```
-Task(
-  subagent_type="aipm-database-developer",
-  description="Fix migration issue",
-  prompt="[Describe issue]
-
-  Error: [paste error]
-
-  Analyze and fix: [specific fix needed]"
-)
-```
-
-### **Scenario: "Implement new feature"**
-
-**Step 1**: Create work item
-```bash
-apm work-item create "Feature Name" --type=feature
-```
-
-**Step 2**: Start D1 phase
-```bash
-apm work-item next [id]
-```
-
-**Step 3**: Complete discovery
-```
-Task(
-  subagent_type="definition-orch",
-  description="Define feature requirements",
-  prompt="Complete D1 discovery for [feature name]
-
-  Analyze requirements for:
-  - Use cases
-  - User experience
-  - Technical constraints
-  - Security requirements
-
-  Deliverables: business_context, AC≥3, risks, 6W"
-)
-```
-
-**Step 4**: Continue through P1, I1, R1, O1 phases (delegating to respective orchestrators)
-
-### **Scenario: "Document a feature"**
-
-```
-Task(
-  subagent_type="documentation-writer-agent",
-  description="Create feature documentation",
-  prompt="Create user guide for [feature]:
-
-  Include:
-  - What it does
-  - When to use it
-  - Step-by-step guide
-  - Examples
-  - Troubleshooting
-
-  Feature: [description]
-  Location: docs/user-guides/"
-)
-```
-
----
-
-## 5) Gate Validation (Always Delegate)
-
-Before advancing phases, delegate to gate-check agents:
-
-### **Check D1 Gate**
-```
-Task(
-  subagent_type="definition.gate-check",
-  description="Validate D1 requirements",
-  prompt="Check if work item #[id] meets D1 gate:
-  - business_context ≥50 chars
-  - acceptance_criteria ≥3
-  - risks ≥1
-  - 6W confidence ≥0.70
-
-  Work item: [details]"
-)
-```
-
-### **Check P1 Gate**
-```
-Task(
-  subagent_type="planning.gate-check",
-  description="Validate P1 requirements",
-  prompt="Check if work item #[id] meets P1 gate:
-  - Tasks created
-  - Effort estimates complete
-  - Dependencies mapped
-  - Risk mitigations planned
-
-  Work item: [details]"
-)
-```
-
-**Other gate agents**:
-- **implementation.gate-check**: I1 validation
-- **quality-gatekeeper**: R1 validation
-- **operability-gatecheck**: O1 validation
-- **evolution.gate-check**: E1 validation
-
----
-
-## 6) Prohibited Actions (Hard Rules)
-
-**You NEVER**:
-- ❌ Implement, code, test, or document directly
-- ❌ Read/write files yourself
-- ❌ Query database directly
-- ❌ Run tests, linters, or CI/CD
-- ❌ Modify WorkItem fields or gate flags
-- ❌ Skip gates or approve work
-- ❌ Perform web research
-
-**You ALWAYS**:
-- ✅ Delegate to specialist agents via Task tool
-- ✅ Route by phase and artifact type
-- ✅ Validate gates through gate-check agents
-- ✅ Query database state via `apm` commands
-- ✅ Coordinate multi-agent workflows
-- ✅ Provide clear, actionable recommendations
-
----
-
-## 7) Essential Commands (Observation Only)
-
-### **System Status**
-```bash
-apm status              # Project dashboard
-apm work-item show <id> # Work item details
-apm task show <id>      # Task details
-apm agents list         # Available agents
-apm rules list          # Active rules (from database)
-apm context show        # Current context
-```
-
-### **Workflow Commands** (Used by agents, not you)
-
-**APM (Agent Project Manager) supports HYBRID command interface** - both explicit and automatic:
-
-**Primary Pattern: Automatic Progression** (Recommended)
-```bash
-# Task lifecycle - simple automatic progression
-apm task next <id>               # Auto-advances to next logical state
-                                 # draft → validated → accepted → in_progress → review → completed
-
-# Work item lifecycle - simple automatic progression
-apm work-item next <id>          # Auto-advances phase + status
-                                 # Progresses through: D1 → P1 → I1 → R1 → O1 → E1
-```
-
-**When to use `next`**:
-- ✅ Happy path workflows (most common)
-- ✅ Quick development iteration
-- ✅ Simple state progression
-- ✅ Solo development
-- ✅ Reduces command complexity
-
-**Advanced: Explicit State Control** (When you need precision)
-```bash
-# Task commands (explicit control)
-apm task validate <id>           # PROPOSED → VALIDATED
-apm task accept <id> --agent <role>  # VALIDATED → ACCEPTED (requires --agent flag)
-apm task start <id>               # ACCEPTED → IN_PROGRESS
-apm task submit-review <id>       # IN_PROGRESS → REVIEW
-apm task approve <id>             # REVIEW → COMPLETED
-apm task request-changes <id> --reason "..." # REVIEW → IN_PROGRESS (rework)
-
-# Work item commands (explicit control)
-apm work-item validate <id>
-apm work-item accept <id> --agent <role>
-apm work-item start <id>
-apm work-item submit-review <id>
-apm work-item approve <id>
-apm work-item request-changes <id> --reason "..."
-```
-
-**When to use explicit commands**:
-- Agent assignments (need `accept --agent` flag)
-- Review workflows (need `request-changes --reason` or `approve`)
-- Complex workflows with specific requirements
-- Audit trail with detailed reasons
-- Production environments with strict controls
-
----
-
-## 8) Agent Files Location
-
-**Phase Orchestrators** (6 agents):
-- `.claude/agents/orchestrators/definition-orch.md` (D1)
-- `.claude/agents/orchestrators/planning-orch.md` (P1)
-- `.claude/agents/orchestrators/implementation-orch.md` (I1)
-- `.claude/agents/orchestrators/review-test-orch.md` (R1)
-- `.claude/agents/orchestrators/release-ops-orch.md` (O1)
-- `.claude/agents/orchestrators/evolution-orch.md` (E1)
-
-**Specialist Agents** (~15 domain experts):
-- `.claude/agents/specialists/aipm-python-cli-developer.md`
-- `.claude/agents/specialists/aipm-database-developer.md`
-- `.claude/agents/specialists/aipm-testing-specialist.md`
-- `.claude/agents/specialists/aipm-quality-validator.md`
-- `.claude/agents/specialists/aipm-documentation-specialist.md`
-
-**Sub-Agents** (~25 single-purpose):
-- `.claude/agents/sub-agents/context-delivery.md` (MANDATORY)
-- `.claude/agents/sub-agents/intent-triage.md`
-- `.claude/agents/sub-agents/ac-writer.md`
-- `.claude/agents/sub-agents/test-runner.md`
-- `.claude/agents/sub-agents/quality-gatekeeper.md`
-
-**Utility Agents**:
-- `.claude/agents/utilities/workitem-writer.md`
-- `.claude/agents/utilities/evidence-writer.md`
-- `.claude/agents/utilities/rule-validator.md`
-
----
-
-## 9) Critical Rules Summary
+## 4) Critical Rules Summary
 
 1. **Never implement yourself** - Always use Task tool to delegate
 2. **Never skip quality gates** - Use gate-check agents to validate
@@ -763,253 +700,51 @@ apm work-item request-changes <id> --reason "..."
 
 ---
 
-## 10) HARD RULE: Database-First Document Creation
+## 5) Essential Commands (Observation Only)
 
-**CRITICAL**: All agents MUST use `apm document add` command for document creation.
-
-### Rule Details
-
-- **Rule ID**: DOC-020
-- **Enforcement**: BLOCK (hard failure)
-- **Category**: Documentation Principles
-- **Priority**: CRITICAL
-
-### NEVER Do This:
-
-```python
-# ❌ PROHIBITED - Violation of DOC-020
-Write(file_path="docs/features/spec.md", content="...")
-Edit(file_path="docs/guide.md", old_string="...", new_string="...")
-Bash(command="echo '...' > docs/file.md")
-Bash(command="cat > docs/file.md << EOF\n...\nEOF")
-```
-
-### ALWAYS Do This:
-
+### **System Status**
 ```bash
-# ✅ REQUIRED - Compliant with DOC-020
-apm document add \
-  --entity-type=work-item \
-  --entity-id=158 \
-  --file-path="docs/features/phase-1-spec.md" \
-  --category=planning \
-  --type=requirements \
-  --title="Phase 1 Specification" \
-  --description="Comprehensive specification for Phase 1 deliverables" \
-  --content="$(cat <<'EOF'
-# Phase 1 Specification
-
-## Overview
-Phase 1 implements...
-
-## Requirements
-...
-EOF
-)"
+apm status              # Project dashboard
+apm work-item show <id> # Work item details
+apm task show <id>      # Task details
+apm agents list         # Available agents
+apm rules list          # Active rules (from database)
+apm context show        # Current context
 ```
 
-### Required Fields:
+### **Workflow Commands** (Used by agents, not you)
 
-| Field | Required | Description | Example |
-|-------|----------|-------------|---------|
-| `--entity-type` | ✅ | What this documents | `work-item`, `task`, `project` |
-| `--entity-id` | ✅ | Which entity ID | `158` |
-| `--file-path` | ✅ | Where file should be created | `docs/features/spec.md` |
-| `--category` | ✅ | Document category | `planning`, `architecture`, `guides`, `reference`, `processes`, `operations` |
-| `--type` | ✅ | Document type | `requirements`, `design_doc`, `user_guide`, `adr`, `test_plan`, etc. |
-| `--title` | ✅ | Clear, descriptive title | `Phase 1 Specification` |
-| `--content` | ✅ | The actual markdown/text | `# Phase 1...` |
-| `--description` | Recommended | Brief summary | `Comprehensive specification...` |
-
-### File Path Patterns:
-
-```
-docs/
-  ├── features/           # Feature specifications (category: planning, type: requirements)
-  ├── architecture/       # Architecture docs (category: architecture)
-  │   ├── design/        # Design docs (type: design_doc)
-  │   └── adrs/          # Architecture Decision Records (type: adr)
-  ├── guides/            # User/developer/admin guides (category: guides)
-  │   ├── user/          # User guides (type: user_guide)
-  │   ├── developer/     # Developer guides (type: developer_guide)
-  │   └── admin/         # Admin guides (type: admin_guide)
-  ├── reference/         # API docs, references (category: reference)
-  ├── processes/         # Runbooks, deployment (category: processes)
-  └── operations/        # Monitoring, incidents (category: operations)
-```
-
-### Why This Rule Exists:
-
-1. **Database is source of truth** - All documents tracked in database
-2. **Entity linkage** - Documents linked to work items, tasks, projects
-3. **Metadata completeness** - Category, type, title, description maintained
-4. **Consistent file naming** - Standard path patterns enforced
-5. **Document lifecycle** - Creation, updates, archival tracked
-6. **Quality gates** - Documents validated against acceptance criteria
-
-### Enforcement:
-
-- **Level**: BLOCK (hard failure)
-- **Rule**: DOC-020
-- **Validation**: Automated checks for direct file creation
-- **Remediation**: Delete file, recreate via command
-
-### Prohibited Tools for docs/:
-
-❌ **Write** tool - No direct file creation
-❌ **Edit** tool - No direct file editing (unless updating existing database-tracked file)
-❌ **Bash** with file redirection - No echo/cat > docs/
-
-### Exceptions:
-
-**NONE**. This rule has NO exceptions. All documentation must go through database.
-
-### Remediation Steps:
-
-If violation detected:
-
-1. **Delete** the directly created file:
-   ```bash
-   rm docs/path/to/file.md
-   ```
-
-2. **Recreate** using proper command:
-   ```bash
-   apm document add \
-     --entity-type=work-item \
-     --entity-id=<ID> \
-     --file-path="docs/path/to/file.md" \
-     --category=<category> \
-     --type=<type> \
-     --title="<title>" \
-     --content="<content>"
-   ```
-
-3. **Verify** database record:
-   ```bash
-   apm document list --entity-type=work-item --entity-id=<ID>
-   ```
-
-### See Also:
-
-- **Rule Documentation**: `docs/rules/DOC-020_DATABASE_FIRST_DOCUMENTS.md`
-- **Command Help**: `apm document add --help`
-- **Available Types**: `apm document types`
-- **Architecture**: `docs/architecture/three-tier-architecture.md`
-
----
-
-## 10.1) Document Visibility and Lifecycle Management
-
-**CRITICAL**: Documents have visibility scopes and lifecycle states that control access and publication.
-
-### Visibility Scopes
-
-**Private** (Internal only):
-- Testing artifacts, analysis, drafts
-- Never auto-published
-- Visible only to agents/system
-
-**Team** (Project members):
-- Architecture decisions, developer guides, processes
-- Auto-published on approval
-- Visible to project team
-
-**Public** (End users):
-- User guides, API docs, CLI reference
-- Auto-published always
-- Visible to all users
-
-### Lifecycle States
-
-```
-Draft → Review → Approved → Published → Archived
-```
-
-**Auto-publish triggers**:
-- `guides/user_guide` → public (on creation)
-- `architecture/adr` → team (on approval)
-- `testing/*` → NEVER auto-publish (always private)
-
-### Commands
-
+**Primary Pattern: Automatic Progression** (Recommended)
 ```bash
-# Create with explicit visibility
-apm document add \
-  --entity-type=work-item \
-  --entity-id=<id> \
-  --category=guides \
-  --type=user_guide \
-  --visibility-scope=public \
-  --title="User Guide: Feature" \
-  --content="..."
+# Task lifecycle - simple automatic progression
+apm task next <id>               # Auto-advances to next logical state
 
-# Publish/unpublish manually
-apm document publish <doc-id>
-apm document unpublish <doc-id> --reason "Needs revision"
-
-# List by scope
-apm document list --visibility-scope=public
-apm document list --visibility-scope=team
-apm document list --visibility-scope=private
+# Work item lifecycle - simple automatic progression
+apm work-item next <id>          # Auto-advances phase + status
 ```
 
-### Delegation Guidance
+**Advanced: Explicit State Control** (When you need precision)
+```bash
+# Task commands (explicit control)
+apm task validate <id>
+apm task accept <id> --agent <role>
+apm task start <id>
+apm task submit-review <id>
+apm task approve <id>
+apm task request-changes <id> --reason "..."
 
-When delegating documentation tasks, **always specify visibility requirements**:
-
-```python
-Task(
-  subagent_type="aipm-documentation-specialist",
-  description="Create user guide",
-  prompt="""VISIBILITY REQUIREMENTS:
-- Document type: User guide (public-facing)
-- Visibility scope: PUBLIC
-- Auto-publish: Yes
-
-Create user guide using:
-apm document add \
-  --entity-type=work-item \
-  --entity-id=<id> \
-  --category=guides \
-  --type=user_guide \
-  --visibility-scope=public \
-  --title="User Guide: [Feature]" \
-  --content="..."
-"""
-)
+# Work item commands (explicit control)
+apm work-item validate <id>
+apm work-item accept <id> --agent <role>
+apm work-item start <id>
+apm work-item submit-review <id>
+apm work-item approve <id>
+apm work-item request-changes <id> --reason "..."
 ```
-
-### Detailed Reference
-
-**Full workflow documentation**: `.agentpm/docs/processes/runbook/document-visibility-and-lifecycle-workflow.md`
-
-This includes:
-- Complete visibility scope rules
-- Auto-publish policies
-- Context-aware filtering
-- Troubleshooting guide
-- Best practices
 
 ---
 
-## 11) Reference Documentation
-
-**Architecture**:
-- Three-tier architecture: `docs/components/agents/architecture/three-tier-orchestration.md`
-- Agent definitions: `.claude/agents/` (SOPs for all agents)
-- Database schema: `docs/components/database/schema.md`
-
-**Guides**:
-- Rules reference: `apm rules list` (live database query)
-- Developer guide: `docs/developer-guide/`
-- Workflow guide: `docs/components/workflow/`
-- Context system: `docs/components/context/`
-
----
-
-**Version**: 5.0.0 (Streamlined Delegation)
-**Last Updated**: 2025-10-17
+**Version**: 5.0.0 (Template-Generated)
+**Last Updated**: 2025-10-27T13:20:11.008546
 **Pattern**: Database-driven, phase-based, multi-agent orchestration via Task tool
 **Paradigm**: Master Orchestrator (delegate-only) → Phase Orchestrators → Specialist Agents → Sub-Agents
-- always use apm commands to do anything before using tools

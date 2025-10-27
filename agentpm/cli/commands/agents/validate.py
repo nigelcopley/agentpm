@@ -88,14 +88,20 @@ def validate(ctx: click.Context, role: str, verbose: bool):
         else:
             passes.append("[green]Agent is fresh (<7 days)[/green]")
 
-        # Check 5: Tier assignment
-        if not agent.tier:
-            warnings.append("[yellow]No tier assigned[/yellow]")
-        else:
+        # Check 5: Functional category assignment (preferred over tier)
+        if not agent.functional_category and not agent.tier:
+            warnings.append("[yellow]No functional category or tier assigned[/yellow]")
+        elif agent.functional_category:
+            passes.append(f"[green]Functional Category: {agent.functional_category.value.capitalize()}[/green]")
+            # Check if tier is also set (should migrate away from tier)
+            if agent.tier:
+                warnings.append("[yellow]Both functional_category and tier set - tier is deprecated[/yellow]")
+        elif agent.tier:
+            # Only tier is set, agent should be migrated to functional_category
             tier_name = {1: "Sub-Agent", 2: "Specialist", 3: "Master Orchestrator"}.get(
                 agent.tier.value, "Unknown"
             )
-            passes.append(f"[green]Tier {agent.tier.value} ({tier_name})[/green]")
+            warnings.append(f"[yellow]Only tier set ({agent.tier.value} - {tier_name}), should migrate to functional_category[/yellow]")
 
         # Check 6: Agent type
         if not agent.agent_type:
@@ -154,8 +160,12 @@ def validate(ctx: click.Context, role: str, verbose: bool):
                 console.print(f"  - Regenerate agent file: apm agents generate --role {role}")
             if agent.is_stale():
                 console.print(f"  - Refresh agent: apm agents generate --role {role}")
-            if not agent.tier or not agent.agent_type:
-                console.print("  - Update agent metadata in database")
+            if not agent.functional_category and not agent.tier:
+                console.print("  - Update agent metadata: set functional_category in database")
+            elif not agent.functional_category and agent.tier:
+                console.print("  - Migrate to functional_category system (tier is deprecated)")
+            if not agent.agent_type:
+                console.print("  - Update agent metadata: set agent_type in database")
 
         # Return code
         console.print()

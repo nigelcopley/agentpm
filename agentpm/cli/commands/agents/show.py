@@ -51,10 +51,19 @@ def show(ctx: click.Context, role: str, sop: bool):
 
         # Display header
         console.print()
-        tier_name = {1: "Sub-Agent", 2: "Specialist", 3: "Master Orchestrator"}.get(
-            agent.tier.value if agent.tier else 0, "Unknown"
-        )
-        header = f"[bold cyan]{agent.display_name}[/bold cyan] ({tier_name})"
+
+        # Determine category display (prefer functional_category over tier)
+        if agent.functional_category:
+            category_display = agent.functional_category.value.capitalize()
+        elif agent.tier:
+            tier_name = {1: "Sub-Agent", 2: "Specialist", 3: "Master Orchestrator"}.get(
+                agent.tier.value, "Unknown"
+            )
+            category_display = f"{tier_name} (deprecated: tier system)"
+        else:
+            category_display = "Unknown"
+
+        header = f"[bold cyan]{agent.display_name}[/bold cyan] ({category_display})"
         console.print(Panel(header, expand=False))
 
         # Core information
@@ -65,7 +74,18 @@ def show(ctx: click.Context, role: str, sop: bool):
 
         info_table.add_row("Role", agent.role)
         info_table.add_row("Type", agent.agent_type or "Unknown")
-        info_table.add_row("Tier", f"{agent.tier.value if agent.tier else '?'} ({tier_name})")
+
+        # Display functional category prominently
+        if agent.functional_category:
+            info_table.add_row("Functional Category", agent.functional_category.value.capitalize())
+
+        # Show tier as deprecated if present
+        if agent.tier:
+            tier_name = {1: "Sub-Agent", 2: "Specialist", 3: "Master Orchestrator"}.get(
+                agent.tier.value, "Unknown"
+            )
+            info_table.add_row("Tier (deprecated)", f"{agent.tier.value} ({tier_name})")
+
         info_table.add_row("Status", "🟢 Active" if agent.is_active else "⚫ Inactive")
 
         if agent.description:
