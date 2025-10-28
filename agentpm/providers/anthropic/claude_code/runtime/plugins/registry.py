@@ -212,7 +212,7 @@ def get_registry() -> ClaudePluginRegistry:
         Singleton ClaudePluginRegistry instance
 
     Example:
-        from agentpm.services.claude_integration.plugins import get_registry
+        from agentpm.providers.anthropic.claude_code.runtime.plugins import get_registry
 
         registry = get_registry()
         registry.register_plugin(my_plugin)

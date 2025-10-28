@@ -7,7 +7,7 @@ Tests Pydantic models for settings validation and serialization.
 import pytest
 from pydantic import ValidationError
 
-from agentpm.services.claude_integration.settings.models import (
+from agentpm.providers.anthropic.claude_code.runtime.settings.models import (
     ClaudeCodeSettings,
     HooksSettings,
     MemorySettings,

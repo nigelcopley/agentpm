@@ -7,14 +7,14 @@ Validates event normalization, dispatch, and aggregation.
 import pytest
 from datetime import datetime
 
-from agentpm.services.claude_integration.hooks import (
+from agentpm.providers.anthropic.claude_code.runtime.hooks import (
     HooksEngine,
     HookEvent,
     EventResult,
     EventType,
     reset_hooks_engine,
 )
-from agentpm.services.claude_integration.plugins import (
+from agentpm.providers.anthropic.claude_code.runtime.plugins import (
     BaseClaudePlugin,
     PluginCapability,
     get_registry,

@@ -11,7 +11,7 @@ import pytest
 from datetime import datetime
 from pydantic import ValidationError
 
-from agentpm.services.claude_integration.checkpoints.models import (
+from agentpm.providers.anthropic.claude_code.runtime.checkpoints.models import (
     SessionCheckpoint,
     CheckpointMetadata
 )

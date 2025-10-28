@@ -12,7 +12,7 @@ Architecture:
 - Search operations: Full-text search across memory files
 
 Example:
-    from agentpm.services.claude_integration.tools import MemoryTool
+    from agentpm.providers.anthropic.claude_code.runtime.tools import MemoryTool
     from agentpm.core.database.service import get_db
 
     db = get_db()

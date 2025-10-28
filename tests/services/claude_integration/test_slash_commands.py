@@ -15,7 +15,7 @@ import pytest
 from unittest.mock import Mock, patch
 from datetime import datetime
 
-from agentpm.services.claude_integration.commands import (
+from agentpm.providers.anthropic.claude_code.runtime.commands import (
     SlashCommandRegistry,
     get_registry,
     reset_registry,

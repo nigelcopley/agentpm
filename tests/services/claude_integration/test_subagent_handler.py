@@ -6,7 +6,7 @@ Tests subagent invocation, request normalization, and result handling.
 
 import pytest
 import asyncio
-from agentpm.services.claude_integration.subagents import (
+from agentpm.providers.anthropic.claude_code.runtime.subagents import (
     SubagentInvocationHandler,
     SubagentRegistry,
     SubagentSpec,

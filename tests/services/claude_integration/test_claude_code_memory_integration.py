@@ -8,7 +8,7 @@ Part of WI-116 Task #623: Create Claude Code Memory Tool System
 import pytest
 from unittest.mock import Mock, patch, MagicMock
 
-from agentpm.services.claude_integration.plugins.claude_code import ClaudeCodePlugin
+from agentpm.providers.anthropic.claude_code.runtime.plugins.claude_code import ClaudeCodePlugin
 from agentpm.core.database.models.memory import MemoryFile, MemoryFileType, ValidationStatus
 
 

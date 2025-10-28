@@ -16,7 +16,7 @@ from typing import Any, Dict, Optional
 
 from agentpm.core.database.service import DatabaseService
 from agentpm.core.database.models.memory import MemoryFileType
-from agentpm.services.claude_integration.hooks.models import (
+from agentpm.providers.anthropic.claude_code.runtime.hooks.models import (
     EventType,
     HookEvent,
     EventResult

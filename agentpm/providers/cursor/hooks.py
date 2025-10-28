@@ -13,7 +13,7 @@ from pathlib import Path
 import logging
 
 from agentpm.core.database.service import DatabaseService
-from agentpm.services.claude_integration.hooks import (
+from agentpm.providers.anthropic.claude_code.runtime.hooks import (
     HookEvent,
     EventResult,
     EventType,

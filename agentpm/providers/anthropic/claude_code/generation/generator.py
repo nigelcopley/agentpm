@@ -30,8 +30,8 @@ from agentpm.providers.base import (
     GenerationResult,
     FileOutput
 )
-from agentpm.providers.anthropic.claude_code.skill_generator import SkillGenerator
-from agentpm.providers.anthropic.claude_code.memory_generator import MemoryGenerator
+from agentpm.providers.anthropic.claude_code.generation.skill_generator import SkillGenerator
+from agentpm.providers.anthropic.claude_code.generation.memory_generator import MemoryGenerator
 
 
 class ClaudeCodeGenerator(BaseProviderGenerator, TemplateBasedMixin):

@@ -20,14 +20,13 @@ from .formatter import AnthropicFormatter
 from .adapter import AnthropicAdapter
 from .skills import ClaudeCodeSkillGenerator, SkillDefinition, SkillRegistry
 from .claude_code import (
+    ClaudeCodeGenerator,
+    SkillGenerator,
+    MemoryGenerator,
     ClaudeCodeOrchestrator,
-    ClaudeCodePluginManager,
-    ClaudeCodeHooksManager,
-    ClaudeCodeSubagentsManager,
-    ClaudeCodeSettingsManager,
-    ClaudeCodeSlashCommandsManager,
-    ClaudeCodeCheckpointingManager,
-    ClaudeCodeMemoryToolManager,
+    get_orchestrator,
+    reset_orchestrator,
+    ClaudeCodeIntegration,
 )
 from ..base import register_formatter
 
@@ -37,19 +36,22 @@ __all__ = [
     # Core formatter and adapter
     "AnthropicFormatter",
     "AnthropicAdapter",
-    
+
     # Skills system
     "ClaudeCodeSkillGenerator",
     "SkillDefinition",
     "SkillRegistry",
-    
-    # Claude Code comprehensive integration
+
+    # Claude Code generation (templates)
+    "ClaudeCodeGenerator",
+    "SkillGenerator",
+    "MemoryGenerator",
+
+    # Claude Code runtime (orchestration)
     "ClaudeCodeOrchestrator",
-    "ClaudeCodePluginManager",
-    "ClaudeCodeHooksManager",
-    "ClaudeCodeSubagentsManager",
-    "ClaudeCodeSettingsManager",
-    "ClaudeCodeSlashCommandsManager",
-    "ClaudeCodeCheckpointingManager",
-    "ClaudeCodeMemoryToolManager",
+    "get_orchestrator",
+    "reset_orchestrator",
+
+    # Models
+    "ClaudeCodeIntegration",
 ]

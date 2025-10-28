@@ -15,7 +15,7 @@ from agentpm.core.database.service import DatabaseService
 from agentpm.core.database.methods import agents as agent_methods
 from agentpm.core.database.methods import rules as rule_methods
 from agentpm.core.database.methods import projects as project_methods
-from agentpm.providers.anthropic.claude_code.generator import ClaudeCodeGenerator
+from agentpm.providers.anthropic.claude_code.generation.generator import ClaudeCodeGenerator
 
 def main():
     # Setup

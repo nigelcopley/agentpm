@@ -17,7 +17,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from agentpm.core.database.service import DatabaseService
 from agentpm.providers.anthropic.claude_code import ClaudeCodeOrchestrator
-from agentpm.services.claude_integration.settings import SettingsManager, ClaudeCodeSettings
+from agentpm.providers.anthropic.claude_code.runtime.settings import SettingsManager, ClaudeCodeSettings
 
 
 @click.group()

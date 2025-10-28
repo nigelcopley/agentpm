@@ -4,7 +4,7 @@ Command Initialization
 Registers all AIPM slash commands with the registry.
 
 Usage:
-    from agentpm.services.claude_integration.commands import init_commands
+    from agentpm.providers.anthropic.claude_code.runtime.commands import init_commands
 
     # Initialize all commands
     init_commands()
@@ -36,7 +36,7 @@ def init_commands(db: DatabaseService) -> None:
         db: Database service instance (required)
 
     Example:
-        from agentpm.services.claude_integration.commands import init_commands
+        from agentpm.providers.anthropic.claude_code.runtime.commands import init_commands
         from agentpm.core.database import DatabaseService
 
         # Initialize all commands with database

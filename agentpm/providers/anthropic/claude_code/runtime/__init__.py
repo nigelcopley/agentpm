@@ -1,8 +1,11 @@
 """
-Claude Integration Services
+Claude Code Runtime Module
 
-Consolidated Claude Code integration for APM (Agent Project Manager).
+Runtime orchestration for Claude Code integration in APM (Agent Project Manager).
 Provides comprehensive capabilities for Claude-based development workflows.
+
+Organized under providers/anthropic/claude_code/runtime/ for cohesive architecture.
+Complementary to generation/ (templates) - provides runtime orchestration.
 
 Main Components:
 - ClaudeCodeOrchestrator: Main coordinator for all subsystems
@@ -14,7 +17,7 @@ Main Components:
 - SlashCommandRegistry: Command handling
 
 Example:
-    from agentpm.services.claude_integration import (
+    from agentpm.providers.anthropic.claude_code.runtime import (
         ClaudeCodeOrchestrator,
         get_orchestrator
     )

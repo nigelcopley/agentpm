@@ -12,11 +12,11 @@ import pytest
 import json
 from datetime import datetime
 
-from agentpm.services.claude_integration.checkpoints.models import (
+from agentpm.providers.anthropic.claude_code.runtime.checkpoints.models import (
     SessionCheckpoint,
     CheckpointMetadata
 )
-from agentpm.services.claude_integration.checkpoints.adapters import CheckpointAdapter
+from agentpm.providers.anthropic.claude_code.runtime.checkpoints.adapters import CheckpointAdapter
 
 
 class TestCheckpointAdapter:

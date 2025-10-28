@@ -1,12 +1,28 @@
 """
-Claude Code Integration (Simplified)
+Claude Code Provider
 
-Use the new template-based generator:
+Unified provider for Claude Code integration in APM (Agent Project Manager).
+
+Architecture:
+- generation/: Template generation (skills, memory, configs)
+- runtime/: Orchestration (sessions, hooks, plugins)
+
+Use template-based generator:
 
 ```python
-from agentpm.providers.anthropic.claude_code.generator import ClaudeCodeGenerator
+from agentpm.providers.anthropic.claude_code.generation import ClaudeCodeGenerator
 generator = ClaudeCodeGenerator(db_service)
 result = generator.generate_from_agents(agents, rules, project, output_dir)
+```
+
+Use runtime orchestrator:
+
+```python
+from agentpm.providers.anthropic.claude_code.runtime import (
+    ClaudeCodeOrchestrator,
+    get_orchestrator
+)
+orchestrator = get_orchestrator(db, project_id=1)
 ```
 
 Or use the high-level service:
@@ -18,20 +34,26 @@ summary = generator.generate_all()
 ```
 """
 
-# New template-based generator (recommended)
-from .generator import ClaudeCodeGenerator
+# Generation module (templates)
+from .generation import ClaudeCodeGenerator, SkillGenerator, MemoryGenerator
 
-# Legacy orchestrator (now a thin compatibility wrapper)
-from .orchestrator import ClaudeCodeOrchestrator
+# Runtime module (orchestration)
+from .runtime import ClaudeCodeOrchestrator, get_orchestrator, reset_orchestrator
 
-# Models (still useful for data structures)
+# Models (data structures)
 from .models import ClaudeCodeIntegration
 
 __all__ = [
-    # New template-based generator (recommended)
+    # Generation
     "ClaudeCodeGenerator",
+    "SkillGenerator",
+    "MemoryGenerator",
 
-    # Core (maintained for compatibility)
+    # Runtime
     "ClaudeCodeOrchestrator",
+    "get_orchestrator",
+    "reset_orchestrator",
+
+    # Models
     "ClaudeCodeIntegration",
 ]

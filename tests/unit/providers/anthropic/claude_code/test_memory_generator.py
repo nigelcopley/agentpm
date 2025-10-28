@@ -9,7 +9,7 @@ from pathlib import Path
 from datetime import datetime
 import hashlib
 
-from agentpm.providers.anthropic.claude_code.memory_generator import (
+from agentpm.providers.anthropic.claude_code.generation.memory_generator import (
     MemoryGenerator,
     SecureImportResolver,
     SecurityError

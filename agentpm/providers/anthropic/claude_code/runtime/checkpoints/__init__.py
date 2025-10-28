@@ -10,7 +10,7 @@ Components:
 - methods: Database operations
 
 Example:
-    from agentpm.services.claude_integration.checkpoints import CheckpointManager
+    from agentpm.providers.anthropic.claude_code.runtime.checkpoints import CheckpointManager
 
     manager = CheckpointManager(db)
     checkpoint = manager.create_checkpoint(session_id=1, name="before-refactor")

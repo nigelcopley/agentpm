@@ -26,7 +26,7 @@ from agentpm.providers.cursor.provider import CursorProvider
 from agentpm.providers.common.agents_generator import AGENTSMDGenerator
 from agentpm.providers.common.integrity import SHA256HashVerifier
 from agentpm.providers.cursor.generator import CursorGenerator
-from agentpm.providers.anthropic.claude_code.generator import ClaudeCodeGenerator
+from agentpm.providers.anthropic.claude_code.generation.generator import ClaudeCodeGenerator
 from agentpm.providers.openai.codex.generator import CodexGenerator
 
 

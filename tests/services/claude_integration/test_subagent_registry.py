@@ -5,7 +5,7 @@ Tests subagent registration, lookup, and invocation guide generation.
 """
 
 import pytest
-from agentpm.services.claude_integration.subagents import (
+from agentpm.providers.anthropic.claude_code.runtime.subagents import (
     SubagentRegistry,
     SubagentSpec,
     SubagentCapability,

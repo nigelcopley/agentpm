@@ -17,7 +17,7 @@ import pytest
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock
 
-from agentpm.services.claude_integration.tools.memory_tool import (
+from agentpm.providers.anthropic.claude_code.runtime.tools.memory_tool import (
     MemoryTool,
     MemoryToolError
 )

@@ -17,15 +17,15 @@ from unittest.mock import Mock, patch
 # Tests are synchronous since orchestrator is synchronous
 # pytestmark = pytest.mark.asyncio
 
-from agentpm.services.claude_integration.orchestrator import (
+from agentpm.providers.anthropic.claude_code.runtime.orchestrator import (
     ClaudeCodeOrchestrator,
     get_orchestrator,
     reset_orchestrator,
 )
-from agentpm.services.claude_integration.hooks.models import EventType
-from agentpm.services.claude_integration.plugins import reset_registry
-from agentpm.services.claude_integration.hooks import reset_hooks_engine
-from agentpm.services.claude_integration.subagents import (
+from agentpm.providers.anthropic.claude_code.runtime.hooks.models import EventType
+from agentpm.providers.anthropic.claude_code.runtime.plugins import reset_registry
+from agentpm.providers.anthropic.claude_code.runtime.hooks import reset_hooks_engine
+from agentpm.providers.anthropic.claude_code.runtime.subagents import (
     reset_subagent_registry,
     reset_invocation_handler,
 )

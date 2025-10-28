@@ -15,7 +15,7 @@ from pathlib import Path
 from datetime import datetime
 
 from agentpm.providers.cursor.hooks import CursorHooks, register_cursor_hooks
-from agentpm.services.claude_integration.hooks import (
+from agentpm.providers.anthropic.claude_code.runtime.hooks import (
     HookEvent,
     EventType,
     get_hooks_engine,

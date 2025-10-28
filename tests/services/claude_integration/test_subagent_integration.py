@@ -5,8 +5,8 @@ Integration tests for subagent system with ClaudeCodePlugin.
 """
 
 import pytest
-from agentpm.services.claude_integration.plugins.claude_code import ClaudeCodePlugin
-from agentpm.services.claude_integration.subagents import (
+from agentpm.providers.anthropic.claude_code.runtime.plugins.claude_code import ClaudeCodePlugin
+from agentpm.providers.anthropic.claude_code.runtime.subagents import (
     get_subagent_registry,
     reset_subagent_registry,
     SubagentSpec,

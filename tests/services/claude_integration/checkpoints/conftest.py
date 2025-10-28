@@ -4,7 +4,7 @@ Pytest fixtures for checkpoint tests.
 
 import pytest
 from datetime import datetime
-from agentpm.services.claude_integration.checkpoints.models import SessionCheckpoint
+from agentpm.providers.anthropic.claude_code.runtime.checkpoints.models import SessionCheckpoint
 
 
 @pytest.fixture

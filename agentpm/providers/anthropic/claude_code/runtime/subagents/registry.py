@@ -280,7 +280,7 @@ def get_subagent_registry() -> SubagentRegistry:
         Singleton SubagentRegistry instance
 
     Example:
-        from agentpm.services.claude_integration.subagents import get_subagent_registry
+        from agentpm.providers.anthropic.claude_code.runtime.subagents import get_subagent_registry
 
         registry = get_subagent_registry()
         guide = registry.get_invocation_guide()

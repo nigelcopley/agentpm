@@ -5,7 +5,7 @@ Subagent orchestration for Claude Code integration.
 Provides registry, invocation handler, and models for AIPM subagent execution.
 
 Example:
-    from agentpm.services.claude_integration.subagents import (
+    from agentpm.providers.anthropic.claude_code.runtime.subagents import (
         get_subagent_registry,
         get_invocation_handler,
         SubagentSpec,

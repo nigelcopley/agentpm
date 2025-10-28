@@ -347,7 +347,7 @@ def get_hooks_engine() -> HooksEngine:
         Singleton HooksEngine instance
 
     Example:
-        from agentpm.services.claude_integration.hooks import get_hooks_engine
+        from agentpm.providers.anthropic.claude_code.runtime.hooks import get_hooks_engine
 
         engine = get_hooks_engine()
         result = engine.dispatch_event(...)

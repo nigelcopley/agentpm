@@ -13,13 +13,13 @@ Validates comprehensive Claude Code integration including:
 import pytest
 from datetime import datetime
 
-from agentpm.services.claude_integration.plugins import (
+from agentpm.providers.anthropic.claude_code.runtime.plugins import (
     ClaudePluginRegistry,
     PluginCapability,
     ClaudeCodePlugin,
     reset_registry,
 )
-from agentpm.services.claude_integration.hooks.models import EventType
+from agentpm.providers.anthropic.claude_code.runtime.hooks.models import EventType
 
 
 @pytest.fixture

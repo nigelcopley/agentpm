@@ -9,8 +9,8 @@ import pytest
 from pathlib import Path
 from unittest.mock import Mock, MagicMock
 
-from agentpm.services.claude_integration.settings.manager import SettingsManager
-from agentpm.services.claude_integration.settings.models import (
+from agentpm.providers.anthropic.claude_code.runtime.settings.manager import SettingsManager
+from agentpm.providers.anthropic.claude_code.runtime.settings.models import (
     ClaudeCodeSettings,
     HooksSettings,
     MemorySettings,

@@ -395,7 +395,7 @@ class CommandHandlers:
                 )
 
             # Import checkpoint manager
-            from agentpm.services.claude_integration.checkpoints import CheckpointManager
+            from agentpm.providers.anthropic.claude_code.runtime.checkpoints import CheckpointManager
             manager = CheckpointManager(self.db)
 
             # Handle list command

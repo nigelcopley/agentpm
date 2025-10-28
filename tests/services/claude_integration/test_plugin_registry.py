@@ -6,7 +6,7 @@ Validates plugin registration, discovery, and capability-based routing.
 
 import pytest
 
-from agentpm.services.claude_integration.plugins import (
+from agentpm.providers.anthropic.claude_code.runtime.plugins import (
     ClaudePluginRegistry,
     ClaudePlugin,
     PluginCapability,

@@ -36,7 +36,7 @@ class CheckpointManager:
 
     Example:
         from agentpm.core.database import DatabaseService
-        from agentpm.services.claude_integration.checkpoints import CheckpointManager
+        from agentpm.providers.anthropic.claude_code.runtime.checkpoints import CheckpointManager
 
         db = DatabaseService("path/to/db")
         manager = CheckpointManager(db)

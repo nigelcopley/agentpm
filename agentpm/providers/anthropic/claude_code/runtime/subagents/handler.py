@@ -260,7 +260,7 @@ def get_invocation_handler() -> SubagentInvocationHandler:
         Singleton SubagentInvocationHandler instance
 
     Example:
-        from agentpm.services.claude_integration.subagents import get_invocation_handler
+        from agentpm.providers.anthropic.claude_code.runtime.subagents import get_invocation_handler
 
         handler = get_invocation_handler()
         result = await handler.invoke_subagent(...)

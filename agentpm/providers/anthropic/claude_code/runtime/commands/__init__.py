@@ -10,7 +10,7 @@ Provides:
 - /aipm:checkpoint - Create session checkpoint
 
 Example:
-    from agentpm.services.claude_integration.commands import get_registry
+    from agentpm.providers.anthropic.claude_code.runtime.commands import get_registry
 
     registry = get_registry()
     result = registry.execute("aipm:context", args=["--work-item=123"])

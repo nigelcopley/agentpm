@@ -23,7 +23,7 @@ Architecture:
 
 Example:
     from agentpm.core.database import get_database
-    from agentpm.services.claude_integration.orchestrator import ClaudeCodeOrchestrator
+    from agentpm.providers.anthropic.claude_code.runtime import ClaudeCodeOrchestrator
 
     db = get_database()
     orchestrator = ClaudeCodeOrchestrator(db, project_id=1)

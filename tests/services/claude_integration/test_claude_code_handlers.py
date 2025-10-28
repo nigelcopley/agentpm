@@ -8,7 +8,7 @@ import pytest
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 
-from agentpm.services.claude_integration.hooks import (
+from agentpm.providers.anthropic.claude_code.runtime.hooks import (
     ClaudeCodeHookHandlers,
     HookEvent,
     EventType,

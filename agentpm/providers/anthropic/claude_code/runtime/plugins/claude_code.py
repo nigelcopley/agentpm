@@ -12,8 +12,8 @@ This plugin consolidates all Claude Code capabilities into a single,
 cohesive integration following the APM (Agent Project Manager) plugin pattern.
 
 Example:
-    from agentpm.services.claude_integration.plugins import get_registry
-    from agentpm.services.claude_integration.plugins.claude_code import ClaudeCodePlugin
+    from agentpm.providers.anthropic.claude_code.runtime.plugins import get_registry
+    from agentpm.providers.anthropic.claude_code.runtime.plugins.claude_code import ClaudeCodePlugin
 
     registry = get_registry()
     plugin = ClaudeCodePlugin()
